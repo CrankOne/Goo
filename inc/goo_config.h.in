@@ -1,0 +1,76 @@
+# ifndef H_GOO_CONFIG_H
+# define H_GOO_CONFIG_H
+
+/*
+ * Features
+ * (do not forget to append description and encoder macros at
+ *  hph_versioning.c)
+ */
+
+#cmakedefine EXTENDED_TYPES     0x1
+#cmakedefine PRINTF_SOURCE_INFO 0x2
+#cmakedefine EXCEPTION_BACTRACE 0x4
+#cmakedefine DEBUG_ALLOCATOR    0x8
+#cmakedefine PRINTING_ANSI_ESC  0x10
+#cmakedefine HASKELL_MODULE     0x20
+#cmakedefine ENABLE_GDS         0x40
+#cmakedefine ENABLE_PDE         0x80
+#cmakedefine ENABLE_NETWORKING  0x100
+#cmakedefine ENABLE_GUI         0x200
+
+#cmakedefine ZLIB_FOUND         0x1
+#cmakedefine LZO_FOUND          0x2
+#cmakedefine BZIP2_FOUND        0x4
+#cmakedefine PNG_FOUND          0x8
+#cmakedefine FLTK_FOUND         0x10
+#cmakedefine GIT_FOUND          0x20
+
+# define BUILD_C_FLAGS          @CMAKE_C_FLAGS@
+# define BUILD_CXX_FLAGS        @CMAKE_CXX_FLAGS@
+# define BUILDER_HOSTNAME       @BUILDER_HOSTNAME@
+# define CMAKE_SYSTEM           @CMAKE_SYSTEM@
+# define BUILD_TYPE             @CMAKE_BUILD_TYPE@
+
+/*
+ * Versioning
+ */
+
+# define GOO_VERSION_MAJOR @GOO_VERSION_MAJOR@
+# define GOO_VERSION_MINOR @GOO_VERSION_MINOR@
+
+# define BUILD_TIMESTAMP @BUILD_TIMESTAMP@
+# ifdef GIT_FOUND
+#  define  COMMIT_HASH "@COMMIT_HASH@"
+#  define  GIT_STRING @GIT_STRING@
+# else
+#  define  COMMIT_HASH "<unavailible>"
+#  define  GIT_STRING  "<unavailible>"
+# endif
+
+# ifndef PACKAGE
+#   define PACKAGE Haephestus
+#   define PACKAGE_VERSION GOO_VERSION_MAJOR GOO_VERSION_MINOR
+# endif
+
+/*
+ * Feature-dependent constants
+ */
+
+# ifndef EMERGENCY_BUFLEN
+#   define EMERGENCY_BUFLEN (256*1024)
+# endif
+
+# ifndef EMERGENCY_STACK_DEPTH_NENTRIES
+#   define EMERGENCY_STACK_DEPTH_NENTRIES 16
+# endif
+
+# ifndef DEFAULT_ZLIB_COMPRESSION_LEVEL
+#   define DEFAULT_ZLIB_COMPRESSION_LEVEL 9
+# endif
+
+# ifdef __cplusplus
+# include <stdexcept>
+# endif
+
+# endif /* H_GOO_CONFIG_H */
+
