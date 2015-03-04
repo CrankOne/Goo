@@ -1,6 +1,6 @@
 # ifndef H_GOO_ANSI_ESCAPE_SEQUENCES_H
 # define H_GOO_ANSI_ESCAPE_SEQUENCES_H
-# include "hph_config.h"
+# include "goo_config.h"
 /*
  * Shell colors
  */

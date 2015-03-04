@@ -1,7 +1,7 @@
-# ifndef H_HPH_VERSIONING_H
-# define H_HPH_VERSIONING_H
+# ifndef H_GOO_VERSIONING_H
+# define H_GOO_VERSIONING_H
 
-# include "hph_types.h"
+# include "goo_types.h"
 
 # ifdef __cplusplus
 extern "C" {
@@ -24,5 +24,5 @@ void build_info();
 }
 # endif
 
-# endif  /* H_HPH_VERSIONING_H */
+# endif  /* H_GOO_VERSIONING_H */
 

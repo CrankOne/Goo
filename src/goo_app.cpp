@@ -91,7 +91,7 @@ handler is not first in stack." );
     act.sa_sigaction = &(iApp::_signal_handler_dispatcher);
     act.sa_flags = SA_SIGINFO;
     if( sigaction(SIGINT, &act, &oldAct) < 0 ) {
-        hraise(common,"sigaction() error\n" );
+        emraise(common,"sigaction() error\n" );
     }
     // signal bound to dispatcher, now append the handlers stack
     std::vector< std::pair<SignalHandler, std::string> > vec;
@@ -136,7 +136,7 @@ iApp::_signal_handler_dispatcher( int signum,
 iApp::hostname() const {
     char bf[128];
     if( -1 == gethostname( bf, 128 ) ) {
-        hraise( common, "Failed to get hostname: (%d) %s",
+        emraise( common, "Failed to get hostname: (%d) %s",
             errno, strerror(errno) );
     }
     return bf;
@@ -149,7 +149,7 @@ iApp::hostname() const {
 iApp::envvar( const std::string & nm ) const {
     char * var = getenv(nm.c_str());
     if(!var) {
-        hraise(noSuchKey, "No such envvar in current context: %s", nm.c_str());
+        emraise(noSuchKey, "No such envvar in current context: %s", nm.c_str());
     }
     return var;
 }

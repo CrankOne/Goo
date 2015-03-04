@@ -47,7 +47,7 @@
 # define true 1
 # define false 0
 
-# include "hph_types.h"
+# include "goo_types.h"
 # include <string.h>
 # include <stdio.h>
 # include <stdlib.h>

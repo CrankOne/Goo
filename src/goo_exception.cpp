@@ -4,8 +4,8 @@
 # include <iomanip>
 # include <sstream>
 
-# include "hph_types.h"
-# include "hph_exception.hpp"
+# include "goo_types.h"
+# include "goo_exception.hpp"
 
 # ifdef EXCEPTION_BACTRACE
 #   include <cxxabi.h>
@@ -16,7 +16,7 @@
 # include <cstring>
 # include <cctype>
 
-namespace hph {
+namespace goo {
 
 namespace em {
 
@@ -246,7 +246,7 @@ struct __ExceptionDescrDictionary {
 
 __ExceptionDescrDictionary __jDict[] = {
     for_all_errorcodes( declare_dict_entry )
-    { null, null }
+    { 0, nullptr }
 };
 
 # define declare_static_const(num, nm, dscr) \
@@ -296,12 +296,12 @@ Exception::dump(std::ostream & os) const throw() {
     }
 }
 
-}  // namespace hph
+}  // namespace goo
 
 const char *
 get_errcode_description( const ErrCode C ) {
-    for( hph::__ExceptionDescrDictionary * c = hph::__jDict;
-        null != c->_descr; ++c ) {
+    for( goo::__ExceptionDescrDictionary * c = goo::__jDict;
+        nullptr != c->_descr; ++c ) {
         if( C == c->_c ) {
             return c->_descr;
         }
@@ -309,22 +309,11 @@ get_errcode_description( const ErrCode C ) {
     return "unhandled custom error code";
 }
 
-# if 0
-int C_error( ErrCode c, const char * fmt, ... ) {
-    static char bf[EMERGENCY_BUFLEN] = "";
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(bf, EMERGENCY_BUFLEN, fmt, args );
-    va_end(args);
-    throw hph::Exception((int) c, bf );
-}
-# endif
-
 //
 // Backtrace
 //
 
-namespace hph {
+namespace goo {
 # ifndef EXCEPTION_BACTRACE
 void
 Exception::_get_trace() throw() { /* do nothing */ }
@@ -337,79 +326,7 @@ Exception::_get_trace() throw() {
     em::obtain_stacktrace( _stacktrace );
 }
 
-
-
-# if 0
-void
-Exception::_get_trace() throw() {
-    size_t funcnamesize = 1024;
-    char * funcname = (char *) alloca(funcnamesize); //alloca(funcnamesize);
-    // stacktrace with demangling. Inspired by:
-    //  http://panthema.net/2008/0901-stacktrace-demangled/
-    void *array[EMERGENCY_BUFLEN];
-    Size size;
-    char **strings;
-    Size i;
-    size = backtrace(array, EMERGENCY_BUFLEN);
-    strings = backtrace_symbols(array, size);
-    for (i = 2; i < size; i++) {
-        char *begin_name = 0, *begin_offset = 0, *end_offset = 0;
-        // find parentheses and +address offset surrounding the mangled name:
-        // ./module(function+0x15c) [0x8048a6d]
-        bool flag = true;
-        for (char *p = strings[i]; *p && flag; ++p){
-            if (*p == '(') {
-                begin_name = p;
-            } else if (*p == '+') {
-                begin_offset = p;
-            } else if (*p == ')' && begin_offset) {
-                end_offset = p;
-                break;
-            }
-        }
-
-        if(begin_name && begin_offset && end_offset && begin_name < begin_offset) {
-            *begin_name++ = '\0';
-            *begin_offset++ = '\0';
-            *end_offset = '\0';
-            // mangled name is now in [begin_name, begin_offset) and caller
-            // offset in [begin_offset, end_offset). now apply
-            // __cxa_demangle():
-            int status;
-            char* ret = abi::__cxa_demangle(begin_name,
-                                            funcname, &funcnamesize, &status);
-            if (status == 0) {
-                funcname = ret; // use possibly realloc()-ed string
-                _stacktrace.push_back( ESC_BLDCYAN +
-                    std::string(strings[i]) +
-                    std::string(" : ") +
-                    std::string(funcname) +
-                    std::string("+") +
-                    std::string(begin_offset) +
-                    std::string("|\n") +
-                ESC_CLRCLEAR );
-            } else {
-                // demangling failed. Output function name as a C function with
-                // no arguments.
-                _stacktrace.push_back( ESC_BLDVIOLET +
-                    std::string(strings[i]) +
-                    std::string(" : ") +
-                    std::string(begin_name) +
-                    std::string("()+") +
-                    std::string(begin_offset) +
-                    std::string("#\n") +
-                ESC_CLRCLEAR );
-            }
-        } else {
-            // couldn't parse the line? print the whole line.
-            _stacktrace.push_back(std::string( strings[i] ));// + std::string("\n"));
-        }
-    }
-    free(strings);
-}
-# endif
-
-}  // namespace hph
+}  // namespace goo
 
 # endif  // EXCEPTION_BACTRACE
 

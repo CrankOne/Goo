@@ -367,14 +367,14 @@ public:
         }
         inline Issuer & issuer() {
             if( !_issuer ) {
-                hraise(badState,
+                emraise(badState,
                   "Subscriber unsubscribed while issuer acquizition invoked.");
             }
             return *_issuer;
         }
         inline const Issuer & issuer() const {
             if( !_issuer ) {
-                hraise(badState,
+                emraise(badState,
                   "Subscriber unsubscribed while issuer acquizition invoked.");
             }
             return *_issuer;
@@ -386,7 +386,7 @@ public:
     void subscribe( SubscriberMixin & subs ) {
         if( _subscribers.end() !=
             std::find( _subscribers.begin(), _subscribers.end(), &subs ) ) {
-                hraise(nonUniq,
+                emraise(nonUniq,
                   "Repitative subscription of the same object %p.",
                   &subs);
         }
@@ -396,7 +396,7 @@ public:
         DECLTYPE(_subscribers)::iterator it =
             std::find( _subscribers.begin(), _subscribers.end(), &subs );
         if( _subscribers.end() == it ) {
-            hraise(noSuchKey,
+            emraise(noSuchKey,
                   "Has no subscriber %p to unsubscribe.", &subs);
         }
         _subscribers.push_back(&subs);

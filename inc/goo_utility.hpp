@@ -208,28 +208,6 @@ T closest_value(std::vector<T> const& vec, T value) {
     return ( distanceBefore > distanceAfter ? right : left );
 }
 
-class TokensList : public std::vector<std::string>,
-                   public goo::mixins::ToOStreamOp,
-                   public goo::mixins::iCached<std::string> {
-protected:
-    char _delimeter;
-protected:
-    virtual void _V_recache( std::string & outString ) const override {
-        std::stringstream ss;
-        for( auto it = this->cbegin(); it != this->cend()-1; ++it ) {
-            ss << *it << _delimeter;
-        }
-        ss << *(this->rbegin());
-        outString = ss.str();
-    }
-    virtual void _V_to_ostream( std::ostream & os ) const override {
-        os << cache();
-    }
-public:
-    TokensList( char delimeter ) : _delimeter(delimeter){}
-    inline char delimeter() const { return _delimeter; }
-};
-
 /// Uses printf()-like syntax to produce std::string in one-line expr.
 std::string strfmt( const std::string & fmt, ... );
 
@@ -275,7 +253,7 @@ split_sequence( const ContainerT & src,
 
 template<typename T> constexpr typename std::enable_if<std::is_fundamental<T>::value, TypeCode>::type
 encode_type() {
-    hraise(badCast, "Provided type \"%s\" is unsupported.", typeid(T).name() ); }
+    emraise(badCast, "Provided type \"%s\" is unsupported.", typeid(T).name() ); }
 
 #define declare_cexpr_ftype_encoder( num, cnm, hnm, hdsnm ) \
 template<> constexpr TypeCode encode_type<cnm>() { return num; }

@@ -40,6 +40,8 @@ following things in parallel before thhe first release at
    4. `parTree` is a parameters tree library implementing a yet another
       argc/argv-parsing facility with ability to merge parameters with config
       files, lexical casts (in relation with GDS).
+   5. `allocators` is a memory management subsystem, supplementing standard
+      library allocators.
 
 One can not probably find all of them at my [bitbucket repo](https://bitbucket.org/CrankOne/goo/)
 whilst I'm working on those features mostly at my spare time on a whim.

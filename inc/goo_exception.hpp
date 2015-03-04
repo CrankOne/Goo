@@ -38,7 +38,7 @@
  * Each number has a generic brief and user-specific textual
  * description that usually provides a detailed description.
  *
- * Exceptions are thrown with hraise() macro with variadic
+ * Exceptions are thrown with emraise() macro with variadic
  * arguments and ANSI printf() format string.
  *
  * There are three developments shortcuts:
@@ -56,34 +56,34 @@
  * name and signature.
  */
 
-/*!\def hraise
- * \brief Throws the hph::Exception object with detailed description.
+/*!\def emraise
+ * \brief Throws the goo::Exception object with detailed description.
  * \ingroup errors
  *
  * Format is standard for ANSI printf() family.
  * \param c is a encoded generic error ID from for_all_errorcodes macro.
  */
-# define hraise( c, ... ) while(true){ \
+# define emraise( c, ... ) while(true){ \
     char bf[EMERGENCY_BUFLEN]; \
     snprintf(bf, EMERGENCY_BUFLEN, __VA_ARGS__ ); \
-    throw hph::Exception((int) hph::Exception::c, bf );}
+    throw goo::Exception((int) goo::Exception::c, bf );}
 
 /*!\def _TODO_
  * \brief Development helper macro to raise 'unimplemented' error.
  * \ingroup errors */
-# define _TODO_ hraise( unimplemented, "%s:%d %s", __FILE__, __LINE__, __PRETTY_FUNCTION__ )
+# define _TODO_ emraise( unimplemented, "%s:%d %s", __FILE__, __LINE__, __PRETTY_FUNCTION__ )
 /*!\def _UNSUPPORTED_
  * \brief Development helper macro to raise 'unsupported' error.
  * \ingroup errors
  *
  * Used for cases when this routine is not avalible in current build
  * configuration. */
-# define _UNSUPPORTED_ hraise( unsupported, "%s:%d %s", __FILE__, __LINE__, __PRETTY_FUNCTION__ )
+# define _UNSUPPORTED_ emraise( unsupported, "%s:%d %s", __FILE__, __LINE__, __PRETTY_FUNCTION__ )
 /*!\def _FORBIDDEN_CALL_
  * \ingroup errors
  * \brief Development macro to be thrown from forbidden ctrs.
  * Indicates bad architecture (badArchitect). */
-# define _FORBIDDEN_CALL_ hraise( badArchitect, "(forbidden call) %s:%d %s", __FILE__, __LINE__, __PRETTY_FUNCTION__ )
+# define _FORBIDDEN_CALL_ emraise( badArchitect, "(forbidden call) %s:%d %s", __FILE__, __LINE__, __PRETTY_FUNCTION__ )
 
 /*!\def eprintf
  * \brief Prints error message to standard Hph's error stream.
@@ -173,10 +173,15 @@
 
 # ifdef __cplusplus
 
-namespace hph {
+namespace goo {
 namespace em {
 
-typedef std::string String; // TODO
+# ifndef ENABLE_ALLOCATORS
+typedef std::string String;
+# else
+# error "Allocators subsystem is supported, but actual emString implementation is still unimplemented."
+# endif
+
 struct StackTraceInfoEntry {
     bfd_vma     addr,           ///< runtime ELF address
                 soLibAddr;      ///< static shared library ELF address
@@ -243,7 +248,7 @@ String demangle_class( const char * );
 String demangle_function( const String & name );
 }  // namespace em
 
-}  // namespace hph
+}  // namespace goo
 
 # endif /* __cplusplus */
 

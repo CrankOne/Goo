@@ -4,19 +4,19 @@
 /*
  * Features
  * (do not forget to append description and encoder macros at
- *  hph_versioning.c)
+ *  goo_versioning.c)
  */
 
 #cmakedefine EXTENDED_TYPES     0x1
 #cmakedefine PRINTF_SOURCE_INFO 0x2
 #cmakedefine EXCEPTION_BACTRACE 0x4
-#cmakedefine DEBUG_ALLOCATOR    0x8
-#cmakedefine PRINTING_ANSI_ESC  0x10
-#cmakedefine HASKELL_MODULE     0x20
-#cmakedefine ENABLE_GDS         0x40
-#cmakedefine ENABLE_PDE         0x80
-#cmakedefine ENABLE_NETWORKING  0x100
-#cmakedefine ENABLE_GUI         0x200
+#cmakedefine PRINTING_ANSI_ESC  0x8
+#cmakedefine ENABLE_GDS         0x10
+#cmakedefine ENABLE_ALLOCATORS  0x20
+#cmakedefine ENABLE_TENSORS     0x40
+#cmakedefine ENABLE_DATASTREAMS 0x80
+#cmakedefine ENABLE_PTREE       0x100
+#cmakedefine HASKELL_MODULE     0x200
 
 #cmakedefine ZLIB_FOUND         0x1
 #cmakedefine LZO_FOUND          0x2

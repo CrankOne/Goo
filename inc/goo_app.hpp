@@ -14,6 +14,7 @@
 # include <cassert>
 
 # include "goo_types.h"
+# include "goo_exception.hpp"
 
 namespace goo {
 
@@ -95,7 +96,7 @@ ConcreteAppType & app() {
             dynamic_cast<ConcreteAppType&>(ConcreteAppType::self());
         return casted;
     } catch(std::bad_cast & e) {
-        hraise(badCast, "Invalid application object type casting.");
+        emraise(badCast, "Invalid application object type casting.");
     }
 }
 
@@ -140,7 +141,7 @@ public:
     // general application management
 
     /// Creates application instance. Must be invoked just after entry point.
-    static void init(App<ConfigObjectT, LogStreamT> * app, int argc_, char * argv_[]) {
+    static void init(int argc_, char * argv_[], App<ConfigObjectT, LogStreamT> * app) {
         _self = app;
         app->argc = argc_; app->argv = argv_;
         app->_V_configure_application( 
@@ -163,8 +164,7 @@ public:
     inline const ConfigObjectT & co() const { assert(_cObj); return *_cObj; }
 };
 
-
-};  // namespace hph
+}  // namespace goo
 
 # endif  // H_GOO_APPLICATION_H
 

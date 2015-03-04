@@ -27,7 +27,7 @@ out << std::setw(4)  << #nm \
     << std::setw(6)  << IS_FLOATING_POINT_TYPE(nm) \
     << std::setw(6)  << IS_COMPOUND_TYPE(nm) \
     << std::endl;
-for_all_hph_datatypes(dump_type_info)
+for_all_atomic_datatypes(dump_type_info)
 # undef dump_type_info
 
 //_ASSERT(0, "artificial");

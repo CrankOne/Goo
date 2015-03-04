@@ -63,7 +63,7 @@
 #   ifndef NAN
 #       define NaN (0./.0)
 #   else
-#       define NAN
+#       define NaN NAN
 #   endif
 # endif
 

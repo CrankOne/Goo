@@ -3,6 +3,7 @@
 
 int
 main(int argc, char * argv[]) {
-    return hphUT::Unit::run_tests( argc, argv ) ? EXIT_FAILURE : EXIT_SUCCESS;
+    //return gooUT::Unit::run_tests( argc, argv ) ? EXIT_FAILURE : EXIT_SUCCESS;
+
 }
 

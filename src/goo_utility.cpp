@@ -3,7 +3,9 @@
 # include <memory>
 # include <iomanip>
 # include <cassert>
+# include <cstring>
 # include "goo_utility.hpp"
+# include "goo_exception.hpp"
 
 namespace stdE {
 
@@ -61,7 +63,7 @@ cf_write( FILE * f, Size len, const void * bf) {
     Size nwrote =
         fwrite( bf, 1, len, f );
     if( nwrote != len ) {
-        hraise( ioError, "fwrite() wrote only " HPH_SIZE_FMT " bytes instead of " HPH_SIZE_FMT,
+        emraise( ioError, "fwrite() wrote only " GOO_SIZE_FMT " bytes instead of " GOO_SIZE_FMT,
                 nwrote, len );
     }
 }
@@ -71,7 +73,7 @@ cf_read( FILE * f, Size len, void * bf) {
     Size nread =
         fread( bf, 1, len, f );
     if( nread != len ) {
-        hraise( ioError, "fread() read only " HPH_SIZE_FMT " bytes instead of " HPH_SIZE_FMT,
+        emraise( ioError, "fread() read only " GOO_SIZE_FMT " bytes instead of " GOO_SIZE_FMT,
                 nread, len );
     }
 }
@@ -117,7 +119,7 @@ ParStream::push( unsigned char ncol, const std::string & msg ) {
             std::pair<UByte, std::string>(ncol, msg)
         ) );
     } else {
-        hraise( malformedArguments, "Wrong thread number: %d > %d",
+        emraise( malformedArguments, "Wrong thread number: %d > %d",
                 (int) ncol,
                 (int) _nCols+1);
     }

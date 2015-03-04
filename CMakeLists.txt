@@ -14,10 +14,17 @@ set( GOO_VERSION_MINOR 1 )
 # disabled by -D<option_name>=<ON|OFF> option given to CMake.
 
 
-option( PRINTF_SOURCE_INFO  "Supplement printing lines with source file info."      OFF)
-option( EXCEPTION_BACTRACE  "C++ exception throw produce a stack unwinding."        ON )
-option( PRINTING_ANSI_ESC   "Terminal messages coloring."                           ON )
-
+option( PRINTF_SOURCE_INFO  "Supplement printing lines with source file info."  OFF)
+option( EXCEPTION_BACTRACE  "C++ exception throw produce a stack unwinding."    ON )
+option( PRINTING_ANSI_ESC   "Terminal messages coloring."                       ON )
+# The lines below is a development features, basically located at other
+# git branches:
+option( ENABLE_GDS          "Goo Declarative Semantics."                        OFF)
+option( ENABLE_ALLOCATORS   "Goo's own allocators subsystem."                   OFF)
+option( ENABLE_TENSORS      "Tensorial algebra support template classes."       OFF)
+option( ENABLE_DATASTREAMS  "Goo's serialization template classes."             OFF)
+option( ENABLE_PTREE        "Goo's getopt()-like mechanism."                    OFF)
+option( HASKELL_MODULE      "Haskell extensions."                               OFF)
 #
 # Find third-party packages
 # 

@@ -3,9 +3,11 @@
 # include <cstdlib>
 # include <algorithm>
 # include <getopt.h>
-# include "hph_exception.hpp"
-# include "hph_versioning.h"
+# include "goo_exception.hpp"
+# include "goo_versioning.h"
 # include "utest.hpp"
+
+# if 0
 
 namespace hphUT {
 
@@ -26,7 +28,7 @@ functions for a bugs, side effects or other misbehaviour.\n\r\
 \n\r\
 Keys:\n\r\
     [-h/--help] ..............  print this message to stdout.\n\r\
-    [-c/--config] ............  print a hph's build\n\r\
+    [-c/--config] ............  print a goo's build\n\r\
                                 configuration ordered in table.\n\r\
     [-s/--silent] ............  do not print walkthrough\n\r\
                                 messages.\n\r\
@@ -68,7 +70,7 @@ void
 Unit::run() {
     try {
         return _run(_ss);
-    } catch( hph::Exception & hE ) {
+    } catch( goo::Exception & hE ) {
         hE.dump(_ss);
     } /*catch( std::exception & sE ) {
         _ss << "caught an std::exception for unit «"
@@ -180,7 +182,7 @@ Unit::run_tests( int argc, char * argv[] ) {
             if( devReports ) {
                 std::cout << it->second->get_report();
             }
-        } catch( hph::Exception & e ) {
+        } catch( goo::Exception & e ) {
             if( !silent ) {
                 std::cout <<  ESC_BLDRED "FAILURE" ESC_CLRCLEAR << std::endl;
             }
@@ -216,4 +218,6 @@ Unit::run_tests( int argc, char * argv[] ) {
 }
 
 }  // namespace HphST
+
+# endif
 

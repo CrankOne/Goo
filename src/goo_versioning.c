@@ -1,6 +1,6 @@
 # include <stdio.h>
-# include "hph_versioning.h"
-# include "hph_utility.h"
+# include "goo_versioning.h"
+# include "goo_utility.h"
 
 const struct HPH_Versioning hphVersioning = {
     .buildTimestamp = BUILD_TIMESTAMP,
@@ -16,28 +16,26 @@ const struct HPH_Versioning hphVersioning = {
 # ifdef EXCEPTION_BACTRACE
     |   EXCEPTION_BACTRACE
 # endif
-# ifdef DEBUG_ALLOCATOR
-    |   DEBUG_ALLOCATOR
+# ifdef ENABLE_GDS
+    |   ENABLE_GDS
 # endif
-# ifdef PRINTING_ANSI_ESC
-    |   PRINTING_ANSI_ESC
+# ifdef ENABLE_ALLOCATORS
+    |   ENABLE_ALLOCATORS
+# endif
+# ifdef ENABLE_TENSORS
+    |   ENABLE_TENSORS
+# endif
+# ifdef ENABLE_DATASTREAMS
+    |   ENABLE_DATASTREAMS
+# endif
+# ifdef ENABLE_PTREE
+    |   ENABLE_PTREE
 # endif
 # ifdef HASKELL_MODULE
     |   HASKELL_MODULE
 # endif
-# ifdef ENABLE_HDS
-    |   ENABLE_HDS
-# endif
-# ifdef ENABLE_PDE
-    |   ENABLE_PDE
-# endif
-# ifdef ENABLE_NETWORKING
-    |   ENABLE_NETWORKING
-# endif
-# ifdef ENABLE_GUI
-    |   ENABLE_GUI
-# endif
     ),
+/* ----------------------- */
  .encodedLibsSupport = (0
 # ifdef ZLIB_FOUND
     |   ZLIB_FOUND
@@ -61,16 +59,15 @@ const struct HPH_Versioning hphVersioning = {
 };
 
 static const char __featuresDescrDict[][128] = {
-    "128-bit types enabled."
+    "128-bit types enabled"
     "source file information included to hph-standard log messages",
     "stacktrace information will be obtained when hph::Exception is thrown",
-    "debugging allocator enabled with additional bookkeeping data",
-    "ANSI terminal coloring escape sequences",
-    "Haskell module",
-    "HDS language support",
-    "PDE templates",
-    "Hephaestus networking routines",
-    "GUI modules",
+    "Goo Declarative Semantics language",
+    "instance-based allocators subsystem",
+    "tensorial algebra extensions are supported",
+    "Goo's serialization streams protocols are supported",
+    "parameters tree supported",
+    "Haskell module is embedded in library"
 };
 
 static const char __libDescrDict[][128] = {
