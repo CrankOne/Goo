@@ -161,8 +161,8 @@
     m(25,       threadError,        "execution stopped due to in-thread error") \
     m(50,       nwGeneric,          "network error") \
     m(100,      ioError,            "common I/O error") \
-    m(101,      dataNotFound,       "data not found by given path") \
-    m(102,      dataCorrupted,      "data seems malformed") \
+    m(101,      notFound,           "data is not found at location") \
+    m(102,      corruption,         "malformed data") \
     m(103,      badValue,           "got unacceptable numeric value") \
     m(104,      fileNotReachable,   "file is unreachable") \
     m(105,      badParameter,       "got invalid parameter or parameter set" ) \

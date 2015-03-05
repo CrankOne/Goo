@@ -3,35 +3,78 @@
 
 # include <string>
 # include <map>
-# include <sstream>
+# include <iostream>
 
 # include "goo_app.hpp"
 # include "goo_exception.hpp"
-
+# include "goo_tsort.tcc"
 
 namespace goo {
 namespace ut {
 
-class UTApp : public goo::App<void, std::ostream> {
+struct Config;
+
+class UTApp : public goo::App<Config, std::ostream> {
+public:
+    class TestingUnit;
+    typedef goo::App<Config, std::ostream> Parent;
+private:
+    std::stringstream * _ss;
+    static LabeledDAG<TestingUnit> _modulesGraph;
 public:
     class TestingUnit {
     private:
-        std::string         _name;
-        std::ostream & _outStream,
-                     & _errStream;
-        virtual void _run() = 0;
+        virtual void _run( std::ostream & ) = 0;
+        std::ostream * _outStream;
     public:
-        void run( ) { _run(); }
-        std::string get_out_log() { return _outStream.str(); }
-        std::string get_err_log() { return _errStream.str(); }
+        TestingUnit() : _outStream(&(std::cout)) {}
+        void run( ) { _run( *_outStream ); }
+        std::ostream & outs() { return *_outStream; }
+        void outs( std::ostream & os ) { _outStream = &os; }
     };
 private:
+    static std::unordered_set<TestingUnit*> _modules;
+protected:
     /// Creates instance of type ConfigObjectT according to command-line arguments
-    virtual ConfigObjectT * _V_construct_config_object( int argc, char * argv[] ) const override;
+    virtual Config * _V_construct_config_object( int argc, char * argv[] ) const override;
     /// Configures application according to recently constructed config object.
-    virtual void _V_configure_application( const ConfigObjectT & ) override;
+    virtual void _V_configure_application( const Config * ) override;
     /// Should create the logging stream of type LogStreamT (app already configured).
-    virtual LogStreamT * _V_acquire_stream() override;
+    virtual std::ostream * _V_acquire_stream() override;
+    /// Run configured application.
+    virtual int _V_run() override;
+public:
+    UTApp();
+    ~UTApp();
+
+    static void register_unit( const std::string & label,
+                               TestingUnit * );
+    static void list_modules( std::ostream & );
+};
+
+/// Unit test application config object.
+struct Config {
+    /// Available functions of application. For descriptions, see _V_construct_config_object().
+    enum Operations {
+        printHelp           = 0,
+        printBuildConfig    = 1,
+        listUnits           = 2,
+        dumpDOT             = 3,
+        runAll              = 4,
+        runChoosen          = 5,
+    } operation;
+
+    /// Supplementary options.
+    bool silent,
+         keepGoing,
+         printUnitsLogs,
+         ignoreDeps;
+
+    /// Vector of unit names desired to run.
+    std::vector<std::string> names;
+
+    /// Prepared unit sequence to run.
+    LabeledDAG<UTApp::TestingUnit>::Order units;
 };
 
 }  // namespace ut

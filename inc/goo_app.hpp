@@ -125,10 +125,11 @@ private:
     /// Config object.
     ConfigObjectT * _cObj;
 
+protected:
     /// Creates instance of type ConfigObjectT according to command-line arguments
     virtual ConfigObjectT * _V_construct_config_object( int argc, char * argv[] ) const = 0;
     /// Configures application according to recently constructed config object.
-    virtual void _V_configure_application( const ConfigObjectT & ) = 0;
+    virtual void _V_configure_application( const ConfigObjectT * ) = 0;
     /// Should create the logging stream of type LogStreamT (app already configured).
     virtual LogStreamT * _V_acquire_stream() = 0;
 protected:
@@ -144,8 +145,8 @@ public:
     static void init(int argc_, char * argv_[], App<ConfigObjectT, LogStreamT> * app) {
         _self = app;
         app->argc = argc_; app->argv = argv_;
-        app->_V_configure_application( 
-            *(app->_cObj = app->_V_construct_config_object(argc_, argv_)) );
+        app->_V_configure_application(
+            app->_cObj = app->_V_construct_config_object(argc_, argv_) );
         app->_lStr = app->_V_acquire_stream();
     }
 
@@ -159,9 +160,9 @@ public:
     /// Returns reference on common loging stream object.
     inline LogStreamT    & ls() { assert(_lStr); return *_lStr; }
     /// Returns reference on common config object.
-    inline ConfigObjectT & co() { assert(_cObj); return *_cObj; }
+    inline ConfigObjectT * co() { assert(_cObj); return  _cObj; }
     /// Returns reference on common config object (const version).
-    inline const ConfigObjectT & co() const { assert(_cObj); return *_cObj; }
+    inline const ConfigObjectT * co() const { assert(_cObj); return *_cObj; }
 };
 
 }  // namespace goo

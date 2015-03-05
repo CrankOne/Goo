@@ -1,16 +1,18 @@
-// TODO: delete
-
-# if 0
+# ifndef H_TOPOLOGICAL_SORT_H
+# define H_TOPOLOGICAL_SORT_H
 
 # include <forward_list>
 # include <unordered_set>
 # include <unordered_map>
+# include <ostream>
 # include <set>
-# include <iostream>  // XXX
-# include <cstdlib>   // XXX
+
+# include "goo_exception.hpp"
+
+namespace goo {
 
 template<typename AssociciatedDataT>
-class DependencyGraph {
+class DAG {
 public:
     typedef AssociciatedDataT Data;
     typedef std::forward_list<const Data *> Order;
@@ -39,6 +41,7 @@ public:
         Node & depends_from( const Node * nd ) {
             _deps.insert(nd);
             return *this; }
+        virtual ~Node(){}
 
         const Data * data() const { return _data; }
         bool is_terminal() const { return _deps.empty(); }
@@ -46,8 +49,7 @@ public:
 
         size_t run_dfs_on_me( Order & ordered ) const {
             if( _status == opened ) {
-                std::cerr << "Circular graph." << std::endl;
-                abort();
+                emraise( badState, "Circular graph." );
             }
             _status = opened;
             if( is_terminal() ) {
@@ -55,7 +57,6 @@ public:
                 _status = discovered;
                 return 1;
             }
-            //std::cout << *_data << std::endl;  // XXX
             size_t nprocessed = 0;
             for( auto it = _deps.begin(); it != _deps.end(); ++it ) {
                 if( discovered != (*it)->_status ) {
@@ -68,31 +69,31 @@ public:
             return nprocessed;
         }
     };  // class Node
-private:
+protected:
     std::unordered_set<Node *> _nodes;
     std::unordered_map<const Data *, Node *> _dict;
 public:
-    DependencyGraph() {}
-    DependencyGraph( const Data * bgn, size_t n ) {
+    DAG() {}
+    DAG( const Data * bgn, size_t n ) {
         for( const Data * cd = bgn; cd != bgn + n; ++cd ) {
             auto nn = new Node(cd);
             _nodes.insert( nn );
             _dict[cd] = nn;
         }
     }
-    ~DependencyGraph( ) {
+    virtual ~DAG( ) {
         clear();
     }
 
     /// Inserts node with given data ptr.
-    void insert( const Data * d ) {
+    virtual void insert( const Data * d ) {
         auto nn = new Node(d);
         _nodes.insert( nn );
         _dict[d] = nn;
     }
 
     /// Returns Node by specific data pointer.
-    Node * operator()( const Data * dp ) {
+    virtual Node * operator()( const Data * dp ) {
         return _dict[dp];
     }
 
@@ -107,8 +108,8 @@ public:
     }
 
     /// Build a graph with reversed dependencies.
-    DependencyGraph revert() const {
-        DependencyGraph rg;
+    DAG revert() const {
+        DAG rg;
         // Place copy of nodes withoud pes.
         for( auto it = _nodes.begin();
              _nodes.end() != it;
@@ -130,7 +131,7 @@ public:
     }
 
     /// Provides a depth-first search.
-    size_t dfs( Order & ordered ) const {
+    virtual size_t dfs( Order & ordered ) const {
         size_t nChains = 0,
                N = 0;  // overall processed
         while( N != _nodes.size() ) {
@@ -148,83 +149,90 @@ public:
         return nChains;
     }
 
-    // TODO: move it to more specific subclass -- it is required that data()
-    // should support << operator.
-    void dump_DOT_notation( std::ostream & os ) {
+    virtual void chain_for_node( const Data * d, Order & order ) {
+        auto r = this->revert();
+        r(d)->run_dfs_on_me( order );
+    }
+};  // class DAG
+
+template<typename AssociciatedDataT>
+class LabeledDAG : protected DAG<AssociciatedDataT> {
+public:
+    typedef AssociciatedDataT Data;
+    typedef DAG<Data> Parent;
+    typedef typename Parent::Order Order;
+    typedef LabeledDAG<Data> Self;
+protected:
+    class Node : public Parent::Node {
+    private:
+        std::string _label;
+        Self & _owner;
+    public:
+        Node( std::string label,
+              const Data * d,
+              Self & set ) : Parent::Node(d),
+                             _label(label),
+                             _owner(set) {}
+
+        Node & depends_from( std::string & depLbl ) {
+            Parent::Node::insert( &(_owner(depLbl)) );
+            return *this; }
+        const std::string & label() const { return _label; }
+    };
+private:
+    std::unordered_map<std::string, Node *> _byLabels;
+public:
+
+    Node & operator()(const std::string & l ) {
+        return *_byLabels[l];
+    }
+
+    /// Deletes nodes.
+    virtual void clear() {
+        Parent::clear();
+        _byLabels.clear();
+    }
+
+    /// Inserts node with given data ptr.
+    virtual void insert( const std::string & label, const Data * d ) {
+        auto nn = new Node(label, d, *this);
+        Parent::_nodes.insert( nn );
+        Parent::_dict[d] = nn;
+        _byLabels[label] = nn;
+    }
+
+    /// Renders dependency graph in DOT notation. Useful for debug.
+    void dump_DOT_notated_graph( std::ostream & os ) {
         os << "digraph Units {" << std::endl;
-        for( auto it = _nodes.begin(); it != _nodes.end(); ++it ) {
-            os << "    " << *(*it)->data() << ";" << std::endl;
+        for( auto it = _byLabels.begin(); it != _byLabels.end(); ++it ) {
+            os << "    " << it->first << ";" << std::endl;
         }
-        for( auto it = _nodes.begin(); it != _nodes.end(); ++it ) {
-            for( auto depIt = (*it)->dependencies().begin();
-                      (*it)->dependencies().end() != depIt; ++depIt ) {
-                os << "    " << *(*depIt)->data() << " -> " << *(*it)->data()
+        for( auto it = _byLabels.begin(); it != _byLabels.end(); ++it ) {
+            for( auto depIt = (*it).second->dependencies().begin();
+                      (*it).second->dependencies().end() != depIt; ++depIt ) {
+                os << "    " << static_cast<Node*>(it->second)->label() << " -> "
+                             << static_cast<Node*>(it->second)->label()
                    << ";" << std::endl;
             }
         }
         os << "}" << std::endl;
     }
 
-    void chain_for_node( const Data * d, Order & order ) {
-        auto r = this->revert();
-        r(d)->run_dfs_on_me( order );
-    }
-};  // class DependencyGraph
-
-
-int
-main(int argc, char * argv[]) {
-
-    std::string labels[] = {
-        "A",    "B",    "C",
-             "D",   "E",
-        "F",    "G",    "H" };
-
-    DependencyGraph<std::string> g;
-    for( uint8_t i = 0; i < 8; ++i ) {
-        g.insert( labels + i );
+    /// Provides a depth-first search.
+    virtual size_t dfs( Order & ordered ) const {
+        return Parent::dfs(ordered);
     }
 
-    if(1) {  // set to zero for trivial case
-        g(labels+5)->depends_from(g(labels+3));
-        g(labels+6)->depends_from(g(labels+3)).depends_from(g(labels+4));
-        g(labels+7)->depends_from(g(labels+3)).depends_from(g(labels+2));
-        g(labels+3)->depends_from(g(labels+0)).depends_from(g(labels+1));
-        g(labels+4)->depends_from(g(labels+0)).depends_from(g(labels+2)).depends_from(g(labels+7));
-        // Add circular dependence for check:
-        g(labels+3)->depends_from(g(labels+4));  // D from E
+    virtual void chain_for_node( const std::string & label, Order & order ) {
+        Parent::chain_for_node( _byLabels[label]->data(), order );
     }
 
-    if(0) {
-        g.dump_DOT_notation(std::cout);
+    const std::unordered_map<std::string, Node *> & index() const {
+        return _byLabels;
     }
+};
 
-    if(1) {
-        std::forward_list<const std::string *> order;
-        size_t nchains = g.dfs( order );
-        std::cout << "Order of " << nchains << " chains:" << std::endl;
-        for( auto it = order.begin(); it != order.end(); ++it ) {
-            std::cout << " " << **it << std::endl;
-        }
-    }
+}  // namespace goo
 
-    // Solution for single node
-    if(0) {  // Check validity of reverted graph
-        DependencyGraph<std::string> rg = g.revert();
-        rg.dump_DOT_notation(std::cout);
-    }
-
-    if(0) {
-        std::forward_list<const std::string *> order;
-        auto c = labels + 0;
-        g.chain_for_node( c, order );
-        std::cout << "Order for \"" << *c << "\" node:" << std::endl;
-        for( auto it = order.begin(); it != order.end(); ++it ) {
-            std::cout << " " << **it << std::endl;
-        }
-    }
-
-    return 0;
-}
-# endif
+# endif  // H_TOPOLOGICAL_SORT_H
 

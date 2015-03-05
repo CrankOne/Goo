@@ -2,6 +2,7 @@
 # include <iomanip>
 # include "utest.hpp"
 
+# if 0
 HPH_UT_BGN( Types ) {
 
 out << std::setiosflags(std::ios::fixed)
@@ -34,4 +35,5 @@ for_all_atomic_datatypes(dump_type_info)
 
 } HPH_UT_END( Types )
 
+# endif
 
