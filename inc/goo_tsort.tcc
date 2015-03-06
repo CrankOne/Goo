@@ -77,7 +77,7 @@ public:
     DAG( const Data * bgn, size_t n ) {
         for( const Data * cd = bgn; cd != bgn + n; ++cd ) {
             auto nn = new Node(cd);
-            _nodes.insert( nn );
+            _nodes.insert_data( nn );
             _dict[cd] = nn;
         }
     }
@@ -86,7 +86,7 @@ public:
     }
 
     /// Inserts node with given data ptr.
-    virtual void insert( const Data * d ) {
+    virtual void insert_data( const Data * d ) {
         auto nn = new Node(d);
         _nodes.insert( nn );
         _dict[d] = nn;
@@ -114,7 +114,7 @@ public:
         for( auto it = _nodes.begin();
              _nodes.end() != it;
              ++it ) {
-            rg.insert( (*it)->data() );
+            rg.insert_data( (*it)->data() );
         }
         // Establish reverted connections.
         for( auto it = _nodes.begin();
@@ -223,7 +223,7 @@ public:
         return Parent::dfs(ordered);
     }
 
-    virtual void chain_for_node( const std::string & label, Order & order ) {
+    virtual void chain_for_node_by_label( const std::string & label, Order & order ) {
         Parent::chain_for_node( _byLabels[label]->data(), order );
     }
 

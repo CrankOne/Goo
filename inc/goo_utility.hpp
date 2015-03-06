@@ -209,7 +209,7 @@ T closest_value(std::vector<T> const& vec, T value) {
 }
 
 /// Uses printf()-like syntax to produce std::string in one-line expr.
-std::string strfmt( const std::string & fmt, ... );
+std::string strfmt( const char * fmt, ... );
 
 /// A logging stream class, convinient for parallel applications.
 class ParStream {

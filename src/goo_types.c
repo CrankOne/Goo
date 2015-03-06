@@ -19,13 +19,6 @@ static struct TypeEntry {
     {0, "unknown"},
 };
 
-static Size _atomicTypeSizes[] = {
-# define init_atomic_dtype_sz( num, cType, name, hdsnm ) \
-    sizeof(name),
-    for_all_atomic_datatypes(init_atomic_dtype_sz)
-    # undef init_atomic_dtype_sz
-};
-
 const char *
 binary_to_string( UByte b, char * bf ) {
     bf[8] = '\0';

@@ -156,7 +156,7 @@ UTApp::_V_configure_application( const Config * c ) {
     if( Config::runChoosen == c->operation ) {
         for( auto it = c->names.begin(); c->names.end() != it; ++it ) {
             if( !c->ignoreDeps ) {
-                _modulesGraph.chain_for_node( *it, _static_Config.units );
+                _modulesGraph.chain_for_node_by_label( *it, _static_Config.units );
             } else {
                 _static_Config.units.push_front( _modulesGraph( *it ).data() );
             }
