@@ -92,14 +92,26 @@ AssureOutOfSourceBuilds()
                     OUTPUT_STRIP_TRAILING_WHITESPACE )
 
 
-set( CMAKE_C_FLAGS_DEBUG        "${CMAKE_C_FLAGS_DEBUG} -g -fno-omit-frame-pointer" )  # -Wfatal-errors -fprofile-use? -fprofile-correction
-set( CMAKE_CXX_FLAGS_DEBUG      "${CMAKE_CXX_FLAGS_DEBUG} -g -fno-omit-frame-pointer" )
-set( CMAKE_C_FLAGS_RELEASE      "${CMAKE_C_FLAGS_RELEASE} -DNDEBUG -O3" )
-set( CMAKE_CXX_FLAGS_RELEASE    "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG -O3" )
-set( CMAKE_C_FLAGS_MINSIZEREL   "${CMAKE_C_FLAGS_MINSIZEREL} -DNDEBUG -Os" )
-set( CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} -DNDEBUG -Os" )
-set( CMAKE_C_FLAGS_RELWITHDEBINFO   "${CMAKE_C_FLAGS_RELWITHDEBINFO} -DNDEBUG -O -g" )
-set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DNDEBUG -O -g" )
+set( GOO_LIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/inc/" )
+
+#
+# Configure compiler -- base flags
+set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -I${GOO_LIB_INCLUDE_DIR} -std=c99" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -I${GOO_LIB_INCLUDE_DIR} -std=gnu++11" )
+if( CMAKE_COMPILER_IS_GNUCXX )
+    set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -rdynamic" )
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic" )
+endif( CMAKE_COMPILER_IS_GNUCXX )
+set( CMAKE_Haskell_FLAGS "-fPIC -no-hs-main" )
+
+set( CMAKE_C_FLAGS_DEBUG        "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer" ) # -Wfatal-errors -fprofile-use? -fprofile-correction
+set( CMAKE_CXX_FLAGS_DEBUG      "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer" )
+set( CMAKE_C_FLAGS_RELEASE      "${CMAKE_C_FLAGS_RELEASE}" )
+set( CMAKE_CXX_FLAGS_RELEASE    "${CMAKE_CXX_FLAGS_RELEASE}" )
+set( CMAKE_C_FLAGS_MINSIZEREL   "${CMAKE_C_FLAGS_MINSIZEREL}" )
+set( CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL}" )
+set( CMAKE_C_FLAGS_RELWITHDEBINFO   "${CMAKE_C_FLAGS_RELWITHDEBINFO}" )
+set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}" )
 
 #
 # Attain configuration depending on current build dir.
@@ -121,18 +133,9 @@ elseif( buildDir STREQUAL "relwdebinfo" )
     set( CMAKE_BUILD_TYPE "RelWithDebInfo" )
 else()
     message( STATUS "NOTE: custom build" )
-    set( CMAKE_BUILD_TYPE "None" )
     set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -DNDEBUG -O3" )
     set( CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -DNDEBUG -O3" )
 endif()
-
-set( GOO_LIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/inc/" )
-
-#
-# Configure compiler
-set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -std=c99     -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -rdynamic -DHAVE_INLINE -I${GOO_LIB_INCLUDE_DIR}" )
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++11 -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -rdynamic -I${GOO_LIB_INCLUDE_DIR}" )
-set( CMAKE_Haskell_FLAGS "-fPIC -no-hs-main" )
 
 #
 # Configure source

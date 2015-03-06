@@ -13,7 +13,7 @@ center_helper<std::string::value_type, std::string::traits_type> centered(const 
     return center_helper<char>(str);
 }
 
-template<typename charT, typename traits = std::char_traits<charT> >
+template<typename charT, typename traits>
 std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>& s, const center_helper<charT, traits>& c) {
     size_t w = s.width();
     if(w > c.str_.length()) {

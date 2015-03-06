@@ -252,8 +252,7 @@ split_sequence( const ContainerT & src,
 }
 
 template<typename T> constexpr typename std::enable_if<std::is_fundamental<T>::value, TypeCode>::type
-encode_type() {
-    emraise(badCast, "Provided type \"%s\" is unsupported.", typeid(T).name() ); }
+encode_type();  // default be undefined by design.
 
 #define declare_cexpr_ftype_encoder( num, cnm, hnm, hdsnm ) \
 template<> constexpr TypeCode encode_type<cnm>() { return num; }
