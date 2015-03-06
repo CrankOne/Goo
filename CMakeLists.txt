@@ -41,8 +41,11 @@ if( GIT_FOUND )
     # obtain current commit hash
     EXECUTE_PROCESS(COMMAND git rev-parse HEAD OUTPUT_VARIABLE COMMIT_HASH
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} OUTPUT_STRIP_TRAILING_WHITESPACE )
+    EXECUTE_PROCESS(COMMAND git rev-parse --abbrev-ref HEAD
+                    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                    OUTPUT_VARIABLE GIT_BRANCH_NAME OUTPUT_STRIP_TRAILING_WHITESPACE)
     EXECUTE_PROCESS(COMMAND git show -s
-        --format="gitInfo:{\\%nCommit:{\\%nhash:%h,\\%ndate:'%ci',\\%ncomment:'%s',\\%n},\\%nbranch:'`git rev-parse --abbrev-ref HEAD`'\\%n}" ${COMMIT_HASH}
+        --format="gitInfo:{\\%nCommit:{\\%nhash:%h,\\%ndate:'%ci',\\%ncomment:'%s',\\%n},\\%nbranch:'${GIT_BRANCH_NAME}'}" ${COMMIT_HASH}
                  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                  OUTPUT_VARIABLE GIT_STRING OUTPUT_STRIP_TRAILING_WHITESPACE)
 else( GIT_FOUND )
@@ -127,6 +130,11 @@ configure_file (
     "${GOO_LIB_INCLUDE_DIR}/goo_config.h.in"
     "${GOO_LIB_INCLUDE_DIR}/goo_config.h"
 )
+if( GIT_FOUND )
+    configure_file( ${CMAKE_SOURCE_DIR}/.git/ORIG_HEAD
+                    ${CMAKE_CURRENT_BINARY_DIR}/ORIG_HEAD )
+endif( GIT_FOUND )
+
 
 #
 # Build Goo library
