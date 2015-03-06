@@ -92,6 +92,15 @@ AssureOutOfSourceBuilds()
                     OUTPUT_STRIP_TRAILING_WHITESPACE )
 
 
+set( CMAKE_C_FLAGS_DEBUG        "${CMAKE_C_FLAGS_DEBUG} -g -fno-omit-frame-pointer" )  # -Wfatal-errors -fprofile-use? -fprofile-correction
+set( CMAKE_CXX_FLAGS_DEBUG      "${CMAKE_CXX_FLAGS_DEBUG} -g -fno-omit-frame-pointer" )
+set( CMAKE_C_FLAGS_RELEASE      "${CMAKE_C_FLAGS_RELEASE} -DNDEBUG -O3" )
+set( CMAKE_CXX_FLAGS_RELEASE    "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG -O3" )
+set( CMAKE_C_FLAGS_MINSIZEREL   "${CMAKE_C_FLAGS_MINSIZEREL} -DNDEBUG -Os" )
+set( CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} -DNDEBUG -Os" )
+set( CMAKE_C_FLAGS_RELWITHDEBINFO   "${CMAKE_C_FLAGS_RELWITHDEBINFO} -DNDEBUG -O -g" )
+set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DNDEBUG -O -g" )
+
 #
 # Attain configuration depending on current build dir.
 string(REPLACE "/" ";" SPLITTED_PATH ${CMAKE_BINARY_DIR})
@@ -101,16 +110,18 @@ message( STATUS "Building in directory ${buildDir}" )
 if( buildDir STREQUAL "debug" )
     message( STATUS "NOTE: debug build" )
     set( CMAKE_BUILD_TYPE "Debug" )
-    set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -g -fno-omit-frame-pointer" )  # -Wfatal-errors -fprofile-use? -fprofile-correction
-    set( CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -g -fno-omit-frame-pointer" )
 elseif( buildDir STREQUAL "release" )
     message( STATUS "NOTE: release build" )
     set( CMAKE_BUILD_TYPE "Release" )
-    set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -DNDEBUG -O3" )
-    set( CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -DNDEBUG -O3" )
+elseif( buildDir STREQUAL "minsizerel" )
+    message( STATUS "NOTE: minimized size build" )
+    set( CMAKE_BUILD_TYPE "MinSizeRel" )
+elseif( buildDir STREQUAL "relwdebinfo" )
+    message( STATUS "NOTE: release build with debugging info" )
+    set( CMAKE_BUILD_TYPE "RelWithDebInfo" )
 else()
     message( STATUS "NOTE: custom build" )
-    set( CMAKE_BUILD_TYPE "Release" )
+    set( CMAKE_BUILD_TYPE "None" )
     set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -DNDEBUG -O3" )
     set( CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -DNDEBUG -O3" )
 endif()
@@ -131,8 +142,10 @@ configure_file (
     "${GOO_LIB_INCLUDE_DIR}/goo_config.h"
 )
 if( GIT_FOUND )
-    configure_file( ${CMAKE_SOURCE_DIR}/.git/ORIG_HEAD
-                    ${CMAKE_CURRENT_BINARY_DIR}/ORIG_HEAD )
+    # This fake causes cmake to reconfigure itself when git versioning
+    # information is changed.
+    configure_file( ${CMAKE_SOURCE_DIR}/.git/COMMIT_EDITMSG
+                    ${CMAKE_CURRENT_BINARY_DIR}/COMMIT_EDITMSG )
 endif( GIT_FOUND )
 
 
