@@ -36,7 +36,7 @@ Syntax:\n\r\
         [-l/--list-units] [--dot] [-k/--keep-going] [-u/--selective UNITS] \\\n\r\
         [-r/--report]\n\r\
 \n\r\
-Provides unit testing functionality for Hephaestus library. \n\r\
+Provides unit testing functionality for Goo library. \n\r\
 \n\r\
 Sequentially runs routines that exploits a partial set of library's\n\r\
 functions for a bugs, side effects or other misbehaviour.\n\r\
@@ -59,7 +59,6 @@ Keys:\n\r\
 Report bugs to crank@qcrypt.org.\n\r\
 Official repository page for this version:\n\r\
     <https://bitbucket.org/CrankOne/goo>\n\r\
-Gluck auf!\n\r\
 ", utilname);}
 
 static void
@@ -132,6 +131,7 @@ UTApp::_V_construct_config_object( int argc, char * argv[] ) const {
                 } break;
                 case 'c' : { _static_Config.operation = Config::printBuildConfig; } break;
                 case 'l' : { _static_Config.operation = Config::listUnits; } break;
+                // TODO: dot, ignore-deps
                 case 'h' :
                 default : {
                     _static_Config.operation = Config::printHelp;

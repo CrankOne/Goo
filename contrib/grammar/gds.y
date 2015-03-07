@@ -1,30 +1,19 @@
 %{
-
-extern int yylex();
-extern char yytext[];
-
 # include <assert.h>
 # include <string.h>
 # include "gds/goo_interpreter.h"
-
-struct YYLTYPE;
-
-void yyerror( struct YYLTYPE *, struct HDSParser *, const char * msg );
-
 %}
-
+%debug
 %pure-parser
- /*%name-prefix="gds"*/
 %locations
 %defines
 %error-verbose
-
- /*%define api.pure full*/
-%parse-param {struct HDSParser * pw}
+%lex-param {   struct GDS_Parser * P}
+%parse-param { struct GDS_Parser * P}
 
 %union {
                   const char * strval;
-              struct GDS_Num * numeric;
+            struct GDS_Value * numeric;
             struct GDS_mexpr * mathExpr;
              struct GDS_expr * manifestation;
 }
@@ -43,6 +32,8 @@ void yyerror( struct YYLTYPE *, struct HDSParser *, const char * msg );
 %type<numeric>      integral float numeric;
 %type<mathExpr>     mathExpr;
 
+%type<manifestation> manifestation;
+
 %start manifestation
 
 %%
@@ -54,7 +45,7 @@ manifestation: /*empty*/                { $$ = 0; }
 
 integral    : T_DEC                     { $$ = interpret_dec($1);   }
             | T_DEC_U                   { $$ = interpret_dec_u($1); }
-            | T_hex                     { $$ = interpret_hex($1);   }
+            | T_HEX                     { $$ = interpret_hex($1);   }
             | T_OCT                     { $$ = interpret_oct($1);   }
             | T_BIN                     { $$ = interpret_bin($1);   }
             ;
@@ -67,21 +58,18 @@ numeric     : integral                  { $$ = $1; }
             | float                     { $$ = $1; }
             ;
 
-mathExpr    : numeric                   { $$ = $1; }
+mathExpr    : numeric                   { $$ = mexpr_from_constant($1); }
             ;
 
 %%
 # include <stdlib.h>
 # include <stdio.h>
 # include <string.h>
-# include "gds/goo_routines.h"
-
-extern char yytext[];
-extern int column;
+# include "gds/goo_interpreter.h"
 
 void
-yyerror( struct YYLTYPE * locp, struct GDSParser * pw, const char * msg ) {
-    fprintf( stderr, "\nParser: %s\n", msg );
-    /*HDS_error( interpreter_ec, "Parser: %s", mes );*/
+yyerror( struct YYLTYPE * locp, struct GDS_Parser * pw, const char * msg ) {
+    /*fprintf( stderr, "\nParser: %s\n", msg );
+      HDS_error( interpreter_ec, "Parser: %s", mes );*/
 }
 

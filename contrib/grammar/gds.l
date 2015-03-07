@@ -4,18 +4,27 @@ L           [a-zA-Z_]
 E           ([Ee][+-]?{D}+)
 F           (({D}+.{D}*)|({D}*.{D}+))
 
+%x COMMENT
+
 %{
 # include "gds/goo_interpreter.h"
-# include "../generated/goo_parser.h"
-void count();
-int comment();
-extern int yylex();
-# define MEMTOKEN(tc) yyget_lval( yyscanner )->strval = memtok( yytext ); return tc;
+# include "gds_parser.generated.h"
+# define MEMTOKEN(tc) /*yyget_lval( yyscanner )->strval = yytext;*/ return tc;
+/* FWD */
+extern int yylex (YYSTYPE * yylval_param ,yyscan_t yyscanner);
+int comment(yyscan_t scanner);
+void count(yyscan_t scanner);
+int yyparse(struct GDS_Parser * P);
+
 %}
 
 %option nounput
 
 %%
+
+"(#"            { BEGIN(COMMENT); }
+<COMMENT>"#)"   { BEGIN(INITIAL); }
+<COMMENT>.      { /* do nothing for commented out */ }
 
 [ ]                                 { count(yyscanner); }
 "#"                                 { comment(yyscanner); }
@@ -31,60 +40,67 @@ extern int yylex();
 
 -?{F}                               { MEMTOKEN(T_FLOAT); }
 -?({F}e-?{D}+)                      { MEMTOKEN(T_SCIFL); }
- /*
-{L}({L}|{D}|"\\ ")*                 { count(); yylval.strval = strdup( yytext); return T_ID;  }
-L?\"(\\.|[^\\"])*\"                 { count(); yylval.strval = strdup( yytext); return T_STRING; }
-"("                                 { count(); return '('; }
-")"                                 { count(); return ')'; }
-"{"                                 { count(); return '{'; }
-"}"                                 { count(); return '}'; }
-","                                 { count(); return ','; }
-":"                                 { count(); return ':'; }
-"["                                 { count(); return '['; }
-"]"                                 { count(); return ']'; }
-"<"                                 { count(); return '<'; }
-">"                                 { count(); return '>'; }
- */;
+;
 
 %%
 
 int comment(yyscan_t scanner){
     char c;
     while ((c = input(scanner)) != '\n' && c != 0) {}
-        //putchar(c);
     return 0; /* TODO? */
 }
 
-struct yyguts_t;
-int yyparse( struct HDSParser * );
-
 void count(yyscan_t scanner){
     struct yyguts_t * yyg = (struct yyguts_t*) scanner;
-    /* TODO */
+    int i;
+    for (i = 0; yytext[i] != '\0'; i++)
+        if(yytext[i] == '\n')
+            yycolumn = 0;
+        else if (yytext[i] == '\t')
+            yycolumn += 4 - (yycolumn % 4);
+        else
+            ++yycolumn;
     ECHO;
 }
 
-struct hds_Decl *
-hds_parse_str( struct HDSParser * pw,
-               const char * hdsStr ) {
-    int len = strlen(hdsStr);
+/*
+ * Entry points
+ */
+
+void /* Evaluates a file */
+gds_eval_file( struct GDS_Parser * P, FILE * inFile ) {
+    if( yylex_init(&(P->scanner))) {
+        fprintf(stderr, "Couldn't initialize scanner.\n");
+        return;
+    } else {
+        yyset_in( inFile, P->scanner );
+        yyset_debug(255, P->scanner);
+        //yylex( P, P->scanner );
+        if( yyparse( P->scanner ) ) {
+            fprintf(stderr, "Parsing error.\n");
+        }
+    } yylex_destroy(P->scanner);
+}
+
+void /* Evaluates a string */
+gds_eval_string( struct GDS_Parser * P, const char * gdsStr ) {
+    # if 0
+    int len = strlen( gdsStr );
     char * intermsyy = malloc(len+2);
-    strcpy( intermsyy, hdsStr );
+    strcpy( intermsyy, gdsStr );
     intermsyy[ len + 1 ] = '\0';
 
     yyscan_t scanner;
-    yylex_init(&scanner);
+    yylex_init(&scanner); {
+        YY_BUFFER_STATE yyBf = yy_scan_string( intermsyy, scanner ); 
+        yy_switch_to_buffer( yyBf, scanner );
 
-    YY_BUFFER_STATE yyBf = yy_scan_string( intermsyy, scanner ); 
-    yy_switch_to_buffer( yyBf, scanner );
+        yyparse( scanner );
 
-    yyparse(pw);
-
-    yy_delete_buffer( yyBf, scanner );
-    yylex_destroy(scanner);
+        yy_delete_buffer( yyBf, scanner );
+    }yylex_destroy(scanner);
 
     free(intermsyy);
-    return 0;  /* TODO */
+    # endif
 }
-
 
