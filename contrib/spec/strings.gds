@@ -1,0 +1,21 @@
+
+multilineString1 = """
+Ich sehe dich,
+    wenn auf dem fernen Wege
+Der Staub sich hebt,
+In tiefer Nacht,
+    wenn auf dem schmalen Stege
+Der Wandrer bebt.
+""";
+
+singleLineString = "All work and no play make Jack a dull boy.";
+
+multilineString2 = """
+Willst du dir ein hübsch Leben zimmern,
+Mußt dich ums Vergangne nicht bekümmern,
+Das Wenigste muß dich verdrießen;
+Mußt stets die Gegenwart genießen,
+Besonders keinen Menschen hassen
+Und die Zukunft Gott überlassen.
+""";
+

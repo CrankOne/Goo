@@ -68,6 +68,18 @@
 #   define DEFAULT_ZLIB_COMPRESSION_LEVEL 9
 # endif
 
+# ifndef GDS_PARSER_EXPR_REPLICA_BUF_LENGTH
+#   define GDS_PARSER_EXPR_REPLICA_BUF_LENGTH 1024
+# endif
+
+# ifndef GDS_PARSER_NSCOPES
+#   define GDS_PARSER_NSCOPES 128
+# endif
+
+# ifndef GDS_PARSER_STRING_BUF_LEN
+#   define GDS_PARSER_STRING_BUF_LEN 1024*1024
+# endif
+
 # ifdef __cplusplus
 # include <stdexcept>
 # endif

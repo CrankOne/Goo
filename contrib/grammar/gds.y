@@ -23,7 +23,8 @@
                      uint8_t   logical;
 }
 
-%token              T_TRUE  T_FALSE
+%token              T_TRUE      T_FALSE
+%token              P_ASSIGN    P_NAME      P_FUNCTION   P_INJECTION
 
 %token              I_CONSTANT F_CONSTANT STRING_LITERAL T_ID
 %type<strval>       I_CONSTANT F_CONSTANT STRING_LITERAL T_ID

@@ -10,7 +10,6 @@ Int8 b = 2;      # Named numerical constant declaration of explicitly
 Float8 c = 6/2;  # Arithmetics will be evaluated whenever it is possible.
 
 
-
 #
 # A bit of functional programming
 #

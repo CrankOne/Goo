@@ -91,12 +91,77 @@ eval_math_expression(
 struct GDS_Parser *
 gds_parser_new() {
     struct GDS_Parser * pObj = malloc( sizeof(struct GDS_Parser) );
+    printf("Parser allocated: %p\n", pObj);  /* XXX */
+
     pObj->scanner = NULL;
+
+    /* Initialize tokens replicator */
+    for( pObj->cScope  = pObj->buffers;
+         pObj->cScope != pObj->buffers + GDS_PARSER_NSCOPES; pObj->cScope ++) {
+        bzero( pObj->cScope->tokenReplicasBf, GDS_PARSER_EXPR_REPLICA_BUF_LENGTH );
+        pObj->cScope->tokenReplicasBfEnd = 
+            pObj->cScope->tokenReplicasBf + GDS_PARSER_EXPR_REPLICA_BUF_LENGTH;
+        pObj->cScope->lastReplica = pObj->cScope->tokenReplicasBf;
+    }
+    /* Set current to top. */
+    pObj->cScope  = pObj->buffers;
+
+    /* Allocate string literals buffer */
+    pObj->strLitBuffer = pObj->strLitBufferC = malloc(GDS_PARSER_STRING_BUF_LEN);
+    bzero(pObj->strLitBuffer, GDS_PARSER_STRING_BUF_LEN);
+
     return pObj;
 }
 
 void
-gds_parser_destroy( struct GDS_Parser * P ) {
-    free( P );
+gds_parser_destroy( struct GDS_Parser * pObj ) {
+    free( pObj->strLitBuffer );
+    free( pObj );
+}
+
+
+char *
+gds_parser_replicate_token(
+        struct GDS_Parser * P,
+        const char * token ) {
+    printf(">%s< %p\n", token, P);  /* XXX */
+
+    char * currentReplicaBegin = P->cScope->lastReplica;
+    const char * c;
+
+    for( c = token; '\0' != *c; c++, P->cScope->lastReplica ++ ) {
+        *(P->cScope->lastReplica) = *c;
+    }
+    *(P->cScope->lastReplica ++) = '\0';
+
+    return currentReplicaBegin;
+}
+
+void
+gds_parser_free_buffer( struct GDS_Parser * P ) {
+    P->cScope->lastReplica = P->cScope->tokenReplicasBf;
+    *(P->cScope->lastReplica) = '\0';
+}
+
+void
+gds_parser_str_lit( struct GDS_Parser * P,
+                    const char * strb ) {
+    /* TODO: get first char of strb to determine which type
+     * of string is to be used (U,u,L,l, etc).
+     */
+    P->strLitBufferC = P->strLitBuffer;
+}
+
+void
+gds_parser_append_lstr_lit( struct GDS_Parser * P,
+                            const char * c ) {
+    *(P->strLitBufferC ++) = *c;
+}
+
+char *
+gds_parser_opt_lstr_lit( struct GDS_Parser * P ) {
+    *(P->strLitBufferC ++) = '\0';
+    /*printf("Lexing STRING_LITERAL done: \"%s\".\n", P->strLitBuffer);*/
+    return P->strLitBuffer;
 }
 

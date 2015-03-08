@@ -40,10 +40,14 @@
    enum yytokentype {
      T_TRUE = 258,
      T_FALSE = 259,
-     I_CONSTANT = 260,
-     F_CONSTANT = 261,
-     STRING_LITERAL = 262,
-     T_ID = 263
+     P_ASSIGN = 260,
+     P_NAME = 261,
+     P_FUNCTION = 262,
+     P_INJECTION = 263,
+     I_CONSTANT = 264,
+     F_CONSTANT = 265,
+     STRING_LITERAL = 266,
+     T_ID = 267
    };
 #endif
 
@@ -64,7 +68,7 @@ typedef union YYSTYPE
 
 
 /* Line 1685 of yacc.c  */
-#line 68 "/home/crank/Projects/goo/src/gds_parser.generated.h"
+#line 72 "/home/crank/Projects/goo/src/gds_parser.generated.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
