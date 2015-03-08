@@ -52,13 +52,8 @@ struct GDS_Value {
     } data;
 };
 
-struct GDS_Value * interpret_dec(  const char * );
-struct GDS_Value * interpret_dec_u(const char * );
-struct GDS_Value * interpret_hex(  const char * );
-struct GDS_Value * interpret_oct(  const char * );
-struct GDS_Value * interpret_bin(  const char * );
+struct GDS_Value * interpret_integral(  const char * );
 struct GDS_Value * interpret_float(const char * );
-struct GDS_Value * interpret_scifl(const char * );
 
 /*
  * Functions
@@ -69,6 +64,7 @@ struct GDS_mexpr {
 };
 
 struct GDS_mexpr * mexpr_from_constant( struct GDS_Value * );
+struct GDS_mexpr * mexpr_from_logic( uint8_t );
 
 /*
  * Manifestations
@@ -77,6 +73,9 @@ struct GDS_mexpr * mexpr_from_constant( struct GDS_Value * );
 struct GDS_expr {
     /* ... */
 };
+
+struct GDS_expr * empty_manifest(void*);
+struct GDS_expr * declare_named_constant(const char *, struct GDS_expr * );
 
 struct GDS_expr * eval_math_expression( struct GDS_mexpr * );
 

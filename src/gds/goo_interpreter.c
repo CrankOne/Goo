@@ -1,4 +1,5 @@
 # include <stdlib.h>
+# include <string.h>
 
 # include "gds/goo_interpreter.h"
 
@@ -9,44 +10,21 @@
  */
 
 struct GDS_Value *
-interpret_dec(  const char * s ){
-    printf("XXX: parse \"%s\" as dec.\n", s);
-    return 0;
-}
-
-struct GDS_Value *
-interpret_dec_u(const char * s ){
-    printf("XXX: parse \"%s\" as decu.\n", s);
-    return 0;
-}
-
-struct GDS_Value *
-interpret_hex(  const char * s ){
-    printf("XXX: parse \"%s\" as hex.\n", s);
-    return 0;
-}
-
-struct GDS_Value *
-interpret_oct(  const char * s ){
-    printf("XXX: parse \"%s\" as oct.\n", s);
-    return 0;
-}
-
-struct GDS_Value *
-interpret_bin(  const char * s ){
-    printf("XXX: parse \"%s\" as bin.\n", s);
+interpret_integral(  const char * s ){
+    printf("XXX: treat \"%s\" as integral constant.\n", s);
     return 0;
 }
 
 struct GDS_Value *
 interpret_float(const char * s ){
-    printf("XXX: parse \"%s\" as float.\n", s);
+    printf("XXX: treat \"%s\" as float constant.\n", s);
     return 0;
 }
 
 struct GDS_Value *
-interpret_scifl(const char * s ){
-    printf("XXX: parse \"%s\" as sci-float.\n", s);
+memorize_string_literal(const char * s ){
+    printf("XXX: treat \"%s\" as string literal of length %zd.\n",
+            s, strlen(s) );
     return 0;
 }
 
@@ -56,13 +34,32 @@ interpret_scifl(const char * s ){
 
 struct GDS_mexpr *
 mexpr_from_constant( struct GDS_Value * val ) {
-    printf("XXX: making an anonymous constant expression from value.\n");
+    printf("XXX: making an anonymous constant expression from numeric value.\n");
+    return 0;
+}
+
+struct GDS_mexpr *
+mexpr_from_logic( uint8_t v ) {
+    printf("XXX: making an anonymous constant expression from logic value.\n");
     return 0;
 }
 
 /*
  * Manifestations
  */
+
+struct GDS_expr *
+empty_manifest( void * prhs ) {
+    printf("XXX: memorize empty manifest with no side effects.\n");
+    return 0;
+}
+
+struct GDS_expr *
+declare_named_constant(const char * idName, struct GDS_expr * expr ) {
+    printf("XXX: memorize manifest named \"%s\" with expression.\n",
+            idName);
+    return 0;
+}
 
 struct GDS_expr *
 eval_math_expression( struct GDS_mexpr * mexpr ) {

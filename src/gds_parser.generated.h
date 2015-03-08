@@ -40,15 +40,10 @@
    enum yytokentype {
      T_TRUE = 258,
      T_FALSE = 259,
-     T_DEC = 260,
-     T_DEC_U = 261,
-     T_HEX = 262,
-     T_OCT = 263,
-     T_BIN = 264,
-     T_FLOAT = 265,
-     T_SCIFL = 266,
-     T_ID = 267,
-     T_STRING = 268
+     I_CONSTANT = 260,
+     F_CONSTANT = 261,
+     STRING_LITERAL = 262,
+     T_ID = 263
    };
 #endif
 
@@ -59,17 +54,17 @@ typedef union YYSTYPE
 {
 
 /* Line 1685 of yacc.c  */
-#line 14 "contrib/grammar/gds.y"
+#line 19 "contrib/grammar/gds.y"
 
                   const char * strval;
-            struct GDS_Value * numeric;
+            struct GDS_Value * value;
             struct GDS_mexpr * mathExpr;
-             struct GDS_expr * manifestation;
+                     uint8_t   logical;
 
 
 
 /* Line 1685 of yacc.c  */
-#line 73 "/home/crank/Projects/goo/src/gds_parser.generated.h"
+#line 68 "/home/crank/Projects/goo/src/gds_parser.generated.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
