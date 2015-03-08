@@ -27,6 +27,8 @@ class Parser {
 extern "C" {
 # endif /* __cplusplus */
 
+struct GDS_Parser;
+
 /*
  * Constant values.
  */
@@ -52,8 +54,12 @@ struct GDS_Value {
     } data;
 };
 
-struct GDS_Value * interpret_integral(  const char * );
-struct GDS_Value * interpret_float(const char * );
+struct GDS_Value * interpret_integral(
+    struct GDS_Parser *,
+    const char * );
+struct GDS_Value * interpret_float(
+    struct GDS_Parser *,
+    const char * );
 
 /*
  * Functions
@@ -63,8 +69,12 @@ struct GDS_mexpr {
     /* ... */
 };
 
-struct GDS_mexpr * mexpr_from_constant( struct GDS_Value * );
-struct GDS_mexpr * mexpr_from_logic( uint8_t );
+struct GDS_mexpr * mexpr_from_constant(
+    struct GDS_Parser *,
+    struct GDS_Value * );
+struct GDS_mexpr * mexpr_from_logic(
+    struct GDS_Parser *,
+    uint8_t );
 
 /*
  * Manifestations
@@ -74,10 +84,15 @@ struct GDS_expr {
     /* ... */
 };
 
-struct GDS_expr * empty_manifest(void*);
-struct GDS_expr * declare_named_constant(const char *, struct GDS_expr * );
-
-struct GDS_expr * eval_math_expression( struct GDS_mexpr * );
+struct GDS_expr * empty_manifest(
+    struct GDS_Parser *,
+    void*);
+struct GDS_expr * declare_named_constant(
+    struct GDS_Parser *,
+    const char *, struct GDS_Value * );
+struct GDS_expr * eval_math_expression(
+    struct GDS_Parser *,
+    struct GDS_mexpr * );
 
 /*
  * Parser object C-wrapper.

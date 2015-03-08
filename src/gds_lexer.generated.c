@@ -597,15 +597,20 @@ static yyconst flex_int16_t yy_chk[536] =
 #line 22 "contrib/grammar/gds.l"
 # include "gds/goo_interpreter.h"
 # include "gds_parser.generated.h"
-# define MEMTOKEN(tc)                           \
-    printf(">%s<\n", yytext);                   \
-    yyget_lval(yyscanner )->strval = yytext;   \
+/* TODO: we should use here kind a reentrant buffer or whatever
+ * instead strdup it each time we need memorize a particular token.
+ * Probably, best way is to supplement scanner with some custom data
+ * structure via `YYEXTRA_TYPE yyextra_r;`.
+ */
+# define MEMTOKEN(tc)                                   \
+    printf(">%s<\n", yytext);                           \
+    yyget_lval(yyscanner )->strval = strdup(yytext);   \
     return tc;
 /* FWD */
 int comment(yyscan_t scanner);
 int yyparse(struct GDS_Parser * P);
 
-#line 609 "/home/crank/Projects/goo/src/gds_lexer.generated.c"
+#line 614 "/home/crank/Projects/goo/src/gds_lexer.generated.c"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -886,10 +891,10 @@ YY_DECL
 		}
 
 	{
-#line 36 "contrib/grammar/gds.l"
+#line 41 "contrib/grammar/gds.l"
 
 
-#line 893 "/home/crank/Projects/goo/src/gds_lexer.generated.c"
+#line 898 "/home/crank/Projects/goo/src/gds_lexer.generated.c"
 
 	while ( 1 )		/* loops until end-of-file is reached */
 		{
@@ -948,117 +953,117 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 38 "contrib/grammar/gds.l"
+#line 43 "contrib/grammar/gds.l"
 { BEGIN(COMMENT); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 39 "contrib/grammar/gds.l"
+#line 44 "contrib/grammar/gds.l"
 { BEGIN(INITIAL); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 40 "contrib/grammar/gds.l"
+#line 45 "contrib/grammar/gds.l"
 { /* do nothing for commented out */ }
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 42 "contrib/grammar/gds.l"
+#line 47 "contrib/grammar/gds.l"
 { /* whitespace separates tokens */ }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 43 "contrib/grammar/gds.l"
+#line 48 "contrib/grammar/gds.l"
 { /* pass #-comment */ }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 45 "contrib/grammar/gds.l"
+#line 50 "contrib/grammar/gds.l"
 { MEMTOKEN(T_TRUE); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 46 "contrib/grammar/gds.l"
+#line 51 "contrib/grammar/gds.l"
 { MEMTOKEN(T_TRUE); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 48 "contrib/grammar/gds.l"
+#line 53 "contrib/grammar/gds.l"
 { MEMTOKEN(I_CONSTANT); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 49 "contrib/grammar/gds.l"
+#line 54 "contrib/grammar/gds.l"
 { MEMTOKEN(I_CONSTANT); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 50 "contrib/grammar/gds.l"
+#line 55 "contrib/grammar/gds.l"
 { MEMTOKEN(I_CONSTANT); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 51 "contrib/grammar/gds.l"
+#line 56 "contrib/grammar/gds.l"
 { MEMTOKEN(I_CONSTANT); /*interpret escape symbols*/ }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 53 "contrib/grammar/gds.l"
+#line 58 "contrib/grammar/gds.l"
 { MEMTOKEN(F_CONSTANT); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 54 "contrib/grammar/gds.l"
+#line 59 "contrib/grammar/gds.l"
 { MEMTOKEN(F_CONSTANT); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 55 "contrib/grammar/gds.l"
+#line 60 "contrib/grammar/gds.l"
 { MEMTOKEN(F_CONSTANT); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 56 "contrib/grammar/gds.l"
+#line 61 "contrib/grammar/gds.l"
 { MEMTOKEN(F_CONSTANT); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 57 "contrib/grammar/gds.l"
+#line 62 "contrib/grammar/gds.l"
 { MEMTOKEN(F_CONSTANT); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 58 "contrib/grammar/gds.l"
+#line 63 "contrib/grammar/gds.l"
 { MEMTOKEN(F_CONSTANT); }
 	YY_BREAK
 case 18:
 /* rule 18 can match eol */
 YY_RULE_SETUP
-#line 60 "contrib/grammar/gds.l"
+#line 65 "contrib/grammar/gds.l"
 { MEMTOKEN(STRING_LITERAL); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 61 "contrib/grammar/gds.l"
+#line 66 "contrib/grammar/gds.l"
 { MEMTOKEN(T_ID); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 63 "contrib/grammar/gds.l"
+#line 68 "contrib/grammar/gds.l"
 { MEMTOKEN(';'); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 64 "contrib/grammar/gds.l"
+#line 69 "contrib/grammar/gds.l"
 { MEMTOKEN('='); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 66 "contrib/grammar/gds.l"
+#line 71 "contrib/grammar/gds.l"
 ECHO;
 	YY_BREAK
-#line 1062 "/home/crank/Projects/goo/src/gds_lexer.generated.c"
+#line 1067 "/home/crank/Projects/goo/src/gds_lexer.generated.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):
 	yyterminate();
@@ -2238,7 +2243,7 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 66 "contrib/grammar/gds.l"
+#line 71 "contrib/grammar/gds.l"
 
 
 

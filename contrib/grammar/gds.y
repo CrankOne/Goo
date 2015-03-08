@@ -41,12 +41,12 @@ expression  : /* empty */               {}
             | manifest ';' expression   {}
             ;
 
-manifest    : constexpr                 { empty_manifest( $1 ); }
-            | T_ID '=' constexpr        { declare_named_constant($1, $3); }
+manifest    : constexpr                 { empty_manifest( P, $1 ); }
+            | T_ID '=' constexpr        { declare_named_constant(P, $1, $3); }
             ;
 
-constexpr   : mathExpr                  { eval_math_expression($1); }
-            | STRING_LITERAL            { memorize_string_literal($1); }
+constexpr   : mathExpr                  { eval_math_expression(P, $1); }
+            | STRING_LITERAL            { memorize_string_literal(P, $1); }
             ;
 
 numeric     : integral                  { $$ = $1; }
@@ -56,14 +56,14 @@ numeric     : integral                  { $$ = $1; }
 logicConst  : T_TRUE                    { $$ = 0xFF; }
             | T_FALSE                   { $$ = 0x0; }
 
-mathExpr    : numeric                   { $$ = mexpr_from_constant($1); }
-            | logicConst                { $$ = mexpr_from_logic($1); }
+mathExpr    : numeric                   { $$ = mexpr_from_constant(P, $1); }
+            | logicConst                { $$ = mexpr_from_logic(P, $1); }
             ;
 
-integral    : I_CONSTANT                { $$ = interpret_integral($1);   }
+integral    : I_CONSTANT                { $$ = interpret_integral(P, $1);   }
             ;
 
-float       : F_CONSTANT                { $$ = interpret_float($1); }
+float       : F_CONSTANT                { $$ = interpret_float(P, $1); }
             ;
 
 %%

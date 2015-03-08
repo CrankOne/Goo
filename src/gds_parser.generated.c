@@ -1426,28 +1426,28 @@ yyreduce:
 
 /* Line 1464 of yacc.c  */
 #line 44 "contrib/grammar/gds.y"
-    { empty_manifest( (yyvsp[(1) - (1)].value) ); ;}
+    { empty_manifest( P, (yyvsp[(1) - (1)].value) ); ;}
     break;
 
   case 6:
 
 /* Line 1464 of yacc.c  */
 #line 45 "contrib/grammar/gds.y"
-    { declare_named_constant((yyvsp[(1) - (3)].strval), (yyvsp[(3) - (3)].value)); ;}
+    { declare_named_constant(P, (yyvsp[(1) - (3)].strval), (yyvsp[(3) - (3)].value)); ;}
     break;
 
   case 7:
 
 /* Line 1464 of yacc.c  */
 #line 48 "contrib/grammar/gds.y"
-    { eval_math_expression((yyvsp[(1) - (1)].mathExpr)); ;}
+    { eval_math_expression(P, (yyvsp[(1) - (1)].mathExpr)); ;}
     break;
 
   case 8:
 
 /* Line 1464 of yacc.c  */
 #line 49 "contrib/grammar/gds.y"
-    { memorize_string_literal((yyvsp[(1) - (1)].strval)); ;}
+    { memorize_string_literal(P, (yyvsp[(1) - (1)].strval)); ;}
     break;
 
   case 9:
@@ -1482,28 +1482,28 @@ yyreduce:
 
 /* Line 1464 of yacc.c  */
 #line 59 "contrib/grammar/gds.y"
-    { (yyval.mathExpr) = mexpr_from_constant((yyvsp[(1) - (1)].value)); ;}
+    { (yyval.mathExpr) = mexpr_from_constant(P, (yyvsp[(1) - (1)].value)); ;}
     break;
 
   case 14:
 
 /* Line 1464 of yacc.c  */
 #line 60 "contrib/grammar/gds.y"
-    { (yyval.mathExpr) = mexpr_from_logic((yyvsp[(1) - (1)].logical)); ;}
+    { (yyval.mathExpr) = mexpr_from_logic(P, (yyvsp[(1) - (1)].logical)); ;}
     break;
 
   case 15:
 
 /* Line 1464 of yacc.c  */
 #line 63 "contrib/grammar/gds.y"
-    { (yyval.value) = interpret_integral((yyvsp[(1) - (1)].strval));   ;}
+    { (yyval.value) = interpret_integral(P, (yyvsp[(1) - (1)].strval));   ;}
     break;
 
   case 16:
 
 /* Line 1464 of yacc.c  */
 #line 66 "contrib/grammar/gds.y"
-    { (yyval.value) = interpret_float((yyvsp[(1) - (1)].strval)); ;}
+    { (yyval.value) = interpret_float(P, (yyvsp[(1) - (1)].strval)); ;}
     break;
 
 

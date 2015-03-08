@@ -21,9 +21,14 @@ WS  [ \t\v\n\f]
 %{
 # include "gds/goo_interpreter.h"
 # include "gds_parser.generated.h"
-# define MEMTOKEN(tc)                           \
-    printf(">%s<\n", yytext);                   \
-    yyget_lval( yyscanner )->strval = yytext;   \
+/* TODO: we should use here kind a reentrant buffer or whatever
+ * instead strdup it each time we need memorize a particular token.
+ * Probably, best way is to supplement scanner with some custom data
+ * structure via `YYEXTRA_TYPE yyextra_r;`.
+ */
+# define MEMTOKEN(tc)                                   \
+    printf(">%s<\n", yytext);                           \
+    yyget_lval( yyscanner )->strval = strdup(yytext);   \
     return tc;
 /* FWD */
 int comment(yyscan_t scanner);
