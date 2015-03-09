@@ -38,7 +38,6 @@
 %%
 
 expression  : /* empty */               {}
-            | expression ';'            {}
             | manifest ';' expression   {}
             ;
 

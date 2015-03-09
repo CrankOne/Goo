@@ -1,3 +1,7 @@
+src/gds_parser.generated.c
+src/gds_parser.generated.h
+src/gds_parser.generated.output
+src/gds_lexer.generated.c
 *.swp
 *.swo
 *.pyc
