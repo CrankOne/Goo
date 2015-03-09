@@ -1,0 +1,383 @@
+Терминалы не используются в грамматике
+
+   P_ASSIGN
+   P_NAME
+
+
+Правило не применимо в парсере из-за конфликтов
+
+    6 manifest: funcDecl P_INJECTION expression
+
+
+Состояние 25 конфликты: 1 сдвига/вывода
+Состояние 26 конфликты: 1 сдвига/вывода
+
+
+Грамматика
+
+    0 $accept: expression $end
+
+    1 expression: /* пусто */
+    2           | expression ';'
+    3           | manifest ';' expression
+
+    4 manifest: constexpr
+    5         | T_ID '=' constexpr
+    6         | funcDecl P_INJECTION expression
+
+    7 funcDecl: T_ID '(' argList ')'
+
+    8 argList: T_ID
+    9        | T_ID ',' argList
+
+   10 constexpr: mathExpr
+   11          | T_STRING_LITERAL
+
+   12 numeric: integral
+   13        | float
+
+   14 logicConst: T_TRUE
+   15           | T_FALSE
+
+   16 mathExpr: numeric
+   17         | logicConst
+
+   18 integral: T_I_CONST
+
+   19 float: T_F_CONST
+
+
+Терминальные символы с правилами, в которых они появляются
+
+$end (0) 0
+'(' (40) 7
+')' (41) 7
+',' (44) 9
+';' (59) 2 3
+'=' (61) 5
+error (256)
+T_TRUE (258) 14
+T_FALSE (259) 15
+P_ASSIGN (260)
+P_NAME (261)
+P_INJECTION (262) 6
+T_I_CONST (263) 18
+T_F_CONST (264) 19
+T_STRING_LITERAL (265) 11
+T_ID (266) 5 7 8 9
+
+
+Нетерминальные символы с правилами, в которых они появляются
+
+$accept (17)
+    налево: 0
+expression (18)
+    налево: 1 2 3, направо: 0 2 3 6
+manifest (19)
+    налево: 4 5 6, направо: 3
+funcDecl (20)
+    налево: 7, направо: 6
+argList (21)
+    налево: 8 9, направо: 7 9
+constexpr (22)
+    налево: 10 11, направо: 4 5
+numeric (23)
+    налево: 12 13, направо: 16
+logicConst (24)
+    налево: 14 15, направо: 17
+mathExpr (25)
+    налево: 16 17, направо: 10
+integral (26)
+    налево: 18, направо: 12
+float (27)
+    налево: 19, направо: 13
+
+
+состояние 0
+
+    0 $accept: . expression $end
+
+    T_TRUE            сдвиг, и переход в состояние 1
+    T_FALSE           сдвиг, и переход в состояние 2
+    T_I_CONST         сдвиг, и переход в состояние 3
+    T_F_CONST         сдвиг, и переход в состояние 4
+    T_STRING_LITERAL  сдвиг, и переход в состояние 5
+    T_ID              сдвиг, и переход в состояние 6
+
+    $default  вывод с использованием правила 1 (expression)
+
+    expression  переход в состояние 7
+    manifest    переход в состояние 8
+    funcDecl    переход в состояние 9
+    constexpr   переход в состояние 10
+    numeric     переход в состояние 11
+    logicConst  переход в состояние 12
+    mathExpr    переход в состояние 13
+    integral    переход в состояние 14
+    float       переход в состояние 15
+
+
+состояние 1
+
+   14 logicConst: T_TRUE .
+
+    $default  вывод с использованием правила 14 (logicConst)
+
+
+состояние 2
+
+   15 logicConst: T_FALSE .
+
+    $default  вывод с использованием правила 15 (logicConst)
+
+
+состояние 3
+
+   18 integral: T_I_CONST .
+
+    $default  вывод с использованием правила 18 (integral)
+
+
+состояние 4
+
+   19 float: T_F_CONST .
+
+    $default  вывод с использованием правила 19 (float)
+
+
+состояние 5
+
+   11 constexpr: T_STRING_LITERAL .
+
+    $default  вывод с использованием правила 11 (constexpr)
+
+
+состояние 6
+
+    5 manifest: T_ID . '=' constexpr
+    7 funcDecl: T_ID . '(' argList ')'
+
+    '='  сдвиг, и переход в состояние 16
+    '('  сдвиг, и переход в состояние 17
+
+
+состояние 7
+
+    0 $accept: expression . $end
+    2 expression: expression . ';'
+
+    $end  сдвиг, и переход в состояние 18
+    ';'   сдвиг, и переход в состояние 19
+
+
+состояние 8
+
+    3 expression: manifest . ';' expression
+
+    ';'  сдвиг, и переход в состояние 20
+
+
+состояние 9
+
+    6 manifest: funcDecl . P_INJECTION expression
+
+    P_INJECTION  сдвиг, и переход в состояние 21
+
+
+состояние 10
+
+    4 manifest: constexpr .
+
+    $default  вывод с использованием правила 4 (manifest)
+
+
+состояние 11
+
+   16 mathExpr: numeric .
+
+    $default  вывод с использованием правила 16 (mathExpr)
+
+
+состояние 12
+
+   17 mathExpr: logicConst .
+
+    $default  вывод с использованием правила 17 (mathExpr)
+
+
+состояние 13
+
+   10 constexpr: mathExpr .
+
+    $default  вывод с использованием правила 10 (constexpr)
+
+
+состояние 14
+
+   12 numeric: integral .
+
+    $default  вывод с использованием правила 12 (numeric)
+
+
+состояние 15
+
+   13 numeric: float .
+
+    $default  вывод с использованием правила 13 (numeric)
+
+
+состояние 16
+
+    5 manifest: T_ID '=' . constexpr
+
+    T_TRUE            сдвиг, и переход в состояние 1
+    T_FALSE           сдвиг, и переход в состояние 2
+    T_I_CONST         сдвиг, и переход в состояние 3
+    T_F_CONST         сдвиг, и переход в состояние 4
+    T_STRING_LITERAL  сдвиг, и переход в состояние 5
+
+    constexpr   переход в состояние 22
+    numeric     переход в состояние 11
+    logicConst  переход в состояние 12
+    mathExpr    переход в состояние 13
+    integral    переход в состояние 14
+    float       переход в состояние 15
+
+
+состояние 17
+
+    7 funcDecl: T_ID '(' . argList ')'
+
+    T_ID  сдвиг, и переход в состояние 23
+
+    argList  переход в состояние 24
+
+
+состояние 18
+
+    0 $accept: expression $end .
+
+    $default  принять
+
+
+состояние 19
+
+    2 expression: expression ';' .
+
+    $default  вывод с использованием правила 2 (expression)
+
+
+состояние 20
+
+    3 expression: manifest ';' . expression
+
+    T_TRUE            сдвиг, и переход в состояние 1
+    T_FALSE           сдвиг, и переход в состояние 2
+    T_I_CONST         сдвиг, и переход в состояние 3
+    T_F_CONST         сдвиг, и переход в состояние 4
+    T_STRING_LITERAL  сдвиг, и переход в состояние 5
+    T_ID              сдвиг, и переход в состояние 6
+
+    $default  вывод с использованием правила 1 (expression)
+
+    expression  переход в состояние 25
+    manifest    переход в состояние 8
+    funcDecl    переход в состояние 9
+    constexpr   переход в состояние 10
+    numeric     переход в состояние 11
+    logicConst  переход в состояние 12
+    mathExpr    переход в состояние 13
+    integral    переход в состояние 14
+    float       переход в состояние 15
+
+
+состояние 21
+
+    6 manifest: funcDecl P_INJECTION . expression
+
+    T_TRUE            сдвиг, и переход в состояние 1
+    T_FALSE           сдвиг, и переход в состояние 2
+    T_I_CONST         сдвиг, и переход в состояние 3
+    T_F_CONST         сдвиг, и переход в состояние 4
+    T_STRING_LITERAL  сдвиг, и переход в состояние 5
+    T_ID              сдвиг, и переход в состояние 6
+
+    $default  вывод с использованием правила 1 (expression)
+
+    expression  переход в состояние 26
+    manifest    переход в состояние 8
+    funcDecl    переход в состояние 9
+    constexpr   переход в состояние 10
+    numeric     переход в состояние 11
+    logicConst  переход в состояние 12
+    mathExpr    переход в состояние 13
+    integral    переход в состояние 14
+    float       переход в состояние 15
+
+
+состояние 22
+
+    5 manifest: T_ID '=' constexpr .
+
+    $default  вывод с использованием правила 5 (manifest)
+
+
+состояние 23
+
+    8 argList: T_ID .
+    9        | T_ID . ',' argList
+
+    ','  сдвиг, и переход в состояние 27
+
+    $default  вывод с использованием правила 8 (argList)
+
+
+состояние 24
+
+    7 funcDecl: T_ID '(' argList . ')'
+
+    ')'  сдвиг, и переход в состояние 28
+
+
+состояние 25
+
+    2 expression: expression . ';'
+    3           | manifest ';' expression .
+
+    ';'  сдвиг, и переход в состояние 19
+
+    ';'       [вывод с использованием правила 3 (expression)]
+    $default  вывод с использованием правила 3 (expression)
+
+
+состояние 26
+
+    2 expression: expression . ';'
+    6 manifest: funcDecl P_INJECTION expression .
+
+    ';'  сдвиг, и переход в состояние 19
+
+    ';'  [вывод с использованием правила 6 (manifest)]
+
+
+состояние 27
+
+    9 argList: T_ID ',' . argList
+
+    T_ID  сдвиг, и переход в состояние 23
+
+    argList  переход в состояние 29
+
+
+состояние 28
+
+    7 funcDecl: T_ID '(' argList ')' .
+
+    $default  вывод с использованием правила 7 (funcDecl)
+
+
+состояние 29
+
+    9 argList: T_ID ',' argList .
+
+    $default  вывод с использованием правила 9 (argList)

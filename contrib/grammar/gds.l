@@ -51,17 +51,17 @@ int yyparse(struct GDS_Parser * P);
 [Tt]rue|[Ee]nable|[Oo]n             { MEMTOKEN(T_TRUE); }
 [Ff]alse|[Dd]isable|[Oo]ff          { MEMTOKEN(T_TRUE); }
 
-{HP}{H}+{IS}?				        { MEMTOKEN(I_CONSTANT); }
-{NZ}{D}*{IS}?				        { MEMTOKEN(I_CONSTANT); }
-"0"{O}*{IS}?				        { MEMTOKEN(I_CONSTANT); }
-{CP}?"'"([^'\\\n]|{ES})+"'"		    { MEMTOKEN(I_CONSTANT); /*interpret escape symbols*/ }
+{HP}{H}+{IS}?				        { MEMTOKEN(T_I_CONST); }
+{NZ}{D}*{IS}?				        { MEMTOKEN(T_I_CONST); }
+"0"{O}*{IS}?				        { MEMTOKEN(T_I_CONST); }
+{CP}?"'"([^'\\\n]|{ES})+"'"		    { MEMTOKEN(T_I_CONST); /*interpret escape symbols*/ }
 
-{D}+{E}{FS}?				        { MEMTOKEN(F_CONSTANT); }
-{D}*"."{D}+{E}?{FS}?			    { MEMTOKEN(F_CONSTANT); }
-{D}+"."{E}?{FS}?			        { MEMTOKEN(F_CONSTANT); }
-{HP}{H}+{P}{FS}?			        { MEMTOKEN(F_CONSTANT); }
-{HP}{H}*"."{H}+{P}{FS}?			    { MEMTOKEN(F_CONSTANT); }
-{HP}{H}+"."{P}{FS}?			        { MEMTOKEN(F_CONSTANT); }
+{D}+{E}{FS}?				        { MEMTOKEN(T_F_CONST); }
+{D}*"."{D}+{E}?{FS}?			    { MEMTOKEN(T_F_CONST); }
+{D}+"."{E}?{FS}?			        { MEMTOKEN(T_F_CONST); }
+{HP}{H}+{P}{FS}?			        { MEMTOKEN(T_F_CONST); }
+{HP}{H}*"."{H}+{P}{FS}?			    { MEMTOKEN(T_F_CONST); }
+{HP}{H}+"."{P}{FS}?			        { MEMTOKEN(T_F_CONST); }
 
 
 {SP}?{TQ}                           { yy_push_state(STRING_LIT, yyscanner);
@@ -72,16 +72,22 @@ int yyparse(struct GDS_Parser * P);
 {TQ}                                { yyget_lval( yyscanner )->strval =
                                           gds_parser_opt_lstr_lit( yyget_extra(yyscanner) );
                                       yy_pop_state(yyscanner);
-                                      return STRING_LITERAL; }
+                                      return T_STRING_LITERAL; }
 }
 
-({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { MEMTOKEN(STRING_LITERAL); }
+({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { MEMTOKEN(T_STRING_LITERAL); }
 
 {L}{A}*					            { MEMTOKEN(T_ID); }
 
 ";"                                 { gds_parser_free_buffer( yyget_extra(yyscanner) );
                                       return ';'; }
+":"                                 { return ':'; }
 "="                                 { return '='; }
+"{"                                 { return '{'; }
+"}"                                 { return '}'; }
+"("                                 { return '('; }
+")"                                 { return ')'; }
+"<-"                                { return P_INJECTION; }
 
 %%
 

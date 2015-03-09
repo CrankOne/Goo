@@ -42,12 +42,11 @@
      T_FALSE = 259,
      P_ASSIGN = 260,
      P_NAME = 261,
-     P_FUNCTION = 262,
-     P_INJECTION = 263,
-     I_CONSTANT = 264,
-     F_CONSTANT = 265,
-     STRING_LITERAL = 266,
-     T_ID = 267
+     P_INJECTION = 262,
+     T_I_CONST = 263,
+     T_F_CONST = 264,
+     T_STRING_LITERAL = 265,
+     T_ID = 266
    };
 #endif
 
@@ -68,7 +67,7 @@ typedef union YYSTYPE
 
 
 /* Line 1685 of yacc.c  */
-#line 72 "/home/crank/Projects/goo/src/gds_parser.generated.h"
+#line 71 "/home/crank/Projects/goo/src/gds_parser.generated.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

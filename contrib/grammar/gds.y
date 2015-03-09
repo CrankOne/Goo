@@ -24,10 +24,10 @@
 }
 
 %token              T_TRUE      T_FALSE
-%token              P_ASSIGN    P_NAME      P_FUNCTION   P_INJECTION
+%token              P_ASSIGN    P_NAME      P_INJECTION
 
-%token              I_CONSTANT F_CONSTANT STRING_LITERAL T_ID
-%type<strval>       I_CONSTANT F_CONSTANT STRING_LITERAL T_ID
+%token              T_I_CONST T_F_CONST T_STRING_LITERAL T_ID
+%type<strval>       T_I_CONST T_F_CONST T_STRING_LITERAL T_ID
 
 %type<value>        integral float numeric constexpr;
 %type<mathExpr>     mathExpr;
@@ -44,10 +44,18 @@ expression  : /* empty */               {}
 
 manifest    : constexpr                 { empty_manifest( P, $1 ); }
             | T_ID '=' constexpr        { declare_named_constant(P, $1, $3); }
+            | funcDecl P_INJECTION expression { /*declare_math_function($1, $3);*/ }
+            ;
+
+funcDecl    : T_ID '(' argList ')'      { /*$$ = new_function( $1, $3 );*/ }
+            ;
+
+argList     : T_ID                      {}
+            | T_ID ',' argList          {}
             ;
 
 constexpr   : mathExpr                  { eval_math_expression(P, $1); }
-            | STRING_LITERAL            { memorize_string_literal(P, $1); }
+            | T_STRING_LITERAL          { memorize_string_literal(P, $1); }
             ;
 
 numeric     : integral                  { $$ = $1; }
@@ -61,10 +69,10 @@ mathExpr    : numeric                   { $$ = mexpr_from_constant(P, $1); }
             | logicConst                { $$ = mexpr_from_logic(P, $1); }
             ;
 
-integral    : I_CONSTANT                { $$ = interpret_integral(P, $1);   }
+integral    : T_I_CONST                 { $$ = interpret_integral(P, $1);   }
             ;
 
-float       : F_CONSTANT                { $$ = interpret_float(P, $1); }
+float       : T_F_CONST                 { $$ = interpret_float(P, $1); }
             ;
 
 %%
