@@ -128,6 +128,7 @@ GDSInterpreterApplication::_V_run() {
         } else {
             for( auto it = _static_gdsiConf.files.begin();
                  _static_gdsiConf.files.end() != it; ++it ) {
+                gds_parser_set_filename( P, it->c_str() );
                 FILE * inFile = fopen(it->c_str(), "r");
                 if( !inFile ) {
                     std::cerr << "Couldn't open file \"" << *it << "\"." << std::endl;
@@ -141,7 +142,13 @@ GDSInterpreterApplication::_V_run() {
             }
         }
     } catch( goo::Exception & e ) {  // generic (non-interactive) catcher.
-        // TODO: dump error.
+        if( goo::Exception::gdsError == e.code() ) {
+            // It's an interpreter's error: no need for full stack dump.
+            std::cerr << e.what() << std::endl;
+        } else {
+            // Generic Goo's error:
+            e.dump(std::cerr);
+        }
         std::cerr << "Exit due to previous errors." << std::endl;
     }
     gds_parser_destroy(P);

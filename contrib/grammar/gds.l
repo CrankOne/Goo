@@ -29,13 +29,34 @@ TQ  \"{3}
     yyget_lval( yyscanner )->strval =                                   \
         gds_parser_replicate_token( yyget_extra(yyscanner), yytext );   \
     return tc;
+#define YY_USER_ACTION                                              \
+    yylloc->first_line   = yyget_lineno(yyscanner);                 \
+    yylloc->first_column = yycolumn;                                \
+    for(int i = 0; yytext[i] != '\0'; i++) {                        \
+        if(yytext[i] == '\n') {                                     \
+            yylloc->last_line++;                                    \
+            yylloc->last_column = 0;                                \
+        } else {                                                    \
+            yylloc->last_column++;                                  \
+        }                                                           \
+    } {                                                             \
+        struct GDS_Parser *pObjPtr =                                \
+                (struct GDS_Parser *) yyget_extra(yyscanner);       \
+        pObjPtr->location.first_line   = yylloc->first_line;        \
+        pObjPtr->location.last_line    = yylloc->last_line;         \
+        pObjPtr->location.first_column = yylloc->first_column;      \
+        pObjPtr->location.last_column  = yylloc->last_column;       \
+    }
 /* FWD */
 int comment(yyscan_t scanner);
 int yyparse(struct GDS_Parser * P);
+void yyerror( struct YYLTYPE * locp, struct GDS_Parser * P, const char * msg );
 
+void gds_error( struct GDS_Parser * P, const char * det );
+void gds_warn( struct GDS_Parser * P, const char * det );
 %}
 
-%option nounput
+%option nounput yylineno never-interactive
 
 %%
 
@@ -51,17 +72,17 @@ int yyparse(struct GDS_Parser * P);
 [Tt]rue|[Ee]nable|[Oo]n             { MEMTOKEN(T_TRUE); }
 [Ff]alse|[Dd]isable|[Oo]ff          { MEMTOKEN(T_TRUE); }
 
-{HP}{H}+{IS}?				        { MEMTOKEN(T_I_CONST); }
-{NZ}{D}*{IS}?				        { MEMTOKEN(T_I_CONST); }
-"0"{O}*{IS}?				        { MEMTOKEN(T_I_CONST); }
-{CP}?"'"([^'\\\n]|{ES})+"'"		    { MEMTOKEN(T_I_CONST); /*interpret escape symbols*/ }
+{HP}{H}+{IS}?				        { MEMTOKEN(TI_HEX); }
+{NZ}{D}*{IS}?				        { MEMTOKEN(TI_DEC); }
+"0"{O}*{IS}?				        { MEMTOKEN(TI_OCT); }
+{CP}?"'"([^'\\\n]|{ES})+"'"		    { MEMTOKEN(TI_ESC); }
 
-{D}+{E}{FS}?				        { MEMTOKEN(T_F_CONST); }
-{D}*"."{D}+{E}?{FS}?			    { MEMTOKEN(T_F_CONST); }
-{D}+"."{E}?{FS}?			        { MEMTOKEN(T_F_CONST); }
-{HP}{H}+{P}{FS}?			        { MEMTOKEN(T_F_CONST); }
-{HP}{H}*"."{H}+{P}{FS}?			    { MEMTOKEN(T_F_CONST); }
-{HP}{H}+"."{P}{FS}?			        { MEMTOKEN(T_F_CONST); }
+{D}+{E}{FS}?				        { MEMTOKEN(TF_DEC); }
+{D}*"."{D}+{E}?{FS}?			    { MEMTOKEN(TF_DEC); }
+{D}+"."{E}?{FS}?			        { MEMTOKEN(TF_DEC); }
+{HP}{H}+{P}{FS}?			        { MEMTOKEN(TF_HEX); }
+{HP}{H}*"."{H}+{P}{FS}?			    { MEMTOKEN(TF_HEX); }
+{HP}{H}+"."{P}{FS}?			        { MEMTOKEN(TF_HEX); }
 
 
 {SP}?{TQ}                           { yy_push_state(STRING_LIT, yyscanner);
@@ -88,6 +109,13 @@ int yyparse(struct GDS_Parser * P);
 "("                                 { return '('; }
 ")"                                 { return ')'; }
 "<-"                                { return P_INJECTION; }
+
+.                                   {   char bf[64];
+                                        snprintf(bf, 64, "Uninpretable character '%c' had been met code.", yytext[0] );
+                                        yyerror( yyget_lloc(yyscanner),
+                                               yyget_extra(yyscanner),
+                                               bf );
+                                    }
 
 %%
 

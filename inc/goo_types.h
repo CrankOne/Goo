@@ -169,6 +169,7 @@
     m(106,      objNotConstructed,  "requested object was not constructed" ) \
     m(107,      singletonRepCtr,    "singleton repeated construction" ) \
     m(108,      badArchitect,       "architectural incompleteness or undefined state" ) \
+    m(254,      gdsError,           "Declarative Semantics language parsing error") \
     m(255,      thirdParty,         "thirt-party code error") \
     /* ... */
 

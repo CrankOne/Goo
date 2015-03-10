@@ -5,7 +5,12 @@
 /* See:
  * http://lists.gnu.org/archive/html/bug-bison/2014-02/msg00002.html
  */
+
 # define P_scanner (P->scanner)
+
+/* FWD */
+int yylex();
+void yyerror();
 %}
 %debug
  /*%define api.pure full*/
@@ -26,8 +31,14 @@
 %token              T_TRUE      T_FALSE
 %token              P_ASSIGN    P_NAME      P_INJECTION
 
-%token              T_I_CONST T_F_CONST T_STRING_LITERAL T_ID
-%type<strval>       T_I_CONST T_F_CONST T_STRING_LITERAL T_ID
+%token              TI_BIN  TI_OCT  TI_HEX  TI_ESC  TI_DEC
+%type<strval>        TI_BIN  TI_OCT  TI_HEX  TI_ESC  TI_DEC
+
+%token              TF_DEC  TF_HEX
+%type<strval>        TF_DEC  TF_HEX
+
+%token              T_STRING_LITERAL T_ID
+%type<strval>       T_STRING_LITERAL T_ID
 
 %type<value>        integral float numeric constexpr;
 %type<mathExpr>     mathExpr;
@@ -68,10 +79,15 @@ mathExpr    : numeric                   { $$ = mexpr_from_constant(P, $1); }
             | logicConst                { $$ = mexpr_from_logic(P, $1); }
             ;
 
-integral    : T_I_CONST                 { $$ = interpret_integral(P, $1);   }
+integral    : TI_BIN                    { $$ = interpret_bin_integral(P, $1); }
+            | TI_OCT                    { $$ = interpret_oct_integral(P, $1); }
+            | TI_HEX                    { $$ = interpret_hex_integral(P, $1); }
+            | TI_ESC                    { $$ = interpret_esc_integral(P, $1); }
+            | TI_DEC                    { $$ = interpret_dec_integral(P, $1); }
             ;
 
-float       : T_F_CONST                 { $$ = interpret_float(P, $1); }
+float       : TF_DEC                    { $$ = interpret_float_dec(P, $1); }
+            | TF_HEX                    { $$ = interpret_float_hex(P, $1); }
             ;
 
 %%
@@ -80,9 +96,28 @@ float       : T_F_CONST                 { $$ = interpret_float(P, $1); }
 # include <string.h>
 # include "gds/goo_interpreter.h"
 
+/* Special error function */
+void gds_error( struct GDS_Parser * P, YYLTYPE * loc, const char * det ) {
+    gds_parser_raise_error( P,
+                            P->currentFilename,
+                            loc->first_line,
+                            loc->first_column,
+                            loc->last_column,
+                            det );
+}
+
+/* Special error function */
+void gds_warn( struct GDS_Parser * P, YYLTYPE * loc, const char * det ) {
+    gds_parser_warning( P,
+                        P->currentFilename,
+                        loc->first_line,
+                        loc->first_column,
+                        loc->last_column,
+                        det );
+}
+
 void
-yyerror( struct YYLTYPE * locp, struct GDS_Parser * pw, const char * msg ) {
-    fprintf( stderr, "\nParser: %s\n", msg );
-    /*HDS_error( interpreter_ec, "Parser: %s", mes );*/
+yyerror( struct YYLTYPE * locp, struct GDS_Parser * P, const char * msg ) {
+    gds_error( P, locp, msg );
 }
 

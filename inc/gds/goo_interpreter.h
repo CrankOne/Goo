@@ -54,12 +54,34 @@ struct GDS_Value {
     } data;
 };
 
-struct GDS_Value * interpret_integral(
+struct GDS_Value * interpret_bin_integral(
     struct GDS_Parser *,
     const char * );
-struct GDS_Value * interpret_float(
+struct GDS_Value * interpret_oct_integral(
     struct GDS_Parser *,
     const char * );
+struct GDS_Value * interpret_hex_integral(
+    struct GDS_Parser *,
+    const char * );
+struct GDS_Value * interpret_esc_integral(
+    struct GDS_Parser *,
+    const char * );
+struct GDS_Value * interpret_dec_integral(
+    struct GDS_Parser *,
+    const char * );
+
+
+struct GDS_Value * interpret_float_dec(
+    struct GDS_Parser *,
+    const char * );
+struct GDS_Value * interpret_float_hex(
+    struct GDS_Parser *,
+    const char * );
+
+struct GDS_Value *
+memorize_string_literal(
+        struct GDS_Parser * P,
+        const char * s );
 
 /*
  * Functions
@@ -108,13 +130,48 @@ struct GDS_Parser {
       * cScope;
     char * strLitBuffer,
          * strLitBufferC;
+
+    char currentFilename[128];
+
+    struct Location {
+        uint32_t first_line,    last_line,
+                 first_column,  last_column;
+    } location;
     /* ... */
 };
 
+void gds_parser_set_filename( struct GDS_Parser *,
+                              const char * );
+
+# ifdef __cplusplus
+extern "C" {
+# endif
+
+/** Raises parser error. */
+void gds_parser_raise_error(
+        struct GDS_Parser * P,
+        const char * filename,
+        uint16_t line,
+        uint16_t columnBgn,
+        uint16_t columnEnd,
+        const char * details );
+
+void gds_parser_warning(
+        struct GDS_Parser * P,
+        const char * filename,
+        uint16_t line,
+        uint16_t columnBgn,
+        uint16_t columnEnd,
+        const char * details );
+
+# ifdef __cplusplus
+}  // extern "C"
+# endif
+
 struct GDS_Parser * gds_parser_new();
 void gds_parser_destroy( struct GDS_Parser * );
-
 char * gds_parser_replicate_token( struct GDS_Parser *, const char * );
+struct GDS_Value * gds_new_empty_value( struct GDS_Parser * );
 void gds_parser_free_buffer( struct GDS_Parser * );
 
 /* Re-inits string literal buffer. */
