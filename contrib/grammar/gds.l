@@ -21,6 +21,7 @@ TQ  \"{3}
 %x COMMENT
 %x INL_COMMENT
 %x STRING_LIT
+%s FORMULA
 
 %{
 # include "gds/goo_interpreter.h"
@@ -29,6 +30,7 @@ TQ  \"{3}
     yyget_lval( yyscanner )->strval =                                   \
         gds_parser_replicate_token( yyget_extra(yyscanner), yytext );   \
     return tc;
+
 #define YY_USER_ACTION                                              \
     yylloc->first_line   = yyget_lineno(yyscanner);                 \
     yylloc->first_column = yycolumn;                                \
@@ -51,6 +53,7 @@ TQ  \"{3}
 int comment(yyscan_t scanner);
 int yyparse(struct GDS_Parser * P);
 void yyerror( struct YYLTYPE * locp, struct GDS_Parser * P, const char * msg );
+int lookup_symbol( struct GDS_Parser * P, const char * sym, YYSTYPE * );
 
 void gds_error( struct GDS_Parser * P, const char * det );
 void gds_warn( struct GDS_Parser * P, const char * det );
@@ -98,10 +101,14 @@ void gds_warn( struct GDS_Parser * P, const char * det );
 
 ({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { MEMTOKEN(T_STRING_LITERAL); }
 
-{L}{A}*					            { MEMTOKEN(T_ID); }
+{L}{A}*					            {   yyget_lval( yyscanner )->strval =
+                                            gds_parser_replicate_token( yyget_extra(yyscanner), yytext );
+                                        return lookup_symbol(yyget_extra(yyscanner), yytext, 0); }
 
 ";"                                 { gds_parser_free_buffer( yyget_extra(yyscanner) );
                                       return ';'; }
+"|-"                                { return P_PIECEWISE_ELIF; }
+"^-"                                { return P_PIECEWISE_FINALY; }
 ":"                                 { return ':'; }
 "="                                 { return '='; }
 "{"                                 { return '{'; }
@@ -110,7 +117,16 @@ void gds_warn( struct GDS_Parser * P, const char * det );
 ")"                                 { return ')'; }
 "/"                                 { return '/'; }
 "."                                 { return '.'; }
-"<-"                                { return P_INJECTION; }
+"+"                                 { return '+'; }
+"-"                                 { return '-'; }
+"*"                                 { return '*'; }
+"^"                                 { return '^'; }
+"%"                                 { return '%'; }
+"&"                                 { return '&'; }
+"|"                                 { return '|'; }
+"?"                                 { return '?'; }
+">"                                 { return '>'; }
+"<"                                 { return '<'; }
 
 .                                   {   char bf[64];
                                         snprintf(bf, 64, "Uninpretable character '%c' had been met code.", yytext[0] );
@@ -120,6 +136,17 @@ void gds_warn( struct GDS_Parser * P, const char * det );
                                     }
 
 %%
+
+/*
+ * Symbol lookup routine.
+ */
+
+int
+lookup_symbol( struct GDS_Parser * P, const char * sym, YYSTYPE * yyst ) {
+    /* TODO: we need here to provide mechanism for returning found
+     *       symbol address. */
+    return UNKNWN_SYM;
+}
 
 /*
  * Entry points

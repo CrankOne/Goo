@@ -24,25 +24,36 @@ void yyerror();
 %union {
                   const char * strval;
             struct GDS_Value * value;
-            struct GDS_mexpr * mathExpr;
+         struct GDS_function * func;
+                 const char ** idList;
                      uint8_t   logical;
+           struct GDS_locvar * locvar;
 }
 
 %token              T_TRUE      T_FALSE
-%token              P_ASSIGN    P_NAME      P_INJECTION
+%token              P_ASSIGN    P_NAME      P_INJECTION  P_PIECEWISE_ELIF  P_PIECEWISE_FINALY
 
 %token              TI_BIN  TI_OCT  TI_HEX  TI_ESC  TI_DEC
-%type<strval>        TI_BIN  TI_OCT  TI_HEX  TI_ESC  TI_DEC
+%type<strval>       TI_BIN  TI_OCT  TI_HEX  TI_ESC  TI_DEC
 
 %token              TF_DEC  TF_HEX
-%type<strval>        TF_DEC  TF_HEX
+%type<strval>       TF_DEC  TF_HEX
 
-%token              T_STRING_LITERAL T_ID
-%type<strval>       T_STRING_LITERAL T_ID
+%token              T_STRING_LITERAL UNKNWN_SYM
+%type<strval>       T_STRING_LITERAL UNKNWN_SYM
 
-%type<value>        integral float numeric constexpr;
-%type<mathExpr>     mathExpr;
-%type<logical>      logicConst;
+%token              T_LOCVAR
+%type<locvar>       T_LOCVAR
+
+%type<idList>       fVarList
+%type<value>        numericCst nanVal integralCst floatCst;
+%type<func>         fTail fDef;
+%type<logical>      logicCst;
+
+%left '-' '+'
+%left '*' '/'
+/*TODO: %precedence NEG   /* negation--unary minus */
+%right '^' '%'       /* exponentiation */
 
 %start gdsExprLst
 
@@ -52,60 +63,74 @@ void yyerror();
  * Basic expression
  */
 
-gdsExprLst  : gdsExpr ';'               {}
-            | gdsExprLst gdsExpr        {}
+gdsExprLst  : /* empty */               {}
+            | gdsExpr ';' gdsExprLst    {}
             ;
 
-gdsExpr     : /* empty */               { /* do nothing */ }
-            | constvalue                { no_side_effects($1); }
-            | injectnDecl               { /* do nothing */ }
-            | assgnmntDecl              { /* do nothing */ }
+gdsExpr     : nanVal                    { /*no_side_effects_warning(P);*/ }
+            | fDef                      { /* do nothing */ }
+            | mathExpr                  {}
             ;
 
-constvalue  : numeric                   {}
-            | logic                     {}
-            | T_STRING_LITERAL          {}
-            | homognsArray              {}
-            | heterognsArray            {}
-            | 
+/*
+ * Variables
+ */
+
+fDef        : UNKNWN_SYM '(' fVarList ')' P_INJECTION fTail { $$ = 0; /*function_set_name(P, $6, $1);*/ }
             ;
 
-injectnDecl : newID '<-' formula        { $$ = new_injection($1, $3); }
+fVarList    : /* empty */               { $$ = 0; /*varlist_new(P, 0);*/           }
+            | UNKNWN_SYM                { $$ = 0; /*varlist_new(P, $1);*/          }
+            | fVarList ',' UNKNWN_SYM   { $$ = 0; /*varlist_append(P, $1, $3);*/   }
             ;
 
-assgnmntDecl: newID '=' constvalue      { $$ = new_variable($1, $3); }
+fTail       : mathExpr                  {}
             ;
 
+/*
+ * Binary arithmetical operations for numericals
+ */
 
-constval    : mathExpr                  { eval_math_expression(P, $1); }
-            | T_STRING_LITERAL          { memorize_string_literal(P, $1); }
+mathExpr    : mathOprnd                 {}
+            | mathExpr '+' mathOprnd    {}
+            | mathExpr '-' mathOprnd    {}
+            | mathExpr '*' mathOprnd    {}
+            | mathExpr '/' mathOprnd    {}
+/*            | '-' mathExpr  %prec NEG   { negotiate(P, $2) }*/
+            | mathExpr '^' mathOprnd    {}
+            | mathExpr '%' mathOprnd    {}
+            | '(' mathExpr ')'          {}
             ;
 
-numeric     : integral                  { $$ = $1; }
-            | float                     { $$ = $1; }
+mathOprnd   : numericCst                {}
+            | T_LOCVAR                  {}
             ;
 
-logicConst  : T_TRUE                    { $$ = 0xFF; }
-            | T_FALSE                   { $$ = 0x0; }
+/*
+ * Basic values
+ */
 
-mathExpr    : numeric                   { $$ = mexpr_from_constant(P, $1); }
-            | logicConst                { $$ = mexpr_from_logic(P, $1); }
+nanVal      : logicCst                  { $$ = $1; }
+            | T_STRING_LITERAL          { $$ = $1; }
             ;
 
-integral    : TI_BIN                    { $$ = interpret_bin_integral(P, $1); }
+numericCst  : integralCst               { $$ = $1; }
+            | floatCst                  { $$ = $1; }
+            ;
+
+integralCst : TI_BIN                    { $$ = interpret_bin_integral(P, $1); }
             | TI_OCT                    { $$ = interpret_oct_integral(P, $1); }
             | TI_HEX                    { $$ = interpret_hex_integral(P, $1); }
             | TI_ESC                    { $$ = interpret_esc_integral(P, $1); }
             | TI_DEC                    { $$ = interpret_dec_integral(P, $1); }
             ;
 
-float       : TF_DEC                    { $$ = interpret_float_dec(P, $1); }
+floatCst    : TF_DEC                    { $$ = interpret_float_dec(P, $1); }
             | TF_HEX                    { $$ = interpret_float_hex(P, $1); }
             ;
 
-genertrExpr : '.' '.' integral          {}
-            | integral '.' '.' integral {}
-            | integral '.' '.' integral '.' '.' integral {}
+logicCst    : T_TRUE                    { $$ = 0xff; /*interpret_logic_true(P);*/ }
+            | T_FALSE                   { $$ = 0x0; /*interpret_logic_false(P);*/ }
             ;
 
 %%
