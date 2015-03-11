@@ -76,12 +76,13 @@ gdsExpr     : nanVal                    { /*no_side_effects_warning(P);*/ }
  * Variables
  */
 
-fDef        : UNKNWN_SYM '(' fVarList ')' P_INJECTION fTail { $$ = 0; /*function_set_name(P, $6, $1);*/ }
+fDef        : UNKNWN_SYM '(' fVarList ')' P_INJECTION fTail { 
+                                          $$ = function_set_name(P, $6, $1); }
             ;
 
-fVarList    : /* empty */               { $$ = 0; /*varlist_new(P, 0);*/           }
-            | UNKNWN_SYM                { $$ = 0; /*varlist_new(P, $1);*/          }
-            | fVarList ',' UNKNWN_SYM   { $$ = 0; /*varlist_append(P, $1, $3);*/   }
+fVarList    : /* empty */               { $$ = gds_varlist_new(P, 0);           }
+            | UNKNWN_SYM                { $$ = gds_varlist_new(P, $1);          }
+            | fVarList ',' UNKNWN_SYM   { $$ = gds_varlist_append(P, $1, $3);   }
             ;
 
 fTail       : mathExpr                  {}
@@ -91,19 +92,19 @@ fTail       : mathExpr                  {}
  * Binary arithmetical operations for numericals
  */
 
-mathExpr    : mathOprnd                 {}
-            | mathExpr '+' mathOprnd    {}
-            | mathExpr '-' mathOprnd    {}
-            | mathExpr '*' mathOprnd    {}
-            | mathExpr '/' mathOprnd    {}
-/*            | '-' mathExpr  %prec NEG   { negotiate(P, $2) }*/
-            | mathExpr '^' mathOprnd    {}
-            | mathExpr '%' mathOprnd    {}
-            | '(' mathExpr ')'          {}
+mathExpr    : mathOprnd                 { $$ = $1; }
+            | mathExpr '+' mathOprnd    { $$ = gds_math_add(P, $1, $2); }
+            | mathExpr '-' mathOprnd    { $$ = gds_math_subt(P, $1, $2); }
+            | mathExpr '*' mathOprnd    { $$ = gds_math_multiply(P, $1, $2); }
+            | mathExpr '/' mathOprnd    { $$ = gds_math_divide(P, $1, $2); }
+            | '-' mathExpr  %prec '*'   { $$ = gds_math_negotiate(P, $2); }
+            | mathExpr '^' mathOprnd    { $$ = gds_math_power(P, $1, $3); }
+            | mathExpr '%' mathOprnd    { $$ = gds_math_modulo(P, $1, $3); }
+            | '(' mathExpr ')'          { $$ = $2; }
             ;
 
-mathOprnd   : numericCst                {}
-            | T_LOCVAR                  {}
+mathOprnd   : numericCst                { $$ = gds_math_new_node_from_const(  $1 ); }
+            | T_LOCVAR                  { $$ = gds_math_new_node_from_locvar( $1 ); }
             ;
 
 /*
@@ -129,8 +130,8 @@ floatCst    : TF_DEC                    { $$ = interpret_float_dec(P, $1); }
             | TF_HEX                    { $$ = interpret_float_hex(P, $1); }
             ;
 
-logicCst    : T_TRUE                    { $$ = 0xff; /*interpret_logic_true(P);*/ }
-            | T_FALSE                   { $$ = 0x0; /*interpret_logic_false(P);*/ }
+logicCst    : T_TRUE                    { $$ = interpret_logic_true(P); }
+            | T_FALSE                   { $$ = interpret_logic_false(P); }
             ;
 
 %%
