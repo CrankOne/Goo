@@ -44,27 +44,40 @@ void yyerror();
 %type<mathExpr>     mathExpr;
 %type<logical>      logicConst;
 
-%start expression
+%start gdsExprLst
 
 %%
 
-expression  : /* empty */               {}
-            | manifest ';' expression   {}
+/*
+ * Basic expression
+ */
+
+gdsExprLst  : gdsExpr ';'               {}
+            | gdsExprLst gdsExpr        {}
             ;
 
-manifest    : constexpr                 { empty_manifest( P, $1 ); }
-            | T_ID '=' constexpr        { declare_named_constant(P, $1, $3); }
-            | funcDecl P_INJECTION expression { /*declare_math_function($1, $3);*/ }
+gdsExpr     : /* empty */               { /* do nothing */ }
+            | constvalue                { no_side_effects($1); }
+            | injectnDecl               { /* do nothing */ }
+            | assgnmntDecl              { /* do nothing */ }
             ;
 
-funcDecl    : T_ID '(' argList ')'      { /*$$ = new_function( $1, $3 );*/ }
+constvalue  : numeric                   {}
+            | logic                     {}
+            | T_STRING_LITERAL          {}
+            | homognsArray              {}
+            | heterognsArray            {}
+            | 
             ;
 
-argList     : T_ID                      {}
-            | T_ID ',' argList          {}
+injectnDecl : newID '<-' formula        { $$ = new_injection($1, $3); }
             ;
 
-constexpr   : mathExpr                  { eval_math_expression(P, $1); }
+assgnmntDecl: newID '=' constvalue      { $$ = new_variable($1, $3); }
+            ;
+
+
+constval    : mathExpr                  { eval_math_expression(P, $1); }
             | T_STRING_LITERAL          { memorize_string_literal(P, $1); }
             ;
 
@@ -88,6 +101,11 @@ integral    : TI_BIN                    { $$ = interpret_bin_integral(P, $1); }
 
 float       : TF_DEC                    { $$ = interpret_float_dec(P, $1); }
             | TF_HEX                    { $$ = interpret_float_hex(P, $1); }
+            ;
+
+genertrExpr : '.' '.' integral          {}
+            | integral '.' '.' integral {}
+            | integral '.' '.' integral '.' '.' integral {}
             ;
 
 %%

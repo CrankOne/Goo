@@ -12,11 +12,11 @@ b = 5*8;  # should produce out[2] : Int16 b = 40;
 c = 3/4;  # out[3] : Rational16 c = 3/4;
 
 # Functions:
-f( _x ) := a * _x^2;  # out[4] : f(x) := x^2;
+f( _x ) <- a * _x^2;  # out[4] : f(x) := x^2;
 
 #
 #
 #
 
-F(x) := M::Integrate( f, [x, 0, 5] );
+F(x) <- M::Integrate( f, [x, 0, 5] );
 

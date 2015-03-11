@@ -1,0 +1,24 @@
+
+(#
+ # Basic data
+ #)
+
+#
+# Simple variables
+Int8    iA = 1;     # explicit type specialization
+UInt16  iB = 42;    # another explicit type specialization
+        iC = '\b';  # atomatic type deduction (Int32) with escseq parsing
+
+fA, fB = 1.28, 7;   # parallel assignment, both variables type is Float16
+Float8 fC = 4.56,
+       fD = 8.97;   # explicit type, both variables type is Float8
+#Float8 fE, FF, FD = 1.28, 9.67;  # forbidden! -- mixing constant declaration notations.
+
+#
+# Arrays
+a = { 42, 7/3, 0xf1 };          # produces positional array
+b = { foo: 12, bar: 13 };       # produces named array (hashtable)
+#c = { 42, 17, foo : 24 };      # forbidden! -- Mixing array declaration notations.
+
+
+

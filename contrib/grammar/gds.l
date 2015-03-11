@@ -108,6 +108,8 @@ void gds_warn( struct GDS_Parser * P, const char * det );
 "}"                                 { return '}'; }
 "("                                 { return '('; }
 ")"                                 { return ')'; }
+"/"                                 { return '/'; }
+"."                                 { return '.'; }
 "<-"                                { return P_INJECTION; }
 
 .                                   {   char bf[64];
