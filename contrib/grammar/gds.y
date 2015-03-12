@@ -18,13 +18,13 @@ void yyerror();
 %locations
 %defines
 %error-verbose
-%parse-param { struct GDS_Parser * P}
+%parse-param { struct gds_Parser * P}
 %lex-param {   yyscan_t P_scanner}
 
 %union {
                   const char * strval;
-            struct GDS_Value * value;
-         struct GDS_function * func;
+            struct gds_Value * value;
+         struct gds_Function * func;
                  const char ** idList;
                      uint8_t   logical;
            struct GDS_locvar * locvar;
@@ -47,7 +47,7 @@ void yyerror();
 
 %type<idList>       fVarList
 %type<value>        numericCst nanVal integralCst floatCst;
-%type<func>         fTail fDef;
+%type<func>         fTail fDef mathExpr mathOprnd;
 %type<logical>      logicCst;
 
 %left '-' '+'
@@ -77,7 +77,7 @@ gdsExpr     : nanVal                    { /*no_side_effects_warning(P);*/ }
  */
 
 fDef        : UNKNWN_SYM '(' fVarList ')' P_INJECTION fTail { 
-                                          $$ = function_set_name(P, $6, $1); }
+                                          $$ = gds_math_function_set_name(P, $6, $1); }
             ;
 
 fVarList    : /* empty */               { $$ = gds_varlist_new(P, 0);           }
@@ -93,18 +93,18 @@ fTail       : mathExpr                  {}
  */
 
 mathExpr    : mathOprnd                 { $$ = $1; }
-            | mathExpr '+' mathOprnd    { $$ = gds_math_add(P, $1, $2); }
-            | mathExpr '-' mathOprnd    { $$ = gds_math_subt(P, $1, $2); }
-            | mathExpr '*' mathOprnd    { $$ = gds_math_multiply(P, $1, $2); }
-            | mathExpr '/' mathOprnd    { $$ = gds_math_divide(P, $1, $2); }
+            | mathExpr '+' mathOprnd    { $$ = gds_math(P, '+', $1, $3); }
+            | mathExpr '-' mathOprnd    { $$ = gds_math(P, '-', $1, $3); }
+            | mathExpr '*' mathOprnd    { $$ = gds_math(P, '*', $1, $3); }
+            | mathExpr '/' mathOprnd    { $$ = gds_math(P, '/', $1, $3); }
             | '-' mathExpr  %prec '*'   { $$ = gds_math_negotiate(P, $2); }
-            | mathExpr '^' mathOprnd    { $$ = gds_math_power(P, $1, $3); }
-            | mathExpr '%' mathOprnd    { $$ = gds_math_modulo(P, $1, $3); }
+            | mathExpr '^' mathOprnd    { $$ = gds_math(P, '^', $1, $3); }
+            | mathExpr '%' mathOprnd    { $$ = gds_math(P, '%', $1, $3); }
             | '(' mathExpr ')'          { $$ = $2; }
             ;
 
-mathOprnd   : numericCst                { $$ = gds_math_new_node_from_const(  $1 ); }
-            | T_LOCVAR                  { $$ = gds_math_new_node_from_locvar( $1 ); }
+mathOprnd   : numericCst                { $$ = gds_math_new_func_from_const(  P, $1 ); }
+            | T_LOCVAR                  { $$ = gds_math_new_func_from_locvar( P, $1 ); }
             ;
 
 /*
@@ -141,7 +141,7 @@ logicCst    : T_TRUE                    { $$ = interpret_logic_true(P); }
 # include "gds/goo_interpreter.h"
 
 /* Special error function */
-void gds_error( struct GDS_Parser * P, YYLTYPE * loc, const char * det ) {
+void gds_error( struct gds_Parser * P, YYLTYPE * loc, const char * det ) {
     gds_parser_raise_error( P,
                             P->currentFilename,
                             loc->first_line,
@@ -151,7 +151,7 @@ void gds_error( struct GDS_Parser * P, YYLTYPE * loc, const char * det ) {
 }
 
 /* Special error function */
-void gds_warn( struct GDS_Parser * P, YYLTYPE * loc, const char * det ) {
+void gds_warn( struct gds_Parser * P, YYLTYPE * loc, const char * det ) {
     gds_parser_warning( P,
                         P->currentFilename,
                         loc->first_line,
@@ -161,7 +161,7 @@ void gds_warn( struct GDS_Parser * P, YYLTYPE * loc, const char * det ) {
 }
 
 void
-yyerror( struct YYLTYPE * locp, struct GDS_Parser * P, const char * msg ) {
+yyerror( struct YYLTYPE * locp, struct gds_Parser * P, const char * msg ) {
     gds_error( P, locp, msg );
 }
 

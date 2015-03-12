@@ -5,8 +5,8 @@
 
 # include <stdio.h>  /*XXX*/
 
-void gds_error( struct GDS_Parser * P, const char * det );
-void gds_warn( struct GDS_Parser * P, const char * det );
+void gds_error( struct gds_Parser * P, const char * det );
+void gds_warn( struct gds_Parser * P, const char * det );
 
 /*
  * Constant values
@@ -44,47 +44,47 @@ integral_parse_typemod_postfix( const char * intStr ) {
     return flags;
 }
 
-struct GDS_Value *
+struct gds_Value *
 interpret_bin_integral(
-        struct GDS_Parser * P,
+        struct gds_Parser * P,
         const char * s ){
     printf("XXX: treat \"%s\" as integral constant in binary form.\n", s);
     return 0;
 }
 
-struct GDS_Value *
+struct gds_Value *
 interpret_oct_integral(
-        struct GDS_Parser * P,
+        struct gds_Parser * P,
         const char * s ){
     printf("XXX: treat \"%s\" as integral constant in octal form.\n", s);
     return 0;
 }
 
-struct GDS_Value *
+struct gds_Value *
 interpret_hex_integral(
-        struct GDS_Parser * P,
+        struct gds_Parser * P,
         const char * s ){
     printf("XXX: treat \"%s\" as integral constant in hexidecimal form.\n", s);
     return 0;
 }
 
-struct GDS_Value *
+struct gds_Value *
 interpret_esc_integral(
-        struct GDS_Parser * P,
+        struct gds_Parser * P,
         const char * s ){
     printf("XXX: treat \"%s\" as integral constant in escape sequence form.\n", s);
     return 0;
 }
 
-struct GDS_Value *
+struct gds_Value *
 interpret_dec_integral(
-        struct GDS_Parser * P,
+        struct gds_Parser * P,
         const char * s ){
     /* TODO:
      *  1) Check truncation errors here (strtoi has special behaviour);
      *  2) Check extra symbols on tail and warn, if they're invalid.
      */
-    struct GDS_Value * v = gds_new_empty_value(P);
+    struct gds_Value * v = gds_new_empty_value(P);
     uint8_t typemod = integral_parse_typemod_postfix( s );
     char * endCPtr;
     if( typemod & 0x2 ) {
@@ -131,17 +131,17 @@ interpret_dec_integral(
 
 /* float */
 
-struct GDS_Value *
+struct gds_Value *
 interpret_float_dec(
-        struct GDS_Parser * P,
+        struct gds_Parser * P,
         const char * s ){
     printf("XXX: treat \"%s\" as float constant in decimal form.\n", s);
     return 0;
 }
 
-struct GDS_Value *
+struct gds_Value *
 interpret_float_hex(
-        struct GDS_Parser * P,
+        struct gds_Parser * P,
         const char * s ){
     printf("XXX: treat \"%s\" as float constant in hexidecimal form.\n", s);
     return 0;
@@ -149,9 +149,9 @@ interpret_float_hex(
 
 /* string literal */
 
-struct GDS_Value *
+struct gds_Value *
 memorize_string_literal(
-        struct GDS_Parser * P,
+        struct gds_Parser * P,
         const char * s ){
     printf("XXX: treat \"%s\" as string literal of length %zd.\n",
             s, strlen(s) );
@@ -159,23 +159,96 @@ memorize_string_literal(
 }
 
 /*
- * Functions
+ * Math function
  */
 
-struct GDS_mexpr *
-mexpr_from_constant(
-        struct GDS_Parser * P,
-        struct GDS_Value * val ) {
-    printf("XXX: making an anonymous constant expression from numeric value.\n");
-    return 0;
+# define for_all_gds_math_node_descriptor_postfix( m )  \
+    m( gds_math_nodeNumeric,    0x2 )                   \
+    m( gds_math_nodeLocVar,     0x1 )                   \
+    m( gds_math_nodeMathOp,     0x3 )
+
+# define for_all_gds_math_node_masks( m )           \
+    m( gds_math_nodeTypeMask,   0x3  )              \
+    m( gds_math_nodeMathOpMask, 0x3c )
+
+# define for_all_gds_binary_math_operators( m )     \
+    m( gds_math_summation_c        , 0x03, '+' )    \
+    m( gds_math_subtraction_c      , 0x07, '-' )    \
+    m( gds_math_mutliplication_c   , 0x0b, '*' )    \
+    m( gds_math_division_c         , 0x0f, '/' )    \
+    m( gds_math_power_c            , 0x13, '^' )    \
+    m( gds_math_modulo_c           , 0x17, '%' )    \
+    m( gds_math_dot_c              , 0x23, '.' )
+
+static const uint8_t
+# define declare_const_b( name, code ) name = code,
+    for_all_gds_math_node_descriptor_postfix(declare_const_b)
+    for_all_gds_math_node_masks(declare_const_b)
+# undef declare_const_b
+# define declare_const_b( name, code, symbol ) name = code,
+    for_all_gds_binary_math_operators(declare_const_b)
+# undef declare_const_b
+    gds_math_unegotiation_c     = 0x1f;
+
+struct gds_Function *
+gds_math_new_func_from_const(
+        struct gds_Parser * P,
+        struct gds_Value * constVal ) {
+    struct gds_Function * node = gds_parser_math_function_new(P);
+
+    node->descriptor = gds_math_nodeNumeric;
+    node->content.asValue = constVal;
+
+    return node;
 }
 
-struct GDS_mexpr *
-mexpr_from_logic(
-        struct GDS_Parser * P,
-        uint8_t v ) {
-    printf("XXX: making an anonymous constant expression from logic value.\n");
-    return 0;
+struct gds_Function *
+gds_math_new_func_from_locvar(
+        struct gds_Parser * P,
+        struct gds_Value * locVar ) {
+    struct gds_Function * node = gds_parser_math_function_new(P);
+
+    node->descriptor = gds_math_nodeLocVar;
+    node->content.asLocalVariable.orderNum = 1 /* TODO: acquire locvar name */ ;
+    fprintf( stderr, "Locvar acquizition is unimplemented yet. Setting to $1.\n" );
+
+    return node;
+}
+
+struct gds_Function *
+gds_math(
+        struct gds_Parser * P,
+        char opType,
+        struct gds_Function * l,
+        struct gds_Function * r) {
+    struct gds_Function * node = gds_parser_math_function_new(P);
+    node->content.asMathOperation.l = l;
+    node->content.asMathOperation.r = r;
+    switch( opType ) {
+        # define case_( name, code, glyph ) \
+            case glyph : {                  \
+                node->descriptor = name;    \
+            } break;
+        for_all_gds_binary_math_operators(case_);
+        # undef case_
+        default: {
+            fprintf( stderr,
+                    "Unknown symbol '%c' interpreted as math operator: internal parser error.\n",
+                    opType );
+        }
+    }; /* switch( opType ) */
+    return node;
+}
+
+struct gds_Function *
+gds_math_negotiate(
+        struct gds_Parser * P,
+        struct gds_Function * o) {
+    struct gds_Function * node = gds_parser_math_function_new(P);
+    node->descriptor = gds_math_unegotiation_c;
+    node->content.asMathOperation.l = o;
+    node->content.asMathOperation.r = NULL;
+    return node;
 }
 
 /*
@@ -184,7 +257,7 @@ mexpr_from_logic(
 
 struct GDS_expr *
 empty_manifest(
-        struct GDS_Parser * P,
+        struct gds_Parser * P,
         void * prhs) {
     /* TODO: there should be a warning about absence of side effects. */
     printf("XXX: memorize empty manifest with no side effects.\n");
@@ -193,19 +266,11 @@ empty_manifest(
 
 struct GDS_expr *
 declare_named_constant(
-        struct GDS_Parser * P,
+        struct gds_Parser * P,
         const char * idName,
-        struct GDS_Value * val ) {
+        struct gds_Value * val ) {
     printf("XXX: memorize manifest named \"%s\" with expression.\n",
             idName);
-    return 0;
-}
-
-struct GDS_expr *
-eval_math_expression(
-        struct GDS_Parser * P,
-        struct GDS_mexpr * mexpr ) {
-    printf("XXX: making a manifestation from mathematical expression.\n");
     return 0;
 }
 
@@ -213,9 +278,9 @@ eval_math_expression(
  * Parser object C-wrapper.
  */
 
-struct GDS_Parser *
+struct gds_Parser *
 gds_parser_new() {
-    struct GDS_Parser * pObj = malloc( sizeof(struct GDS_Parser) );
+    struct gds_Parser * pObj = malloc( sizeof(struct gds_Parser) );
     printf("Parser allocated: %p\n", pObj);  /* XXX */
 
     pObj->scanner = NULL;
@@ -239,13 +304,13 @@ gds_parser_new() {
 }
 
 void
-gds_parser_destroy( struct GDS_Parser * pObj ) {
+gds_parser_destroy( struct gds_Parser * pObj ) {
     free( pObj->strLitBuffer );
     free( pObj );
 }
 
 void
-gds_parser_set_filename( struct GDS_Parser * P,
+gds_parser_set_filename( struct gds_Parser * P,
                          const char * filename ) {
     strncpy(P->currentFilename, filename, 128);
     P->currentFilename[127] = '\0';
@@ -254,7 +319,7 @@ gds_parser_set_filename( struct GDS_Parser * P,
 
 char *
 gds_parser_replicate_token(
-        struct GDS_Parser * P,
+        struct gds_Parser * P,
         const char * token ) {
     printf(">%s< %p\n", token, P);  /* XXX */
 
@@ -269,22 +334,22 @@ gds_parser_replicate_token(
     return currentReplicaBegin;
 }
 
-struct GDS_Value *
-gds_new_empty_value( struct GDS_Parser * P ) {
+struct gds_Value *
+gds_new_empty_value( struct gds_Parser * P ) {
     /* TODO use kind of pool here. */
-     struct GDS_Value * vPtr = malloc( sizeof(struct GDS_Value) );
-     bzero( vPtr, sizeof(struct GDS_Value) );
+     struct gds_Value * vPtr = malloc( sizeof(struct gds_Value) );
+     bzero( vPtr, sizeof(struct gds_Value) );
      return vPtr;
 }
 
 void
-gds_parser_free_buffer( struct GDS_Parser * P ) {
+gds_parser_free_buffer( struct gds_Parser * P ) {
     P->cScope->lastReplica = P->cScope->tokenReplicasBf;
     *(P->cScope->lastReplica) = '\0';
 }
 
 void
-gds_parser_str_lit( struct GDS_Parser * P,
+gds_parser_str_lit( struct gds_Parser * P,
                     const char * strb ) {
     /* TODO: get first char of strb to determine which type
      * of string is to be used (U,u,L,l, etc).
@@ -293,13 +358,13 @@ gds_parser_str_lit( struct GDS_Parser * P,
 }
 
 void
-gds_parser_append_lstr_lit( struct GDS_Parser * P,
+gds_parser_append_lstr_lit( struct gds_Parser * P,
                             const char * c ) {
     *(P->strLitBufferC ++) = *c;
 }
 
 char *
-gds_parser_opt_lstr_lit( struct GDS_Parser * P ) {
+gds_parser_opt_lstr_lit( struct gds_Parser * P ) {
     *(P->strLitBufferC ++) = '\0';
     /*printf("Lexing STRING_LITERAL done: \"%s\".\n", P->strLitBuffer);*/
     return P->strLitBuffer;

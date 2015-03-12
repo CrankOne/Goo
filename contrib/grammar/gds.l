@@ -1,5 +1,5 @@
 %option reentrant stack noyywrap bison-bridge bison-locations
-%option extra-type="struct GDS_Parser *"
+%option extra-type="struct gds_Parser *"
 O   [0-7]
 D   [0-9]
 NZ  [1-9]
@@ -42,8 +42,8 @@ TQ  \"{3}
             yylloc->last_column++;                                  \
         }                                                           \
     } {                                                             \
-        struct GDS_Parser *pObjPtr =                                \
-                (struct GDS_Parser *) yyget_extra(yyscanner);       \
+        struct gds_Parser *pObjPtr =                                \
+                (struct gds_Parser *) yyget_extra(yyscanner);       \
         pObjPtr->location.first_line   = yylloc->first_line;        \
         pObjPtr->location.last_line    = yylloc->last_line;         \
         pObjPtr->location.first_column = yylloc->first_column;      \
@@ -51,12 +51,12 @@ TQ  \"{3}
     }
 /* FWD */
 int comment(yyscan_t scanner);
-int yyparse(struct GDS_Parser * P);
-void yyerror( struct YYLTYPE * locp, struct GDS_Parser * P, const char * msg );
-int lookup_symbol( struct GDS_Parser * P, const char * sym, YYSTYPE * );
+int yyparse(struct gds_Parser * P);
+void yyerror( struct YYLTYPE * locp, struct gds_Parser * P, const char * msg );
+int lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE * );
 
-void gds_error( struct GDS_Parser * P, const char * det );
-void gds_warn( struct GDS_Parser * P, const char * det );
+void gds_error( struct gds_Parser * P, const char * det );
+void gds_warn( struct gds_Parser * P, const char * det );
 %}
 
 %option nounput yylineno never-interactive
@@ -142,7 +142,7 @@ void gds_warn( struct GDS_Parser * P, const char * det );
  */
 
 int
-lookup_symbol( struct GDS_Parser * P, const char * sym, YYSTYPE * yyst ) {
+lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE * yyst ) {
     /* TODO: we need here to provide mechanism for returning found
      *       symbol address. */
     return UNKNWN_SYM;
@@ -153,7 +153,7 @@ lookup_symbol( struct GDS_Parser * P, const char * sym, YYSTYPE * yyst ) {
  */
 
 void /* Evaluates a file */
-gds_eval_file( struct GDS_Parser * P, FILE * inFile ) {
+gds_eval_file( struct gds_Parser * P, FILE * inFile ) {
     if( yylex_init(&(P->scanner))) {
         fprintf(stderr, "Couldn't initialize scanner.\n");
         return;
@@ -168,7 +168,7 @@ gds_eval_file( struct GDS_Parser * P, FILE * inFile ) {
 }
 
 void /* Evaluates a string */
-gds_eval_string( struct GDS_Parser * P, const char * gdsStr ) {
+gds_eval_string( struct gds_Parser * P, const char * gdsStr ) {
     # if 0
     int len = strlen( gdsStr );
     char * intermsyy = malloc(len+2);
