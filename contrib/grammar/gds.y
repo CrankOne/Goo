@@ -23,7 +23,7 @@ void yyerror();
 
 %union {
                   const char * strval;
-            struct gds_Value * value;
+            struct gds_Literal * value;
          struct gds_Function * func;
                  const char ** idList;
                      uint8_t   logical;

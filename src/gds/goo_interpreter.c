@@ -9,156 +9,6 @@ void gds_error( struct gds_Parser * P, const char * det );
 void gds_warn( struct gds_Parser * P, const char * det );
 
 /*
- * Constant values
- */
-
-/* integral */
-
-/* Flags:
- *  u    - 0x1
- *  l1   - 0x2
- *  l2   - 0x4
- * so:
- *  ull  - 7
- *  ul   - 3
- *  u    - 1
- *  ll   - 6
- *  l    - 2
- */
-static uint8_t
-integral_parse_typemod_postfix( const char * intStr ) {
-    uint8_t flags = 0;
-    for( const char * c = intStr;
-                    *c != '\0'; ++c ) {
-        if( 'u' == *c || 'U' == *c ) {
-            flags |= 0x1;
-        }
-        if( 'l' == *c || 'L' == *c ) {
-            if( flags & 0x2 ) {
-                flags |= 0x4;
-            } else {
-                flags |= 0x2;
-            }
-        }
-    }
-    return flags;
-}
-
-struct gds_Value *
-interpret_bin_integral(
-        struct gds_Parser * P,
-        const char * s ){
-    printf("XXX: treat \"%s\" as integral constant in binary form.\n", s);
-    return 0;
-}
-
-struct gds_Value *
-interpret_oct_integral(
-        struct gds_Parser * P,
-        const char * s ){
-    printf("XXX: treat \"%s\" as integral constant in octal form.\n", s);
-    return 0;
-}
-
-struct gds_Value *
-interpret_hex_integral(
-        struct gds_Parser * P,
-        const char * s ){
-    printf("XXX: treat \"%s\" as integral constant in hexidecimal form.\n", s);
-    return 0;
-}
-
-struct gds_Value *
-interpret_esc_integral(
-        struct gds_Parser * P,
-        const char * s ){
-    printf("XXX: treat \"%s\" as integral constant in escape sequence form.\n", s);
-    return 0;
-}
-
-struct gds_Value *
-interpret_dec_integral(
-        struct gds_Parser * P,
-        const char * s ){
-    /* TODO:
-     *  1) Check truncation errors here (strtoi has special behaviour);
-     *  2) Check extra symbols on tail and warn, if they're invalid.
-     */
-    struct gds_Value * v = gds_new_empty_value(P);
-    uint8_t typemod = integral_parse_typemod_postfix( s );
-    char * endCPtr;
-    if( typemod & 0x2 ) {
-        if( typemod & 0x4 ) {
-            # ifdef EXTENDED_TYPES
-            if( typemod & 0x1 ) {
-                v->data.UInt64Val = strtoull( s, &endCPtr, 10 );
-                v->typecode = UInt128_CT;
-                printf("XXX: \"%s\" dec int, uul.\n", s);
-            } else {
-                v->data.Int64Val = strtoll( s, &endCPtr, 10 );
-                v->typecode = UInt128_CT;
-                printf("XXX: \"%s\" dec int, ll.\n", s);
-            }
-            # else
-            char bf[64];
-            snprintf(bf, 64, "\"%s\" -- 128-bit integer is unsupported", s );
-            gds_error(P, bf );
-            # endif
-        } else {
-            if( typemod & 0x1 ) {
-                v->data.UInt32Val = strtoul( s, &endCPtr, 10 );
-                v->typecode = UInt64_CT;
-                printf("XXX: \"%s\" dec int, ul.\n", s);
-            } else {
-                v->data.Int32Val = strtol( s, &endCPtr, 10 );
-                v->typecode = UInt64_CT;
-                printf("XXX: \"%s\" dec int, l.\n", s);
-            }
-        }
-    } else {
-        if( typemod & 0x1 ) {
-            v->data.UInt32Val = strtoul( s, &endCPtr, 10 );
-            v->typecode = UInt32_CT;
-            printf("XXX: \"%s\" dec int, u.\n", s);
-        } else {
-            v->data.Int32Val = strtol( s, &endCPtr, 10 );
-            v->typecode = UInt32_CT;
-            printf("XXX: \"%s\" dec int.\n", s);
-        }
-    }
-    return v;
-}
-
-/* float */
-
-struct gds_Value *
-interpret_float_dec(
-        struct gds_Parser * P,
-        const char * s ){
-    printf("XXX: treat \"%s\" as float constant in decimal form.\n", s);
-    return 0;
-}
-
-struct gds_Value *
-interpret_float_hex(
-        struct gds_Parser * P,
-        const char * s ){
-    printf("XXX: treat \"%s\" as float constant in hexidecimal form.\n", s);
-    return 0;
-}
-
-/* string literal */
-
-struct gds_Value *
-memorize_string_literal(
-        struct gds_Parser * P,
-        const char * s ){
-    printf("XXX: treat \"%s\" as string literal of length %zd.\n",
-            s, strlen(s) );
-    return 0;
-}
-
-/*
  * Math function
  */
 
@@ -193,7 +43,7 @@ static const uint8_t
 struct gds_Function *
 gds_math_new_func_from_const(
         struct gds_Parser * P,
-        struct gds_Value * constVal ) {
+        struct gds_Literal * constVal ) {
     struct gds_Function * node = gds_parser_math_function_new(P);
 
     node->descriptor = gds_math_nodeNumeric;
@@ -205,7 +55,7 @@ gds_math_new_func_from_const(
 struct gds_Function *
 gds_math_new_func_from_locvar(
         struct gds_Parser * P,
-        struct gds_Value * locVar ) {
+        struct gds_Literal * locVar ) {
     struct gds_Function * node = gds_parser_math_function_new(P);
 
     node->descriptor = gds_math_nodeLocVar;
@@ -268,7 +118,7 @@ struct GDS_expr *
 declare_named_constant(
         struct gds_Parser * P,
         const char * idName,
-        struct gds_Value * val ) {
+        struct gds_Literal * val ) {
     printf("XXX: memorize manifest named \"%s\" with expression.\n",
             idName);
     return 0;
@@ -334,11 +184,11 @@ gds_parser_replicate_token(
     return currentReplicaBegin;
 }
 
-struct gds_Value *
+struct gds_Literal *
 gds_new_empty_value( struct gds_Parser * P ) {
     /* TODO use kind of pool here. */
-     struct gds_Value * vPtr = malloc( sizeof(struct gds_Value) );
-     bzero( vPtr, sizeof(struct gds_Value) );
+     struct gds_Literal * vPtr = malloc( sizeof(struct gds_Literal) );
+     bzero( vPtr, sizeof(struct gds_Literal) );
      return vPtr;
 }
 
