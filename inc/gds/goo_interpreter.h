@@ -53,6 +53,13 @@ struct gds_Module;
  * Parser object C-wrapper.
  */
 
+# define for_all_parser_stacked_pools(m)    \
+    m( ArgList,     16          )
+
+# define for_all_parser_owned_pools(m)      \
+    m( Literal,     256*1024    )           \
+    m( Function,    256*1024    )
+
 struct gds_Parser {
     /* YACC/FLEX section {{{ */
     void * scanner;
@@ -71,8 +78,27 @@ struct gds_Parser {
       * cScope;
     char * strLitBuffer,
          * strLitBufferC;
-    /* ... */
+
+    # define declare_pool(typeName, size)       \
+    struct Pool_ ## typeName {                  \
+        struct gds_ ## typeName instns[size];   \
+        uint32_t current;                       \
+    } pool_ ## typeName;
+    for_all_parser_stacked_pools(declare_pool)
+    for_all_parser_owned_pools(declare_pool)
+    # undef declare_pool
 };
+
+# define declare_pool_acq_routines(typeName, size)                             \
+struct gds_ ## typeName * gds_parser_new_  ## typeName( struct gds_Parser * );
+for_all_parser_stacked_pools(declare_pool_acq_routines)
+for_all_parser_owned_pools(declare_pool_acq_routines)
+# undef declare_pool_acq_routines
+
+# define declare_pool_free_routines(typeName, size)                            \
+void gds_parser_free_ ## typeName( struct gds_Parser * );
+for_all_parser_stacked_pools(declare_pool_free_routines)
+# undef declare_pool_free_routines
 
 /** Sets current filename. Should be called before lexical analysis (yylex()). */
 void gds_parser_set_filename( struct gds_Parser *,

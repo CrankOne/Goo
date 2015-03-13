@@ -5,6 +5,8 @@
 # include "goo_config.h"
 # include "goo_types.h"
 
+# ifdef ENABLE_GDS
+
 /**@file goo_literals.h
  * @brief File contains general parser state machine routines.
  *
@@ -33,7 +35,7 @@ struct gds_Literal {
         cname gdsname ## Val;
         for_all_atomic_datatypes(declare_datfield)
         # undef declare_datfield
-        uint8_t logicValPtr;
+        uint8_t logicVal;
         char * stringValPtr;
         void * structValPtr;
     } data;
@@ -64,13 +66,23 @@ struct gds_Literal * interpret_float_hex(
     const char * );
 
 struct gds_Literal *
-memorize_string_literal(
+interpret_string_literal(
         struct gds_Parser * P,
         const char * s );
+
+struct gds_Literal *
+interpret_logic_true(
+        struct gds_Parser * P );
+struct gds_Literal *
+interpret_logic_false(
+        struct gds_Parser * P );
+
 
 # ifdef __cplusplus
 }
 # endif /* __cplusplus */
+
+# endif  /* ENABLE_GDS */
 
 # endif  /* H_GOO_GDS_LITERALS_H */
 

@@ -1,5 +1,9 @@
 # include <stdio.h>
-# include "gds/goo_literals.h"
+# include <stdlib.h>
+# include <string.h>
+# include "gds/goo_interpreter.h"
+
+# ifdef ENABLE_GDS
 
 /*
  * Constant values
@@ -77,7 +81,7 @@ interpret_dec_integral(
      *  1) Check truncation errors here (strtoi has special behaviour);
      *  2) Check extra symbols on tail and warn, if they're invalid.
      */
-    struct gds_Literal * v = gds_new_empty_value(P);
+    struct gds_Literal * v = gds_parser_new_Literal(P);
     uint8_t typemod = integral_parse_typemod_postfix( s );
     char * endCPtr;
     if( typemod & 0x2 ) {
@@ -95,7 +99,7 @@ interpret_dec_integral(
             # else
             char bf[64];
             snprintf(bf, 64, "\"%s\" -- 128-bit integer is unsupported", s );
-            gds_error(P, bf );
+            gds_error( P, bf );
             # endif
         } else {
             if( typemod & 0x1 ) {
@@ -143,11 +147,29 @@ interpret_float_hex(
 /* string literal */
 
 struct gds_Literal *
-memorize_string_literal(
+interpret_string_literal(
         struct gds_Parser * P,
         const char * s ){
     printf("XXX: treat \"%s\" as string literal of length %zd.\n",
             s, strlen(s) );
     return 0;
 }
+
+struct gds_Literal *
+interpret_logic_true( struct gds_Parser * P ) {
+    struct gds_Literal * v = gds_parser_new_Literal(P);
+    v->typecode = logic_CT;
+    v->data.logicVal = 0xff;
+    return v;
+}
+
+struct gds_Literal *
+interpret_logic_false( struct gds_Parser * P ) {
+    struct gds_Literal * v = gds_parser_new_Literal(P);
+    v->typecode = logic_CT;
+    v->data.logicVal = 0x0;
+    return v;
+}
+
+# endif  /* ENABLE_GDS */
 

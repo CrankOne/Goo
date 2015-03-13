@@ -120,7 +120,7 @@ GDSInterpreterApplication::_V_run() {
                       << std::endl;
         }
     }
-    struct GDS_Parser * P = gds_parser_new();
+    struct gds_Parser * P = gds_parser_new();
     try {
         if( _static_gdsiConf.files.empty() ) {
             // TODO: readline, eval_string(P, line)

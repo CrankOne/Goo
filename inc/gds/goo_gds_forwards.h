@@ -14,11 +14,6 @@ struct gds_Formula;
 /** Creates a copy of token string using internal static memory pool. */
 char * gds_parser_replicate_token( struct gds_Parser *, const char * );
 
-/** Creates a new parsed literal structure internal static memory pool. */
-struct gds_Literal * gds_new_empty_value( struct gds_Parser * );
-
-
-
 /* Re-inits string literal buffer. */
 void gds_parser_str_lit( struct gds_Parser *, const char * );
 
@@ -41,11 +36,11 @@ struct gds_Function * gds_parser_math_function_new( struct gds_Parser * );
 extern "C" {
 # endif
 
-void gds_parser_raise_error(
+void gds_error(
         struct gds_Parser * P,
         const char * details );
 
-void gds_parser_warning(
+void gds_warn(
         struct gds_Parser * P,
         const char * details );
 

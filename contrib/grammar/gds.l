@@ -88,6 +88,8 @@ void gds_warn( struct gds_Parser * P, const char * det );
 {HP}{H}+"."{P}{FS}?			        { MEMTOKEN(TF_HEX); }
 
 
+    /* MULTILINE STRING LITERALS */
+
 {SP}?{TQ}                           { yy_push_state(STRING_LIT, yyscanner);
                                       gds_parser_str_lit( yyget_extra(yyscanner), yytext );
                                     }
@@ -101,12 +103,17 @@ void gds_warn( struct gds_Parser * P, const char * det );
 
 ({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { MEMTOKEN(T_STRING_LITERAL); }
 
+    /* IDENTIFIERS */
+
 {L}{A}*					            {   yyget_lval( yyscanner )->strval =
                                             gds_parser_replicate_token( yyget_extra(yyscanner), yytext );
                                         return lookup_symbol(yyget_extra(yyscanner), yytext, 0); }
 
+    /* SIMPLE GRAMMAR TERMINALS */
+
 ";"                                 { gds_parser_free_buffer( yyget_extra(yyscanner) );
                                       return ';'; }
+"<-"                                { return P_INJECTION; }
 "|-"                                { return P_PIECEWISE_ELIF; }
 "^-"                                { return P_PIECEWISE_FINALY; }
 ":"                                 { return ':'; }
