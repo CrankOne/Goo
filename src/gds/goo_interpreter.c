@@ -56,6 +56,19 @@ gds_parser_new() {
     pObj->strLitBuffer = pObj->strLitBufferC = malloc(GDS_PARSER_STRING_BUF_LEN);
     bzero(pObj->strLitBuffer, GDS_PARSER_STRING_BUF_LEN);
 
+    /* Zero all pools */
+    # define zero_pool(typeName, size) \
+    bzero( pObj->pool_ ## typeName . instns , sizeof( struct gds_ ## typeName )*size ); \
+    pObj->pool_ ## typeName . current = 0;
+    for_all_parser_stacked_pools(zero_pool)
+    for_all_parser_owned_pools(zero_pool)
+    # undef zero_pool
+
+    /* Init current scope */
+    pObj->currentScope.functions = gds_hashtable_new();
+    pObj->currentScope.variables = gds_hashtable_new();
+    pObj->modules = gds_hashtable_new();
+
     return pObj;
 }
 

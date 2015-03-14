@@ -46,8 +46,36 @@
 extern "C" {
 # endif /* __cplusplus */
 
-struct gds_Hashtable;
-struct gds_Module;
+/**@struct gds_Hashtable
+ * @brief A GDS hash table -- string-indexed dictionary of arbitrary data.
+ *
+ * Interpreted internally as C++ STL unordered map.
+ */
+typedef void * gds_Hashtable;
+
+/** Allocates new hash table object. */
+gds_Hashtable gds_hashtable_new();
+/** Deletes allocated hash table object. */
+void gds_hashtable_free(        gds_Hashtable );
+/** Inserts new named data entry into hash table. */
+void gds_hashtable_insert(      gds_Hashtable, const char *, void * );
+/** Returns data associated with string key. NULL if not found. */
+void * gds_hashtable_search(    gds_Hashtable, const char * );
+/** Erases element by key. Raises `noSuchKey` if key is not found. */
+void gds_hashtable_erase(       gds_Hashtable, const char * );
+
+/**@struct gds_Module
+ * @brief Represents a loaded module scope with all its symbols.
+ *
+ * Module can be presented as shared libraries or as preloaded GDS
+ * scripts.
+ */
+
+struct gds_Module {
+    char * name;
+    gds_Hashtable functions,
+                  variables;
+};
 
 /*
  * Parser object C-wrapper.
@@ -87,6 +115,9 @@ struct gds_Parser {
     for_all_parser_stacked_pools(declare_pool)
     for_all_parser_owned_pools(declare_pool)
     # undef declare_pool
+
+    gds_Hashtable modules;
+    struct gds_Module currentScope;
 };
 
 # define declare_pool_acq_routines(typeName, size)                             \

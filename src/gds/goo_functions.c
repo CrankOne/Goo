@@ -11,7 +11,8 @@
 # define for_all_gds_math_node_descriptor_postfix( m )  \
     m( gds_math_nodeNumeric,    0x2 )                   \
     m( gds_math_nodeLocVar,     0x1 )                   \
-    m( gds_math_nodeMathOp,     0x3 )
+    m( gds_math_nodeMathOp,     0x3 )                   \
+    m( gds_math_uDefinedFunc,   0xc0 )
 
 # define for_all_gds_math_node_masks( m )           \
     m( gds_math_nodeTypeMask,   0x3  )              \
@@ -39,14 +40,20 @@ static const uint8_t
 void gds_math_function_init(
         struct gds_Parser * P,
         struct gds_Function * f,
+        struct gds_Function * body,
         const char * name,
         struct gds_ArgList * arglist) {
-    /* TODO: append symbol table */
     printf( "XXX: new function \"%s\" at %p on parser %p with args %p\n",
             name,
             f,
             P,
             arglist);
+    f->descriptor = gds_math_uDefinedFunc;
+    f->content.asFunction.f = body; /* can be NULL */
+    f->content.asFunction.arglist = arglist;
+    gds_hashtable_insert( P->currentScope.functions,
+                          name,
+                          f );
 }
 
 struct gds_Function *
@@ -64,12 +71,12 @@ gds_math_new_func_from_const(
 struct gds_Function *
 gds_math_new_func_from_locvar(
         struct gds_Parser * P,
-        const char * locVar ) {
+        const char * locVarName ) {
     struct gds_Function * node = gds_parser_new_Function(P);
 
     node->descriptor = gds_math_nodeLocVar;
-    node->content.asLocalVariable.orderNum = 1 /* TODO: acquire locvar name */ ;
-    fprintf( stderr, "Locvar acquizition is unimplemented yet. Setting to $1.\n" );
+    node->content.asLocalVariable.orderNum = 0xff ;
+    node->content.asLocalVariable.name = locVarName;
 
     return node;
 }
@@ -113,6 +120,51 @@ gds_math_negotiate(
     node->content.asMathOperation.l = o;
     node->content.asMathOperation.r = NULL;
     return node;
+}
+
+static void _static_print_out_math_expr_graph(
+            struct gds_Parser * P,
+            struct gds_Function * f ) {
+    uint8_t typePart = gds_math_nodeTypeMask & f->descriptor;
+    if( typePart == gds_math_nodeNumeric ) {
+        printf( "%p -- numeric node %p\n", f, f->content.asValue );
+    } else if( typePart == gds_math_nodeLocVar ) {
+        printf( "%p -- locvar node \"%s\"\n", f, f->content.asLocalVariable.name );
+    } else if( typePart == gds_math_nodeMathOp ) {
+        printf( "%p -- math op node ", f );
+        uint8_t mathOpPart = (gds_math_nodeTypeMask | gds_math_nodeMathOpMask) & f->descriptor;
+        switch( mathOpPart ) {
+        # define case_( name, code, glyph ) \
+            case code : {                   \
+                printf( "%c: %p %p\n",      \
+                        glyph,              \
+                        f->content.asMathOperation.l,  \
+                        f->content.asMathOperation.r); \
+                _static_print_out_math_expr_graph( P, f->content.asMathOperation.l ); \
+                _static_print_out_math_expr_graph( P, f->content.asMathOperation.r ); \
+            } break;
+        for_all_gds_binary_math_operators(case_);
+        # undef case_
+        default: {
+            gds_error(P, "logic error #2");
+        }
+    }; /* switch( mathOpPart ) */
+    } else {
+        gds_error( P, "logic error #1." );
+    }
+}
+
+void gds_math_function_resolve(
+        struct gds_Parser * P,
+        struct gds_Function * f) {
+    struct gds_ArgList * c = f->content.asFunction.arglist;
+    printf( "Function %p of parser %p is ready to be resolved:\n", f, P );
+    printf( "    - arglist %p:\n", c );
+    if( c->identifier ) do {
+        printf( "        %s\n", c->identifier );
+        c = c->next;
+    } while( c );
+    _static_print_out_math_expr_graph( P, f->content.asFunction.f );
 }
 
 # endif  /* ENABLE_GDS */

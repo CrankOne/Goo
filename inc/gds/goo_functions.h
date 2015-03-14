@@ -60,14 +60,18 @@ struct gds_ArgList * gds_math_append_arglist(
  *          - dot (dot product)             xx10 0011
  *        * Unary:
  *          - unary negotiation             xx01 1111
+ *      node is a GDS-math function         1100 0000
+ *      node is a third-party math function 1000 0000
  *  Where bits tagged as 'x' is unused and can be undefined.
  * */
 struct gds_Function {
     uint8_t descriptor;
     union {
-        /* Node is a local variable */
+        /* Node is a local variable.
+         * Note: resolved only when function is fully constructed. */
         struct {
-            uint8_t orderNum;
+            uint8_t orderNum; /* is set to 0xff when not resolved */
+            const char * name; /* should be never used, when orderNum is resolved. */  
         } asLocalVariable;
         /* Node is numeric value */
         struct gds_Literal * asValue;
@@ -77,7 +81,6 @@ struct gds_Function {
         } asMathOperation;
         /* Node represents named function with symbol id and arguments */
         struct {
-            char * name;
             struct gds_Function * f;
             struct gds_ArgList * arglist;
         } asFunction;
@@ -107,9 +110,15 @@ struct gds_Function * gds_math_negotiate(
 
 void gds_math_function_init(
         struct gds_Parser *,
-        struct gds_Function *,
+        struct gds_Function *, /* function node itself */
+        struct gds_Function *, /* function root node */
         const char *,
         struct gds_ArgList *);
+
+/** Resolves all local variables inside a function and provides basic validation. */
+void gds_math_function_resolve(
+        struct gds_Parser *,
+        struct gds_Function *);
 
 # endif  /* ENABLE_GDS */
 

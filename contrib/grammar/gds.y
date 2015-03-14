@@ -73,16 +73,20 @@ gdsExpr     : vaLit                     { /*no_side_effects_warning(P);*/ }
 
 fDecl       : UNKNWN_SYM '(' fArgList ')'
                 { $$ = gds_parser_new_Function( P );
-                  gds_math_function_init( P, $$, $1, $3 );
+                  gds_math_function_init( P, $$, NULL, $1, $3 );
                 }
             ;
 
 fDef        : fDecl P_INJECTION mathExpr
-                { $1->content.asFunction.f = $3; $$ = $1; }
+                { $1->content.asFunction.f = $3;
+                  gds_math_function_resolve( P, $1 );
+                  $$ = $1; }
             ;
 
 fArgList    : /* empty */               
                 { struct gds_ArgList * al = gds_parser_new_ArgList(P);
+                  al->identifier = NULL;
+                  al->next = NULL;
                   $$ = al; }
             | UNKNWN_SYM
                 { struct gds_ArgList * al = gds_parser_new_ArgList(P);
@@ -92,7 +96,7 @@ fArgList    : /* empty */
             | fArgList ',' UNKNWN_SYM   { $$ = $1;
                                           $$->next = gds_parser_new_ArgList(P);
                                           $$->next->identifier = $3;
-                                        }
+                                          $$->next->next = NULL; }
             ;
 
 /*
@@ -100,13 +104,13 @@ fArgList    : /* empty */
  */
 
 mathExpr    : mathOprnd                 { $$ = $1; }
-            | mathExpr '+' mathExpr    { $$ = gds_math(P, '+', $1, $3); }
-            | mathExpr '-' mathExpr    { $$ = gds_math(P, '-', $1, $3); }
-            | mathExpr '*' mathExpr    { $$ = gds_math(P, '*', $1, $3); }
-            | mathExpr '/' mathExpr    { $$ = gds_math(P, '/', $1, $3); }
+            | mathExpr '+' mathExpr     { $$ = gds_math(P, '+', $1, $3); }
+            | mathExpr '-' mathExpr     { $$ = gds_math(P, '-', $1, $3); }
+            | mathExpr '*' mathExpr     { $$ = gds_math(P, '*', $1, $3); }
+            | mathExpr '/' mathExpr     { $$ = gds_math(P, '/', $1, $3); }
             | '-' mathExpr  %prec '*'   { $$ = gds_math_negotiate(P, $2); }
-            | mathExpr '^' mathExpr    { $$ = gds_math(P, '^', $1, $3); }
-            | mathExpr '%' mathExpr    { $$ = gds_math(P, '%', $1, $3); }
+            | mathExpr '^' mathExpr     { $$ = gds_math(P, '^', $1, $3); }
+            | mathExpr '%' mathExpr     { $$ = gds_math(P, '%', $1, $3); }
             | '(' mathExpr ')'          { $$ = $2; }
             ;
 
