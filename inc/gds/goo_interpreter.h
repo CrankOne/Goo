@@ -39,8 +39,9 @@
 
 # include "goo_gds_forwards.h"
 # include "goo_literals.h"
+# include "goo_variables.h"
 # include "goo_functions.h"
-/* ... */
+# include "goo_expressions.h"
 
 # ifdef __cplusplus
 extern "C" {
@@ -64,17 +65,31 @@ void * gds_hashtable_search(    gds_Hashtable, const char * );
 /** Erases element by key. Raises `noSuchKey` if key is not found. */
 void gds_hashtable_erase(       gds_Hashtable, const char * );
 
+/**@brief GDS type.
+ *
+ * A type abstraction. Types aren't a part of GDS actual semantics,
+ * but its instances can be treated as mathematical operands,
+ * string constants, or objects for further using in module's
+ * routines.
+ */
+struct gds_TypeID {
+    uint16_t descriptor;
+    void * typePtr;
+};
+
+/* TODO: type system. */
+
 /**@struct gds_Module
  * @brief Represents a loaded module scope with all its symbols.
  *
  * Module can be presented as shared libraries or as preloaded GDS
  * scripts.
  */
-
 struct gds_Module {
     char * name;
     gds_Hashtable functions,
-                  variables;
+                  variables,
+                  types;
 };
 
 /*
@@ -82,11 +97,14 @@ struct gds_Module {
  */
 
 # define for_all_parser_stacked_pools(m)    \
-    m( ArgList,     16          )
+    m( ArgList,     1024        )           \
+    m( VarList,     128*1024    )
 
 # define for_all_parser_owned_pools(m)      \
     m( Literal,     256*1024    )           \
-    m( Function,    256*1024    )
+    m( Function,    256*1024    )           \
+    m( Expr,        256*1024    )           \
+    m( ExprList,    1024        )
 
 struct gds_Parser {
     /* YACC/FLEX section {{{ */
@@ -141,6 +159,19 @@ struct gds_Parser * gds_parser_new();
 void gds_parser_destroy( struct gds_Parser * );
 /** Frees current parser tokens buffer. */
 void gds_parser_free_buffer( struct gds_Parser * );
+
+/*
+ * Symbol table routines.
+ */
+
+/** Sets current local variables dictionary to provided. */
+void gds_parser_push_locvar_arglist( struct gds_Parser *, struct gds_ArgList * );
+/** Denies current local variables dictionary and sets current to previous. */
+void gds_parser_pop_locvar_arglist( struct gds_Parser * P );
+/** Append this context's functions hash with given instance. */
+struct gds_Expr * gds_parser_math_function_declare( struct gds_Parser *, struct gds_Function * );
+/** Append this context's functions hash with given variable (any expression) instance. */
+struct gds_Expr * gds_parser_variables_declare( struct gds_Parser *, struct gds_VarList * );
 
 /*
  * Flex-related routines.

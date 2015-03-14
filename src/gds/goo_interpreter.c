@@ -131,5 +131,39 @@ gds_parser_opt_lstr_lit( struct gds_Parser * P ) {
     return P->strLitBuffer;
 }
 
+
+/*
+ * Symbol table routines.
+ */
+
+void
+gds_parser_pop_locvar_arglist(
+        struct gds_Parser * P ) {
+    /* TODO */
+}
+
+void
+gds_parser_push_locvar_arglist(
+        struct gds_Parser * P,
+        struct gds_ArgList * al ) {
+    /* TODO */
+}
+
+struct gds_Expr *
+gds_parser_math_function_declare(
+        struct gds_Parser * P,
+        struct gds_Function * f ) {
+    /* TODO */
+    return NULL;
+}
+
+struct gds_Expr *
+gds_parser_variables_declare(
+        struct gds_Parser * P,
+        struct gds_VarList * vl ) {
+    /* TODO */
+    return NULL;
+}
+
 # endif  /* ENABLE_GDS */
 

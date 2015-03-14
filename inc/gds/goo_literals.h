@@ -1,9 +1,9 @@
 # ifndef H_GOO_GDS_LITERALS_H
 # define H_GOO_GDS_LITERALS_H
 
-# include "gds/goo_gds_forwards.h"
 # include "goo_config.h"
 # include "goo_types.h"
+# include "gds/goo_gds_forwards.h"
 
 # ifdef ENABLE_GDS
 

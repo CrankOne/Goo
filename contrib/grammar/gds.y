@@ -23,10 +23,14 @@ void yyerror();
 
 %union {
                   const char * strval;
-            struct gds_Literal * value;
+          struct gds_Literal * value;
          struct gds_Function * func;
+           struct gds_TypeID * GTID;
+             struct gds_Expr * expr;
+
           struct gds_ArgList * argList;
-           struct GDS_locvar * locvar;
+          struct gds_VarList * varList;
+         struct gds_ExprList * exprList;
 }
 
 %token              T_TRUE      T_FALSE
@@ -41,9 +45,17 @@ void yyerror();
 %token              T_STRING_LITERAL UNKNWN_SYM
 %type<strval>       T_STRING_LITERAL UNKNWN_SYM
 
-%type<argList>      fArgList
+%token              TYPEID
+%type<GTID>         TYPEID
+
+
 %type<value>        logicCst numericCst vaLit integralCst floatCst;
 %type<func>         fDecl fDef mathExpr mathOprnd;
+%type<expr>         expr rvalExpr manifest
+
+%type<argList>      fArgList
+%type<varList>      varHead varDecl unknwSymLst
+%type<exprList>     varTail gdsExprLst
 
 %left '-' '+'
 %left '*' '/'
@@ -58,13 +70,59 @@ void yyerror();
  * Basic expression
  */
 
-gdsExprLst  : /* empty */               {}
-            | gdsExpr ';' gdsExprLst    {}
+gdsExprLst  : /* empty */               { $$ = gds_parser_new_ExprList(P);
+                                          $$->next = NULL;
+                                          $$->cexpr = NULL; }
+            | expr ';' gdsExprLst       { $3->next = gds_parser_new_ExprList(P);
+                                          $3->next->next = NULL;
+                                          $3->next->cexpr = $1;
+                                          $$ = $3; }
             ;
 
-gdsExpr     : vaLit                     { /*no_side_effects_warning(P);*/ }
-            | fDef                      { /* do nothing */ }
-            | mathExpr                  {}
+expr        : rvalExpr                  { $$ = $1; }
+            | manifest                  { $$ = $1; }
+            ;
+
+manifest    : fDef                      { $$ = gds_parser_math_function_declare( P, $1 ); }
+            | varDecl                   { $$ = gds_parser_variables_declare( P, $1 ); }
+            ;
+
+rvalExpr    : vaLit                     { $$ = $1; }
+            | mathExpr                  { $$ = $1; }
+            | '(' manifest ')'          { $$ = $2; }
+            ;
+
+/*
+ * Variables declaration
+ */
+
+varDecl     : varHead "=" varTail       { $$ = gds_variable_init_list(P, $1, $3); }
+            ;
+
+varHead     : TYPEID unknwSymLst        {$$ = gds_variable_spec_type_for(P, $2, $1);}
+            | unknwSymLst               {$$ = $1;}
+            ;
+
+unknwSymLst : UNKNWN_SYM
+                { $$ = gds_parser_new_VarList(P);
+                  $$->identifier = $1;
+                  $$->next = NULL; }
+            | unknwSymLst ',' UNKNWN_SYM
+                { $1->next = gds_parser_new_VarList(P);
+                  $1->next->identifier = $3;
+                  $1->next->next = NULL;
+                  $$ = $1; }
+            ;
+
+varTail     : rvalExpr
+                { $$ = gds_parser_new_ExprList(P);
+                  $$->cexpr = $1;
+                  $$->next = NULL; }
+            | varTail ',' rvalExpr
+                { $$ = $1;
+                  $$->next = gds_parser_new_ExprList(P);
+                  $$->next->cexpr = $3;
+                  $$->next->next = NULL; }
             ;
 
 /*
@@ -74,12 +132,14 @@ gdsExpr     : vaLit                     { /*no_side_effects_warning(P);*/ }
 fDecl       : UNKNWN_SYM '(' fArgList ')'
                 { $$ = gds_parser_new_Function( P );
                   gds_math_function_init( P, $$, NULL, $1, $3 );
+                  gds_parser_push_locvar_arglist( P, $3 );
                 }
             ;
 
 fDef        : fDecl P_INJECTION mathExpr
                 { $1->content.asFunction.f = $3;
                   gds_math_function_resolve( P, $1 );
+                  gds_parser_pop_locvar_arglist( P );
                   $$ = $1; }
             ;
 
@@ -115,7 +175,7 @@ mathExpr    : mathOprnd                 { $$ = $1; }
             ;
 
 mathOprnd   : numericCst                { $$ = gds_math_new_func_from_const(  P, $1 ); }
-            | UNKNWN_SYM                { $$ = gds_math_new_func_from_locvar( P, $1 ); }
+            /*TODO| UNKNWN_SYM                { $$ = gds_math_new_func_from_locvar( P, $1 ); }*/
             ;
 
 /*
