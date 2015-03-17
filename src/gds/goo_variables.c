@@ -11,7 +11,7 @@ gds_variable_spec_type_for(
     return NULL;
 }
 
-struct gds_Expr *
+struct gds_VarList *
 gds_variable_init_list(
         struct gds_Parser * P,
         struct gds_VarList * vl,

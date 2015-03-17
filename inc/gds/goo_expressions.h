@@ -19,6 +19,9 @@ struct gds_ExprList {
     struct gds_ExprList * next;
 };
 
+struct gds_Expr * gds_expression_from_literal( struct gds_Literal * );
+struct gds_Expr * gds_expression_from_math_expr( struct gds_Function * );
+
 # endif  /* ENABLE_GDS */
 
 # endif  /* H_GOO_GDS_EXPRESSIONS_H */

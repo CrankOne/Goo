@@ -17,7 +17,7 @@ struct gds_VarList * gds_variable_spec_type_for(
     struct gds_TypeID *,
     struct gds_VarList * );
 
-struct gds_Expr * gds_variable_init_list(
+struct gds_VarList * gds_variable_init_list(
     struct gds_Parser *,
     struct gds_VarList *,
     struct gds_ExprList *

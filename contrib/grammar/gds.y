@@ -27,6 +27,7 @@ void yyerror();
          struct gds_Function * func;
            struct gds_TypeID * GTID;
              struct gds_Expr * expr;
+           struct gds_Module * module;
 
           struct gds_ArgList * argList;
           struct gds_VarList * varList;
@@ -45,12 +46,14 @@ void yyerror();
 %token              T_STRING_LITERAL UNKNWN_SYM
 %type<strval>       T_STRING_LITERAL UNKNWN_SYM
 
-%token              TYPEID
+%token              TYPEID DCLRD_FUN DCLRD_VAR DCLRD_MDLE
+
+
 %type<GTID>         TYPEID
+%type<module>       DCLRD_MDLE
 
-
-%type<value>        logicCst numericCst vaLit integralCst floatCst;
-%type<func>         fDecl fDef mathExpr mathOprnd;
+%type<value>        DCLRD_VAR logicCst numericCst vaLit integralCst floatCst;
+%type<func>         DCLRD_FUN fDecl fDef mathExpr mathOprnd;
 %type<expr>         expr rvalExpr manifest
 
 %type<argList>      fArgList
@@ -87,8 +90,8 @@ manifest    : fDef                      { $$ = gds_parser_math_function_declare(
             | varDecl                   { $$ = gds_parser_variables_declare( P, $1 ); }
             ;
 
-rvalExpr    : vaLit                     { $$ = $1; }
-            | mathExpr                  { $$ = $1; }
+rvalExpr    : vaLit                     { $$ = gds_expression_from_literal( $1 ); }
+            | mathExpr                  { $$ = gds_expression_from_math_expr( $1 ); }
             | '(' manifest ')'          { $$ = $2; }
             ;
 
@@ -99,7 +102,7 @@ rvalExpr    : vaLit                     { $$ = $1; }
 varDecl     : varHead "=" varTail       { $$ = gds_variable_init_list(P, $1, $3); }
             ;
 
-varHead     : TYPEID unknwSymLst        {$$ = gds_variable_spec_type_for(P, $2, $1);}
+varHead     : TYPEID unknwSymLst        {$$ = gds_variable_spec_type_for(P, $1, $2);}
             | unknwSymLst               {$$ = $1;}
             ;
 

@@ -89,7 +89,8 @@ struct gds_Module {
     char * name;
     gds_Hashtable functions,
                   variables,
-                  types;
+                  types,
+                  submodules;
 };
 
 /*
@@ -134,8 +135,7 @@ struct gds_Parser {
     for_all_parser_owned_pools(declare_pool)
     # undef declare_pool
 
-    gds_Hashtable modules;
-    struct gds_Module currentScope;
+    struct gds_Module thisModule;
 };
 
 # define declare_pool_acq_routines(typeName, size)                             \
@@ -163,6 +163,23 @@ void gds_parser_free_buffer( struct gds_Parser * );
 /*
  * Symbol table routines.
  */
+
+/** Tries to resolve given identifier in module.
+ *
+ * @param[in] context       module to search in.
+ * @param[in] identifier    key to search for.
+ * @param[out] resut        will be set to 0, when identifier isn't found!
+ *
+ * @returns search result.
+ * @retval  0 -- nothing found
+ * @retval  1 -- submodule
+ * @retval  2 -- variable
+ * @retval  4 -- function
+ * @retval  8 -- type
+ */
+int8_t gds_parser_module_resolve_symbol( struct gds_Module * context,
+                                         const char * identifier,
+                                         void ** result );
 
 /** Sets current local variables dictionary to provided. */
 void gds_parser_push_locvar_arglist( struct gds_Parser *, struct gds_ArgList * );

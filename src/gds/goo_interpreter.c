@@ -65,9 +65,10 @@ gds_parser_new() {
     # undef zero_pool
 
     /* Init current scope */
-    pObj->currentScope.functions = gds_hashtable_new();
-    pObj->currentScope.variables = gds_hashtable_new();
-    pObj->modules = gds_hashtable_new();
+    pObj->thisModule.types = gds_hashtable_new();
+    pObj->thisModule.functions = gds_hashtable_new();
+    pObj->thisModule.variables = gds_hashtable_new();
+    pObj->thisModule.submodules = gds_hashtable_new();
 
     return pObj;
 }
@@ -135,6 +136,37 @@ gds_parser_opt_lstr_lit( struct gds_Parser * P ) {
 /*
  * Symbol table routines.
  */
+
+int8_t
+gds_parser_module_resolve_symbol( struct gds_Module * ctx,
+                                         const char * key,
+                                         void ** result ) {
+    {/* 1) try to resolve symbol as type here. */
+        *result = gds_hashtable_search( ctx->types, key );
+        if( *result ) {
+            return 0x8;
+        }
+    }
+    {/* 2) try to resolve symbol as function here. */
+        *result = gds_hashtable_search( ctx->functions, key );
+        if( *result ) {
+            return 0x4;
+        }
+    }
+    {/* 3) try to resolve symbol as variable here. */
+        *result = gds_hashtable_search( ctx->variables, key );
+        if( *result ) {
+            return 0x2;
+        }
+    }
+    {/* 4) try to resolve symbol as module here. */
+        *result = gds_hashtable_search( ctx->submodules, key );
+        if( *result ) {
+            return 0x1;
+        }
+    }
+    return 0x0;
+}
 
 void
 gds_parser_pop_locvar_arglist(

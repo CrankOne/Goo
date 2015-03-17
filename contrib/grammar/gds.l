@@ -53,7 +53,7 @@ TQ  \"{3}
 int comment(yyscan_t scanner);
 int yyparse(struct gds_Parser * P);
 void yyerror( struct YYLTYPE * locp, struct gds_Parser * P, const char * msg );
-int lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE * );
+int lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE ** );
 
 void gds_error( struct gds_Parser * P, const char * det );
 void gds_warn( struct gds_Parser * P, const char * det );
@@ -105,9 +105,14 @@ void gds_warn( struct gds_Parser * P, const char * det );
 
     /* IDENTIFIERS */
 
-{L}{A}*					            {   yyget_lval( yyscanner )->strval =
+(({L}{A}{0,127})::)*{L}{A}{0,127}   {   int rt;
+                                        yyget_lval( yyscanner )->strval =
                                             gds_parser_replicate_token( yyget_extra(yyscanner), yytext );
-                                        return lookup_symbol(yyget_extra(yyscanner), yytext, 0); }
+                                        YYSTYPE * flval;
+                                        rt = lookup_symbol(yyget_extra(yyscanner), yytext, &flval);
+                                        yyset_lval( flval, yyscanner );
+                                        return rt;
+                                    }
 
     /* SIMPLE GRAMMAR TERMINALS */
 
@@ -149,11 +154,94 @@ void gds_warn( struct gds_Parser * P, const char * det );
  * Symbol lookup routine.
  */
 
+/**@function lookup_symbol
+ * @brief Provides search among current session hashtables.
+ *
+ * This routine resolves named identifier in current context, sets the
+ * appropriate YYSTYPE's lval union field and returns terminal code.
+ * When symbol isn't found, lval stays unchanged.
+ *
+ * @param[in] P         current parser (context)
+ * @param[in] sym       C-string containing null-teminated identifier str.
+ * @param[out] lval     Scanner's lval instance to be affilated with.
+ * @returns appropriate terminal code, or UNKNWN_SYM, if no symbols found. 
+ */
 int
-lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE * yyst ) {
-    /* TODO: we need here to provide mechanism for returning found
-     *       symbol address. */
+lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE ** lval ) {
+    # if 0
+    int8_t rt = 0;
+    const char * c = sym;
+    char   cSymName[128] = {'\0'},
+         * cDest;
+
+    struct gds_Module * cModule = &(P->thisModule);
+
+    do {
+        for( cDest = cSymName;
+             '\0' != *c;
+             c++ ) {
+            if( ':' == *c && ':' == *(++c) ) {
+                *(++cDest) = '\0';
+                printf( " - \"%s\" /\n", cSymName );
+                break;
+            }
+            *(cDest++) = *c;
+        }
+        {  /* Try to resolve symbol as function, variable, or submodule.
+            * All non-module names aren't allowed here, the point is
+            * to figure out shadowing naming.
+            */
+            void * result;
+            rt = gds_parser_module_resolve_symbol( cModule,
+                                                   cSymName,
+                                                  &result );
+            if( rt > 0x1 && &(P->thisModule) != cModule ) {
+                /* Here, we aren't in current module's context and we got
+                 * an unkown symbol, that means something goes wrong.
+                 */
+                char bf[2560];
+                if( rt > 0x1 ) {
+                    snprintf(bf, 2560, "Symbol \"%s\" in identifier \"%s\" refers to non-module.",
+                             cSymName, sym);
+                    gds_error(P, bf);
+                } else if( !rt ) {
+                    snprintf(bf, 2560, "Identifier \"%s\" can not be resolved due to unkown symbol \"%s\".",
+                             sym, cSymName);
+                    gds_error(P, bf);
+                }
+            }
+        }
+    } while( '\0' != *c );
+    void * result;
+    rt = gds_parser_module_resolve_symbol(
+                 cModule,
+                 cSymName,
+                &result );
+    switch( rt ) {
+        case 0x8 : { /* type */
+            (*lval)->GTID = result;
+            return TYPEID;
+        } break;
+        case 0x4 : { /* function */
+            (*lval)->func = result;
+            return DCLRD_FUN;
+        } break;
+        case 0x2 : { /* variable */
+            (*lval)->value = result;
+            return DCLRD_VAR;
+        } break;
+        case 0x1 : { /* submodule */
+            (*lval)->module = result;
+            return DCLRD_MDLE;
+        } break;
+        case 0:
+        default: { /* Symbol isn't known */
+            return UNKNWN_SYM;
+        }
+    };
+    # else
     return UNKNWN_SYM;
+    # endif
 }
 
 /*
