@@ -92,7 +92,7 @@ char *
 gds_parser_replicate_token(
         struct gds_Parser * P,
         const char * token ) {
-    printf(">%s< %p\n", token, P);  /* XXX */
+    /*printf(">%s< %p\n", token, P); XXX */
 
     char * currentReplicaBegin = P->cScope->lastReplica;
     const char * c;
@@ -142,6 +142,7 @@ int8_t
 gds_parser_module_resolve_symbol( struct gds_Module * ctx,
                                          const char * key,
                                          void ** result ) {
+    /*printf( "!!!XXX: resolving \"%s\".\n", key );*/
     {/* 1) try to resolve symbol as type here. */
         *result = gds_hashtable_search( ctx->types, key );
         if( *result ) {
@@ -151,6 +152,7 @@ gds_parser_module_resolve_symbol( struct gds_Module * ctx,
     {/* 2) try to resolve symbol as function here. */
         *result = gds_hashtable_search( ctx->functions, key );
         if( *result ) {
+            printf( "SYMTABLE: resolved as a function \"%s\".\n", key );
             return 0x4;
         }
     }
@@ -197,20 +199,17 @@ gds_parser_pop_locvar_arglist(
     }
 }
 
-struct gds_Expr *
-gds_parser_math_function_declare(
+struct gds_Function *
+gds_parser_deepcopy_function(
         struct gds_Parser * P,
         struct gds_Function * f ) {
-    /* TODO */
-    return NULL;
-}
-
-struct gds_Expr *
-gds_parser_variables_declare(
-        struct gds_Parser * P,
-        struct gds_VarList * vl ) {
-    /* TODO */
-    return NULL;
+    struct gds_Function * copiedF = 
+        gds_function_heapcopy( f );
+    gds_hashtable_replace( P->thisModule.functions,
+                          f->content.asFunction.name,
+                          copiedF );
+    free( f->content.asFunction.name );
+    return copiedF;
 }
 
 # endif  /* ENABLE_GDS */

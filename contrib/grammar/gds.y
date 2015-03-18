@@ -64,6 +64,7 @@ void yyerror();
 %type<exprList>     varTail gdsExprLst
 
 %left '-' '+'
+%left '.'
 %left '*' '/'
 /*TODO: %precedence NEG   /* negation--unary minus */
 %right '^' '%'       /* exponentiation */
@@ -89,13 +90,18 @@ expr        : rvalExpr                  { $$ = $1; }
             | manifest                  { $$ = $1; }
             ;
 
-manifest    : fDef                      { $$ = gds_parser_math_function_declare( P, $1 ); }
-            | varDecl                   { $$ = gds_parser_variables_declare( P, $1 ); }
+manifest    : fDef                      { $$ = gds_expr_from_func_decl( P, $1 ); }
+            | varDecl                   { $$ = gds_expr_from_var_decls( P, $1 ); }
             ;
 
 rvalExpr    : vaLit                     { $$ = gds_expression_from_literal( $1 ); }
             | mathExpr                  { $$ = gds_expression_from_math_expr( $1 ); }
             | '(' manifest ')'          { $$ = $2; }
+            | funcRfrnc                 { /*TODO*/ }
+            ;
+
+rvalExprLst : rvalExpr                  { /*TODO*/ }
+            | rvalExpr ',' rvalExprLst  { /*TODO*/ }
             ;
 
 /*
@@ -144,8 +150,8 @@ fDecl       : UNKNWN_SYM '(' fArgList ')'
 
 fDef        : fDecl P_INJECTION mathExpr
                 { $1->content.asFunction.f = $3;
-                  gds_math_function_resolve( P, $1 );
                   gds_parser_pop_locvar_arglist( P );
+                  gds_parser_deepcopy_function( P, $1 );
                   $$ = $1; }
             ;
 
@@ -165,6 +171,12 @@ fArgList    : /* empty */
                                           $$->next->next = NULL; }
             ;
 
+funcRfrnc   : DCLRD_FUN '(' ')'
+                { /*TODO*/ }
+            | DCLRD_FUN '(' rvalExprLst ')'
+                { /*TODO*/ }
+            ;
+
 /*
  * Binary arithmetical operations for numericals
  */
@@ -172,6 +184,7 @@ fArgList    : /* empty */
 mathExpr    : mathOprnd                 { $$ = $1; }
             | mathExpr '+' mathExpr     { $$ = gds_math(P, '+', $1, $3); }
             | mathExpr '-' mathExpr     { $$ = gds_math(P, '-', $1, $3); }
+            | mathExpr '.' mathExpr     { /* TODO */ }
             | mathExpr '*' mathExpr     { $$ = gds_math(P, '*', $1, $3); }
             | mathExpr '/' mathExpr     { $$ = gds_math(P, '/', $1, $3); }
             | '-' mathExpr  %prec '*'   { $$ = gds_math_negotiate(P, $2); }

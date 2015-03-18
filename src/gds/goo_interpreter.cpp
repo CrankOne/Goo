@@ -28,9 +28,25 @@ void gds_hashtable_insert(      gds_Hashtable hs_,
     auto hs = reinterpret_cast<HT *>(hs_);
     if( hs->end() != hs->find(key) ) {
         emraise( nonUniq,
-                 "Key is not unique \"%s\".",
+                 "Identifier already known: \"%s\".",
                  key );
     }
+    (*hs)[key] = data;
+}
+
+void
+gds_hashtable_replace(      gds_Hashtable hs_,
+                            const char * key,
+                            void * data  ) {
+    assert( data );
+    assert( hs_ );
+    auto hs = reinterpret_cast<HT *>(hs_);
+    if( hs->end() == hs->find(key) ) {
+        emraise( nonUniq,
+                 "Identifier is not known and can't be replaced: \"%s\".",
+                 key );
+    }
+    (*hs)[key] = data;
 }
 
 void * gds_hashtable_search(    gds_Hashtable hs_,

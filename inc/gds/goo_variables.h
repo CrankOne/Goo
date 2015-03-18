@@ -23,6 +23,8 @@ struct gds_VarList * gds_variable_init_list(
     struct gds_ExprList *
     );
 
+struct gds_Expr * gds_expr_from_var_decls( struct gds_Parser * P, struct gds_VarList * vl );
+
 # endif  /* ENABLE_GDS */
 
 # endif  /* H_GOO_GDS_VARIABLES_H */

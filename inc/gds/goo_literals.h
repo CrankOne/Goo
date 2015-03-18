@@ -78,6 +78,12 @@ interpret_logic_false(
         struct gds_Parser * P );
 
 
+struct gds_Literal *
+gds_literal_heapcopy( struct gds_Literal * );
+void
+gds_literal_heapfree( struct gds_Literal * );
+
+
 # ifdef __cplusplus
 }
 # endif /* __cplusplus */

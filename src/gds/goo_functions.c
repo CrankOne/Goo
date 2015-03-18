@@ -1,6 +1,8 @@
 # include "gds/goo_functions.h"
 # include "gds/goo_interpreter.h"
 # include <stdio.h>
+# include <stdlib.h>
+# include <string.h>
 
 # ifdef ENABLE_GDS
 
@@ -43,14 +45,17 @@ void gds_math_function_init(
         struct gds_Function * body,
         const char * name,
         struct gds_ArgList * arglist) {
+    /*
     printf( "XXX: new function \"%s\" at %p on parser %p with args %p\n",
             name,
             f,
             P,
             arglist);
+    */
     f->descriptor = gds_math_uDefinedFunc;
     f->content.asFunction.f = body; /* can be NULL */
     f->content.asFunction.arglist = arglist;
+    f->content.asFunction.name = strdup(name);
     gds_hashtable_insert( P->thisModule.functions,
                           name,
                           f );
@@ -102,11 +107,13 @@ gds_math(
                     opType );
         }
     }; /* switch( opType ) */
+    /*
     printf( "XXX New math operation 0x%0x(%c) at %p: %p %p.\n",
             node->descriptor,
             opType,
             node,
             l, r);
+    */
     return node;
 }
 
@@ -120,7 +127,7 @@ gds_math_negotiate(
     node->content.asMathOperation.r = NULL;
     return node;
 }
-
+# if 0
 static void _static_print_out_math_expr_graph(
             struct gds_Parser * P,
             struct gds_Function * f ) {
@@ -128,7 +135,7 @@ static void _static_print_out_math_expr_graph(
     if( typePart == gds_math_nodeNumeric ) {
         printf( "%p -- numeric node %p\n", f, f->content.asValue );
     } else if( typePart == gds_math_nodeLocVar ) {
-        printf( "%p -- locvar node \"%s\"\n", f, f->content.asLocalVariable.name );
+        printf( "%p -- locvar node \"%d\"\n", f, f->content.asLocalVariable.orderNum );
     } else if( typePart == gds_math_nodeMathOp ) {
         printf( "%p -- math op node ", f );
         uint8_t mathOpPart = (gds_math_nodeTypeMask | gds_math_nodeMathOpMask) & f->descriptor;
@@ -152,18 +159,71 @@ static void _static_print_out_math_expr_graph(
         gds_error( P, "logic error #1." );
     }
 }
+# endif
 
-void gds_math_function_resolve(
+struct gds_Function *
+gds_function_heapcopy( const struct gds_Function * f ) {
+    if( !f ) {return NULL;}
+    struct gds_Function * cf = malloc( sizeof(struct gds_Function) );
+    memcpy( cf, f, sizeof(struct gds_Function) );
+    uint8_t typePart = gds_math_nodeTypeMask & f->descriptor;
+    if( typePart == gds_math_nodeNumeric ) {
+        cf->content.asValue = 
+            gds_literal_heapcopy( f->content.asValue );
+    } /*else if( typePart == gds_math_nodeLocVar ) {
+        Do nothing for locvar, as previous memcpy call already copied its
+        order number.
+    } */else if( typePart == gds_math_nodeMathOp ) {
+        uint8_t mathOpPart = (gds_math_nodeTypeMask | gds_math_nodeMathOpMask) & f->descriptor;
+        switch( mathOpPart ) {
+            # define case_( name, code, glyph ) \
+                case code : {                   \
+                    cf->content.asMathOperation.l = gds_function_heapcopy( f->content.asMathOperation.l ); \
+                    cf->content.asMathOperation.r = gds_function_heapcopy( f->content.asMathOperation.r ); \
+                } break;
+            for_all_gds_binary_math_operators(case_);
+            # undef case_
+        }; /* switch( mathOpPart ) */
+        if(gds_math_unegotiation_c == mathOpPart ) {
+            cf->content.asMathOperation.l = gds_function_heapcopy( f->content.asMathOperation.l );
+        }
+    }
+    return cf;
+}
+
+void
+gds_function_heapfree( struct gds_Function * f ) {
+    if( !f ) {return;}
+    uint8_t typePart = gds_math_nodeTypeMask & f->descriptor;
+    if( typePart == gds_math_nodeNumeric ) {
+        gds_literal_heapfree( f->content.asValue );
+    } /*else if( typePart == gds_math_nodeLocVar ) {
+        Do nothing for locvar, as its data is stored entirely in current node.
+    } */else if( typePart == gds_math_nodeMathOp ) {
+        uint8_t mathOpPart = (gds_math_nodeTypeMask | gds_math_nodeMathOpMask) & f->descriptor;
+        switch( mathOpPart ) {
+            # define case_( name, code, glyph ) \
+                case code : {                   \
+                    gds_function_heapfree( f->content.asMathOperation.l ); \
+                    gds_function_heapfree( f->content.asMathOperation.r ); \
+                } break;
+            for_all_gds_binary_math_operators(case_);
+            # undef case_
+        }; /* switch( mathOpPart ) */
+        if(gds_math_unegotiation_c == mathOpPart ) {
+            gds_function_heapfree( f->content.asMathOperation.l );
+        }
+    }
+    free(f);
+}
+
+struct gds_Expr *
+gds_expr_from_func_decl(
         struct gds_Parser * P,
-        struct gds_Function * f) {
-    struct gds_ArgList * c = f->content.asFunction.arglist;
-    printf( "Function %p of parser %p is ready to be resolved:\n", f, P );
-    printf( "    - arglist %p:\n", c );
-    if( c->identifier ) do {
-        printf( "        %s\n", c->identifier );
-        c = c->next;
-    } while( c );
-    _static_print_out_math_expr_graph( P, f->content.asFunction.f );
+        struct gds_Function * f ) {
+    /* TODO: here we should make expression from function,
+     * that currently aren't necessary. */
+    return NULL;
 }
 
 # endif  /* ENABLE_GDS */

@@ -117,7 +117,7 @@ struct gds_Literal *
 interpret_oct_integral(
         struct gds_Parser * P,
         const char * s ){
-    printf("XXX: treat \"%s\" as integral constant in octal form.\n", s);
+    printf("TODO: treat \"%s\" as integral constant in octal form.\n", s);
     return 0;
 }
 
@@ -125,7 +125,7 @@ struct gds_Literal *
 interpret_hex_integral(
         struct gds_Parser * P,
         const char * s ){
-    printf("XXX: treat \"%s\" as integral constant in hexidecimal form.\n", s);
+    printf("TODO: treat \"%s\" as integral constant in hexidecimal form.\n", s);
     return 0;
 }
 
@@ -133,7 +133,7 @@ struct gds_Literal *
 interpret_esc_integral(
         struct gds_Parser * P,
         const char * s ){
-    printf("XXX: treat \"%s\" as integral constant in escape sequence form.\n", s);
+    printf("TODO: treat \"%s\" as integral constant in escape sequence form.\n", s);
     return 0;
 }
 
@@ -154,11 +154,11 @@ interpret_dec_integral(
             if( typemod & 0x1 ) {
                 v->data.UInt64Val = strtoull( s, &endCPtr, 10 );
                 v->typecode = UInt128_CT;
-                printf("XXX: \"%s\" dec int, uul.\n", s);
+                /*printf("XXX: \"%s\" dec int, uul.\n", s);*/
             } else {
                 v->data.Int64Val = strtoll( s, &endCPtr, 10 );
                 v->typecode = UInt128_CT;
-                printf("XXX: \"%s\" dec int, ll.\n", s);
+                /*printf("XXX: \"%s\" dec int, ll.\n", s);*/
             }
             # else
             char bf[64];
@@ -169,22 +169,22 @@ interpret_dec_integral(
             if( typemod & 0x1 ) {
                 v->data.UInt32Val = strtoul( s, &endCPtr, 10 );
                 v->typecode = UInt64_CT;
-                printf("XXX: \"%s\" dec int, ul.\n", s);
+                /*printf("XXX: \"%s\" dec int, ul.\n", s);*/
             } else {
                 v->data.Int32Val = strtol( s, &endCPtr, 10 );
                 v->typecode = UInt64_CT;
-                printf("XXX: \"%s\" dec int, l.\n", s);
+                /*printf("XXX: \"%s\" dec int, l.\n", s);*/
             }
         }
     } else {
         if( typemod & 0x1 ) {
             v->data.UInt32Val = strtoul( s, &endCPtr, 10 );
             v->typecode = UInt32_CT;
-            printf("XXX: \"%s\" dec int, u.\n", s);
+            /*printf("XXX: \"%s\" dec int, u.\n", s);*/
         } else {
             v->data.Int32Val = strtol( s, &endCPtr, 10 );
             v->typecode = UInt32_CT;
-            printf("XXX: \"%s\" dec int.\n", s);
+            /*printf("XXX: \"%s\" dec int.\n", s);*/
         }
     }
     return v;
@@ -233,6 +233,19 @@ interpret_logic_false( struct gds_Parser * P ) {
     v->typecode = logic_CT;
     v->data.logicVal = 0x0;
     return v;
+}
+
+struct gds_Literal *
+gds_literal_heapcopy( struct gds_Literal * o ) {
+    struct gds_Literal * c = malloc(sizeof(struct gds_Literal));
+    memcpy(c, o, sizeof(struct gds_Literal));
+    return c;
+}
+
+void
+gds_literal_heapfree( struct gds_Literal * inst ) {
+    if( !inst ) { return; }
+    free(inst);
 }
 
 # endif  /* ENABLE_GDS */

@@ -60,6 +60,8 @@ gds_Hashtable gds_hashtable_new();
 void gds_hashtable_free(        gds_Hashtable );
 /** Inserts new named data entry into hash table. */
 void gds_hashtable_insert(      gds_Hashtable, const char *, void * );
+/** Replaces named data entry in hash table with given one. Checks existency. */
+void gds_hashtable_replace(     gds_Hashtable, const char *, void * );
 /** Returns data associated with string key. NULL if not found. */
 void * gds_hashtable_search(    gds_Hashtable, const char * );
 /** Erases element by key. Raises `noSuchKey` if key is not found. */
@@ -190,10 +192,8 @@ void gds_parser_push_locvar_arglist( struct gds_Parser *, struct gds_ArgList * )
 /** Denies current local variables dictionary and sets current to previous. */
 void gds_parser_pop_locvar_arglist( struct gds_Parser * P );
 
-/** Append this context's functions hash with given instance. */
-struct gds_Expr * gds_parser_math_function_declare( struct gds_Parser *, struct gds_Function * );
-/** Append this context's functions hash with given variable (any expression) instance. */
-struct gds_Expr * gds_parser_variables_declare( struct gds_Parser *, struct gds_VarList * );
+/** Produces pools-unrelated deep copy of a function. */
+struct gds_Function * gds_parser_deepcopy_function( struct gds_Parser * P, struct gds_Function * f );
 
 /*
  * Flex-related routines.

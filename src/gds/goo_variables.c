@@ -21,3 +21,12 @@ gds_variable_init_list(
     return NULL;
 }
 
+struct gds_Expr *
+gds_expr_from_var_decls(
+        struct gds_Parser * P,
+        struct gds_VarList * vl ) {
+    /* TODO: here we should produce expression from variable
+     *       declarations. */
+    return NULL;
+}
+

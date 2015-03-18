@@ -235,22 +235,27 @@ lookup_symbol( struct gds_Parser * P, const char * sym ) {
     switch( rt ) {
         case 0x8 : { /* type */
             yyget_lval( P->scanner )->GTID = result;
+            printf("LEXER: \"%s\" resolved as a type.\n", sym);
             return TYPEID;
         } break;
         case 0x4 : { /* function */
             yyget_lval( P->scanner )->func = result;
+            printf("LEXER: \"%s\" resolved as a function.\n", sym);
             return DCLRD_FUN;
         } break;
         case 0x2 : { /* variable */
             yyget_lval( P->scanner )->value = result;
+            printf("LEXER: \"%s\" resolved as a variable.\n", sym);
             return DCLRD_VAR;
         } break;
         case 0x1 : { /* submodule */
             yyget_lval( P->scanner )->module = result;
+            printf("LEXER: \"%s\" resolved as a module name.\n", sym);
             return DCLRD_MDLE;
         } break;
         case 0:
         default: { /* Symbol isn't known */
+            printf("LEXER: \"%s\" is unresolved.\n", sym);
             return UNKNWN_SYM;
         }
     };

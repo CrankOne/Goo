@@ -71,7 +71,6 @@ struct gds_Function {
          * Note: resolved only when function is fully constructed. */
         struct {
             uint8_t orderNum; /* is set to 0xff when not resolved */
-            const char * name; /* should be never used, when orderNum is resolved. */  
         } asLocalVariable;
         /* Node is numeric value */
         struct gds_Literal * asValue;
@@ -81,6 +80,7 @@ struct gds_Function {
         } asMathOperation;
         /* Node represents named function with symbol id and arguments */
         struct {
+            char * name;  /*Note: heap-allocated.*/
             struct gds_Function * f;
             struct gds_ArgList * arglist;
         } asFunction;
@@ -115,10 +115,15 @@ void gds_math_function_init(
         const char *,
         struct gds_ArgList *);
 
-/** Resolves all local variables inside a function and provides basic validation. */
-void gds_math_function_resolve(
-        struct gds_Parser *,
-        struct gds_Function *);
+struct gds_Function *
+gds_function_heapcopy( const struct gds_Function * );
+void
+gds_function_heapfree( struct gds_Function * );
+
+struct gds_Expr *
+gds_expr_from_func_decl(
+        struct gds_Parser * P,
+        struct gds_Function * f );
 
 # endif  /* ENABLE_GDS */
 
