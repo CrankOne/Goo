@@ -43,8 +43,8 @@ fVar = (f(x) <- x/2);   # Internally, all variable names are turned in positiona
                         # arguments, so function names aren't actually meaningful
                         # anywhere otside the function body.
 
-piecewiseF1(x)  <- x >  0 ? M::log(x),
-                |- x < -1 ? 0,
+piecewiseF1(x)  <- x >  0 ? M::log(x)
+                |- x < -1 ? 0
                 |- M::NaN;
 
 #)

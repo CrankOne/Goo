@@ -113,13 +113,28 @@ void gds_warn( struct gds_Parser * P, const char * det );
                                         return rt;
                                     }
 
+    /* COMPOSITE NOTATION SYMBOLS */
+
+"<-"                                { return P_INJECTION; }
+"|-"                                { return P_PIECEWISE_ELIF; }
+"^-"                                { return P_PIECEWISE_ELSE; }
+
+    /* LOGICAL OPERATORS */
+
+">="                                { return P_GET; }
+"<="                                { return P_LET; }
+"=="                                { return P_EET; /*exactly equals to*/ }
+"~~"                                { return P_NET; /*nearly equals to*/ }
+"&&"                                { return P_LAND; }
+"||"                                { return P_LOR; }
+"^^"                                { return P_LXOR; }
+
     /* SIMPLE GRAMMAR TERMINALS */
 
 ";"                                 { gds_parser_free_buffer( yyget_extra(yyscanner) );
                                       return ';'; }
-"<-"                                { return P_INJECTION; }
-"|-"                                { return P_PIECEWISE_ELIF; }
-"^-"                                { return P_PIECEWISE_FINALY; }
+">"                                 { return '>'; }
+"<"                                 { return '<'; }
 ":"                                 { return ':'; }
 "="                                 { return '='; }
 "{"                                 { return '{'; }
@@ -137,8 +152,7 @@ void gds_warn( struct gds_Parser * P, const char * det );
 "&"                                 { return '&'; }
 "|"                                 { return '|'; }
 "?"                                 { return '?'; }
-">"                                 { return '>'; }
-"<"                                 { return '<'; }
+"~"                                 { return '~'; }
 
 .                                   {   char bf[64];
                                         snprintf(bf, 64, "Uninpretable character '%c' had been met code.", yytext[0] );

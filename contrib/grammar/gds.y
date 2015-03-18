@@ -37,7 +37,9 @@ void yyerror();
 }
 
 %token              T_TRUE      T_FALSE
-%token              P_ASSIGN    P_NAME      P_INJECTION  P_PIECEWISE_ELIF  P_PIECEWISE_FINALY
+%token              P_ASSIGN    P_NAME      P_INJECTION  P_PIECEWISE_ELIF  P_PIECEWISE_ELSE
+%token              P_GET       P_LET       P_EET       P_NET
+%token              P_LAND      P_LXOR      P_LOR
 
 %token              TI_BIN  TI_OCT  TI_HEX  TI_ESC  TI_DEC
 %type<strval>       TI_BIN  TI_OCT  TI_HEX  TI_ESC  TI_DEC
@@ -56,12 +58,16 @@ void yyerror();
 %type<locvarNo>     LOCVAR
 
 %type<value>        DCLRD_VAR logicCst numericCst vaLit integralCst floatCst;
-%type<func>         DCLRD_FUN fDecl fDef mathExpr mathOprnd;
+%type<func>         DCLRD_FUN fDecl fDef mathExpr mathOprnd funcTail;
 %type<expr>         expr rvalExpr manifest
 
 %type<argList>      fArgList
 %type<varList>      varHead varDecl unknwSymLst
 %type<exprList>     varTail gdsExprLst
+
+%left P_LAND
+%left P_LOR P_XOR
+%left '!'
 
 %left '-' '+'
 %left '.'
@@ -97,7 +103,6 @@ manifest    : fDef                      { $$ = gds_expr_from_func_decl( P, $1 );
 rvalExpr    : vaLit                     { $$ = gds_expression_from_literal( $1 ); }
             | mathExpr                  { $$ = gds_expression_from_math_expr( $1 ); }
             | '(' manifest ')'          { $$ = $2; }
-            | funcRfrnc                 { /*TODO*/ }
             ;
 
 rvalExprLst : rvalExpr                  { /*TODO*/ }
@@ -148,11 +153,23 @@ fDecl       : UNKNWN_SYM '(' fArgList ')'
                 }
             ;
 
-fDef        : fDecl P_INJECTION mathExpr
+fDef        : fDecl P_INJECTION funcTail
                 { $1->content.asFunction.f = $3;
                   gds_parser_pop_locvar_arglist( P );
                   gds_parser_deepcopy_function( P, $1 );
                   $$ = $1; }
+            ;
+
+funcTail    : mathExpr                  {}
+            | piecewsLst                {}
+            ;
+
+piecewsLst  : piecewsFrg                                    {}
+            | piecewsLst ',' P_PIECEWISE_ELIF piecewsFrg    {}
+            | piecewsLst ',' P_PIECEWISE_ELSE mathExpr      {}
+            ;
+
+piecewsFrg  : logicExpr '?' mathExpr    {}
             ;
 
 fArgList    : /* empty */               
@@ -178,13 +195,51 @@ funcRfrnc   : DCLRD_FUN '(' ')'
             ;
 
 /*
+ * Logical expressions
+ */
+
+logicExpr   : logicAtom                          {}
+            | logicAtom P_LAND logicExpr         {}
+            | logicAtom P_LOR  logicExpr         {}
+            | logicAtom P_LXOR logicExpr         {}
+            | '!' logicExpr %prec P_LXOR         {}
+            ;
+
+logicAtom   : mathExpr                           {}
+            | mathExpr '>' mathExpr              {}
+            | mathExpr '<' mathExpr              {}
+            | mathExpr P_GET mathExpr            {}
+            | mathExpr P_LET mathExpr            {}
+            | mathExpr P_EET mathExpr            {}
+            | mathExpr P_NET mathExpr            {}
+            | mathExpr '~' mathExpr '~' mathExpr {}
+            /* Ternary (interval) logic */
+            | mathExpr '<' mathExpr '<' mathExpr
+                {}
+            | mathExpr '>' mathExpr '>' mathExpr
+                {}
+            | mathExpr '<' mathExpr P_LET mathExpr
+                {}
+            | mathExpr P_LET mathExpr '<' mathExpr
+                {}
+            | mathExpr P_LET mathExpr P_LET mathExpr
+                {}
+            | mathExpr P_GET mathExpr '>' mathExpr
+                {}
+            | mathExpr '>' mathExpr P_GET mathExpr
+                {}
+            | mathExpr P_GET mathExpr P_GET mathExpr
+                {}
+            ;
+
+/*
  * Binary arithmetical operations for numericals
  */
 
 mathExpr    : mathOprnd                 { $$ = $1; }
             | mathExpr '+' mathExpr     { $$ = gds_math(P, '+', $1, $3); }
             | mathExpr '-' mathExpr     { $$ = gds_math(P, '-', $1, $3); }
-            | mathExpr '.' mathExpr     { /* TODO */ }
+            | mathExpr '.' mathExpr     { $$ = gds_math(P, '.', $1, $3); }
             | mathExpr '*' mathExpr     { $$ = gds_math(P, '*', $1, $3); }
             | mathExpr '/' mathExpr     { $$ = gds_math(P, '/', $1, $3); }
             | '-' mathExpr  %prec '*'   { $$ = gds_math_negotiate(P, $2); }
@@ -194,7 +249,9 @@ mathExpr    : mathOprnd                 { $$ = $1; }
             ;
 
 mathOprnd   : numericCst                { $$ = gds_math_new_func_from_const(  P, $1 ); }
+            | funcRfrnc                 { /*TODO*/ }
             | LOCVAR                    { $$ = gds_math_new_func_from_locvar( P, $1 ); }
+            | DCLRD_VAR                 { /*TODO*/ }
             ;
 
 /*
