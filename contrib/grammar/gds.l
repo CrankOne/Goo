@@ -53,7 +53,7 @@ TQ  \"{3}
 int comment(yyscan_t scanner);
 int yyparse(struct gds_Parser * P);
 void yyerror( struct YYLTYPE * locp, struct gds_Parser * P, const char * msg );
-int lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE ** );
+int lookup_symbol( struct gds_Parser * P, const char * sym );
 
 void gds_error( struct gds_Parser * P, const char * det );
 void gds_warn( struct gds_Parser * P, const char * det );
@@ -75,6 +75,7 @@ void gds_warn( struct gds_Parser * P, const char * det );
 [Tt]rue|[Ee]nable|[Oo]n             { MEMTOKEN(T_TRUE); }
 [Ff]alse|[Dd]isable|[Oo]ff          { MEMTOKEN(T_TRUE); }
 
+"b"[01]+{IS}?                       { MEMTOKEN(TI_BIN); }
 {HP}{H}+{IS}?				        { MEMTOKEN(TI_HEX); }
 {NZ}{D}*{IS}?				        { MEMTOKEN(TI_DEC); }
 "0"{O}*{IS}?				        { MEMTOKEN(TI_OCT); }
@@ -108,9 +109,7 @@ void gds_warn( struct gds_Parser * P, const char * det );
 (({L}{A}{0,127})::)*{L}{A}{0,127}   {   int rt;
                                         yyget_lval( yyscanner )->strval =
                                             gds_parser_replicate_token( yyget_extra(yyscanner), yytext );
-                                        YYSTYPE * flval;
-                                        rt = lookup_symbol(yyget_extra(yyscanner), yytext, &flval);
-                                        yyset_lval( flval, yyscanner );
+                                        rt = lookup_symbol(yyget_extra(yyscanner), yytext );
                                         return rt;
                                     }
 
@@ -167,9 +166,9 @@ void gds_warn( struct gds_Parser * P, const char * det );
  * @returns appropriate terminal code, or UNKNWN_SYM, if no symbols found. 
  */
 int
-lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE ** lval ) {
-    # if 0
-    int8_t rt = 0;
+lookup_symbol( struct gds_Parser * P, const char * sym ) {
+    int8_t rt = 0,
+           wasScopeResolution = 0;
     const char * c = sym;
     char   cSymName[128] = {'\0'},
          * cDest;
@@ -182,7 +181,8 @@ lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE ** lval ) {
              c++ ) {
             if( ':' == *c && ':' == *(++c) ) {
                 *(++cDest) = '\0';
-                printf( " - \"%s\" /\n", cSymName );
+                wasScopeResolution = 1;
+                printf( " - \"%s\" /\n", cSymName );  /*XXX*/
                 break;
             }
             *(cDest++) = *c;
@@ -212,6 +212,21 @@ lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE ** lval ) {
             }
         }
     } while( '\0' != *c );
+
+    if( !wasScopeResolution && P->currentLocArgListChain ) {
+        /* Now, try to resolve symbol as locvar, if we're in function declaration. */
+        const struct gds_ArgList * c = *(P->currentLocArgListChain);
+        uint8_t lvno = 0;
+        do {
+            if( !strcmp( c->identifier, cSymName ) ) {
+                yyget_lval( P->scanner )->locvarNo = lvno;
+                return LOCVAR;
+            }
+            lvno++;
+            c = c->next;
+        } while( c );
+    }
+
     void * result;
     rt = gds_parser_module_resolve_symbol(
                  cModule,
@@ -219,19 +234,19 @@ lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE ** lval ) {
                 &result );
     switch( rt ) {
         case 0x8 : { /* type */
-            (*lval)->GTID = result;
+            yyget_lval( P->scanner )->GTID = result;
             return TYPEID;
         } break;
         case 0x4 : { /* function */
-            (*lval)->func = result;
+            yyget_lval( P->scanner )->func = result;
             return DCLRD_FUN;
         } break;
         case 0x2 : { /* variable */
-            (*lval)->value = result;
+            yyget_lval( P->scanner )->value = result;
             return DCLRD_VAR;
         } break;
         case 0x1 : { /* submodule */
-            (*lval)->module = result;
+            yyget_lval( P->scanner )->module = result;
             return DCLRD_MDLE;
         } break;
         case 0:
@@ -239,9 +254,6 @@ lookup_symbol( struct gds_Parser * P, const char * sym, YYSTYPE ** lval ) {
             return UNKNWN_SYM;
         }
     };
-    # else
-    return UNKNWN_SYM;
-    # endif
 }
 
 /*

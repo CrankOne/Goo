@@ -51,7 +51,7 @@ void gds_math_function_init(
     f->descriptor = gds_math_uDefinedFunc;
     f->content.asFunction.f = body; /* can be NULL */
     f->content.asFunction.arglist = arglist;
-    gds_hashtable_insert( P->currentScope.functions,
+    gds_hashtable_insert( P->thisModule.functions,
                           name,
                           f );
 }
@@ -71,12 +71,11 @@ gds_math_new_func_from_const(
 struct gds_Function *
 gds_math_new_func_from_locvar(
         struct gds_Parser * P,
-        const char * locVarName ) {
+        uint8_t lvno ) {
     struct gds_Function * node = gds_parser_new_Function(P);
 
     node->descriptor = gds_math_nodeLocVar;
-    node->content.asLocalVariable.orderNum = 0xff ;
-    node->content.asLocalVariable.name = locVarName;
+    node->content.asLocalVariable.orderNum = lvno;
 
     return node;
 }

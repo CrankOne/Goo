@@ -69,6 +69,7 @@ gds_parser_new() {
     pObj->thisModule.functions = gds_hashtable_new();
     pObj->thisModule.variables = gds_hashtable_new();
     pObj->thisModule.submodules = gds_hashtable_new();
+    pObj->currentLocArgListChain = NULL;
 
     return pObj;
 }
@@ -169,16 +170,31 @@ gds_parser_module_resolve_symbol( struct gds_Module * ctx,
 }
 
 void
-gds_parser_pop_locvar_arglist(
-        struct gds_Parser * P ) {
-    /* TODO */
-}
-
-void
 gds_parser_push_locvar_arglist(
         struct gds_Parser * P,
         struct gds_ArgList * al ) {
-    /* TODO */
+    if( NULL == P->currentLocArgListChain ) {
+        P->currentLocArgListChain = P->argListChains;
+    } else if( P->currentLocArgListChain >=
+        P->argListChains + sizeof(P->argListChains)/sizeof(struct gds_ArgList *) ) {
+        gds_error( P, "Local argument lists pool depleted for nested declarations." );
+    } else {
+        (P->currentLocArgListChain)++;
+    }
+    *((P->currentLocArgListChain)) = al;
+}
+
+void
+gds_parser_pop_locvar_arglist(
+        struct gds_Parser * P ) {
+    if( NULL == P->currentLocArgListChain ) {
+        /* Logical error we must be aware of. */
+        gds_error( P, "Local variable scope exit invoked when not in scope." );
+    } else if( P->currentLocArgListChain == P->argListChains ) {
+        P->currentLocArgListChain = NULL;
+    } else {
+        (P->currentLocArgListChain)--;
+    }
 }
 
 struct gds_Expr *

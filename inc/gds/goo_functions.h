@@ -96,7 +96,7 @@ struct gds_Function * gds_math_new_func_from_const(
         struct gds_Literal * );
 struct gds_Function * gds_math_new_func_from_locvar(
         struct gds_Parser *,
-        const char * );
+        uint8_t lvno );
 
 struct gds_Function * gds_math(
         struct gds_Parser *,

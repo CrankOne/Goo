@@ -32,6 +32,8 @@ void yyerror();
           struct gds_ArgList * argList;
           struct gds_VarList * varList;
          struct gds_ExprList * exprList;
+
+                     uint8_t   locvarNo;
 }
 
 %token              T_TRUE      T_FALSE
@@ -46,11 +48,12 @@ void yyerror();
 %token              T_STRING_LITERAL UNKNWN_SYM
 %type<strval>       T_STRING_LITERAL UNKNWN_SYM
 
-%token              TYPEID DCLRD_FUN DCLRD_VAR DCLRD_MDLE
+%token              TYPEID DCLRD_FUN DCLRD_VAR DCLRD_MDLE LOCVAR
 
 
 %type<GTID>         TYPEID
 %type<module>       DCLRD_MDLE
+%type<locvarNo>     LOCVAR
 
 %type<value>        DCLRD_VAR logicCst numericCst vaLit integralCst floatCst;
 %type<func>         DCLRD_FUN fDecl fDef mathExpr mathOprnd;
@@ -178,7 +181,7 @@ mathExpr    : mathOprnd                 { $$ = $1; }
             ;
 
 mathOprnd   : numericCst                { $$ = gds_math_new_func_from_const(  P, $1 ); }
-            /*TODO| UNKNWN_SYM                { $$ = gds_math_new_func_from_locvar( P, $1 ); }*/
+            | LOCVAR                    { $$ = gds_math_new_func_from_locvar( P, $1 ); }
             ;
 
 /*

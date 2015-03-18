@@ -135,6 +135,9 @@ struct gds_Parser {
     for_all_parser_owned_pools(declare_pool)
     # undef declare_pool
 
+    struct gds_ArgList * argListChains[8];
+    struct gds_ArgList ** currentLocArgListChain;
+
     struct gds_Module thisModule;
 };
 
@@ -176,15 +179,17 @@ void gds_parser_free_buffer( struct gds_Parser * );
  * @retval  2 -- variable
  * @retval  4 -- function
  * @retval  8 -- type
+ * @retval -1 -- local variable (in f-n declaration)
  */
 int8_t gds_parser_module_resolve_symbol( struct gds_Module * context,
                                          const char * identifier,
                                          void ** result );
 
-/** Sets current local variables dictionary to provided. */
+/** Sets given variables dictionary as curent locvar dict keeping previous. */
 void gds_parser_push_locvar_arglist( struct gds_Parser *, struct gds_ArgList * );
 /** Denies current local variables dictionary and sets current to previous. */
 void gds_parser_pop_locvar_arglist( struct gds_Parser * P );
+
 /** Append this context's functions hash with given instance. */
 struct gds_Expr * gds_parser_math_function_declare( struct gds_Parser *, struct gds_Function * );
 /** Append this context's functions hash with given variable (any expression) instance. */
