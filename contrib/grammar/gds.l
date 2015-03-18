@@ -72,6 +72,28 @@ void gds_warn( struct gds_Parser * P, const char * det );
 
 {WS}                                { /* whitespace separates tokens */ }
 
+    /* COMPOSITE NOTATION SYMBOLS */
+
+"<-"                                { return P_INJECTION; }
+"|-"                                { return P_PIECEWISE_ELIF; }
+"^-"                                { return P_PIECEWISE_ELSE; }
+
+    /* LOGICAL OPERATORS */
+
+">="                                { return P_GET; }
+"<="                                { return P_LET; }
+"=="                                { return P_EET; /*exactly equals to*/ }
+"~~"                                { return P_NET; /*nearly equals to*/ }
+"&&"                                { return P_LAND; }
+"and"                               { return P_LAND; }
+"||"                                { return P_LOR; }
+"or"                                { return P_LOR; }
+"^^"                                { return P_LXOR; }
+"xor"                               { return P_LXOR; }
+".."                                { return P_BETWEEN; }
+
+    /* LITERALS */
+
 [Tt]rue|[Ee]nable|[Oo]n             { MEMTOKEN(T_TRUE); }
 [Ff]alse|[Dd]isable|[Oo]ff          { MEMTOKEN(T_TRUE); }
 
@@ -83,7 +105,7 @@ void gds_warn( struct gds_Parser * P, const char * det );
 
 {D}+{E}{FS}?				        { MEMTOKEN(TF_DEC); }
 {D}*"."{D}+{E}?{FS}?			    { MEMTOKEN(TF_DEC); }
-{D}+"."{E}?{FS}?			        { MEMTOKEN(TF_DEC); }
+{D}+"."/[^"."]{E}?{FS}?			    { MEMTOKEN(TF_DEC); }
 {HP}{H}+{P}{FS}?			        { MEMTOKEN(TF_HEX); }
 {HP}{H}*"."{H}+{P}{FS}?			    { MEMTOKEN(TF_HEX); }
 {HP}{H}+"."{P}{FS}?			        { MEMTOKEN(TF_HEX); }
@@ -113,22 +135,6 @@ void gds_warn( struct gds_Parser * P, const char * det );
                                         return rt;
                                     }
 
-    /* COMPOSITE NOTATION SYMBOLS */
-
-"<-"                                { return P_INJECTION; }
-"|-"                                { return P_PIECEWISE_ELIF; }
-"^-"                                { return P_PIECEWISE_ELSE; }
-
-    /* LOGICAL OPERATORS */
-
-">="                                { return P_GET; }
-"<="                                { return P_LET; }
-"=="                                { return P_EET; /*exactly equals to*/ }
-"~~"                                { return P_NET; /*nearly equals to*/ }
-"&&"                                { return P_LAND; }
-"||"                                { return P_LOR; }
-"^^"                                { return P_LXOR; }
-
     /* SIMPLE GRAMMAR TERMINALS */
 
 ";"                                 { gds_parser_free_buffer( yyget_extra(yyscanner) );
@@ -153,6 +159,8 @@ void gds_warn( struct gds_Parser * P, const char * det );
 "|"                                 { return '|'; }
 "?"                                 { return '?'; }
 "~"                                 { return '~'; }
+"["                                 { return '['; }
+"]"                                 { return ']'; }
 
 .                                   {   char bf[64];
                                         snprintf(bf, 64, "Uninpretable character '%c' had been met code.", yytext[0] );

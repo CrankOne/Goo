@@ -37,9 +37,9 @@ void yyerror();
 }
 
 %token              T_TRUE      T_FALSE
-%token              P_ASSIGN    P_NAME      P_INJECTION  P_PIECEWISE_ELIF  P_PIECEWISE_ELSE
+%token              P_INJECTION  P_PIECEWISE_ELIF  P_PIECEWISE_ELSE
 %token              P_GET       P_LET       P_EET       P_NET
-%token              P_LAND      P_LXOR      P_LOR
+%token              P_LAND      P_LXOR      P_LOR       P_BETWEEN
 
 %token              TI_BIN  TI_OCT  TI_HEX  TI_ESC  TI_DEC
 %type<strval>       TI_BIN  TI_OCT  TI_HEX  TI_ESC  TI_DEC
@@ -66,7 +66,7 @@ void yyerror();
 %type<exprList>     varTail gdsExprLst
 
 %left P_LAND
-%left P_LOR P_XOR
+%left P_LOR P_LXOR
 %left '!'
 
 %left '-' '+'
@@ -160,16 +160,16 @@ fDef        : fDecl P_INJECTION funcTail
                   $$ = $1; }
             ;
 
-funcTail    : mathExpr                  {}
-            | piecewsLst                {}
+funcTail    : mathExpr                  { /*TODO*/ }
+            | piecewsLst                { /*TODO*/ }
             ;
 
-piecewsLst  : piecewsFrg                                    {}
-            | piecewsLst ',' P_PIECEWISE_ELIF piecewsFrg    {}
-            | piecewsLst ',' P_PIECEWISE_ELSE mathExpr      {}
+piecewsLst  : piecewsFrg                                    { /*TODO*/ }
+            | piecewsLst ',' P_PIECEWISE_ELIF piecewsFrg    { /*TODO*/ }
+            | piecewsLst ',' P_PIECEWISE_ELSE mathExpr      { /*TODO*/ }
             ;
 
-piecewsFrg  : logicExpr '?' mathExpr    {}
+piecewsFrg  : logicExpr '?' mathExpr    { /*TODO*/ }
             ;
 
 fArgList    : /* empty */               
@@ -198,38 +198,38 @@ funcRfrnc   : DCLRD_FUN '(' ')'
  * Logical expressions
  */
 
-logicExpr   : logicAtom                          {}
-            | logicAtom P_LAND logicExpr         {}
-            | logicAtom P_LOR  logicExpr         {}
-            | logicAtom P_LXOR logicExpr         {}
-            | '!' logicExpr %prec P_LXOR         {}
+logicExpr   : logicAtom                          { /*TODO*/ }
+            | logicAtom P_LAND logicExpr         { /*TODO*/ }
+            | logicAtom P_LOR  logicExpr         { /*TODO*/ }
+            | logicAtom P_LXOR logicExpr         { /*TODO*/ }
+            | '!' logicExpr %prec P_LXOR         { /*TODO*/ }
             ;
 
-logicAtom   : mathExpr                           {}
-            | mathExpr '>' mathExpr              {}
-            | mathExpr '<' mathExpr              {}
-            | mathExpr P_GET mathExpr            {}
-            | mathExpr P_LET mathExpr            {}
-            | mathExpr P_EET mathExpr            {}
-            | mathExpr P_NET mathExpr            {}
-            | mathExpr '~' mathExpr '~' mathExpr {}
+logicAtom   : mathExpr                           { /*TODO*/ }
+            | mathExpr '>' mathExpr              { /*TODO*/ }
+            | mathExpr '<' mathExpr              { /*TODO*/ }
+            | mathExpr P_GET mathExpr            { /*TODO*/ }
+            | mathExpr P_LET mathExpr            { /*TODO*/ }
+            | mathExpr P_EET mathExpr            { /*TODO*/ }
+            | mathExpr P_NET mathExpr            { /*TODO*/ }
+            | mathExpr '~' mathExpr '~' mathExpr { /*TODO*/ }
             /* Ternary (interval) logic */
             | mathExpr '<' mathExpr '<' mathExpr
-                {}
+                { /*TODO*/ }
             | mathExpr '>' mathExpr '>' mathExpr
-                {}
+                { /*TODO*/ }
             | mathExpr '<' mathExpr P_LET mathExpr
-                {}
+                { /*TODO*/ }
             | mathExpr P_LET mathExpr '<' mathExpr
-                {}
+                { /*TODO*/ }
             | mathExpr P_LET mathExpr P_LET mathExpr
-                {}
+                { /*TODO*/ }
             | mathExpr P_GET mathExpr '>' mathExpr
-                {}
+                { /*TODO*/ }
             | mathExpr '>' mathExpr P_GET mathExpr
-                {}
+                { /*TODO*/ }
             | mathExpr P_GET mathExpr P_GET mathExpr
-                {}
+                { /*TODO*/ }
             ;
 
 /*
@@ -252,10 +252,34 @@ mathOprnd   : numericCst                { $$ = gds_math_new_func_from_const(  P,
             | funcRfrnc                 { /*TODO*/ }
             | LOCVAR                    { $$ = gds_math_new_func_from_locvar( P, $1 ); }
             | DCLRD_VAR                 { /*TODO*/ }
+            | range                     { /*TODO*/ }
+            | posArray                  { /*TODO*/ }
+            | ascArray                  { /*TODO*/ }
+            | mathOprnd '[' mathExpr ']'
+                { /*TODO*/ }
+            ;
+
+range       : '/' mathExpr P_BETWEEN mathExpr '/'
+                { /*TODO*/ }
+            | '/' mathExpr P_BETWEEN mathExpr P_BETWEEN mathExpr '/'
+                { /*TODO*/ }
             ;
 
 /*
- * Basic values
+ * Positional and associative arrays
+ */
+
+posArray    : '{' rvalExprLst '}'       { /*TODO*/ }
+            ;
+
+ascArray    : '{' ascPairsLst '}'       { /*TODO*/ }
+            ;
+
+ascPairsLst : UNKNWN_SYM ':' rvalExpr   { /*TODO*/ }
+            ;
+
+/*
+ * Basic literals
  */
 
 vaLit       : logicCst                  { $$ = $1; }
