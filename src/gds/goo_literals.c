@@ -125,15 +125,97 @@ struct gds_Literal *
 interpret_hex_integral(
         struct gds_Parser * P,
         const char * s ){
-    printf("TODO: treat \"%s\" as integral constant in hexidecimal form.\n", s);
-    return 0;
+    /* TODO:
+     *  1) Check truncation errors here (strtoi has special behaviour);
+     *  2) Check extra symbols on tail and warn, if they're invalid.
+     */
+    struct gds_Literal * v = gds_parser_new_Literal(P);
+    uint8_t typemod = integral_parse_typemod_postfix( s );
+    char * endCPtr;
+    if( typemod & 0x2 ) {
+        if( typemod & 0x4 ) {
+            # ifdef EXTENDED_TYPES
+            if( typemod & 0x1 ) {
+                v->data.UInt64Val = strtoull( s, &endCPtr, 16 );
+                v->typecode = UInt128_CT;
+            } else {
+                v->data.Int64Val = strtoll( s, &endCPtr, 16 );
+                v->typecode = UInt128_CT;
+            }
+            # else
+            char bf[64];
+            snprintf(bf, 64, "\"%s\" -- 128-bit integer is unsupported", s );
+            gds_error( P, bf );
+            # endif
+        } else {
+            if( typemod & 0x1 ) {
+                v->data.UInt64Val = strtoul( s, &endCPtr, 16 );
+                v->typecode = UInt64_CT;
+            } else {
+                v->data.Int64Val = strtol( s, &endCPtr, 16 );
+                v->typecode = UInt64_CT;
+            }
+        }
+    } else {
+        if( typemod & 0x1 ) {
+            v->data.UInt32Val = strtoul( s, &endCPtr, 16 );
+            v->typecode = UInt32_CT;
+        } else {
+            v->data.Int32Val = strtol( s, &endCPtr, 16 );
+            v->typecode = Int32_CT;
+        }
+    }
+    return v;
 }
 
 struct gds_Literal *
 interpret_esc_integral(
         struct gds_Parser * P,
         const char * s ){
-    printf("TODO: treat \"%s\" as integral constant in escape sequence form.\n", s);
+    struct gds_Literal * v = gds_parser_new_Literal(P);
+    switch(s[2]) {
+        case 'a' : {
+            v->data.UInt8Val = 0x07;
+        } break;
+        case 'b' : {
+            v->data.UInt8Val = 0x08;
+        } break;
+        case 'f' : {
+            v->data.UInt8Val = 0x0c;
+        } break;
+        case 'n' : {
+            v->data.UInt8Val = 0x0a;
+        } break;
+        case 'r' : {
+            v->data.UInt8Val = 0x0d;
+        } break;
+        case 't' : {
+            v->data.UInt8Val = 0x09;
+        } break;
+        case 'v' : {
+            v->data.UInt8Val = 0x0b;
+        } break;
+        case '\\' : {
+            v->data.UInt8Val = 0x5c;
+        } break;
+        case '\'' : {
+            v->data.UInt8Val = 0x27;
+        } break;
+        case '"' : {
+            v->data.UInt8Val = 0x22;
+        } break;
+        case '?' : {
+            v->data.UInt8Val = 0x3f;
+        } break;
+        case 'x' : {
+            char * endCPtr;
+            v->data.UInt8Val = strtoul( s+3, &endCPtr, 16 );
+        } break;
+        default : {
+            char * endCPtr;
+            v->data.UInt8Val = strtoul( s+2, &endCPtr, 8 );
+        }
+    };
     return 0;
 }
 
@@ -154,11 +236,9 @@ interpret_dec_integral(
             if( typemod & 0x1 ) {
                 v->data.UInt64Val = strtoull( s, &endCPtr, 10 );
                 v->typecode = UInt128_CT;
-                /*printf("XXX: \"%s\" dec int, uul.\n", s);*/
             } else {
                 v->data.Int64Val = strtoll( s, &endCPtr, 10 );
                 v->typecode = UInt128_CT;
-                /*printf("XXX: \"%s\" dec int, ll.\n", s);*/
             }
             # else
             char bf[64];
@@ -167,24 +247,20 @@ interpret_dec_integral(
             # endif
         } else {
             if( typemod & 0x1 ) {
-                v->data.UInt32Val = strtoul( s, &endCPtr, 10 );
+                v->data.UInt64Val = strtoul( s, &endCPtr, 10 );
                 v->typecode = UInt64_CT;
-                /*printf("XXX: \"%s\" dec int, ul.\n", s);*/
             } else {
-                v->data.Int32Val = strtol( s, &endCPtr, 10 );
-                v->typecode = UInt64_CT;
-                /*printf("XXX: \"%s\" dec int, l.\n", s);*/
+                v->data.Int64Val = strtol( s, &endCPtr, 10 );
+                v->typecode = Int64_CT;
             }
         }
     } else {
         if( typemod & 0x1 ) {
             v->data.UInt32Val = strtoul( s, &endCPtr, 10 );
             v->typecode = UInt32_CT;
-            /*printf("XXX: \"%s\" dec int, u.\n", s);*/
         } else {
             v->data.Int32Val = strtol( s, &endCPtr, 10 );
-            v->typecode = UInt32_CT;
-            /*printf("XXX: \"%s\" dec int.\n", s);*/
+            v->typecode = Int32_CT;
         }
     }
     return v;
