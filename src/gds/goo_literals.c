@@ -5,6 +5,35 @@
 
 # ifdef ENABLE_GDS
 
+# define for_each_escseq_shortcut(m)        \
+    m( 'a',     0x07 ) m( 'b',     0x08 )   \
+    m( 'f',     0x0c ) m( 'n',     0x0a )   \
+    m( 'r',     0x0d ) m( 't',     0x09 )   \
+    m( 'v',     0x0b ) m( '\\',    0x5c )   \
+    m( '\'',    0x27 ) m( '"',     0x22 )   \
+    m( '?',     0x3f ) \
+    /* ... */
+
+uint32_t
+interpret_escseq(const char * s) {
+    uint32_t res = 0;
+    switch(*s) {
+        # define case_(chr, code) \
+            case chr : { res = code; } break;
+        for_each_escseq_shortcut(case_)
+        # undef for_each_escseq_shortcut
+        case 'x' : {
+            char * endCPtr;
+            res = strtoul( s+1, &endCPtr, 16 );
+        } break;
+        default : {
+            char * endCPtr;
+            res = strtoul( s, &endCPtr, 8 );
+        }
+    };
+    return res;
+}
+
 /*
  * Constant values
  */
@@ -173,50 +202,8 @@ interpret_esc_integral(
         struct gds_Parser * P,
         const char * s ){
     struct gds_Literal * v = gds_parser_new_Literal(P);
-    switch(s[2]) {
-        case 'a' : {
-            v->data.UInt8Val = 0x07;
-        } break;
-        case 'b' : {
-            v->data.UInt8Val = 0x08;
-        } break;
-        case 'f' : {
-            v->data.UInt8Val = 0x0c;
-        } break;
-        case 'n' : {
-            v->data.UInt8Val = 0x0a;
-        } break;
-        case 'r' : {
-            v->data.UInt8Val = 0x0d;
-        } break;
-        case 't' : {
-            v->data.UInt8Val = 0x09;
-        } break;
-        case 'v' : {
-            v->data.UInt8Val = 0x0b;
-        } break;
-        case '\\' : {
-            v->data.UInt8Val = 0x5c;
-        } break;
-        case '\'' : {
-            v->data.UInt8Val = 0x27;
-        } break;
-        case '"' : {
-            v->data.UInt8Val = 0x22;
-        } break;
-        case '?' : {
-            v->data.UInt8Val = 0x3f;
-        } break;
-        case 'x' : {
-            char * endCPtr;
-            v->data.UInt8Val = strtoul( s+3, &endCPtr, 16 );
-        } break;
-        default : {
-            char * endCPtr;
-            v->data.UInt8Val = strtoul( s+2, &endCPtr, 8 );
-        }
-    };
-    return 0;
+    v->data.UInt8Val = interpret_escseq( s + 2 );
+    return v;
 }
 
 struct gds_Literal *

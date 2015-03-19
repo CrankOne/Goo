@@ -18,6 +18,21 @@
 extern "C" {
 # endif /* __cplusplus */
 
+/**@func interpret_escseq
+ * @brief Interprets ANSI escape sequences (like \n, \b, etc.)
+ *
+ * Returns interpreted sequence as 32-bit length unsigned integer.
+ * Implies that byte pointer as a starting character in escaped
+ * sequence (first char after back-slash). Parses sequence until
+ * EOF or invalid characters. Currently supports octal and hexidecimal
+ * encoding and doesn't provide any length check.
+ *
+ * TODO: length check, wide characters.
+ *
+ * @param s     a starting encoding byte.
+ */
+uint32_t interpret_escseq(const char * s);
+
 struct gds_Parser;
 
 struct gds_Literal {
