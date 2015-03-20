@@ -29,9 +29,9 @@ void yyerror();
              struct gds_Expr * expr;
            struct gds_Module * module;
 
-          struct gds_ArgList * argList;
-          struct gds_VarList * varList;
-         struct gds_ExprList * exprList;
+           union gds_ArgList * argList;
+           union gds_VarList * varList;
+          union gds_ExprList * exprList;
 
                      uint8_t   locvarNo;
 }
@@ -83,13 +83,8 @@ void yyerror();
  * Basic expression
  */
 
-gdsExprLst  : /* empty */               { $$ = gds_parser_new_ExprList(P);
-                                          $$->next = NULL;
-                                          $$->cexpr = NULL; }
-            | expr ';' gdsExprLst       { $3->next = gds_parser_new_ExprList(P);
-                                          $3->next->next = NULL;
-                                          $3->next->cexpr = $1;
-                                          $$ = $3; }
+gdsExprLst  : /* empty */               { $$ = gds_parser_new_ExprList(P);}
+            | expr ';' gdsExprLst       { gds_ExprList_append(P, $$ = $3, $1); }
             ;
 
 expr        : rvalExpr                  { $$ = $1; }
@@ -122,24 +117,16 @@ varHead     : TYPEID unknwSymLst        {$$ = gds_variable_spec_type_for(P, $1, 
 
 unknwSymLst : UNKNWN_SYM
                 { $$ = gds_parser_new_VarList(P);
-                  $$->identifier = $1;
-                  $$->next = NULL; }
+                  gds_VarList_append( P, $$, $1 ); }
             | unknwSymLst ',' UNKNWN_SYM
-                { $1->next = gds_parser_new_VarList(P);
-                  $1->next->identifier = $3;
-                  $1->next->next = NULL;
-                  $$ = $1; }
+                { gds_VarList_append(P, $$ = $1, $3); } 
             ;
 
 varTail     : rvalExpr
                 { $$ = gds_parser_new_ExprList(P);
-                  $$->cexpr = $1;
-                  $$->next = NULL; }
+                  gds_ExprList_append( P, $$, $1 ); }
             | varTail ',' rvalExpr
-                { $$ = $1;
-                  $$->next = gds_parser_new_ExprList(P);
-                  $$->next->cexpr = $3;
-                  $$->next->next = NULL; }
+                { gds_ExprList_append( P, $$ = $1, $3 ); }
             ;
 
 /*
@@ -173,19 +160,12 @@ piecewsFrg  : logicExpr '?' mathExpr    { /*TODO*/ }
             ;
 
 fArgList    : /* empty */               
-                { struct gds_ArgList * al = gds_parser_new_ArgList(P);
-                  al->identifier = NULL;
-                  al->next = NULL;
-                  $$ = al; }
+                { $$ = gds_parser_new_ArgList(P); }
             | UNKNWN_SYM
-                { struct gds_ArgList * al = gds_parser_new_ArgList(P);
-                  al->identifier = $1;
-                  al->next = NULL;
-                  $$ = al; }
-            | fArgList ',' UNKNWN_SYM   { $$ = $1;
-                                          $$->next = gds_parser_new_ArgList(P);
-                                          $$->next->identifier = $3;
-                                          $$->next->next = NULL; }
+                { $$ = gds_parser_new_ArgList(P);
+                  gds_ArgList_append(P, $$, $1); }
+            | fArgList ',' UNKNWN_SYM
+                { gds_ArgList_append(P, $$ = $1, $3); }
             ;
 
 funcRfrnc   : DCLRD_FUN '(' ')'

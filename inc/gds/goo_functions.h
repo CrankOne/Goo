@@ -20,24 +20,20 @@
  * Is used in function declarations.
  * TODO: use hashtable for quicker search.
  */
-struct gds_ArgList {
-    const char * identifier;
-    struct gds_ArgList * next;
-};
 
 /** Returns new void arglist entry. */
-struct gds_ArgList * gds_math_new_arglist_entry(
+union gds_ArgList * gds_math_new_arglist_entry(
         struct gds_Parser * );
 /** Sets name of provided arglist entry. */
-struct gds_ArgList * gds_math_set_arglist_name(
+union gds_ArgList * gds_math_set_arglist_name(
         struct gds_Parser *,
-        struct gds_ArgList *,
+        union gds_ArgList *,
         const char *);
 /** Appends arglist with new arglist entry */
-struct gds_ArgList * gds_math_append_arglist(
+union gds_ArgList * gds_math_append_arglist(
         struct gds_Parser *,
-        struct gds_ArgList *,
-        struct gds_ArgList *);
+        union gds_ArgList *,
+        union gds_ArgList *);
 
 /**@struct gds_Function
  * @brief Mathematical function description.
@@ -82,7 +78,7 @@ struct gds_Function {
         struct {
             char * name;  /*Note: heap-allocated.*/
             struct gds_Function * f;
-            struct gds_ArgList * arglist;
+            union gds_ArgList * arglist;
         } asFunction;
     } content;
 };
@@ -113,7 +109,7 @@ void gds_math_function_init(
         struct gds_Function *, /* function node itself */
         struct gds_Function *, /* function root node */
         const char *,
-        struct gds_ArgList *);
+        union gds_ArgList *);
 
 struct gds_Function *
 gds_function_heapcopy( const struct gds_Function * );

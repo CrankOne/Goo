@@ -7,16 +7,15 @@
 
 # ifdef ENABLE_GDS
 
+# define for_each_gds_expression_type(m)                            \
+    m( function,       0x1,    "Expression without side effects." ) \
+    m( variable,       0x2,     "..." )
+
 struct gds_Expr {
-    uint8_t descriptor;
+    uint32_t descriptor;
     union {
         /* TODO */
     } content;
-};
-
-struct gds_ExprList {
-    struct gds_Expr * cexpr;
-    struct gds_ExprList * next;
 };
 
 struct gds_Expr * gds_expression_from_literal( struct gds_Literal * );

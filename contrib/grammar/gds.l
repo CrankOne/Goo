@@ -237,16 +237,21 @@ lookup_symbol( struct gds_Parser * P, const char * sym ) {
 
     if( !wasScopeResolution && P->currentLocArgListChain ) {
         /* Now, try to resolve symbol as locvar, if we're in function declaration. */
-        const struct gds_ArgList * c = *(P->currentLocArgListChain);
+        const union gds_ArgList * c = *(P->currentLocArgListChain);
         uint8_t lvno = 0;
-        do {
-            if( !strcmp( c->identifier, cSymName ) ) {
-                yyget_lval( P->scanner )->locvarNo = lvno;
-                return LOCVAR;
-            }
-            lvno++;
-            c = c->next;
-        } while( c );
+        if( c->head.first ) {
+            c = c->head.first;
+            do {
+                if( !strcmp( c->entry.this_, cSymName ) ) {
+                    yyget_lval( P->scanner )->locvarNo = lvno;
+                    /* printf( "LEXER: sym \"%s\" resolved as locvar #%d.\n",
+                            cSymName, (int) lvno ); XXX */
+                    return LOCVAR;
+                }
+                lvno++;
+                c = c->entry.next;
+            } while( c );
+        }
     }
 
     void * result;

@@ -44,7 +44,7 @@ void gds_math_function_init(
         struct gds_Function * f,
         struct gds_Function * body,
         const char * name,
-        struct gds_ArgList * arglist) {
+        union gds_ArgList * arglist) {
     /*
     printf( "XXX: new function \"%s\" at %p on parser %p with args %p\n",
             name,

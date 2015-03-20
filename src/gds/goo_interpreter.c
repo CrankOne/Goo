@@ -1,6 +1,7 @@
 # include <stdlib.h>
 # include <string.h>
 # include <stdio.h>
+# include <assert.h>
 # include "gds/goo_interpreter.h"
 
 # ifdef ENABLE_GDS
@@ -13,16 +14,18 @@
 struct gds_ ## typeName * gds_parser_new_  ## typeName(                     \
                                                 struct gds_Parser * P ) {   \
     if(P->pool_ ## typeName .current >= size) {                             \
-        gds_error( P, "Pool overflow" ); }                                  \
+        gds_error( P, "Pool depleted." ); }                                 \
     struct gds_ ## typeName * st =                                          \
            P->pool_ ## typeName .instns + P->pool_ ## typeName .current;    \
     ++ P->pool_ ## typeName .current;                                       \
     return st;                                                              \
 }
-for_all_parser_stacked_pools(implement_pool_acq_routines)
 for_all_parser_owned_pools(implement_pool_acq_routines)
 # undef implement_pool_acq_routines
 
+
+
+# if 0
 # define implement_pool_free_routines(typeName, size)                       \
 void gds_parser_free_ ## typeName( struct gds_Parser * P ) {                \
         if( ! (P->pool_ ## typeName .current)) {                            \
@@ -33,6 +36,39 @@ void gds_parser_free_ ## typeName( struct gds_Parser * P ) {                \
 }
 for_all_parser_stacked_pools(implement_pool_free_routines)
 # undef implement_pool_free_routines
+# endif
+
+
+# define gds_list_implement_routines( StructName, StructPtrType, l )          \
+union gds_ ## StructName ## List *                                            \
+gds_parser_new_ ## StructName ## List( struct gds_Parser * P ) {              \
+    if(P->pool_ ## StructName ## List .current >= l) {                        \
+        gds_error( P, "Pool depleted." ); }                                   \
+    union gds_ ## StructName ## List * st =                                   \
+           P->pool_ ## StructName ## List .instns +                           \
+                P->pool_ ## StructName ## List .current;                      \
+    ++ P->pool_ ## StructName ## List.current;                                \
+    bzero(st, sizeof(union gds_ ## StructName ## List));                      \
+    return st;                                                                \
+}                                                                             \
+union gds_ ## StructName ## List * gds_ ## StructName ## List_append(         \
+                                    struct gds_Parser * P,                    \
+                                    union gds_ ## StructName ## List * head,  \
+                                    StructPtrType entry ) {                   \
+    union gds_ ## StructName ## List * ni =                                   \
+                             gds_parser_new_ ## StructName ## List (P);       \
+    if(head->head.last) {                                                     \
+        head->head.last->entry.next = ni;                                     \
+    } else {                                                                  \
+        head->head.last = head->head.first = ni;                              \
+    }                                                                         \
+    ni->entry.next= NULL;                                                     \
+    ni->entry.this_ = entry;                                                  \
+    head->head.last = ni;                                                     \
+    return ni; }
+for_all_parser_lists(gds_list_implement_routines)
+# undef gds_list_implement_routines
+
 
 struct gds_Parser *
 gds_parser_new() {
@@ -57,18 +93,25 @@ gds_parser_new() {
     bzero(pObj->strLitBuffer, GDS_PARSER_STRING_BUF_LEN);
 
     /* Zero all pools */
-    # define zero_pool(typeName, size) \
-    bzero( pObj->pool_ ## typeName . instns , sizeof( struct gds_ ## typeName )*size ); \
+    # define zero_pool(typeName, size)                      \
+    bzero( pObj->pool_ ## typeName . instns ,               \
+           sizeof( struct gds_ ## typeName )*size );        \
     pObj->pool_ ## typeName . current = 0;
-    for_all_parser_stacked_pools(zero_pool)
     for_all_parser_owned_pools(zero_pool)
     # undef zero_pool
+    # define zero_pool(StructName, StructPtrType, l)        \
+    bzero( pObj->pool_ ## StructName ## List . instns ,     \
+           sizeof( union gds_ ## StructName ## List )*l ); \
+    pObj->pool_ ## StructName ## List . current = 0;
+    for_all_parser_lists(zero_pool)
+    # undef zero_pool
+
 
     /* Init current scope */
-    pObj->thisModule.types = gds_hashtable_new();
-    pObj->thisModule.functions = gds_hashtable_new();
-    pObj->thisModule.variables = gds_hashtable_new();
-    pObj->thisModule.submodules = gds_hashtable_new();
+    assert( pObj->thisModule.types = gds_hashtable_new()        );
+    assert( pObj->thisModule.functions = gds_hashtable_new()    );
+    assert( pObj->thisModule.variables = gds_hashtable_new()    );
+    assert( pObj->thisModule.submodules = gds_hashtable_new()   );
     pObj->currentLocArgListChain = NULL;
 
     return pObj;
@@ -174,11 +217,11 @@ gds_parser_module_resolve_symbol( struct gds_Module * ctx,
 void
 gds_parser_push_locvar_arglist(
         struct gds_Parser * P,
-        struct gds_ArgList * al ) {
+         union gds_ArgList * al ) {
     if( NULL == P->currentLocArgListChain ) {
         P->currentLocArgListChain = P->argListChains;
     } else if( P->currentLocArgListChain >=
-        P->argListChains + sizeof(P->argListChains)/sizeof(struct gds_ArgList *) ) {
+        P->argListChains + sizeof(P->argListChains)/sizeof(union gds_ArgList *) ) {
         gds_error( P, "Local argument lists pool depleted for nested declarations." );
     } else {
         (P->currentLocArgListChain)++;
