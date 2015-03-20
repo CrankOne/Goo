@@ -63,7 +63,7 @@ void yyerror();
 
 %type<argList>      fArgList
 %type<varList>      varHead varDecl unknwSymLst
-%type<exprList>     varTail gdsExprLst
+%type<exprList>     varTail gdsExprLst rvalExprLst
 
 %left P_LAND
 %left P_LOR P_LXOR
@@ -83,7 +83,7 @@ void yyerror();
  * Basic expression
  */
 
-gdsExprLst  : /* empty */               { $$ = gds_parser_new_ExprList(P);}
+gdsExprLst  : /* empty */               { $$ = gds_parser_new_ExprList(P); }
             | expr ';' gdsExprLst       { gds_ExprList_append(P, $$ = $3, $1); }
             ;
 
@@ -100,8 +100,8 @@ rvalExpr    : vaLit                     { $$ = gds_expression_from_literal( $1 )
             | '(' manifest ')'          { $$ = $2; }
             ;
 
-rvalExprLst : rvalExpr                  { /*TODO*/ }
-            | rvalExpr ',' rvalExprLst  { /*TODO*/ }
+rvalExprLst : rvalExpr                  { $$ = gds_parser_new_ExprList(P); }
+            | rvalExpr ',' rvalExprLst  { gds_ExprList_append(P, $$ = $3, $1); }
             ;
 
 /*
