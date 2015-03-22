@@ -129,7 +129,6 @@ gds_parser_append_lstr_lit( struct gds_Parser * P,
 char *
 gds_parser_opt_lstr_lit( struct gds_Parser * P ) {
     *(P->strLitBufferC ++) = '\0';
-    /*printf("Lexing STRING_LITERAL done: \"%s\".\n", P->strLitBuffer);*/
     return P->strLitBuffer;
 }
 

@@ -3,10 +3,15 @@
 # ifdef ENABLE_GDS
 
 # include <unordered_map>
+# include <unordered_set>
 # include <cassert>
 
 # include "gds/goo_interpreter.h"
 # include "goo_exception.hpp"
+
+//
+// Hashtable
+//
 
 typedef std::unordered_map<std::string, void*> HT;
 
@@ -73,6 +78,46 @@ void gds_hashtable_erase(       gds_Hashtable hs_,
                  hs_, key );
     }
     hs->erase( it );
+}
+
+//
+// Heap
+//
+
+typedef std::unordered_set<void *> Heap;
+
+gds_Heap
+gds_heap_new() {
+    return new Heap();
+}
+
+void
+gds_heap_free( gds_Heap hp_ ) {
+    assert( hp_ );
+    Heap * hp = reinterpret_cast<Heap *>(hp_);
+    delete hp;
+}
+
+void *
+gds_heap_alloc( gds_Heap hp_, uint32_t blocklen ) {
+    assert( hp_ );
+    Heap * hp = reinterpret_cast<Heap *>(hp_);
+    void * chunk = malloc( blocklen );
+    hp->insert( chunk );
+    return chunk;
+}
+
+void
+gds_heap_erase( gds_Heap hp_, void * chunk ) {
+    assert( hp_ );
+    Heap * hp = reinterpret_cast<Heap *>(hp_);
+    # ifndef NDEBUG
+    auto it = hp->find( chunk );
+    if( hp->end() == it ) {
+        emraise( noSuchKey, "Block %p isn't in the heap %p.", chunk, hp_ );
+    }
+    # endif
+    free( *it );
 }
 
 # endif  // ENABLE_GDS

@@ -47,7 +47,7 @@
 extern "C" {
 # endif /* __cplusplus */
 
-/**@struct gds_Hashtable
+/**@typedef gds_Hashtable
  * @brief A GDS hash table -- string-indexed dictionary of arbitrary data.
  *
  * Interpreted internally as C++ STL unordered map.
@@ -66,6 +66,23 @@ void gds_hashtable_replace(     gds_Hashtable, const char *, void * );
 void * gds_hashtable_search(    gds_Hashtable, const char * );
 /** Erases element by key. Raises `noSuchKey` if key is not found. */
 void gds_hashtable_erase(       gds_Hashtable, const char * );
+
+
+/**@typedef gds_Heap
+ * @brief A container for managing dynamic heap-allocated memory.
+ *
+ * Internally represented jast as unordered_set of malloc()'d pointers.
+ */
+typedef void * gds_Heap;
+
+/** Allocates new heap abstraction. */
+gds_Heap gds_heap_new();
+/** Deletes heap and all its blocks. */
+void gds_heap_free( gds_Heap );
+/** Allocates a memory block. */
+void * gds_heap_alloc( gds_Heap, uint32_t blocklen );
+/** Frees a memory block. */
+void gds_heap_erase( gds_Heap, void * chunk );
 
 /**@brief GDS type.
  *
@@ -98,6 +115,9 @@ struct gds_Module {
 /*
  * Parser object C-wrapper.
  */
+
+# define for_all_parser_heaps(m)            \
+    m( Literals )
 
 # define for_all_parser_stacked_pools(m)    \
     m( ArgList,     1024        )           \

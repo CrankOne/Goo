@@ -73,7 +73,7 @@ void yyerror();
 %left '.'
 %left '*' '/'
 /*TODO: %precedence NEG   /* negation--unary minus */
-%right '^' '%'       /* exponentiation */
+%right '^' '%'          /* exponentiation */
 
 %start gdsExprLst
 
