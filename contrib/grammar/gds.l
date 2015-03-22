@@ -142,7 +142,7 @@ void gds_warn( struct gds_Parser * P, const char * det );
 ">"                                 { return '>'; }
 "<"                                 { return '<'; }
 ":"                                 { return ':'; }
-"="                                 { return '='; }
+"="                                 { return P_ASSIGN; }
 "{"                                 { return '{'; }
 "}"                                 { return '}'; }
 "("                                 { return '('; }

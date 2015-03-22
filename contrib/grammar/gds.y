@@ -37,7 +37,7 @@ void yyerror();
 }
 
 %token              T_TRUE      T_FALSE
-%token              P_INJECTION  P_PIECEWISE_ELIF  P_PIECEWISE_ELSE
+%token              P_INJECTION P_ASSIGN    P_PIECEWISE_ELIF  P_PIECEWISE_ELSE
 %token              P_GET       P_LET       P_EET       P_NET
 %token              P_LAND      P_LXOR      P_LOR       P_BETWEEN
 
@@ -98,6 +98,7 @@ manifest    : fDef                      { $$ = gds_expr_from_func_decl( P, $1 );
 rvalExpr    : vaLit                     { $$ = gds_expression_from_literal( $1 ); }
             | mathExpr                  { $$ = gds_expression_from_math_expr( $1 ); }
             | '(' manifest ')'          { $$ = $2; }
+            | ascArray                  { /*TODO*/ }
             ;
 
 rvalExprLst : rvalExpr                  { $$ = gds_parser_new_ExprList(P); }
@@ -108,7 +109,7 @@ rvalExprLst : rvalExpr                  { $$ = gds_parser_new_ExprList(P); }
  * Variables declaration
  */
 
-varDecl     : varHead "=" varTail       { $$ = gds_variable_init_list(P, $1, $3); }
+varDecl     : varHead P_ASSIGN varTail  { $$ = gds_variable_init_list(P, $1, $3); }
             ;
 
 varHead     : TYPEID unknwSymLst        {$$ = gds_variable_spec_type_for(P, $1, $2);}
@@ -234,7 +235,6 @@ mathOprnd   : numericCst                { $$ = gds_math_new_func_from_const(  P,
             | DCLRD_VAR                 { /*TODO*/ }
             | range                     { /*TODO*/ }
             | posArray                  { /*TODO*/ }
-            | ascArray                  { /*TODO*/ }
             | mathOprnd '[' mathExpr ']'
                 { /*TODO*/ }
             ;
