@@ -259,16 +259,44 @@ struct gds_Literal *
 interpret_float_dec(
         struct gds_Parser * P,
         const char * s ){
-    printf("XXX: treat \"%s\" as float constant in decimal form.\n", s);
-    return 0;
+    struct gds_Literal * v = gds_parser_new_Literal(P);
+    uint8_t typemod = integral_parse_typemod_postfix( s );
+    char * endptr;
+
+    if( typemod & 0x2 ) {
+        v->data.Float64Val = strtold( s, &endptr );
+        v->typecode = Float64_CT;
+        /*printf("XXX: treat \"%s\" as double constant in decimal form: %e %a.\n",
+            s, v->data.Float64Val, v->data.Float64Val);*/
+    } else {
+        v->data.Float32Val = strtod( s, &endptr );
+        v->typecode = Float32_CT;
+        /*printf("XXX: treat \"%s\" as float constant in decimal form: %e %a.\n",
+            s, v->data.Float32Val, v->data.Float32Val);*/
+    }
+    return v;
 }
 
 struct gds_Literal *
 interpret_float_hex(
         struct gds_Parser * P,
         const char * s ){
-    printf("XXX: treat \"%s\" as float constant in hexidecimal form.\n", s);
-    return 0;
+    struct gds_Literal * v = gds_parser_new_Literal(P);
+    uint8_t typemod = integral_parse_typemod_postfix( s );
+    char * endptr;
+
+    if( typemod & 0x2 ) {
+        v->data.Float64Val = strtold( s, &endptr );
+        v->typecode = Float64_CT;
+        /*printf("XXX: treat \"%s\" as double constant in hexidecimal form: %e %a.\n",
+            s, v->data.Float64Val, v->data.Float64Val);*/
+    } else {
+        v->data.Float32Val = strtod( s, &endptr );
+        v->typecode = Float32_CT;
+        /*printf("XXX: treat \"%s\" as float constant in hexidecimal form: %e %a.\n",
+            s, v->data.Float32Val, v->data.Float32Val);*/
+    }
+    return v;
 }
 
 /* string literal */
@@ -277,9 +305,12 @@ struct gds_Literal *
 interpret_string_literal(
         struct gds_Parser * P,
         const char * s ){
-    printf("XXX: treat \"%s\" as string literal of length %zd.\n",
-            s, strlen(s) );
-    return 0;
+    size_t len = strlen(s);
+    char * copy = gds_heap_alloc(P->literals, len+1);
+    strcpy( copy, s );
+    struct gds_Literal * v = gds_parser_new_Literal(P);
+    v->data.stringValPtr = copy;
+    return v;
 }
 
 struct gds_Literal *
@@ -299,16 +330,16 @@ interpret_logic_false( struct gds_Parser * P ) {
 }
 
 struct gds_Literal *
-gds_literal_heapcopy( struct gds_Literal * o ) {
-    struct gds_Literal * c = malloc(sizeof(struct gds_Literal));
+gds_literal_heapcopy( struct gds_Parser * P,  struct gds_Literal * o ) {
+    struct gds_Literal * c = gds_heap_alloc(P->literals, sizeof(struct gds_Literal));
     memcpy(c, o, sizeof(struct gds_Literal));
     return c;
 }
 
 void
-gds_literal_heapfree( struct gds_Literal * inst ) {
+gds_literal_heapfree( struct gds_Parser * P, struct gds_Literal * inst ) {
     if( !inst ) { return; }
-    free(inst);
+    gds_heap_erase(P->literals, inst);
 }
 
 # endif  /* ENABLE_GDS */

@@ -7,8 +7,8 @@ struct gds_TypeID;
 struct gds_Expr;
 struct gds_Formula;
 
-struct gds_ExprList;
-struct gds_VarList;
+union gds_ExprList;
+union gds_VarList;
 
 /*
  * Those functions are necessary for other

@@ -95,6 +95,10 @@ void
 gds_heap_free( gds_Heap hp_ ) {
     assert( hp_ );
     Heap * hp = reinterpret_cast<Heap *>(hp_);
+    for( auto it  = hp->begin();
+              it != hp->end(); ++it ) {
+        free( *it );
+    }
     delete hp;
 }
 

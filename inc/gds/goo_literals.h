@@ -94,9 +94,9 @@ interpret_logic_false(
 
 
 struct gds_Literal *
-gds_literal_heapcopy( struct gds_Literal * );
+gds_literal_heapcopy( struct gds_Parser *, struct gds_Literal * );
 void
-gds_literal_heapfree( struct gds_Literal * );
+gds_literal_heapfree( struct gds_Parser *, struct gds_Literal * );
 
 
 # ifdef __cplusplus

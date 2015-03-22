@@ -10,41 +10,82 @@
  * Math function
  */
 
-# define for_all_gds_math_node_descriptor_postfix( m )  \
-    m( gds_math_nodeNumeric,    0x2 )                   \
-    m( gds_math_nodeLocVar,     0x1 )                   \
-    m( gds_math_nodeMathOp,     0x3 )                   \
-    m( gds_math_uDefinedFunc,   0xc0 )
-
-# define for_all_gds_math_node_masks( m )           \
-    m( gds_math_nodeTypeMask,   0x3  )              \
-    m( gds_math_nodeMathOpMask, 0x3c )
-
-# define for_all_gds_binary_math_operators( m )     \
-    m( gds_math_summation_c        , 0x03, '+' )    \
-    m( gds_math_subtraction_c      , 0x07, '-' )    \
-    m( gds_math_mutliplication_c   , 0x0b, '*' )    \
-    m( gds_math_division_c         , 0x0f, '/' )    \
-    m( gds_math_power_c            , 0x13, '^' )    \
-    m( gds_math_modulo_c           , 0x17, '%' )    \
-    m( gds_math_dot_c              , 0x23, '.' )
-
 static const uint8_t
-# define declare_const_b( name, code ) name = code,
-    for_all_gds_math_node_descriptor_postfix(declare_const_b)
-    for_all_gds_math_node_masks(declare_const_b)
-# undef declare_const_b
-# define declare_const_b( name, code, symbol ) name = code,
-    for_all_gds_binary_math_operators(declare_const_b)
-# undef declare_const_b
-    gds_math_unegotiation_c     = 0x1f;
+    gds_math_MASK_postfix   = 0xE0,
+    gds_math_MASK_arithm    = 0xEF,
+# define for_all_gds_math_1categories(m)                \
+    m( 0x0,     locVar,         "local variable" )      \
+    m( 0x20,    numVal,         "numeric value" )       \
+    m( 0x40,    mathOp,         "math operation" )      \
+    m( 0x60,    logicOp,        "logical operation" )   \
+    m( 0x80,    object,         "object" )              \
+    m( 0xE0,    function,       "function" )            \
+    /* ... */
+    # define declare_const(code, name, descr)   \
+    gds_math_ ## name = code,
+        for_all_gds_math_1categories( declare_const )
+    # undef declare_const
+
+# define for_all_binary_math(m)          \
+    m( summation        , 0x43, '+' )    \
+    m( subtraction      , 0x42, '-' )    \
+    m( mutliplication   , 0x44, '*' )    \
+    m( division         , 0x45, '/' )    \
+    m( power            , 0x47, '^' )    \
+    m( modulo           , 0x46, '%' )    \
+    m( dot              , 0x48, '.' )
+    /* ... */
+
+    # define declare_const(name, code, sym)   \
+    gds_math_binary_ ## name = code,
+        for_all_binary_math( declare_const )
+    # undef declare_const
+
+# define for_all_binary_logic(m)         \
+    m( and              , 0x68, '&' )    \
+    m( or               , 0x69, '|' )    \
+    m( xor              , 0x6B, '^' )    \
+    m( less             , 0x61, '<' )    \
+    m( lessOrEquals     , 0x62, 'l' )    \
+    m( greater          , 0x65, '>' )    \
+    m( greaterOrEquals  , 0x64, 'g' )    \
+    m( exactEquals      , 0x6E, '=' )    \
+    m( nearlyEquals     , 0x6A, '~' )    \
+    /* ... */
+    # define declare_const(name, code, sym)   \
+    gds_math_binary_l_ ## name = code,
+        for_all_binary_logic(declare_const)
+    # undef declare_const
+
+# define for_all_ternary_logic(m)   \
+    m( ltlt             , 0x7E )    \
+    m( ltle             , 0x7C )    \
+    m( lelt             , 0x7A )    \
+    m( lele             , 0x78 )    \
+    m( gtgt             , 0x76 )    \
+    m( gtge             , 0x74 )    \
+    m( gegt             , 0x72 )    \
+    m( gege             , 0x70 )    \
+    m( devEquals        , 0x71 )    \
+    /* ... */
+
+    # define declare_const(name, code ) \
+    gds_math_tl_ ## name = code,
+        for_all_ternary_logic(declare_const)
+    # undef declare_const
+
+    gds_math_unary_negotiation = 0x40,
+    gds_math_unary_abs         = 0x4f,
+    gds_math_unary_factorial   = 0x4a,
+    gds_math_unary_l_inversion = 0x60
+;
 
 void gds_math_function_init(
         struct gds_Parser * P,
         struct gds_Function * f,
         struct gds_Function * body,
         const char * name,
-        struct gds_ArgList * arglist) {
+        union gds_ArgList * arglist) {
     /*
     printf( "XXX: new function \"%s\" at %p on parser %p with args %p\n",
             name,
@@ -52,7 +93,7 @@ void gds_math_function_init(
             P,
             arglist);
     */
-    f->descriptor = gds_math_uDefinedFunc;
+    f->descriptor = gds_math_function;
     f->content.asFunction.f = body; /* can be NULL */
     f->content.asFunction.arglist = arglist;
     f->content.asFunction.name = strdup(name);
@@ -67,7 +108,7 @@ gds_math_new_func_from_const(
         struct gds_Literal * constVal ) {
     struct gds_Function * node = gds_parser_new_Function(P);
 
-    node->descriptor = gds_math_nodeNumeric;
+    node->descriptor = gds_math_numVal;
     node->content.asValue = constVal;
 
     return node;
@@ -79,7 +120,7 @@ gds_math_new_func_from_locvar(
         uint8_t lvno ) {
     struct gds_Function * node = gds_parser_new_Function(P);
 
-    node->descriptor = gds_math_nodeLocVar;
+    node->descriptor = gds_math_locVar;
     node->content.asLocalVariable.orderNum = lvno;
 
     return node;
@@ -97,9 +138,9 @@ gds_math(
     switch( opType ) {
         # define case_( name, code, glyph ) \
             case glyph : {                  \
-                node->descriptor = name;    \
+                node->descriptor = gds_math_binary_ ## name;    \
             } break;
-        for_all_gds_binary_math_operators(case_);
+        for_all_binary_math(case_);
         # undef case_
         default: {
             fprintf( stderr,
@@ -118,11 +159,43 @@ gds_math(
 }
 
 struct gds_Function *
+gds_math_logical_binary_op(
+        struct gds_Parser * P,
+        char opType,
+        struct gds_Function * l,
+        struct gds_Function * r) {
+    struct gds_Function * node = gds_parser_new_Function(P);
+    node->content.asLogicalOperation.l = l;
+    node->content.asLogicalOperation.r = r;
+    switch( opType ) {
+        # define case_( name, code, glyph ) \
+            case glyph : {                  \
+                node->descriptor = gds_math_binary_l_ ## name;    \
+            } break;
+        for_all_binary_logic(case_);
+        # undef case_
+        default: {
+            fprintf( stderr,
+                    "Unknown symbol '%c' interpreted as logical operator: internal parser error.\n",
+                    opType );
+        }
+    }; /* switch( opType ) */
+    /*
+    printf( "XXX New math operation 0x%0x(%c) at %p: %p %p.\n",
+            node->descriptor,
+            opType,
+            node,
+            l, r);
+    */
+    return node;
+}
+
+struct gds_Function *
 gds_math_negotiate(
         struct gds_Parser * P,
         struct gds_Function * o) {
     struct gds_Function * node = gds_parser_new_Function(P);
-    node->descriptor = gds_math_unegotiation_c;
+    node->descriptor = gds_math_unary_negotiation;
     node->content.asMathOperation.l = o;
     node->content.asMathOperation.r = NULL;
     return node;
@@ -162,59 +235,56 @@ static void _static_print_out_math_expr_graph(
 # endif
 
 struct gds_Function *
-gds_function_heapcopy( const struct gds_Function * f ) {
+gds_function_heapcopy( struct gds_Parser * P, const struct gds_Function * f ) {
     if( !f ) {return NULL;}
-    struct gds_Function * cf = malloc( sizeof(struct gds_Function) );
+    struct gds_Function * cf = gds_heap_alloc( P->literals, sizeof(struct gds_Function) );
     memcpy( cf, f, sizeof(struct gds_Function) );
-    uint8_t typePart = gds_math_nodeTypeMask & f->descriptor;
-    if( typePart == gds_math_nodeNumeric ) {
+    uint8_t typePart = gds_math_MASK_postfix & f->descriptor;
+    if( typePart == gds_math_numVal ) {
         cf->content.asValue = 
-            gds_literal_heapcopy( f->content.asValue );
-    } /*else if( typePart == gds_math_nodeLocVar ) {
-        Do nothing for locvar, as previous memcpy call already copied its
-        order number.
-    } */else if( typePart == gds_math_nodeMathOp ) {
-        uint8_t mathOpPart = (gds_math_nodeTypeMask | gds_math_nodeMathOpMask) & f->descriptor;
+            gds_literal_heapcopy( P, f->content.asValue );
+    } else if( typePart == gds_math_mathOp ) {
+        uint8_t mathOpPart = gds_math_MASK_arithm & f->descriptor;
         switch( mathOpPart ) {
             # define case_( name, code, glyph ) \
                 case code : {                   \
-                    cf->content.asMathOperation.l = gds_function_heapcopy( f->content.asMathOperation.l ); \
-                    cf->content.asMathOperation.r = gds_function_heapcopy( f->content.asMathOperation.r ); \
+                    cf->content.asMathOperation.l = gds_function_heapcopy( P, f->content.asMathOperation.l ); \
+                    cf->content.asMathOperation.r = gds_function_heapcopy( P, f->content.asMathOperation.r ); \
                 } break;
-            for_all_gds_binary_math_operators(case_);
+            for_all_binary_math(case_);
             # undef case_
         }; /* switch( mathOpPart ) */
-        if(gds_math_unegotiation_c == mathOpPart ) {
-            cf->content.asMathOperation.l = gds_function_heapcopy( f->content.asMathOperation.l );
+        if(gds_math_unary_negotiation == mathOpPart ) {
+            cf->content.asMathOperation.l = gds_function_heapcopy( P, f->content.asMathOperation.l );
         }
     }
     return cf;
 }
 
 void
-gds_function_heapfree( struct gds_Function * f ) {
+gds_function_heapfree( struct gds_Parser * P, struct gds_Function * f ) {
     if( !f ) {return;}
-    uint8_t typePart = gds_math_nodeTypeMask & f->descriptor;
-    if( typePart == gds_math_nodeNumeric ) {
-        gds_literal_heapfree( f->content.asValue );
+    uint8_t typePart = gds_math_MASK_postfix & f->descriptor;
+    if( typePart == gds_math_numVal ) {
+        gds_literal_heapfree( P, f->content.asValue );
     } /*else if( typePart == gds_math_nodeLocVar ) {
         Do nothing for locvar, as its data is stored entirely in current node.
-    } */else if( typePart == gds_math_nodeMathOp ) {
-        uint8_t mathOpPart = (gds_math_nodeTypeMask | gds_math_nodeMathOpMask) & f->descriptor;
+    } */else if( typePart == gds_math_mathOp ) {
+        uint8_t mathOpPart = gds_math_MASK_arithm & f->descriptor;
         switch( mathOpPart ) {
             # define case_( name, code, glyph ) \
                 case code : {                   \
-                    gds_function_heapfree( f->content.asMathOperation.l ); \
-                    gds_function_heapfree( f->content.asMathOperation.r ); \
+                    gds_function_heapfree( P, f->content.asMathOperation.l ); \
+                    gds_function_heapfree( P, f->content.asMathOperation.r ); \
                 } break;
-            for_all_gds_binary_math_operators(case_);
+            for_all_binary_math(case_);
             # undef case_
         }; /* switch( mathOpPart ) */
-        if(gds_math_unegotiation_c == mathOpPart ) {
-            gds_function_heapfree( f->content.asMathOperation.l );
+        if(gds_math_unary_negotiation == mathOpPart ) {
+            gds_function_heapfree( P, f->content.asMathOperation.l );
         }
     }
-    free(f);
+    gds_heap_erase(P->literals, f);
 }
 
 struct gds_Expr *

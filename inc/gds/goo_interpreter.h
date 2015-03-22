@@ -113,21 +113,49 @@ struct gds_Module {
 };
 
 /*
- * Parser object C-wrapper.
+ * Lists X-macros
  */
 
-# define for_all_parser_heaps(m)            \
-    m( Literals )
+# define for_all_parser_lists(m)                            \
+    m( Arg,     const char *,               1024 )          \
+    m( Var,     const char *,           128*1024 )          \
+    m( Expr,    struct gds_Expr *,      128*1024 )
 
-# define for_all_parser_stacked_pools(m)    \
-    m( ArgList,     1024        )           \
-    m( VarList,     128*1024    )
+/* Declare list union */
+
+# define gds_list_declare_lstruct( StructName, StructPtrType, l )   \
+    union gds_ ## StructName ## List {                              \
+        struct StructName ## Entry {                                \
+            union gds_ ## StructName ## List * next;                \
+            StructPtrType this_;                                    \
+        } entry;                                                    \
+        struct StructName ## Head {                                 \
+            union gds_ ## StructName ## List * first, * last;       \
+        } head; };
+for_all_parser_lists( gds_list_declare_lstruct );
+# undef gds_list_declare_lstruct
+
+# define gds_list_declare_routines(StructName, StructPtrType, l)    \
+union gds_ ## StructName ## List *                                  \
+    gds_ ## StructName ## List_append(                              \
+            struct gds_Parser *,                                    \
+            union gds_ ## StructName ## List *,                     \
+            StructPtrType );
+for_all_parser_lists(gds_list_declare_routines);
+# undef gds_list_declare_routines
+
+/*
+ * Pools X-macro
+ */
 
 # define for_all_parser_owned_pools(m)      \
     m( Literal,     256*1024    )           \
     m( Function,    256*1024    )           \
-    m( Expr,        256*1024    )           \
-    m( ExprList,    1024        )
+    m( Expr,     4*1024*1024    )
+
+/*
+ * Parser
+ */
 
 struct gds_Parser {
     /* YACC/FLEX section {{{ */
@@ -139,6 +167,7 @@ struct gds_Parser {
     } location;
     /* }}} */
 
+    /* Tokens replication {{{ */
     struct ReplicaBuffer {
         char tokenReplicasBf[GDS_PARSER_EXPR_REPLICA_BUF_LENGTH];
         char * lastReplica;
@@ -147,32 +176,51 @@ struct gds_Parser {
       * cScope;
     char * strLitBuffer,
          * strLitBufferC;
+    /* }}} */
 
-    # define declare_pool(typeName, size)       \
-    struct Pool_ ## typeName {                  \
-        struct gds_ ## typeName instns[size];   \
-        uint32_t current;                       \
+    /* Argument lists (locvars) managing {{{ */
+    union gds_ArgList * argListChains[8];
+    union gds_ArgList ** currentLocArgListChain;
+    /*}}}*/
+
+    /*Moduels subsystem {{{*/
+    struct gds_Module thisModule;
+    /*}}}*/
+
+    /* Lists pools {{{ */
+    # define declare_lists_pool( StructName, StructPtrType, l ) \
+    struct Pool_ ## StructName ## List {                        \
+        union gds_ ## StructName ## List instns[l];             \
+        uint32_t current;                                       \
+    } pool_ ## StructName ## List;
+    for_all_parser_lists(declare_lists_pool);
+    # undef gds_list_declare_lstruct
+    /* }}} */
+
+    /* Entities pools {{{ */
+    # define declare_pool(typeName, size)               \
+    struct Pool_ ## typeName {                          \
+        struct gds_ ## typeName instns[size];           \
+        uint32_t current;                               \
     } pool_ ## typeName;
-    for_all_parser_stacked_pools(declare_pool)
     for_all_parser_owned_pools(declare_pool)
     # undef declare_pool
+    /* }}} */
 
-    struct gds_ArgList * argListChains[8];
-    struct gds_ArgList ** currentLocArgListChain;
-
-    struct gds_Module thisModule;
+    gds_Heap literals;
 };
 
 # define declare_pool_acq_routines(typeName, size)                             \
 struct gds_ ## typeName * gds_parser_new_  ## typeName( struct gds_Parser * );
-for_all_parser_stacked_pools(declare_pool_acq_routines)
 for_all_parser_owned_pools(declare_pool_acq_routines)
 # undef declare_pool_acq_routines
 
-# define declare_pool_free_routines(typeName, size)                            \
-void gds_parser_free_ ## typeName( struct gds_Parser * );
-for_all_parser_stacked_pools(declare_pool_free_routines)
-# undef declare_pool_free_routines
+# define declare_pool_acq_routines(StructName, StructPtrType, l)                \
+union gds_ ## StructName ## List *                                              \
+gds_parser_new_ ## StructName ## List( struct gds_Parser * );                   \
+union gds_ ## typeName ## List * gds_parser_new_  ## typeName( struct gds_Parser * );
+for_all_parser_lists(declare_pool_acq_routines)
+# undef declare_pool_acq_routines
 
 /** Sets current filename. Should be called before lexical analysis (yylex()). */
 void gds_parser_set_filename( struct gds_Parser *,
@@ -208,7 +256,7 @@ int8_t gds_parser_module_resolve_symbol( struct gds_Module * context,
                                          void ** result );
 
 /** Sets given variables dictionary as curent locvar dict keeping previous. */
-void gds_parser_push_locvar_arglist( struct gds_Parser *, struct gds_ArgList * );
+void gds_parser_push_locvar_arglist( struct gds_Parser *, union gds_ArgList * );
 /** Denies current local variables dictionary and sets current to previous. */
 void gds_parser_pop_locvar_arglist( struct gds_Parser * P );
 
