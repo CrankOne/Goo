@@ -1,4 +1,6 @@
 TODO:
+ - For short string literal quotes are also copied.
  - Parse escape sequences inside a string: \077, \\, \n, etc.
  - Parsing a string literal prefixed with (u8|u|U|L) yields no effects of used storaging type.
+ - Truncation/narrowing warnings during parsing the literals.
 

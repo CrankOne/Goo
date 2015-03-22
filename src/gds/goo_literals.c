@@ -146,8 +146,47 @@ struct gds_Literal *
 interpret_oct_integral(
         struct gds_Parser * P,
         const char * s ){
-    printf("TODO: treat \"%s\" as integral constant in octal form.\n", s);
-    return 0;
+    /* TODO:
+     *  1) Check truncation errors here (strtoi has special behaviour);
+     *  2) Check extra symbols on tail and warn, if they're invalid.
+     */
+    struct gds_Literal * v = gds_parser_new_Literal(P);
+    uint8_t typemod = integral_parse_typemod_postfix( s );
+    char * endCPtr;
+    if( typemod & 0x2 ) {
+        if( typemod & 0x4 ) {
+            # ifdef EXTENDED_TYPES
+            if( typemod & 0x1 ) {
+                v->data.UInt64Val = strtoull( s, &endCPtr, 8 );
+                v->typecode = UInt128_CT;
+            } else {
+                v->data.Int64Val = strtoll( s, &endCPtr, 8 );
+                v->typecode = UInt128_CT;
+            }
+            # else
+            char bf[64];
+            snprintf(bf, 64, "\"%s\" -- 128-bit integer is unsupported", s );
+            gds_error( P, bf );
+            # endif
+        } else {
+            if( typemod & 0x1 ) {
+                v->data.UInt64Val = strtoul( s, &endCPtr, 8 );
+                v->typecode = UInt64_CT;
+            } else {
+                v->data.Int64Val = strtol( s, &endCPtr, 8 );
+                v->typecode = UInt64_CT;
+            }
+        }
+    } else {
+        if( typemod & 0x1 ) {
+            v->data.UInt32Val = strtoul( s, &endCPtr, 8 );
+            v->typecode = UInt32_CT;
+        } else {
+            v->data.Int32Val = strtol( s, &endCPtr, 8 );
+            v->typecode = Int32_CT;
+        }
+    }
+    return v;
 }
 
 struct gds_Literal *
