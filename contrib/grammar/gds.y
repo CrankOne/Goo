@@ -25,6 +25,7 @@ void yyerror();
                   const char * strval;
           struct gds_Literal * value;
          struct gds_Function * func;
+        struct gds_LFunction * lfunc;
            struct gds_TypeID * GTID;
              struct gds_Expr * expr;
            struct gds_Module * module;
@@ -57,8 +58,9 @@ void yyerror();
 %type<module>       DCLRD_MDLE
 %type<locvarNo>     LOCVAR
 
-%type<value>        DCLRD_VAR logicCst numericCst vaLit integralCst floatCst;
+%type<value>        DCLRD_VAR logicCst numericCst vaLit integralCst floatCst funcRfrnc;
 %type<func>         DCLRD_FUN fDecl fDef mathExpr mathOprnd funcTail;
+%type<lfunc>        logicAtom logicExpr
 %type<expr>         expr rvalExpr manifest
 
 %type<argList>      fArgList
@@ -170,47 +172,54 @@ fArgList    : /* empty */
             ;
 
 funcRfrnc   : DCLRD_FUN '(' ')'
-                { /*TODO*/ }
+                { $$ = gds_math_substitute_function( NULL ); }
             | DCLRD_FUN '(' rvalExprLst ')'
-                { /*TODO*/ }
+                { $$ = gds_math_substitute_function( $3 ); }
             ;
 
 /*
  * Logical expressions
  */
 
-logicExpr   : logicAtom                          { /*TODO*/ }
-            | logicAtom P_LAND logicExpr         { /*TODO*/ }
-            | logicAtom P_LOR  logicExpr         { /*TODO*/ }
-            | logicAtom P_LXOR logicExpr         { /*TODO*/ }
-            | '!' logicExpr %prec P_LXOR         { /*TODO*/ }
+logicExpr   : logicAtom                          { $$ = $1; }
+            | logicAtom P_LAND logicExpr         { $$ = gds_logic_bin( 1, $1, '&', $3 ); }
+            | logicAtom P_LOR  logicExpr         { $$ = gds_logic_bin( 1, $1, '|', $3 ); }
+            | logicAtom P_LXOR logicExpr         { $$ = gds_logic_bin( 1, $1, '^', $3 ); }
+            | '!' logicExpr %prec P_LXOR         { $$ = gds_logic_unary( 1, $2, '!' ); }
             ;
 
-logicAtom   : mathExpr                           { /*TODO*/ }
-            | mathExpr '>' mathExpr              { /*TODO*/ }
-            | mathExpr '<' mathExpr              { /*TODO*/ }
-            | mathExpr P_GET mathExpr            { /*TODO*/ }
-            | mathExpr P_LET mathExpr            { /*TODO*/ }
-            | mathExpr P_EET mathExpr            { /*TODO*/ }
-            | mathExpr P_NET mathExpr            { /*TODO*/ }
-            | mathExpr '~' mathExpr '~' mathExpr { /*TODO*/ }
+logicAtom   : mathExpr                           { $$ = gds_logic_from_math(); }
+            | mathExpr '>' mathExpr
+                { $$ = gds_logic_math( $1, gds_math_binary_l_greater, $3 ); }
+            | mathExpr '<' mathExpr
+                { $$ = gds_logic_math( $1, gds_math_binary_l_less,    $3 ); }
+            | mathExpr P_GET mathExpr
+                { $$ = gds_logic_math( $1, gds_math_binary_l_greaterOrEquals, $3 ); }
+            | mathExpr P_LET mathExpr
+                { $$ = gds_logic_math( $1, gds_math_binary_l_lessOrEquals, $3 ); }
+            | mathExpr P_EET mathExpr
+                { $$ = gds_logic_math( $1, gds_math_binary_l_exactEquals, $3 ); }
+            | mathExpr P_NET mathExpr
+                { $$ = gds_logic_math( $1, gds_math_binary_l_nearlyEquals, $3 ); }
             /* Ternary (interval) logic */
+            | mathExpr '~' mathExpr '~' mathExpr
+                { $$ = gds_logic_ternary_math( $1, $3, $5, gds_math_binary_l_nearlyEquals ); }
             | mathExpr '<' mathExpr '<' mathExpr
-                { /*TODO*/ }
+                { $$ = gds_logic_ternary_math( $1, $3, $5, gds_math_tl_ltlt ); }
             | mathExpr '>' mathExpr '>' mathExpr
-                { /*TODO*/ }
+                { $$ = gds_logic_ternary_math( $1, $3, $5, gds_math_tl_gtgt ); }
             | mathExpr '<' mathExpr P_LET mathExpr
-                { /*TODO*/ }
+                { $$ = gds_logic_ternary_math( $1, $3, $5, gds_math_tl_ltle ); }
             | mathExpr P_LET mathExpr '<' mathExpr
-                { /*TODO*/ }
+                { $$ = gds_logic_ternary_math( $1, $3, $5, gds_math_tl_lelt ); }
             | mathExpr P_LET mathExpr P_LET mathExpr
-                { /*TODO*/ }
+                { $$ = gds_logic_ternary_math( $1, $3, $5, gds_math_tl_lele ); }
             | mathExpr P_GET mathExpr '>' mathExpr
-                { /*TODO*/ }
+                { $$ = gds_logic_ternary_math( $1, $3, $5, gds_math_tl_gegt ); }
             | mathExpr '>' mathExpr P_GET mathExpr
-                { /*TODO*/ }
+                { $$ = gds_logic_ternary_math( $1, $3, $5, gds_math_tl_gtge ); }
             | mathExpr P_GET mathExpr P_GET mathExpr
-                { /*TODO*/ }
+                { $$ = gds_logic_ternary_math( $1, $3, $5, gds_math_tl_gege ); }
             ;
 
 /*
@@ -230,7 +239,7 @@ mathExpr    : mathOprnd                 { $$ = $1; }
             ;
 
 mathOprnd   : numericCst                { $$ = gds_math_new_func_from_const(  P, $1 ); }
-            | funcRfrnc                 { /*TODO*/ }
+            | funcRfrnc                 { $$ = $1; }
             | LOCVAR                    { $$ = gds_math_new_func_from_locvar( P, $1 ); }
             | DCLRD_VAR                 { /*TODO*/ }
             | range                     { /*TODO*/ }
@@ -239,9 +248,9 @@ mathOprnd   : numericCst                { $$ = gds_math_new_func_from_const(  P,
                 { /*TODO*/ }
             ;
 
-range       : '/' mathExpr P_BETWEEN mathExpr '/'
+range       : '{' mathExpr P_BETWEEN mathExpr '}'
                 { /*TODO*/ }
-            | '/' mathExpr P_BETWEEN mathExpr P_BETWEEN mathExpr '/'
+            | '{' mathExpr P_BETWEEN mathExpr P_BETWEEN mathExpr '}'
                 { /*TODO*/ }
             ;
 

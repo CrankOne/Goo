@@ -35,6 +35,85 @@ union gds_ArgList * gds_math_append_arglist(
         union gds_ArgList *,
         union gds_ArgList *);
 
+# define for_all_gds_math_1categories(m)                \
+    m( 0x0,     locVar,         "local variable" )      \
+    m( 0x20,    numVal,         "numeric value" )       \
+    m( 0x40,    mathOp,         "math operation" )      \
+    m( 0x60,    logicOp,        "logical operation" )   \
+    m( 0x80,    object,         "object" )              \
+    m( 0xE0,    function,       "function" )            \
+    /* ... */
+
+# define for_all_binary_math(m)             \
+    m( summation        , 0x43, '+' )       \
+    m( subtraction      , 0x42, '-' )       \
+    m( mutliplication   , 0x44, '*' )       \
+    m( division         , 0x45, '/' )       \
+    m( power            , 0x47, '^' )       \
+    m( modulo           , 0x46, '%' )       \
+    m( dot              , 0x48, '.' )
+    /* ... */
+
+# define for_all_binary_logic(m)            \
+    m( and              , 0x68, '&' )       \
+    m( or               , 0x69, '|' )       \
+    m( xor              , 0x6B, '^' )       \
+    m( less             , 0x61, '<' )       \
+    m( lessOrEquals     , 0x62, 'l' )       \
+    m( greater          , 0x65, '>' )       \
+    m( greaterOrEquals  , 0x64, 'g' )       \
+    m( exactEquals      , 0x6E, '=' )       \
+    m( nearlyEquals     , 0x6A, '~' )       \
+    /* ... */
+
+# define for_all_ternary_logic(m)           \
+    m( ltlt             , 0x7E )            \
+    m( ltle             , 0x7C )            \
+    m( lelt             , 0x7A )            \
+    m( lele             , 0x78 )            \
+    m( gtgt             , 0x76 )            \
+    m( gtge             , 0x74 )            \
+    m( gegt             , 0x72 )            \
+    m( gege             , 0x70 )            \
+    m( devEquals        , 0x71 )            \
+    /* ... */
+
+# define for_all_unclassified_operations(m) \
+    m(gds_math_unary_negotiation , 0x40)    \
+    m(gds_math_unary_abs         , 0x4f)    \
+    m(gds_math_unary_factorial   , 0x4a)    \
+    m(gds_math_unary_l_inversion , 0x60)    \
+    m(gds_math_MASK_postfix      , 0xE0)    \
+    m(gds_math_MASK_arithm       , 0xEF)    \
+    /* ... */
+
+/*
+ * Declare extern const
+ */
+
+const uint8_t
+    # define declare_const(code, name, descr)   \
+    gds_math_ ## name,
+        for_all_gds_math_1categories( declare_const )
+    # undef declare_const
+
+    # define declare_const(name, code, sym)   \
+    gds_math_binary_ ## name,
+        for_all_binary_math( declare_const )
+    # undef declare_const
+
+    # define declare_const(name, code, sym)   \
+    gds_math_binary_l_ ## name,
+        for_all_binary_logic(declare_const)
+    # undef declare_const
+
+    # define declare_const(name, code ) \
+    gds_math_tl_ ## name,
+        for_all_ternary_logic(declare_const)
+    # undef declare_const
+
+gds_operations_sentinel;
+
 /**@struct gds_Function
  * @brief Mathematical function description.
  *

@@ -10,75 +10,33 @@
  * Math function
  */
 
-static const uint8_t
-    gds_math_MASK_postfix   = 0xE0,
-    gds_math_MASK_arithm    = 0xEF,
-# define for_all_gds_math_1categories(m)                \
-    m( 0x0,     locVar,         "local variable" )      \
-    m( 0x20,    numVal,         "numeric value" )       \
-    m( 0x40,    mathOp,         "math operation" )      \
-    m( 0x60,    logicOp,        "logical operation" )   \
-    m( 0x80,    object,         "object" )              \
-    m( 0xE0,    function,       "function" )            \
-    /* ... */
+const uint8_t
     # define declare_const(code, name, descr)   \
     gds_math_ ## name = code,
         for_all_gds_math_1categories( declare_const )
     # undef declare_const
-
-# define for_all_binary_math(m)          \
-    m( summation        , 0x43, '+' )    \
-    m( subtraction      , 0x42, '-' )    \
-    m( mutliplication   , 0x44, '*' )    \
-    m( division         , 0x45, '/' )    \
-    m( power            , 0x47, '^' )    \
-    m( modulo           , 0x46, '%' )    \
-    m( dot              , 0x48, '.' )
-    /* ... */
 
     # define declare_const(name, code, sym)   \
     gds_math_binary_ ## name = code,
         for_all_binary_math( declare_const )
     # undef declare_const
 
-# define for_all_binary_logic(m)         \
-    m( and              , 0x68, '&' )    \
-    m( or               , 0x69, '|' )    \
-    m( xor              , 0x6B, '^' )    \
-    m( less             , 0x61, '<' )    \
-    m( lessOrEquals     , 0x62, 'l' )    \
-    m( greater          , 0x65, '>' )    \
-    m( greaterOrEquals  , 0x64, 'g' )    \
-    m( exactEquals      , 0x6E, '=' )    \
-    m( nearlyEquals     , 0x6A, '~' )    \
-    /* ... */
     # define declare_const(name, code, sym)   \
     gds_math_binary_l_ ## name = code,
         for_all_binary_logic(declare_const)
     # undef declare_const
-
-# define for_all_ternary_logic(m)   \
-    m( ltlt             , 0x7E )    \
-    m( ltle             , 0x7C )    \
-    m( lelt             , 0x7A )    \
-    m( lele             , 0x78 )    \
-    m( gtgt             , 0x76 )    \
-    m( gtge             , 0x74 )    \
-    m( gegt             , 0x72 )    \
-    m( gege             , 0x70 )    \
-    m( devEquals        , 0x71 )    \
-    /* ... */
 
     # define declare_const(name, code ) \
     gds_math_tl_ ## name = code,
         for_all_ternary_logic(declare_const)
     # undef declare_const
 
-    gds_math_unary_negotiation = 0x40,
-    gds_math_unary_abs         = 0x4f,
-    gds_math_unary_factorial   = 0x4a,
-    gds_math_unary_l_inversion = 0x60
-;
+    # define declare_const(name, code)  \
+    name = code,
+    for_all_unclassified_operations(declare_const)
+    # undef declare_const
+
+gds_operations_sentinel = 0 ;
 
 void gds_math_function_init(
         struct gds_Parser * P,
