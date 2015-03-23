@@ -91,7 +91,7 @@ union gds_ArgList * gds_math_append_arglist(
  * Declare extern const
  */
 
-const uint8_t
+extern const uint8_t
     # define declare_const(code, name, descr)   \
     gds_math_ ## name,
         for_all_gds_math_1categories( declare_const )
