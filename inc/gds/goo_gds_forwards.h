@@ -9,6 +9,7 @@ struct gds_Formula;
 
 union gds_ExprList;
 union gds_VarList;
+union gds_PcwsTrmList;
 
 /*
  * Those functions are necessary for other

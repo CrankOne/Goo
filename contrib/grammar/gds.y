@@ -168,16 +168,16 @@ fDef        : fDecl P_INJECTION funcTail
             ;
 
 funcTail    : mathExpr                  { $$ = $1; }
-            | piecewsLst                { $$ = gds_math_piecewise_unite($1); }
+            | piecewsLst                { $$ = gds_math_piecewise_unite(P, $1); }
             ;
 
 piecewsLst  : piecewsFrg
                 { $$ = gds_parser_new_PcwsTrmList(P);
                   gds_PcwsTrmList_append(P, $$, $1);  }
             | piecewsLst ',' P_PIECEWISE_ELIF piecewsFrg
-                { gds_PcwsTrmList_append(P, '|', $$ = $1, $4); }
+                { gds_PcwsTrmList_append(P, $$ = $1, $4); }
             | piecewsLst ',' P_PIECEWISE_ELSE mathExpr
-                { gds_PcwsTrmList_append(P, '~', $$ = $1, $4); }
+                { $$ = gds_PcwsTrmList_append(P, $$ = $1, gds_math_piecewise_term_new(P, NULL, $4)); }
             ;
 
 piecewsFrg  : logicExpr '?' mathExpr    { $$ = gds_math_piecewise_term_new(P, $1, $3); }
@@ -203,10 +203,10 @@ funcRfrnc   : DCLRD_FUN '(' ')'
  */
 
 logicExpr   : logicAtom                          { $$ = $1; }
-            | logicAtom P_LAND logicExpr         { $$ = gds_logic_bin( P, 1, $1, '&', $3 ); }
-            | logicAtom P_LOR  logicExpr         { $$ = gds_logic_bin( P, 1, $1, '|', $3 ); }
-            | logicAtom P_LXOR logicExpr         { $$ = gds_logic_bin( P, 1, $1, '^', $3 ); }
-            | '!' logicExpr %prec P_LXOR         { $$ = gds_logic_unary( P, 1, $2, '!' ); }
+            | logicAtom P_LAND logicExpr         { $$ = gds_logic_bin( P, $1, '&', $3 ); }
+            | logicAtom P_LOR  logicExpr         { $$ = gds_logic_bin( P, $1, '|', $3 ); }
+            | logicAtom P_LXOR logicExpr         { $$ = gds_logic_bin( P, $1, '^', $3 ); }
+            | '!' logicExpr %prec P_LXOR         { $$ = gds_logic_unary( P, $2, '!' ); }
             ;
 
 logicAtom   : mathExpr                           { $$ = gds_logic_from_math(P, $1); }
@@ -286,10 +286,11 @@ ascArray    : '{' ascPairsLst '}'       { $$ = gds_asc_array_new(P, $2); }
             ;
 
 ascPairsLst :                           { $$ = NULL; }
-            | ascPair ',' ascPairsLst   { $$ = gds_asc_array_append(P,  $3, $1 ); }
+            | ascPair ';' ascPairsLst   { $$ = gds_asc_array_append(P,  $3, $1 ); }
             ;
 
 ascPair     : UNKNWN_SYM ':' rvalExpr   { $$ = gds_asc_array_pair_new(P, $1, $3); }
+            | fDef                      { /* TODO */ }
             ;
 
 /*

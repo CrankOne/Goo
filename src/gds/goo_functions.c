@@ -7,6 +7,29 @@
 # ifdef ENABLE_GDS
 
 /*
+ * Piecewise
+ */
+
+struct gds_PcwsTrm * gds_math_piecewise_term_new(
+        struct gds_Parser * P,
+        struct gds_LFunction * cond, /* Left NULL for `otherwise' */
+        struct gds_Function * f) {
+    struct gds_PcwsTrm * term = gds_parser_new_PcwsTrm( P );
+
+    term->condition = cond;
+    term->function = f;
+
+    return term;
+}
+
+struct gds_Function * gds_math_piecewise_unite(
+        struct gds_Parser * P,
+        union gds_PcwsTrmList * ptList) {
+    /* TODO */
+    return NULL;
+}
+
+/*
  * Math function
  */
 
@@ -253,6 +276,60 @@ gds_expr_from_func_decl(
      * that currently aren't necessary. */
     return NULL;
 }
+
+/*
+ * Logic
+ */
+
+struct gds_LFunction *
+gds_logic_unary(    struct gds_Parser * P,
+                    struct gds_LFunction * lf,
+                    char operation
+                    ) {
+    /* TODO */
+    return NULL;
+}
+
+struct gds_LFunction *
+gds_logic_bin(      struct gds_Parser * P,
+                    struct gds_LFunction * lfl,
+                    char operation,
+                    struct gds_LFunction * lfr
+                    ) {
+    /* TODO */
+    return NULL;
+}
+
+struct gds_LFunction *
+gds_logic_math(     struct gds_Parser * P,
+                    struct gds_Function * fl,
+                    uint8_t opcode,
+                    struct gds_Function * fr
+                    ) {
+    /* TODO */
+    return NULL;
+}
+
+struct gds_LFunction *
+gds_logic_ternary_math(
+                    struct gds_Parser * P,
+                    struct gds_Function * l,
+                    struct gds_Function * m,
+                    struct gds_Function * r,
+                    const uint8_t opcode
+                    ) {
+    /* TODO */
+    return NULL;
+}
+
+struct gds_LFunction *
+gds_logic_from_math(
+                    struct gds_Parser * P,
+                    struct gds_Function * f) {
+    /* TODO */
+    return NULL;
+}
+
 
 # endif  /* ENABLE_GDS */
 

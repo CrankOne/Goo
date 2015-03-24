@@ -119,7 +119,9 @@ struct gds_Module {
 # define for_all_parser_lists(m)                            \
     m( Arg,     const char *,               1024 )          \
     m( Var,     const char *,           128*1024 )          \
-    m( Expr,    struct gds_Expr *,      128*1024 )
+    m( Expr,    struct gds_Expr *,      128*1024 )          \
+    m( PcwsTrm, struct gds_PcwsTrm *,   128      )          \
+    /* ... */
 
 /* Declare list union */
 
@@ -148,10 +150,11 @@ for_all_parser_lists(gds_list_declare_routines);
  * Pools X-macro
  */
 
-# define for_all_parser_owned_pools(m)      \
-    m( Literal,     256*1024    )           \
-    m( Function,    256*1024    )           \
-    m( Expr,     4*1024*1024    )
+# define for_all_parser_owned_pools(m)              \
+    m( struct, Literal,     256*1024    )           \
+    m( struct, Function,    256*1024    )           \
+    m( struct, Expr,     4*1024*1024    )           \
+    m( struct, PcwsTrm,          256    )
 
 /*
  * Parser
@@ -198,9 +201,9 @@ struct gds_Parser {
     /* }}} */
 
     /* Entities pools {{{ */
-    # define declare_pool(typeName, size)               \
-    struct Pool_ ## typeName {                          \
-        struct gds_ ## typeName instns[size];           \
+    # define declare_pool(T, typeName, size)            \
+    T Pool_ ## typeName {                               \
+        T gds_ ## typeName instns[size];                \
         uint32_t current;                               \
     } pool_ ## typeName;
     for_all_parser_owned_pools(declare_pool)
@@ -210,8 +213,8 @@ struct gds_Parser {
     gds_Heap literals;
 };
 
-# define declare_pool_acq_routines(typeName, size)                             \
-struct gds_ ## typeName * gds_parser_new_  ## typeName( struct gds_Parser * );
+# define declare_pool_acq_routines(T, typeName, size)                           \
+T gds_ ## typeName * gds_parser_new_  ## typeName( struct gds_Parser * );
 for_all_parser_owned_pools(declare_pool_acq_routines)
 # undef declare_pool_acq_routines
 

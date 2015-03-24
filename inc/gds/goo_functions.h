@@ -14,26 +14,24 @@
  * data.
  */
 
-/**@struct gds_ArgList
- * @brief Describes a sequence of unknown names.
- *
- * Is used in function declarations.
- * TODO: use hashtable for quicker search.
- */
+struct gds_PcwsTrm {
+    struct gds_Function  * function;
+    struct gds_LFunction * condition;
+};
 
-/** Returns new void arglist entry. */
-union gds_ArgList * gds_math_new_arglist_entry(
-        struct gds_Parser * );
-/** Sets name of provided arglist entry. */
-union gds_ArgList * gds_math_set_arglist_name(
+struct gds_PcwsTrm * gds_math_piecewise_term_new(
         struct gds_Parser *,
-        union gds_ArgList *,
-        const char *);
-/** Appends arglist with new arglist entry */
-union gds_ArgList * gds_math_append_arglist(
+        struct gds_LFunction *, /* Left NULL for `otherwise' */
+        struct gds_Function *);
+
+void gds_math_piecewise_term_free(
         struct gds_Parser *,
-        union gds_ArgList *,
-        union gds_ArgList *);
+        struct gds_PcwsTrm * );
+
+struct gds_Function * gds_math_piecewise_unite(
+        struct gds_Parser *,
+        union gds_PcwsTrmList * );
+
 
 # define for_all_gds_math_1categories(m)                \
     m( 0x0,     locVar,         "local variable" )      \
@@ -246,6 +244,49 @@ struct gds_Expr *
 gds_expr_from_func_decl(
         struct gds_Parser * P,
         struct gds_Function * f );
+
+/*
+ * Logic
+ */
+
+struct gds_LFunction {
+    uint8_t descriptor;
+    union {
+        /* ... */
+    } content;
+};
+
+struct gds_LFunction *
+gds_logic_unary(    struct gds_Parser *,
+                    struct gds_LFunction *,
+                    char operation
+                    );
+
+struct gds_LFunction *
+gds_logic_bin(      struct gds_Parser *,
+                    struct gds_LFunction *,
+                    char operation,
+                    struct gds_LFunction *
+                    );
+
+struct gds_LFunction *
+gds_logic_math(     struct gds_Parser *,
+                    struct gds_Function *,
+                    uint8_t opcode,
+                    struct gds_Function *
+                    );
+
+struct gds_LFunction *
+gds_logic_ternary_math(
+                    struct gds_Parser * P,
+                    struct gds_Function * l,
+                    struct gds_Function * m,
+                    struct gds_Function * r,
+                    const uint8_t opcode
+                    );
+
+struct gds_LFunction *
+gds_logic_from_math(struct gds_Parser *, struct gds_Function *);
 
 # endif  /* ENABLE_GDS */
 

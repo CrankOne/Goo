@@ -10,12 +10,12 @@
  * Parser object C-wrapper.
  */
 
-# define implement_pool_acq_routines(typeName, size)                        \
-struct gds_ ## typeName * gds_parser_new_  ## typeName(                     \
+# define implement_pool_acq_routines(T, typeName, size)                     \
+T gds_ ## typeName * gds_parser_new_  ## typeName(                          \
                                                 struct gds_Parser * P ) {   \
     if(P->pool_ ## typeName .current >= size) {                             \
         gds_error( P, "Pool depleted." ); }                                 \
-    struct gds_ ## typeName * st =                                          \
+    T gds_ ## typeName * st =                                               \
            P->pool_ ## typeName .instns + P->pool_ ## typeName .current;    \
     ++ P->pool_ ## typeName .current;                                       \
     return st;                                                              \
@@ -93,9 +93,9 @@ gds_parser_new() {
     bzero(pObj->strLitBuffer, GDS_PARSER_STRING_BUF_LEN);
 
     /* Zero all pools */
-    # define zero_pool(typeName, size)                      \
+    # define zero_pool(T, typeName, size)                   \
     bzero( pObj->pool_ ## typeName . instns ,               \
-           sizeof( struct gds_ ## typeName )*size );        \
+           sizeof( T gds_ ## typeName )*size );             \
     pObj->pool_ ## typeName . current = 0;
     for_all_parser_owned_pools(zero_pool)
     # undef zero_pool

@@ -67,10 +67,35 @@ spatial::Boolean<subtraction> result(box1, box2);
 # exists in intermediate representation -- as an associative array.
 
 root = {
-    verbosity = 1;
-    paths = {
-        inputFile = "~/input.dat";
-        outputFile = "/tmp/out.dat";
+    verbosity : 1;
+    paths : {
+        inputFile : "~/input.dat";
+        outputFile : "/tmp/out.dat";
+    },
+    transformation(x) <- x  > 0 ? log(x^2),
+                      |- x == 0 ? 0,
+                      ^-          x;
+};
+
+#
+# Tensors
+#
+# Are defined similar to function or vector function except additional
+# construction `[[...]]', where co-/contravariant indexes can be denoted.
+# Each index consists of two parts: variance prefix (^ or _ for contra- and
+# contravariant respectively) and, optionally, the index name. Index names
+# are sometimes necessary (e.g. to implemnt a conditional tensor).
+
+a[[``,]](x) <- {
+        { 1,    0,   0 },
+        { 0, f(x),   0 },
+        { 0,    0, 1/x }
     };
+
+\lambda[[`i `j ,k]] = {
+    { { 1, 0 },
+      { 0, 1 }, },
+    { { 1, 0 },
+      { 0, 1 }, },
 };
 
