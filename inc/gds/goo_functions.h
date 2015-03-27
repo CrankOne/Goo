@@ -197,12 +197,17 @@ struct gds_Function {
             struct gds_Function * f;
             union gds_ArgList * arglist;
         } asFunction;
+        /* Node represents a picewise function. */
+        struct {
+            union gds_PcwsTrmList * pcs;
+        } asPiecewiseFunction;
     } content;
 };
 
 /*
- * Mathematical expressions
+ * Casting functions
  */
+
 
 struct gds_Function * gds_math_new_func_from_const(
         struct gds_Parser *,
@@ -210,6 +215,22 @@ struct gds_Function * gds_math_new_func_from_const(
 struct gds_Function * gds_math_new_func_from_locvar(
         struct gds_Parser *,
         uint8_t lvno );
+struct gds_Function *
+gds_math_new_func_from_array(
+        struct gds_Parser *,
+        struct gds_Arr * );
+struct gds_Function *
+gds_math_new_func_from_range(
+        struct gds_Parser *,
+        struct gds_Range * );
+struct gds_Function *
+gds_math_new_func_from_var(
+        struct gds_Parser *,
+        struct gds_Literal *);
+
+/*
+ * Mathematical expressions
+ */
 
 struct gds_Function * gds_math(
         struct gds_Parser *,
@@ -244,6 +265,11 @@ struct gds_Expr *
 gds_expr_from_func_decl(
         struct gds_Parser * P,
         struct gds_Function * f );
+
+struct gds_Literal *
+gds_math_substitute_function( struct gds_Parser *,
+                              struct gds_Function *,
+                              union gds_ExprList * );
 
 /*
  * Logic

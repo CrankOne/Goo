@@ -42,6 +42,8 @@
 # include "goo_variables.h"
 # include "goo_functions.h"
 # include "goo_expressions.h"
+# include "goo_array.h"
+# include "goo_range.h"
 
 # ifdef __cplusplus
 extern "C" {

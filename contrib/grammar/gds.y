@@ -193,9 +193,28 @@ fArgList    : /* empty */
             ;
 
 funcRfrnc   : DCLRD_FUN '(' ')'
-                { $$ = gds_math_substitute_function( NULL ); }
+                { $$ = gds_math_substitute_function( P, $1, NULL ); }
             | DCLRD_FUN '(' rvalExprLst ')'
-                { $$ = gds_math_substitute_function( $3 ); }
+                { $$ = gds_math_substitute_function( P, $1, $3   ); }
+            ;
+
+/*
+ * Tensors
+ */
+
+tDecl       : UNKNWN_SYM '[' '[' tArgList ']' ']' {  }
+            ;
+
+tArgList    : tArgQ             {}
+            | tArgQ tArgList    {}
+            ;
+
+tArgQ       : varQ UNKNWN_SYM   { }
+            | varQ              { }
+            ;
+
+varQ        : '^'               { /* contravariant index */ }
+            | '_'               { /* covariant index */ }
             ;
 
 /*
@@ -260,26 +279,26 @@ mathExpr    : mathOprnd                 { $$ = $1; }
             ;
 
 mathOprnd   : numericCst                { $$ = gds_math_new_func_from_const(  P, $1 );  }
-            | funcRfrnc                 { $$ = $1; }
+            | funcRfrnc                 { $$ = gds_math_new_func_from_var(P, $1); }
             | LOCVAR                    { $$ = gds_math_new_func_from_locvar( P, $1 );  }
             | DCLRD_VAR                 { $$ = gds_math_new_func_from_var(P, $1);       }
             | range                     { $$ = gds_math_new_func_from_range(P, $1);     }
             | posArray                  { $$ = gds_math_new_func_from_array(P, $1); }
             | mathOprnd '[' mathExpr ']'
-                { $$ = gds_array_subset($1, $3); }
+                { $$ = gds_array_subset( P, $1, $3); }
             ;
 
 range       : '{' mathExpr P_BETWEEN mathExpr '}'
-                { $$ = gds_range_new( $2, 1, $4 ); }
+                { $$ = gds_range_new( P, $2,  NULL, $4 ); }
             | '{' mathExpr P_BETWEEN mathExpr P_BETWEEN mathExpr '}'
-                { $$ = gds_range_new( $2, $4, $6 ); }
+                { $$ = gds_range_new( P, $2, $4, $6 ); }
             ;
 
 /*
  * Positional and associative arrays
  */
 
-posArray    : '{' rvalExprLst '}'       { $$ = $2; }
+posArray    : '{' rvalExprLst '}'       { $$ = gds_array_new(P, $2); }
             ;
 
 ascArray    : '{' ascPairsLst '}'       { $$ = gds_asc_array_new(P, $2); }
@@ -289,7 +308,8 @@ ascPairsLst :                           { $$ = NULL; }
             | ascPair ';' ascPairsLst   { $$ = gds_asc_array_append(P,  $3, $1 ); }
             ;
 
-ascPair     : UNKNWN_SYM ':' rvalExpr   { $$ = gds_asc_array_pair_new(P, $1, $3); }
+ascPair     : vaLit ':' rvalExpr        { $$ = gds_asc_array_pair_new( P, $1, $3); }
+            | UNKNWN_SYM ':' rvalExpr   { $$ = gds_asc_array_pair_new_(P, $1, $3); }
             | fDef                      { /* TODO */ }
             ;
 

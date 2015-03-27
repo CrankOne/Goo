@@ -3,7 +3,7 @@
 O   [0-7]
 D   [0-9]
 NZ  [1-9]
-L   [a-zA-Z_]
+L   [a-zA-Z_\\]
 A   [a-zA-Z_0-9]
 H   [a-fA-F0-9]
 HP  (0[xX])

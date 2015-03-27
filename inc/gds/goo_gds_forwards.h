@@ -6,10 +6,14 @@ struct gds_Literal;
 struct gds_TypeID;
 struct gds_Expr;
 struct gds_Formula;
+struct gds_Arr;
+struct gds_Range;
+struct gds_Pair;
 
 union gds_ExprList;
 union gds_VarList;
 union gds_PcwsTrmList;
+union gds_PairList;
 
 /*
  * Those functions are necessary for other

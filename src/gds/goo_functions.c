@@ -108,6 +108,31 @@ gds_math_new_func_from_locvar(
 }
 
 struct gds_Function *
+gds_math_new_func_from_array(
+        struct gds_Parser * P,
+        struct gds_Arr * arr ) {
+    /* TODO */
+    return NULL;
+}
+
+struct gds_Function *
+gds_math_new_func_from_range(
+        struct gds_Parser * P,
+        struct gds_Range * range ) {
+    /* TODO */
+    return NULL;
+}
+
+struct gds_Function *
+gds_math_new_func_from_var(
+        struct gds_Parser * P,
+        struct gds_Literal * lt ) {
+    /* TODO */
+    return NULL;
+}
+
+
+struct gds_Function *
 gds_math(
         struct gds_Parser * P,
         char opType,
@@ -330,6 +355,13 @@ gds_logic_from_math(
     return NULL;
 }
 
+struct gds_Function *
+gds_math_substitute_function( struct gds_Parser * P,
+                              struct gds_Function * oF,
+                              union gds_ExprList * args ) {
+    /* TODO */
+    return NULL;
+}
 
 # endif  /* ENABLE_GDS */
 
