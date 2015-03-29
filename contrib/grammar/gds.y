@@ -193,28 +193,9 @@ fArgList    : /* empty */
             ;
 
 funcRfrnc   : DCLRD_FUN '(' ')'
-                { $$ = gds_math_substitute_function( P, $1, NULL ); }
+                { $$ = NULL;/*gds_math_substitute_function( P, $1, NULL );*/ }
             | DCLRD_FUN '(' rvalExprLst ')'
-                { $$ = gds_math_substitute_function( P, $1, $3   ); }
-            ;
-
-/*
- * Tensors
- */
-
-tDecl       : UNKNWN_SYM '[' '[' tArgList ']' ']' {  }
-            ;
-
-tArgList    : tArgQ             {}
-            | tArgQ tArgList    {}
-            ;
-
-tArgQ       : varQ UNKNWN_SYM   { }
-            | varQ              { }
-            ;
-
-varQ        : '^'               { /* contravariant index */ }
-            | '_'               { /* covariant index */ }
+                { $$ = NULL;/*gds_math_substitute_function( P, $1, $3   );*/ }
             ;
 
 /*

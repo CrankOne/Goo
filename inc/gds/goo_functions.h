@@ -266,10 +266,11 @@ gds_expr_from_func_decl(
         struct gds_Parser * P,
         struct gds_Function * f );
 
-struct gds_Literal *
+/*struct gds_Literal *
 gds_math_substitute_function( struct gds_Parser *,
                               struct gds_Function *,
                               union gds_ExprList * );
+*/
 
 /*
  * Logic

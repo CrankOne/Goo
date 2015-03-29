@@ -363,5 +363,7 @@ gds_math_substitute_function( struct gds_Parser * P,
     return NULL;
 }
 
+/* ========================================= */
+
 # endif  /* ENABLE_GDS */
 

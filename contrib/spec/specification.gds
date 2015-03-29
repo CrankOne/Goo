@@ -1,3 +1,4 @@
+\={
 #
 # Basics: literals, variables
 #
@@ -22,36 +23,45 @@ d1, e1 = 1, 2;          # Kind of a parallel assignment is possible, but
 # Lists
 #
 
-a2 = { 1, 2, 3 };       # a positional array of simple type (not a list).
+a2 = { 1, 2, 3 };       # a list.
 b2 = { 1e-3,
        2e-3,
-       3e-4};
+       3e-4};           # another list
 c2 = {  "one",
         "two",
-        "three" };      # positional array can contain a string.
-{ 0x1u, "two", 3.45,
-        { a1, {} },
-    };                  # lists can contain any expression except declarations.
+        "three" };      # list containing strings.
+{ 
+    0x1u,
+    "two",
+    3.45,
+    { a1, {} },
+};                      # lists can contain any expression.
                         # Note, that a trailing comma do not causes an error or
                         # warning.
 
 a2[0];                  # lists can be seen as a positional uniform-indexed arrays
                         # starting from 0.
 
+#
+# Functions
+# The concept of the function in GDS refers to 'injection' term.
+
+f3(x, y) := x^b1 + (y%5)*(0.13-x);
+
 
 #
-# Hash tables
+# Injection shortcut
 #
 
-a3 = {                  # Hashing lists consists of a pairs "key : value".
-    one     : 1,        # For standard types (numbers and strings) the hashing
-    two     : 2,        # or comparison function can be omitted. But for
-    three   : 3,        # nonstandard keys, hashing or comparison function
+a4 = {                  # This form of injection consists of a pairs "key : value".
+    one     : 1;        # For standard types (numbers and strings) the hashing
+    two     : 2;        # or comparison function can be omitted. But for
+    three   : 3;        # nonstandard keys, hashing or comparison function
     four    : {         # should be defined.
             1 : 0x1,    # For standard key types it is required that all keys
             2 : 0x2     # have the same type.
         },
-    five    : 4,        # Trailing comma is allowed here too.
+    five    : 4;        # Trailing semicolon is necessary
 };
 
 # Custom hashing/comparison can be provided via special attributes
@@ -67,29 +77,31 @@ a3 = {                  # Hashing lists consists of a pairs "key : value".
 #    {3, 4} : 2
 #};
 
-b3 = ( a2 <- c2  );     # Hash table can be defined as a more complex object that
-c3 = ( a2 -> c2  );     # implies injection or bijection of multiple sets into
-d3 = ( a2 <-> c2 );     # each other. Dimensions of sets should be the same and be
+b4 = ( a2 <- c2  );     # Hash table can be defined as a more complex object that
+c4 = ( a2 -> c2  );     # implies injection or bijection of multiple sets into
+d4 = ( a2 <-> c2 );     # each other. Dimensions of sets should be the same and be
                         # homogenious by type.
 
-e3 = ( a2 <->           # You can even construct a kind of relational DB
+# Indexing, acquizition:
+
+a2["one"]; c4[2];       # Getting an injection result (form #1)
+
+e4 = ( a2 <->           # You can even construct a kind of relational DB
        b2 <->           # using some bijections.
        c2 );
 
 # Note, that you can specify a hashing or comparison function using following notations:
-#   a </my_pair_hashing/- b;        # for custom hashing function
-#   a <//my_comparison_function/-;  # for custom comparision function
-#   a </hashing/comparision/-b;     # for both.
+#   a <-/my_pair_hashing/- b;          # for custom hashing function
+#   a <-//my_comparison_function/- b;  # for custom comparision function
+#   a <-/hashing/comparision/- b;      # for both.
 # 
 
-a2["one"]; c3[2]        # Getting an injection result (form #1)
-a2(one);   c3(2)        # Getting an injection result (form #2)
+e3[<- ("two" == $[3])]; # Returns list {2, 2e-3, "two"}: [] means 'get any'.
+                        # The $ sign denotes arguments list, and '<-' here declares
+                        # an anonimous function, that should return 'true' for objects
+                        # in a multiset that satisfyes filtering condition.
 
-#
-# Functions
-#
-
-f4(x, y) <- x^b1 + (y%5)*(0.13-x);
+e3(<- (3 > $1));        # Returns a list of a list: () means 'get all'.
 
 
 #
@@ -97,12 +109,12 @@ f4(x, y) <- x^b1 + (y%5)*(0.13-x);
 #
 
 #
-# Generators are not a usual variable
+# Generators are the special objects:
 
-ag <- /0..1..50/;
-bg <- ag*10;        # b is /0..10..500/
-cg <- ag^2;         # c is /0, 1, 4, 9 ... 2500/
-dg <- /0..1..50/^2; # d is /0, 1, 4, 9 ... 2500/
+a5 <- /0..1..50/;
+b5 <- a5*10;        # b is /0..10..500/
+c5 <- a5^2;         # c is /0, 1, 4, 9 ... 2500/
+d5 <- /0..1..50/^2; # d is /0, 1, 4, 9 ... 2500/
 
 # One can explicitly yield an array from generator:
 
@@ -181,3 +193,8 @@ a[[``,]](x) <- {
       { 0, 1 }, },
 };
 
+
+#
+# Math rewriting rules
+#
+};
