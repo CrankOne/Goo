@@ -1,16 +1,150 @@
+# The most fundamental category in GDS is called `scope' and has a type `Scope'.
+# It is represented lexically as a set of expressions with lvalue and rvalue
+# separated with `=' or `<-' terminals inside the curly bracets `{}'. The `='
+# means immediate evaluation
+# to numerical (or third-party object) value and never can be a `Function'. The `<-'
+# defines a function or deferred evaluated symbol.
+
+# The GDS type system implies a set of so-called atomic types, the classes and 
+# reducible polymorphic objects:
+# --------------------------+------------------------------------------
+#       Type name           | Classes
+# --------------------------+------------------------------------------
+#   Logical                 | Scalar, Algebraic
+#   (U)Int(8,16,32,64,128)  | Scalar, Integral, Numeric, Algebraic
+#   Float                   | Scalar, Integral, Numeric, Algebraic
+#   Function                | Injection
+#   List                    | Injection, Discrete, Ordered
+#   Tensor                  | Injection, Discrete, Ordered, Algebraic
+#   Scope                   | Injection, Discrete
+#   Functional              | Injection
+# --------------------------+------------------------------------------
+#   Polymorphic             |  --
+# --------------------------+------------------------------------------
+
 {
+
+# The beginning `!' symbol is reserved for special directive that
+# has immediate side effect on parser. They are called `isntructions'.
+# For example:
+
+!requires "Geo3";
+
+# imports some external module named `Geo3' whom declarations are
+# now available by symbol lookup resolutin `::', e.g. `Geo3::Vector'.
+
+!math-evaluator "Default";
+
+# This instruction forbids closures at all. Such behaviour is convinient for
+# strict thread-safe code. By default GDS allows closures, but only for immutable
+# external context.
+#!forbid-closures
+
+# This instruction, in contradiction, allows mutable variables inside functions:
+#!soft-closures
+
+Basics = {
+    #
+    # Simple values
+    #
+
+    # Defining a simple value:
     a = 5;
-    f(x) = x%a;
-    \lambda[[^\mu,\nu]]() <- {
-            {1, 0},
-            {0, 1},
-        };
 
-    boxes = Geo::Box( {
-            {-1., -1., 1., 1.},
-            {-a,  -a,   a,  a},
-        } );
+    # Defining a simple value of strict type:
+    Float8 b = 32.1;
+
+    # Defining a value of classed type:
+    Numeric c = 123/12;
+
+    # Forward value declaration:
+    Numeric d;
+
+    # Equivalent form of Scope creation:
+    symTable1 = {
+        foo = 1;
+        bar = 2;
+    };
+    SymTable symTable2(bar=2, foo=1);
+    isEquivalent = symTable1 == symTable2;
+
+    #
+    # Functions Basics
+    #
+
+    # Declaring a simple function:
+    f(x) <- x%a;    # NOTE: it's a closure.
+                    # Non-local variables in closures are always
+                    # immutable (read-only).
+
+    # Immediate evaluating a simple function:
+    e = f(15);
+
+    # Deferred evaluating of a value
+    g <- f(b)*d;
+
+    e /d=5/:= e + g ;   # `g' will be actually computed here.
+                        # /.../:= is a special context-manipulating
+                        # operator that submittes additional temporary
+                        # symbols to current manipulation. Can be used
+                        # to resolve dreferred symbols like variable aliases
+                        # and so on.
+};
+
+PiecewiseFunctions = {
+
+    f1(x) <- x < -1 ? 0,    # Here, the simple piecewise function is defined
+          |- x >  1 ? 0,    # in form, very similar to Haskell syntax.
+          ^-          x^2;  # `|-' and '^-' is a special literals meaning
+                            # `else if' and `else' correspondingly. The part
+                            # before the question mark `?' should be logical
+                            # expression.
+
+    f2(x) <- -1 < x < 1 ? 0     # This function is similar to `f1' and only demonstrates
+          ^-              x^2;  # the usage of ternary comparison operator.
+};
+
+DereferredBasics = {
+    a <- /0..99/;   # `a' now has a type `Sequence' that can be used as follows:
+    b = a[5];       # `b' is now of type Int32 and stores a value `4';
+
+    # ... TODO: more
+};
+
+Constructors = {
+    # Constructors is a special kind of functions that returns a
+    # non-standard objects. These objects sometimes (but not necessarily)
+    # may be typecasted to GDS's terms like numbers, lists or mathematical
+    # expressions.
+    # For example, let's imagine that we have some module `Geo3D', where the
+    # `Vector' constructor is defined. Instances constructed with `Vector3'
+    # can participate in some arithmetical expressions like exponentiation,
+    # summation or dot product:
+
+    Geo3D::Vector a(-1, -1, -1),        # Positional (list) initialization form.
+                  b{ z=1,  x=1,  y=1},  # Named initialization form.
+                  c = a + b;            # `c' is now (0, 0, 0);
+    d = a.b;                            # `d' is now `-2'.
+
+    # For some object `Box' defined in the same module, that accepts two vectors
+    # to be constructed:
+
+    Geo3D::Box  box1(a, b),
+                box2((-2, -2, -2), (2, 2, 2));  # Here, as `(...)' invokes positional
+                                                # ctr, inner `(...)' tuples will be used
+                                                # to construct objects of type required
+                                                # by extern (`Box') ctr.
+    hull = box2 - box1;     # Let's imagine that `-' operator applied to `Box' instances
+                            # invokes some 3D boolean operation. GDS supports operator
+                            # overloading this way.
+
+    e <- Function(b);       # Explicit type casting. Here, if `Geo::Vector' instances
+                            # supports casting to GDS's `Function' type, the some sort of
+                            # `-i - j - k' mathematical expression will be yielded.
+};
+
+Tensors = {
+    # TODO: indexed with [[...]]
+};
+
 }
-
-Разница между `=' и `<-' в том что первое — causes немедленный eval(rvalue),
-второе не causes.
