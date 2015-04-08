@@ -83,8 +83,8 @@ Basics = {
     # Deferred evaluating of a value
     g <- f(b)*d;
 
-    e /d=5/:= e + g ;   # `g' will be actually computed here.
-                        # /.../:= is a special context-manipulating
+    e /:d=5:/= e + g;   # `g' will be actually computed here.
+                        # /:...:/= is a special context-manipulating
                         # operator that submittes additional temporary
                         # symbols to current manipulation. Can be used
                         # to resolve dreferred symbols like variable aliases
@@ -102,6 +102,35 @@ PiecewiseFunctions = {
 
     f2(x) <- -1 < x < 1 ? 0     # This function is similar to `f1' and only demonstrates
           ^-              x^2;  # the usage of ternary comparison operator.
+
+
+    # Another syntax:
+    f3(x) <-    x if -1 < x < 1,
+             -x^2 if -1 < x,
+              x^2 otherwise;
+
+    # We can declare a typed function like so:
+    f4</Numeric/>(Numeric a, Numeric b, String c);
+
+    # That is equivalent with:
+    shouldBeTrue1 = typeof(f4) == </Numeric/>(Numeric, Numeric, String);
+
+    # A typed function that returns a function (functional) looks a bit more sophisticated:
+    F1</</Float16, Float16/>(Float t)/>(String s)
+          <- s == "ellipse"  ? <- {a*M::cos(t), b*sin(t)},
+          |- s == "parabola" ? <- {t, t^2}
+          ;
+
+    # Carrying:
+    F2</</Numeric/>(Numeric)/>(ff</Numeric/>(Numrtic, Numeric)) <- ff(x, 1.25);
+    # That's equivalent with more laconic:
+    F2equiv /:y=1.25:/= f;
+
+    shouldBeTrue2 = typeof(F2) == typeof(F2equiv);
+
+    f5(x, y) <- x^2 + y^2;
+    f6 <- F2(f5);
+    shouldBeTrue3 typeof(f5) == </Numeric/>(Numeric);
 };
 
 DereferredBasics = {
@@ -146,5 +175,39 @@ Constructors = {
 Tensors = {
     # TODO: indexed with [[...]]
 };
+
+Types = {
+    # Declares a kind of complex float type.
+    Complex/typid BaseT/(BaseT r, BaseT i) <- {
+        BaseT real, imag = r, i;
+
+        \classes = {CommutativeSum, CommutativeProd};
+
+        \binaryPlus</Complex/>(right, left) <- Complex( righ::real + left::real, righ::imag + left::imag );
+        \unaryMinus</Complex/>(orig) <- Complex( - orig::real, - orig::imag );
+        # TODO
+    };
+};
+
+
+#
+# The rewriting rules sub-language:
+#
+
+# The {: and :} defines rewriting rules that further called `Algebra'
+Algebra SimpleNumericals = {:
+    /:{a, b} is {CommutativeSum}:/=
+        a + b       <=> b + a;
+    /:{a, b} is {CommutativeSum, has \unaryMinus}:/=
+        a - b       <=> -b + a;
+    /:{a, b} is {CommutativeProd}:/=
+        a*b         <=> b*a;
+
+    /:{a, b} is {Assotiative}:/
+    a*(a + b)       <=> a*a + b*b;
+
+    /:a is {has \exponentiative, has \binaryProduct}:/
+    a^$n            <=> a **[n];
+:};
 
 }
