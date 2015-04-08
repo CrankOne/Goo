@@ -58,9 +58,9 @@ a4 = {                  # This form of injection consists of a pairs "key : valu
     two     : 2;        # or comparison function can be omitted. But for
     three   : 3;        # nonstandard keys, hashing or comparison function
     four    : {         # should be defined.
-            1 : 0x1,    # For standard key types it is required that all keys
-            2 : 0x2     # have the same type.
-        },
+            1 : 0x1;    # For standard key types it is required that all keys
+            2 : 0x2;    # have the same type.
+        };
     five    : 4;        # Trailing semicolon is necessary
 };
 
@@ -197,4 +197,5 @@ a[[``,]](x) <- {
 #
 # Math rewriting rules
 #
+
 };
