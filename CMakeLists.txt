@@ -15,7 +15,7 @@ set( GOO_VERSION_MINOR 1 )
 
 
 option( PRINTF_SOURCE_INFO  "Supplement printing lines with source file info."  OFF)
-option( EXCEPTION_BACTRACE  "C++ exception throw produce a stack unwinding."    ON )
+option( EM_STACK_UNWINDING  "C++ exception throw produce a stack unwinding."    ON )
 option( PRINTING_ANSI_ESC   "Terminal messages coloring."                       ON )
 # The lines below is a development features, basically located at other
 # git branches:
@@ -34,9 +34,9 @@ find_package( ZLIB  )
 find_package( Lzo   )
 find_package( BZip2 )
 find_package( Git   )
-if( EXCEPTION_BACTRACE )
+if( EM_STACK_UNWINDING )
     find_package( BFD   )
-endif( EXCEPTION_BACTRACE )
+endif( EM_STACK_UNWINDING )
 if( GIT_FOUND )
     # obtain current commit hash
     EXECUTE_PROCESS(COMMAND git rev-parse HEAD OUTPUT_VARIABLE COMMIT_HASH
@@ -172,7 +172,7 @@ if( BZIP2_FOUND )
     target_link_libraries( goo ${BZIP2_LIBRARIES} )
 endif( BZIP2_FOUND )
 
-if( EXCEPTION_BACTRACE )
+if( EM_STACK_UNWINDING )
     if( BFD_FOUND )
         target_link_libraries( goo ${BFD_LIB} )
     endif( BFD_FOUND )
@@ -180,7 +180,7 @@ if( EXCEPTION_BACTRACE )
         target_link_libraries( goo HSrts-ghc${CMAKE_Haskell_NUMERIC_VERSION} )
     endif( HASKELL_MODULE )
     # ... ither bactrace libs here
-endif( EXCEPTION_BACTRACE )
+endif( EM_STACK_UNWINDING )
 
 #
 # Build enabled routines

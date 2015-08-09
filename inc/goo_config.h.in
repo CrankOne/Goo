@@ -9,7 +9,7 @@
 
 #cmakedefine EXTENDED_TYPES     0x1
 #cmakedefine PRINTF_SOURCE_INFO 0x2
-#cmakedefine EXCEPTION_BACTRACE 0x4
+#cmakedefine EM_STACK_UNWINDING 0x4
 #cmakedefine PRINTING_ANSI_ESC  0x8
 #cmakedefine ENABLE_GDS         0x10
 #cmakedefine ENABLE_ALLOCATORS  0x20

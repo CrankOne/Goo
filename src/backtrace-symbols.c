@@ -1,3 +1,6 @@
+# include "goo_types.h"
+# ifdef EM_STACK_UNWINDING
+
 /* Crank: I've stole it from Cairo project. See original source here:
  *  http://cairo.sourcearchive.com/documentation/1.9.4/backtrace-symbols_8c-source.html
  */
@@ -47,7 +50,6 @@
 # define true 1
 # define false 0
 
-# include "goo_types.h"
 # include <string.h>
 # include <stdio.h>
 # include <stdlib.h>
@@ -380,3 +382,6 @@ backtrace_symbols_fd(void *const *buffer, int size, int fd)
 
         free(strings);
 }
+
+# endif  /* EM_STACK_UNWINDING */
+

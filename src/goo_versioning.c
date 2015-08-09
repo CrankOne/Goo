@@ -13,8 +13,8 @@ const struct HPH_Versioning hphVersioning = {
 # ifdef PRINTF_SOURCE_INFO
     |   PRINTF_SOURCE_INFO
 # endif
-# ifdef EXCEPTION_BACTRACE
-    |   EXCEPTION_BACTRACE
+# ifdef EM_STACK_UNWINDING
+    |   EM_STACK_UNWINDING
 # endif
 # ifdef ENABLE_GDS
     |   ENABLE_GDS
@@ -61,7 +61,7 @@ const struct HPH_Versioning hphVersioning = {
 static const char __featuresDescrDict[][128] = {
     "128-bit types enabled"
     "source file information included to hph-standard log messages",
-    "stacktrace information will be obtained when hph::Exception is thrown",
+    "stacktrace information can be obtained using liberty/bfd",
     "Goo Declarative Semantics language",
     "instance-based allocators subsystem",
     "tensorial algebra extensions are supported",

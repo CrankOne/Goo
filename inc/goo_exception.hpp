@@ -8,7 +8,7 @@
 # ifdef __cplusplus
 #   include <string>
 #   include <exception>
-#   ifdef EXCEPTION_BACTRACE
+#   ifdef EM_STACK_UNWINDING
 #       include <forward_list>
 #       ifndef NO_BFD_LIB
 #           include <bfd.h>
@@ -31,7 +31,7 @@
  * Exceptions on various build configurations provides a way
  * to extract a stacktrase information even when no debug
  * info is given (in that case this info is however rather
- * uninformative). To disable stactrace set the EXCEPTION_BACTRACE cmake
+ * uninformative). To disable stactrace set the EM_STACK_UNWINDING cmake
  * option to OFF.
  *
  * Each exception reason is encoded by unique number from enum.
@@ -182,9 +182,8 @@ typedef std::string String;
 # error "Allocators subsystem is supported, but actual emString implementation is still unimplemented."
 # endif
 
+# ifdef EM_STACK_UNWINDING
 struct StackTraceInfoEntry {
-    bfd_vma     addr,           ///< runtime ELF address
-                soLibAddr;      ///< static shared library ELF address
     unsigned int lFound;        ///< 1 if line was found, 0 otherwise.
     unsigned int lineno;        ///< line number
     String      function,       ///< function name (possibly, mangled)
@@ -192,12 +191,16 @@ struct StackTraceInfoEntry {
                 srcFilename,    ///< source filename
                 failure;        ///< failure reason
 # ifndef NO_BFD_LIB
+    bfd_vma     addr,           ///< runtime ELF address
+                soLibAddr;      ///< static shared library ELF address
     asymbol **  sTable;
 # endif
 };
 typedef std::forward_list<StackTraceInfoEntry> List; // TODO
 
 std::ostream & operator<<(std::ostream& os, const StackTraceInfoEntry & t);
+
+# endif  // EM_STACK_UNWINDING
 
 }  // namespace em (emergency)
 
@@ -221,7 +224,7 @@ public:
 protected:
     ErrCode       _code;
     em::String    _what;
-    # ifdef EXCEPTION_BACTRACE
+    # ifdef EM_STACK_UNWINDING
     em::List      _stacktrace;
     void _get_trace() throw();
     # endif

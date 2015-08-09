@@ -7,7 +7,7 @@
 # include "goo_types.h"
 # include "goo_exception.hpp"
 
-# ifdef EXCEPTION_BACTRACE
+# ifdef EM_STACK_UNWINDING
 #   include <cxxabi.h>
 #   include <execinfo.h>
 #   include <unistd.h>
@@ -19,6 +19,8 @@
 namespace goo {
 
 namespace em {
+
+# ifdef EM_STACK_UNWINDING
 
 void
 seek_entry_in_section(  bfd * abfd,
@@ -235,6 +237,8 @@ std::ostream & operator<<(std::ostream& os, const StackTraceInfoEntry & t) {
     return os;
 }
 
+# endif  // EM_STACK_UNWINDING
+
 }  // namespace em (emergency)
 
 # define declare_dict_entry(num, nm, dscr) { num, dscr },
@@ -259,7 +263,9 @@ Exception::Exception(
                 const em::String & s
                     ) : _code(c),
                         _what(s) {
+    # ifdef EM_STACK_UNWINDING
     _get_trace();
+    # endif  // EM_STACK_UNWINDING
 }
 
 Exception::~Exception() throw() {
@@ -267,7 +273,9 @@ Exception::~Exception() throw() {
 
 Exception::Exception( const em::String & s ) : _code(0),
                                                _what(s){
+    # ifdef EM_STACK_UNWINDING
     _get_trace();
+    # endif  // EM_STACK_UNWINDING
 }
 
 void
@@ -280,6 +288,7 @@ Exception::dump(std::ostream & os) const throw() {
     os  << ESC_BLDYELLOW << std::setw(15) << std::right << "details" << ESC_CLRCLEAR": "
         << _what << std::endl;
 
+    # ifdef EM_STACK_UNWINDING
     os << ESC_BLDYELLOW << std::setw(15) << std::right << "stacktrace" << ESC_CLRCLEAR":"
        << " (most recent call last)"
        << std::endl;
@@ -294,6 +303,9 @@ Exception::dump(std::ostream & os) const throw() {
         //    break;
         //}
     }
+    # else
+    os << "Stack unwinding is unavailable in current build." << std::endl;
+    # endif  // EM_STACK_UNWINDING
 }
 
 }  // namespace goo
@@ -314,19 +326,15 @@ get_errcode_description( const ErrCode C ) {
 //
 
 namespace goo {
-# ifndef EXCEPTION_BACTRACE
-void
-Exception::_get_trace() throw() { /* do nothing */ }
 
-# else  // EXCEPTION_BACTRACE
-
+# ifdef EM_STACK_UNWINDING
 
 void
 Exception::_get_trace() throw() {
     em::obtain_stacktrace( _stacktrace );
 }
 
-}  // namespace goo
+# endif  // EM_STACK_UNWINDING
 
-# endif  // EXCEPTION_BACTRACE
+}  // namespace goo
 
