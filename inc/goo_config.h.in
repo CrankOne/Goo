@@ -72,5 +72,14 @@
 # include <stdexcept>
 # endif
 
+
+/*
+ * Streaming parameters
+ */
+# ifdef ENABLE_DATASTREAMS
+#   define GOO_STREAMS_DEFAULT_SIZE       GOO_SIZE_TYPE
+#   define GOO_STREAMS_DEFAULT_POSITION   GOO_SIZE_TYPE
+# endif
+
 # endif /* H_GOO_CONFIG_H */
 
