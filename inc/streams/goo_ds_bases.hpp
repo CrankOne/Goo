@@ -15,7 +15,6 @@
 namespace goo {
 namespace streaming {
 
-// ft: Stream, Resource; determines data flow direction
 enum Direction : UByte {
        in = 1,
       out = 2,
@@ -48,6 +47,7 @@ public:
 class StreamBase {
 private:
     ResourceBase * _resourcePtr;
+    
 protected:
     void _set_abstract_resource_ptr( ResourceBase * ptr ) { _resourcePtr = ptr; }
     ResourceBase * _get_abstract_resource_ptr() { return _resourcePtr; }

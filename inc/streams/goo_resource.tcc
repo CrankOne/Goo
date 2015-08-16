@@ -1,7 +1,7 @@
 # ifndef H_GOO_STREAMS_RESOURCE_H
 # define H_GOO_STREAMS_RESOURCE_H
 
-# include "goo_SDLM.tcc"
+# include "goo_ds_bases.hpp"
 
 # ifdef ENABLE_DATASTREAMS
 namespace goo {
@@ -9,124 +9,123 @@ namespace streaming {
 
 namespace abstract {
 
-template<typename PositionT, typename SizeT>
-class ResourceIn : public virtual ResourceBase {
+class Resource {
 public:
-    typedef PositionT Position;
-    typedef SizeT DSize;
-protected:
-    virtual Position _V_write_block( DSize, const UByte * ) = 0;
+    virtual ~Resource(){}
 };
 
-//
 
-template<typename PositionT, typename SizeT>
-class ResourceOut : public virtual ResourceBase {
+template<typename DataSizeT>
+class ResourcePlainIn : public virtual Resource {
 public:
-    typedef PositionT Position;
-    typedef SizeT DSize;
+    typedef DataSizeT DataSize;
 protected:
-    virtual Position _V_read_block( DSize, UByte *& ) = 0;
+    virtual void _V_write_block( const UByte *, DataSize ) = 0;
+public:
+    virtual ~ResourcePlainIn() {}
+    void write_block( const UByte * bs, DataSize sz ) {
+        assert(sz);
+        _V_write_block( bs, sz );
+    }
 };
 
-//
-
-template<typename PositionT, typename SizeT>
-class ResourceSerial : public virtual ResourceBase {
+template<typename DataSizeT>
+class ResourcePlainOut : public virtual Resource {
 public:
-    typedef PositionT Position;
-    typedef SizeT DSize;
-private:
-    PositionT _cPosition;
+    typedef DataSizeT DataSize;
 protected:
-    virtual void _V_increase_position(Position &, Position) = 0;
-    PositionT & get_current_position_ref() { return _cPosition; }
+    virtual void _V_read_block( const UByte *&, DataSize ) = 0;
 public:
-    virtual void increase_current_position(Position np) {
-        _V_increase_position( _cPosition, np ); }
-
-    PositionT current_position() const { return _cPosition; }
+    virtual ~ResourcePlainOut() {}
+    void read_block( UByte *& bs, DataSize sz ) {
+        assert(sz);
+        _V_write_block( bs, sz );
+    }
 };
 
-//
 
-template<typename PositionT, typename SizeT>
-class ResourceRandom : public ResourceSerial<PositionT, SizeT> {
+template<typename DataSizeT,
+         Direction dir>
+class iResourceRandom;  // generic template instantiation forbidden
+
+template<typename DataSizeT>
+class iResourceRandom<DataSizeT, in> : public virtual Resource {
 public:
-    typedef PositionT Position;
-    typedef SizeT DSize;
+    typedef DataSizeT DataSize;
 protected:
-    void _V_set_position(Position &, Position) = 0;
+    virtual void _V_reserve( DataSize ) = 0;
 public:
-    virtual void set_current_position(Position np) {
-        _V_set_position( ResourceSerial<PositionT, SizeT>::get_current_position_ref(), np ); }
+    void reserve( DataSize desiredSize ) {
+        _V_reserved( desiredSize );
+    }
 };
+
+template<typename DataSizeT>
+class iResourceRandom<DataSizeT, out> : public virtual Resource {
+public:
+    typedef DataSizeT DataSize;
+protected:
+    virtual DataSize _V_used_size( ) const = 0;
+public:
+    DataSize used_size( DataSize desiredSize ) const {
+        return _V_used_size( );
+    }
+};
+
+template<typename DataSizeT>
+class iResourceRandom<DataSizeT, bidir> :
+        public iResourceRandom<DataSizeT, in>,
+        public iResourceRandom<DataSizeT, out> { };
 
 }  // namespace abstract
 
-
 //
 //
 //
 
+template<Direction dir,
+         typename DataSizeT>
+class ResourcePlain;  // generic template instantiation forbidden
 
-template<Direction dirT,
-         Layout layoutT,
-         typename PositionT=GOO_STREAMS_DEFAULT_POSITION,
-         typename SizeT=GOO_STREAMS_DEFAULT_SIZE>
-class iResource {
-    // static_assert<true>( "Default resource base instantiation." );
+template<typename DataSizeT>
+class ResourcePlain<in, DataSizeT> : public abstract::ResourcePlainIn<DataSizeT> {
+public:
+    static constexpr Direction dir = in;
 };
 
-//
-//
-//
-
-template<typename PositionT,
-         typename SizeT>
-class iResource<in, serial,
-                PositionT,
-                SizeT> : public abstract::ResourceIn<PositionT, SizeT>,
-                                    public abstract::ResourceSerial<PositionT, SizeT> {
+template<typename DataSizeT>
+class ResourcePlain<out, DataSizeT> : public abstract::ResourcePlainOut<DataSizeT> {
 public:
-    typedef PositionT Position;
-    typedef SizeT DSize;
-    typedef SDLMSerial<Position, DSize> SDLM;
+    static constexpr Direction dir = out;
+};
 
-    class Iterator : public SDLM::Iterator {
-    public:
-        void write_block( DSize, const UByte * );
-        // ...
-    };
+template<typename DataSizeT>
+class ResourcePlain<bidir, DataSizeT> : public abstract::ResourcePlainIn<DataSizeT>,
+                                        public abstract::ResourcePlainOut<DataSizeT> {
 public:
-    virtual Position write_block( Position place, DSize lBlock, const UByte * blockPtr ) {
-        _V_write_block( lBlock, blockPtr );
-        _V_increase_position( lBlock );
+    static constexpr Direction dir = bidir;
+};
+
+
+template<Direction dir,
+         typename DataSizeT,
+         typename PositionIndexT,
+         typename PositionIteratorT>
+class ResourceRandom : public ResourcePlain<dir, DataSizeT>,
+                       public abstract::iResourceRandom<DataSizeT, dir> {
+public:
+    typedef ResourcePlain<dir, DataSizeT> ParentPlain;
+    typedef typename ParentPlain::DataSize DataSize;
+    typedef PositionIndexT PositionIndex;
+    typedef PositionIteratorT Iterator;
+protected:
+    virtual void _V_set_position( Iterator &, PositionIndex ) = 0;
+public:
+    virtual void set_position( Iterator & pIt, PositionIndex pIdx ) {
+        _V_set_position( pIt, pIdx );
     }
 };
 
-// Note: always can be downcasted to serial!
-template<typename PositionT,
-         typename SizeT>
-class iResource<in, streaming::random,
-                PositionT, SizeT> : public abstract::ResourceIn<PositionT, SizeT>,
-                                    public abstract::ResourceRandom<PositionT, SizeT> {
-public:
-    typedef PositionT Position;
-    typedef SizeT DSize;
-    typedef SDLMPositional<Position, DSize> SDLM;
-
-    class Iterator : public SDLM::Iterator {
-    public:
-        void read_block( DSize, UByte *& );
-        // ...
-    };
-public:
-    virtual Position write_block( Position place, DSize lBlock, const UByte * blockPtr ) {
-        _V_write_block( lBlock, blockPtr );
-        _V_increase_position( lBlock );
-    }
-};
 
 } // namespace streaming
 } // namespace goo

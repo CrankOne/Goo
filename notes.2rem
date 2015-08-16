@@ -1,0 +1,49 @@
+
+Basic template types:
+    DataSize -- data length type, usually size_t or goo's Size.
+    PositionIndexes -- resource positioning information. Depending on
+        actual resource type can bear offset information, file index
+        and so on.
+    Reflection -- reflection data, that should be converted and written
+        by representation class. Length is non-uniform.
+    
+Infrastructural classes:
+    - Resource;
+        Provides I/O operations of byte blocks for specified size and indexing
+        types.
+    - Representation;
+        Provides reflection constitution interface. Keep in mind, that
+        representation can be not only in form of serialized data, but
+        also a human-readable formats.
+        - Layout manager;
+            Defines layout strategy for serialized data.
+    - Stream;
+        Routes entities to representation, providing some syntax shugar with
+        template magic. On this level all template generic should be routed
+        to concrete specific representation procedures.
+    - C-arithmetic types and its arrays, pointers and so on;
+        Serialization is usually pretty simple.
+    - Serializble classes;
+        Subdivided to uniform/variadic length classes as using advantage of
+        uniform size can increase efficiency for serialization procedures.
+        - Uniform-length serializable;
+            Constant length template class.
+        - Variadic-length serializable.
+            Variadic length serializable (like strings).
+
+Representation can be (re-)assigned to streams dynamically.
+Representation keeps layout managers.
+Reflexive serialization streams can keep extended reflection information ---
+so called hints which content is actually arbitrary.
+
+One can not directly specify JSON/XML representation nodes. E.g.
+``<int value="32"/>'' is hard-coded into representation.
+
+Representation interface provides typed I/O while resource operates only
+untyped byte sequences. Representation method examples:
+    put_array_element<>()
+    write_standalone_arithmetic<>()
+    ...
+While Stream responcibility is to provide all this Ary-unwinding stuff.
+
+

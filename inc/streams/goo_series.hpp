@@ -6,6 +6,15 @@
 namespace goo {
 namespace streaming {
 
+//
+// Entity header
+//
+
+
+//
+//
+//
+
 class iSerializable {
 protected:
     virtual void _V_serialized_size() const = 0;
@@ -21,12 +30,14 @@ public:
 };
 
 template<Size SizeT>
-class iSerializableUniformSize : public iSerializable {
+class iUniformSerializable : public iSerializable {
 public:
     static constexpr Size TypeSize = SizeT;
 protected:
     virtual void _V_serialized_size() const final { return SizeT; }
 };
+
+
 
 }  // streaming
 }  // goo
