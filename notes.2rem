@@ -11,7 +11,7 @@ Infrastructural classes:
     - Resource;
         Provides I/O operations of byte blocks for specified size and indexing
         types.
-    - Representation;
+    - Layout;
         Provides reflection constitution interface. Keep in mind, that
         representation can be not only in form of serialized data, but
         also a human-readable formats.
