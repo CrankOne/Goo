@@ -9,8 +9,17 @@ namespace streaming {
 
 namespace abstract {
 
+class Stream;
+
 class Resource {
+protected:
+    virtual void _V_dock_stream( Stream * ) = 0;
+    virtual void _V_undock_stream( Stream * ) = 0;
 public:
+    void dock_stream( Stream * str ) {
+        _V_dock_stream(str); }
+    void undock_stream( Stream * str ) {
+        _V_undock_stream(str); }
     virtual ~Resource(){}
 };
 

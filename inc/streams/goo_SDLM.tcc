@@ -4,11 +4,63 @@
 # include "goo_ds_bases.hpp"
 # include "goo_resource.tcc"
 # include "goo_utility.hpp"
+# include "goo_storable.hpp"
+# include "goo_resource.tcc"
 
 # ifdef ENABLE_DATASTREAMS
 namespace goo {
 namespace streaming {
 
+namespace abstract {
+
+class Stream;
+
+class Layout {
+public:
+    virtual ~Layout(){}
+    void dock_stream( Stream * );
+    void undock_stream( Stream * );
+};
+
+# if 0
+template<typename DataSizeT>
+class LayoutPlainIn : public LayoutBase {
+public:
+    typedef DataSizeT DataSize;
+public:
+    void dock_stream( Stream * );
+    void undock_stream( Stream * );
+
+    template<Direction dir> substream();
+
+    template<template<Direction> class StreamT,
+             Size SizeT,
+             typename T>
+    typename std::enable_if<std::is_base_of<iStorable<StreamT, SizeT>, T>::value, void>::type
+    write_entity_data(  abstract::ResourcePlainIn<DataSize> & writableResource,
+                        const T & entity ) {
+        auto ss = obtain_substream<StreamT<in>>( writableResource );
+        entity.store( ss );
+        parentISS.merge_substream()
+    }
+
+    template<typename T>
+    typename std::enable_if<std::is_arithmetic<T>::value, void>::type
+    write_arithmetic_data(  abstract::ResourcePlainIn<DataSize> & writableResource,
+                            const T entity ) {
+        DataSize dataLength = arithmetic_data_length( entity );
+        writableResource.reserve( dataLength );
+        writableResource.write_block(
+                arithmetic_as_data( entity ),
+                dataLength
+            );
+    }
+};
+# endif
+
+}  // namespace abstract
+
+# if 0
 namespace abstract {
 
 template<typename DataSizeT,
@@ -93,6 +145,8 @@ form_reflection_data_type_descriptor_for(
 
 class SerialLayout;
 class PrescriptiveLayout;
+
+# endif
 
 } // namespace streaming
 } // namespace goo
