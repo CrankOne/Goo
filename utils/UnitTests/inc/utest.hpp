@@ -4,6 +4,7 @@
 # include <string>
 # include <map>
 # include <iostream>
+# include <sstream>
 
 # include "goo_app.hpp"
 # include "goo_exception.hpp"
@@ -80,7 +81,7 @@ struct Config {
 }  // namespace ut
 }  // namespace goo
 
-# if 0
+# if 1
 namespace gooUT {
 
 class Unit {
@@ -121,7 +122,7 @@ public:
 
 }  // namespace HphST
 
-# define HPH_UT_BGN( name )                                     \
+# define GOO_UT_BGN( name )                                     \
 static gooUT::Unit * __ptr_UT_ ## name = nullptr;               \
 void __ut_ctr_ ## name() __attribute__(( constructor(156) ));   \
 namespace gooUT { \
@@ -132,7 +133,7 @@ virtual void _run(std::stringstream & out) { using namespace goo;
 # define _ASSERT( expr, ... ) \
 if( !(expr) ) { hraise(uTestFailure, __VA_ARGS__ ) }
 
-# define HPH_UT_END( name ) } }; \
+# define GOO_UT_END( name ) } }; \
 } void __ut_ctr_ ## name(){ __ptr_UT_ ## name = new gooUT::UT_ ## name(); } \
 void __ut_dtr_ ## name() __attribute__(( destructor(156) ));   \
 void __ut_dtr_ ## name(){ if(__ptr_UT_ ## name) {delete __ptr_UT_ ## name;} }

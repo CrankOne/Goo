@@ -1,4 +1,6 @@
-# include "string.h"
+# include <stdlib.h>
+# include <stdio.h>
+# include <string.h>
 # include "streams/goo_reflection.h"
 
 # define declare_const( name, bitshift ) \

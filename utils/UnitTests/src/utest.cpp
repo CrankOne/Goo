@@ -210,7 +210,7 @@ UTApp::_V_run() {
         } break;
         default:
         case Config::printHelp : {
-            _print_usage( Parent::argv[0] );
+            goo::ut::_print_usage( Parent::argv[0] );
         } break;
     };
     return EXIT_SUCCESS;
@@ -220,11 +220,9 @@ UTApp::_V_run() {
 }  // namespace goo
 
 
-# if 0
+namespace gooUT {
 
-namespace hphUT {
-
-std::map<std::string, Unit *> * Unit::_units = null;
+std::map<std::string, Unit *> * Unit::_units = nullptr;
 
 void
 Unit::enlist_modules( std::ostream & ) {
@@ -258,7 +256,7 @@ Unit::run() {
             << _name.c_str() << "»: "
             << sE.what();
     }*/
-    hraise( uTestFailure, "in unit %s", _name.c_str() );
+    emraise( uTestFailure, "in unit %s", _name.c_str() );
 }
 
 bool
@@ -310,7 +308,7 @@ Unit::run_tests( int argc, char * argv[] ) {
                 } break;
                 case 'h' :
                 default : {
-                    _print_usage( argv[0] );
+                    goo::ut::_print_usage( argv[0] );
                     return EXIT_FAILURE;
                 }
             }  // switch
@@ -398,7 +396,5 @@ Unit::run_tests( int argc, char * argv[] ) {
     return nFails; // false -- ok
 }
 
-}  // namespace HphST
-
-# endif
+}  // namespace gooUT
 

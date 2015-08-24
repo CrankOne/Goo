@@ -45,5 +45,10 @@
     m( hasTypeHint,      4 ) \
     /* ... */
 
+Size reflection_length( const UByte * r );
+Size copy_reflection_bytes( UByte * __restrict dest, const UByte * __restrict src );
+UByte * gain_reflection( UByte * previous, const Size newLength );
+void textualize_reflection_info(const UByte * r, FILE * outFile);
+
 # endif  // H_GOO_STREAMING_GOO_REFLECTION_H
 
