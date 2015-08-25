@@ -123,6 +123,12 @@ UTApp::_V_construct_config_object( int argc, char * argv[] ) const {
                     }
                     printf("\n");
                 } break;
+                case 1 : {
+                    // ...
+                } break;
+                case 2: {
+                    // ...
+                } break;
                 case 'k' : { _static_Config.keepGoing = true; } break;
                 case 's' : { _static_Config.silent = true;     } break;
                 case 'r' : { _static_Config.printUnitsLogs = true; } break;
@@ -216,34 +222,11 @@ UTApp::_V_run() {
     return EXIT_SUCCESS;
 }
 
-}  // namespace ut
-}  // namespace goo
-
-
-namespace gooUT {
-
-std::map<std::string, Unit *> * Unit::_units = nullptr;
-
-void
-Unit::enlist_modules( std::ostream & ) {
-    std::cout << "UNIT-TESTS VAILABLE:" << std::endl;
-    for( auto it = Unit::_units->cbegin();
-              it != Unit::_units->cend(); ++it ) {
-        std::cout << "  - "
-                  << it->second->name()
-                  << std::endl;
-    }
 }
 
-static void
-tokenize_unit_names( const std::string & namelist,
-                     std::vector<std::string> & tokens ) {
-    std::stringstream ss(namelist);
-    std::string item;
-    while (std::getline(ss, item, ',')) {
-        tokens.push_back(item);
-    }
 }
+
+# if 0
 
 void
 Unit::run() {
@@ -396,5 +379,6 @@ Unit::run_tests( int argc, char * argv[] ) {
     return nFails; // false -- ok
 }
 
-}  // namespace gooUT
+# endif
+
 

@@ -25,11 +25,12 @@ private:
 public:
     class TestingUnit {
     private:
-        virtual void _run( std::ostream & ) = 0;
+        virtual void _V_run( std::ostream & ) = 0;
         std::ostream * _outStream;
     public:
         TestingUnit() : _outStream(&(std::cout)) {}
-        void run( ) { _run( *_outStream ); }
+        virtual ~TestingUnit(){}
+        void run( ) { _V_run( *_outStream ); }
         std::ostream & outs() { return *_outStream; }
         void outs( std::ostream & os ) { _outStream = &os; }
     };
@@ -81,7 +82,26 @@ struct Config {
 }  // namespace ut
 }  // namespace goo
 
-# if 1
+# define GOO_UT_BGN( name )                                         \
+static goo::ut::UTApp::TestingUnit * __ptr_UT_ ## name = nullptr;   \
+void __ut_ctr_ ## name() __attribute__(( constructor(156) ));       \
+namespace goo { namespace ut {                                      \
+class UT_ ## name : public goo::ut::UTApp::TestingUnit {            \
+protected:                                                          \
+virtual void _V_run(std::ostream & out) override {
+
+# define _ASSERT( expr, ... )                                       \
+if( !(expr) ) { emraise(uTestFailure, __VA_ARGS__ ) }
+
+# define GOO_UT_END( name, ... ) } };                               \
+void __ut_ctr_ ## name(){                                           \
+__ptr_UT_ ## name = new UT_ ## name();                              \
+goo::ut::UTApp::register_unit( #name, __ptr_UT_ ## name ); }        \
+void __ut_dtr_ ## name() __attribute__(( destructor(156) ));        \
+void __ut_dtr_ ## name(){ if(__ptr_UT_ ## name) {                   \
+    delete __ptr_UT_ ## name;} } } }
+
+# if 0
 namespace gooUT {
 
 class Unit {
@@ -137,8 +157,9 @@ if( !(expr) ) { hraise(uTestFailure, __VA_ARGS__ ) }
 } void __ut_ctr_ ## name(){ __ptr_UT_ ## name = new gooUT::UT_ ## name(); } \
 void __ut_dtr_ ## name() __attribute__(( destructor(156) ));   \
 void __ut_dtr_ ## name(){ if(__ptr_UT_ ## name) {delete __ptr_UT_ ## name;} }
-# endif  // 0
-
+# else
+// ...
+# endif
 
 # endif  // H_HPHST_UTEST_H
 
