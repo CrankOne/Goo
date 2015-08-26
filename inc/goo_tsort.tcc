@@ -11,10 +11,19 @@
 
 namespace goo {
 
+/**@class DAG
+ * @brief Directed Acyclic Graph
+ *
+* This template implements directed acyclic graph and some
+* routines utilizing it.
+* For details, see: https://en.wikipedia.org/wiki/Directed_acyclic_graph
+ * */
 template<typename AssociciatedDataT>
 class DAG {
 public:
     typedef AssociciatedDataT Data;
+
+    /// Aux type representing particular order of graph traversal.
     typedef std::forward_list<const Data *> Order;
 
     /// Auxilliary internal node class.
@@ -155,6 +164,11 @@ public:
     }
 };  // class DAG
 
+/**@class LabeledDAG
+ * @brief Directed Acyclic graph with labeled nodes and associated data.
+ *
+ * This class insertion and depth-searching routines.
+ * */
 template<typename AssociciatedDataT>
 class LabeledDAG : protected DAG<AssociciatedDataT> {
 public:
@@ -223,10 +237,12 @@ public:
         return Parent::dfs(ordered);
     }
 
+    /// Obtain chain for node pointed out by particular label.
     virtual void chain_for_node_by_label( const std::string & label, Order & order ) {
         Parent::chain_for_node( _byLabels[label]->data(), order );
     }
 
+    /// Returns list of all nodes.
     const std::unordered_map<std::string, Node *> & index() const {
         return _byLabels;
     }

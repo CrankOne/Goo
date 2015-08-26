@@ -4,6 +4,7 @@
 # include <algorithm>
 # include <sstream>
 # include <cstdlib>
+# include <cstdarg>
 
 # include <getopt.h>
 
@@ -17,11 +18,11 @@ namespace ut {
 LabeledDAG<UTApp::TestingUnit> UTApp::_modulesGraph;
 
 static Config _static_Config {
-    Config::runAll,     // Run all modules in order.
-    false,              // Be verbose
-    false,              // Abort on unit failure.
-    true,               // Print reports about each ran unit after all.
-    false,              // Take into account unit dependencies on selective run.
+    Config::unassigned,     // Run all modules in order.
+    false,                  // Be verbose
+    false,                  // Abort on unit failure.
+    true,                   // Print reports about each ran unit after all.
+    false,                  // Take into account unit dependencies on selective run.
 };
 
 //
@@ -29,12 +30,12 @@ static Config _static_Config {
 //
 
 static void
-_print_usage(const char * utilname) { printf("\
+_print_usage(const char * utilname) { fprintf(stderr, "\
 GOO UNIT TESTING APPLICATION\n\r\
 Syntax:\n\r\
-    $ %s [-h/--help] [-c/--config] [-s/--silent] \\\n\r\
-        [-l/--list-units] [--dot] [-k/--keep-going] [-u/--selective UNITS] \\\n\r\
-        [-r/--report]\n\r\
+    $ " ESC_CLRBOLD "%s" ESC_CLRCLEAR " [-h/--help] [-c/--config] [-q/--quiet] \\\n\r\
+        [-l/--list] [--dot-graph] [-K/--keep-going] [-u/--selective " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR "] \\\n\r\
+        [-r/--report] [--ignore-deps]\n\r\
 \n\r\
 Provides unit testing functionality for Hephaestus library. \n\r\
 \n\r\
@@ -42,19 +43,19 @@ Sequentially runs routines that exploits a partial set of library's\n\r\
 functions for a bugs, side effects or other misbehaviour.\n\r\
 \n\r\
 Keys:\n\r\
-    [-h/--help] ..............  print this message to stdout.\n\r\
-    [-c/--config] ............  print a goo's build configuration\n\r\
+    -h/--help ................  print this message to stdout.\n\r\
+    -c/--build-config ........  print a goo's build configuration\n\r\
                                 ordered in table form.\n\r\
-    [-s/--silent] ............  do not print any walkthrough\n\r\
+    -q/--quiet ..............   do not print any walkthrough\n\r\
                                 messages.\n\r\
-    [-k/--keep-going] ........  do not interrupt unit sequence\n\r\
+    -K/--keep-going ..........  do not interrupt unit sequence\n\r\
                                 walkthrough on errors.\n\r\
-    [-l/--list-units] ........  print available unit names to stdout.\n\r\
-    [--dot] ..................  print to stdout a DOT graph of units.\n\r\
-    [-u/--selective UNITS] ...  run only named unit or unit in list\n\r\
+    -l/--list ................  print available unit names to stdout.\n\r\
+    --dot-graph ..............  print to stdout a DOT graph of units.\n\r\
+    -u/--selective " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR " .....  run only named unit or unit in list\n\r\
                                 delimeted with comma.\n\r\
-    [--ignore-deps] ..........  ignore unit dependencies (for selective runs)\n\r\
-    [-r/--report] ............  print development reports (unit\n\r\
+    --ignore-deps ............  ignore unit dependencies (for selective runs)\n\r\
+    -r/--report ..............  print development reports (unit\n\r\
                                 runtime messages) to stdout.\n\r\
 Report bugs to crank@qcrypt.org.\n\r\
 Official repository page for this version:\n\r\
@@ -63,12 +64,28 @@ Gluck auf!\n\r\
 ", utilname);}
 
 static void
+_print_conflicting_tasks_warning() {
+    fprintf( stderr, "You're specified multiple actions. Please,\n\r\
+choose exactly one of (--help/--config/--list/--dot-graph)." );
+}
+
+static void
 tokenize_unit_names( const std::string & namelist,
                      std::vector<std::string> & tokens ) {
     std::stringstream ss(namelist);
     std::string item;
     while (std::getline(ss, item, ',')) {
         tokens.push_back(item);
+    }
+}
+
+void
+_set_task( Config::Operations op ) {
+    if( _static_Config.operation == Config::unassigned ) {
+        _static_Config.operation = op;
+    } else {
+        _print_conflicting_tasks_warning();
+        exit( EXIT_FAILURE );
     }
 }
 
@@ -98,16 +115,16 @@ UTApp::_V_construct_config_object( int argc, char * argv[] ) const {
             //int this_option_optind = optind ? optind : 1;
             int option_index = 0;
             static struct option long_options[] = {
-                {"help",        no_argument,        0,  'h' },
-                {"config",      no_argument,        0,  'c' },
-                {"silent",      no_argument,        0,  's' },
-                {"keep-going",  no_argument,        0,  'k' },
-                {"report",      no_argument,        0,  'r' },
-                {"list-units",  no_argument,        0,  'l' },
-                {"selective",   required_argument,  0,  'u' },
-                {"dot",         no_argument,        0,   1  },
-                {"ignore-deps", no_argument,        0,   2  },
-                {0,             0,                  0,   0  }
+                {"help",            no_argument,        0,  'h' },
+                {"build-config",    no_argument,        0,  'c' },
+                {"quiet",           no_argument,        0,  'q' },
+                {"keep-going",      no_argument,        0,  'K' },
+                {"report",          no_argument,        0,  'r' },
+                {"list",            no_argument,        0,  'l' },
+                {"selective",       required_argument,  0,  'u' },
+                {"dot-graph",       no_argument,        0,   2  },
+                {"ignore-deps",     no_argument,        0,   1  },
+                {0,                 0,                  0,   0  }
             };
 
             c = getopt_long(argc, argv, "chvskrlu:",
@@ -116,42 +133,34 @@ UTApp::_V_construct_config_object( int argc, char * argv[] ) const {
                 break;
 
             switch (c) {
-                case 0: {
-                    printf("option %s", long_options[option_index].name);
-                    if( optarg ) {
-                        printf(" with arg %s", optarg);
-                    }
-                    printf("\n");
-                } break;
-                case 1 : {
-                    // ...
-                } break;
-                case 2: {
-                    // ...
-                } break;
-                case 'k' : { _static_Config.keepGoing = true; } break;
-                case 's' : { _static_Config.silent = true;     } break;
+                // OPTIONS
+                case   1 : { _static_Config.ignoreDeps = true; } break;
+                case 'K' : { _static_Config.keepGoing = true;  } break;
+                case 'q' : { _static_Config.quiet = true;      } break;
                 case 'r' : { _static_Config.printUnitsLogs = true; } break;
+                // TASKS
+                case 2: { _set_task( Config::dumpDOT ); } break;
                 case 'u' : {
-                    _static_Config.operation = Config::runChoosen;
-                    tokenize_unit_names( optarg, _static_Config.names );
-                } break;
-                case 'c' : { _static_Config.operation = Config::printBuildConfig; } break;
-                case 'l' : { _static_Config.operation = Config::listUnits; } break;
+                        _set_task( Config::runChoosen );
+                        tokenize_unit_names( optarg, _static_Config.names );
+                    } break;
+                case 'c' : { _set_task( Config::printBuildConfig ); } break;
+                case 'l' : { _set_task( Config::listUnits ); } break;
                 case 'h' :
-                default : {
-                    _static_Config.operation = Config::printHelp;
-                }
+                default : { _set_task( Config::printHelp ); }
             }  // switch
         }  // while
     };
+    if( _static_Config.operation == Config::unassigned ) {
+        _static_Config.operation = Config::runAll;
+    }
     return &_static_Config;
 }
 
 void
 UTApp::_V_configure_application( const Config * c ) {
     // Only continue for unit running tasks.
-    if( c->operation < 4 ) {
+    if( c->operation < Config::runAll ) {
         return;
     }
     // If it is common run, just obtain the correct sequence:
@@ -176,7 +185,7 @@ UTApp::_V_configure_application( const Config * c ) {
 
 std::ostream *
 UTApp::_V_acquire_stream() {
-    if( co()->silent ) {
+    if( co()->quiet ) {
         return (_ss = new std::stringstream());
     } else {
         return &(std::cout);
@@ -200,7 +209,7 @@ UTApp::list_modules( std::ostream & os ) {
 
 int
 UTApp::_V_run() {
-    switch(co()->operation) {
+    switch( _static_Config.operation ) {
         case Config::printBuildConfig : {
             build_info();
         } break;
@@ -212,19 +221,31 @@ UTApp::_V_run() {
         } break;
         case Config::runAll :
         case Config::runChoosen : {
-            // ...
+            // TODO
         } break;
-        default:
-        case Config::printHelp : {
+        case Config::unassigned :
+        case Config::printHelp :
+        default : {
             goo::ut::_print_usage( Parent::argv[0] );
         } break;
     };
     return EXIT_SUCCESS;
 }
 
+void
+store_dependencies( std::vector<std::string> & depListNames, ... ) {
+    const char * dependencyName;
+    va_list vl;
+    va_start(vl, depListNames);
+        while( dependencyName = va_arg(vl, const char *) ) {
+            depListNames.push_back( dependencyName );
+        }
+    va_end(vl);
 }
 
-}
+}  // namespace ut
+
+}  // namespace goo
 
 # if 0
 

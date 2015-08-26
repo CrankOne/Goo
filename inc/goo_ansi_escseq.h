@@ -7,7 +7,8 @@
 
 # ifdef PRINTING_ANSI_ESC
 
-# define ESC_CLRBOLD    "\033[1;30m"
+# define ESC_CLRBOLD    "\033[0;1m"
+# define ESC_CLRITALIC  "\033[0;3m"
 
 # define ESC_BLDRED     "\033[1;31m"
 # define ESC_BLDGREEN   "\033[1;32m"
@@ -38,6 +39,7 @@
 # else /* PRINTING_ANSI_ESC */
 
 # define ESC_CLRBOLD    ""
+# define ESC_CLRITALIC  ""
 
 # define ESC_BLDRED     ""
 # define ESC_BLDGREEN   ""
@@ -47,7 +49,13 @@
 # define ESC_BLDCYAN    ""
 # define ESC_BLDWHITE   ""
 
+# define ESC_CLRRED     ""
 # define ESC_CLRGREEN   ""
+# define ESC_CLRYELLOW  ""
+# define ESC_CLRBLUE    ""
+# define ESC_CLRVIOLET  ""
+# define ESC_CLRCYAN    ""
+# define ESC_CLRWHITE   ""
 
 # define ESC_UNLRED     ""
 # define ESC_UNLGREEN   ""

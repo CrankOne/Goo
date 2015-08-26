@@ -7,5 +7,5 @@ GOO_UT_BGN( serialization )
 
 
 
-GOO_UT_END( serialization )
+GOO_UT_END( serialization, "types" )
 

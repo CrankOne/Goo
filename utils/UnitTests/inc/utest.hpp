@@ -33,6 +33,8 @@ public:
         void run( ) { _V_run( *_outStream ); }
         std::ostream & outs() { return *_outStream; }
         void outs( std::ostream & os ) { _outStream = &os; }
+        void set_unit_name( const char * );
+        void set_dependencies( const char ** );
     };
 private:
     static std::unordered_set<TestingUnit*> _modules;
@@ -58,16 +60,17 @@ public:
 struct Config {
     /// Available functions of application. For descriptions, see _V_construct_config_object().
     enum Operations {
-        printHelp           = 0,
-        printBuildConfig    = 1,
-        listUnits           = 2,
-        dumpDOT             = 3,
-        runAll              = 4,
-        runChoosen          = 5,
+        unassigned          = 0,
+        printHelp           = 1,
+        printBuildConfig    = 2,
+        listUnits           = 3,
+        dumpDOT             = 4,
+        runAll              = 5,
+        runChoosen          = 6,
     } operation;
 
     /// Supplementary options.
-    bool silent,
+    bool quiet,
          keepGoing,
          printUnitsLogs,
          ignoreDeps;
@@ -78,6 +81,19 @@ struct Config {
     /// Prepared unit sequence to run.
     LabeledDAG<UTApp::TestingUnit>::Order units;
 };
+
+# if 0
+void
+store_dependency_names( std::vector<std::string> & t) {}
+
+template<typename ... Ts> void
+store_dependency_names( std::vector<std::string> & t,
+                        const std::string & first,
+                        Ts ... args ) {
+    t.push_back( first );
+    store_dependency_names( t, args ... );
+}
+# endif
 
 }  // namespace ut
 }  // namespace goo
@@ -95,7 +111,10 @@ if( !(expr) ) { emraise(uTestFailure, __VA_ARGS__ ) }
 
 # define GOO_UT_END( name, ... ) } };                               \
 void __ut_ctr_ ## name(){                                           \
+const char * depNames[] = { __VA_ARGS__, NULL };                    \
 __ptr_UT_ ## name = new UT_ ## name();                              \
+__ptr_UT_ ## name->set_unit_name( # name );                         \
+__ptr_UT_ ## name->set_dependencies( depNames );                    \
 goo::ut::UTApp::register_unit( #name, __ptr_UT_ ## name ); }        \
 void __ut_dtr_ ## name() __attribute__(( destructor(156) ));        \
 void __ut_dtr_ ## name(){ if(__ptr_UT_ ## name) {                   \
