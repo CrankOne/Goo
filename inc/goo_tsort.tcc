@@ -76,16 +76,11 @@ protected:
 public:
     DAG() : _nodesPtr( new std::unordered_set<Node *>() ),
             _dictPtr(  new std::unordered_map<const Data *, Node *> ),
-            _dict(*_dictPtr) {
-                printf("XXX #1 %p\n", this);
-                fflush(stdout); //XXX
-                }
+            _dict(*_dictPtr) {}
     DAG( const Data * bgn, size_t n ) :
             _nodesPtr( new std::unordered_set<Node *>() ),
             _dictPtr(  new std::unordered_map<const Data *, Node *> ),
             _dict(*_dictPtr) {
-        printf("XXX #2 %p\n", this);
-        fflush(stdout); //XXX
         for( const Data * cd = bgn; cd != bgn + n; ++cd ) {
             auto nn = new Node(cd);
             _nodesPtr->insert_data( nn );
@@ -100,10 +95,11 @@ public:
     }
 
     /// Inserts node with given data ptr.
-    virtual void insert_data( const Data * d ) {
+    virtual Node * insert_data( const Data * d ) {
         auto nn = new Node(d);
         _nodesPtr->insert( nn );
         _dict[d] = nn;
+        return nn;
     }
 
     /// Returns Node by specific data pointer.
