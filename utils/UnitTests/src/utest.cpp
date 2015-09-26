@@ -14,7 +14,7 @@
 namespace goo {
 namespace ut {
 
-LabeledDAG<UTApp::TestingUnit> UTApp::_modulesGraph;
+LabeledDAG<UTApp::TestingUnit> * UTApp::_modulesGraphPtr = nullptr;
 
 static Config _static_Config {
     Config::runAll,     // Run all modules in order.
@@ -87,7 +87,10 @@ UTApp::~UTApp() {
 void
 UTApp::register_unit( const std::string & label,
                       TestingUnit * unitObject ) {
-    _modulesGraph.insert( label, unitObject );
+    if( !_modulesGraphPtr ) {
+        _modulesGraphPtr = new LabeledDAG<UTApp::TestingUnit>();
+    }
+    _modulesGraphPtr->insert( label, unitObject );
 }
 
 Config *
@@ -150,15 +153,15 @@ UTApp::_V_configure_application( const Config * c ) {
     }
     // If it is common run, just obtain the correct sequence:
     if( Config::runAll == c->operation ) {
-        _modulesGraph.dfs( _static_Config.units );
+        _modulesGraphPtr->dfs( _static_Config.units );
     }
     // If it is a selective run, determine which modules we need.
     if( Config::runChoosen == c->operation ) {
         for( auto it = c->names.begin(); c->names.end() != it; ++it ) {
             if( !c->ignoreDeps ) {
-                _modulesGraph.chain_for_node_by_label( *it, _static_Config.units );
+                _modulesGraphPtr->chain_for_node_by_label( *it, _static_Config.units );
             } else {
-                _static_Config.units.push_front( _modulesGraph( *it ).data() );
+                _static_Config.units.push_front( (*_modulesGraphPtr)( *it ).data() );
             }
         }
     }
@@ -180,12 +183,12 @@ UTApp::_V_acquire_stream() {
 void
 UTApp::list_modules( std::ostream & os ) {
     os << "MODULES AVAILABLE:" << std::endl;
-    if( _modulesGraph.index().empty() ) {
+    if( _modulesGraphPtr->index().empty() ) {
         os << " <none>" << std::endl;
         return;
     }
-    for( auto it = _modulesGraph.index().cbegin();
-              it != _modulesGraph.index().cend(); ++it ) {
+    for( auto it = _modulesGraphPtr->index().cbegin();
+              it != _modulesGraphPtr->index().cend(); ++it ) {
         os << "  - "
            << it->first
            << std::endl;
@@ -202,7 +205,7 @@ UTApp::_V_run() {
             list_modules( std::cout );
         } break;
         case Config::dumpDOT : {
-            _modulesGraph.dump_DOT_notated_graph( std::cout );
+            _modulesGraphPtr->dump_DOT_notated_graph( std::cout );
         } break;
         case Config::runAll :
         case Config::runChoosen : {
@@ -219,13 +222,14 @@ UTApp::_V_run() {
 }  // namespace ut
 }  // namespace goo
 
+# if 0
 
 namespace gooUT {
 
 std::map<std::string, Unit *> * Unit::_units = nullptr;
 
 void
-Unit::enlist_modules( std::ostream & ) {
+Unit::dump_modules_list_to( std::ostream & ) {
     std::cout << "UNIT-TESTS VAILABLE:" << std::endl;
     for( auto it = Unit::_units->cbegin();
               it != Unit::_units->cend(); ++it ) {
@@ -303,7 +307,7 @@ Unit::run_tests( int argc, char * argv[] ) {
                     tokenize_unit_names( optarg, uNamesPtd );
                 } break;
                 case 'l' : {
-                    Unit::enlist_modules(std::cout);
+                    Unit::dump_modules_list_to(std::cout);
                     return EXIT_FAILURE;
                 } break;
                 case 'h' :
@@ -397,4 +401,6 @@ Unit::run_tests( int argc, char * argv[] ) {
 }
 
 }  // namespace gooUT
+
+# endif  // deprecated
 

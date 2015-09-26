@@ -70,25 +70,39 @@ public:
         }
     };  // class Node
 protected:
-    std::unordered_set<Node *> _nodes;
-    std::unordered_map<const Data *, Node *> _dict;
+    std::unordered_set<Node *> * _nodesPtr;
+    std::unordered_map<const Data *, Node *> * _dictPtr,
+                                             & _dict;
 public:
-    DAG() {}
-    DAG( const Data * bgn, size_t n ) {
+    DAG() : _nodesPtr( new std::unordered_set<Node *>() ),
+            _dictPtr(  new std::unordered_map<const Data *, Node *> ),
+            _dict(*_dictPtr) {
+                printf("XXX #1 %p\n", this);
+                fflush(stdout); //XXX
+                }
+    DAG( const Data * bgn, size_t n ) :
+            _nodesPtr( new std::unordered_set<Node *>() ),
+            _dictPtr(  new std::unordered_map<const Data *, Node *> ),
+            _dict(*_dictPtr) {
+        printf("XXX #2 %p\n", this);
+        fflush(stdout); //XXX
         for( const Data * cd = bgn; cd != bgn + n; ++cd ) {
             auto nn = new Node(cd);
-            _nodes.insert_data( nn );
+            _nodesPtr->insert_data( nn );
             _dict[cd] = nn;
         }
     }
+    //DAG( const DAG & orig );
     virtual ~DAG( ) {
         clear();
+        delete _nodesPtr;
+        delete _dictPtr;
     }
 
     /// Inserts node with given data ptr.
     virtual void insert_data( const Data * d ) {
         auto nn = new Node(d);
-        _nodes.insert( nn );
+        _nodesPtr->insert( nn );
         _dict[d] = nn;
     }
 
@@ -99,11 +113,11 @@ public:
 
     /// Deletes nodes.
     void clear() {
-        for( auto it = _nodes.begin();
-             _nodes.end() != it; ++it ) {
+        for( auto it = _nodesPtr->begin();
+             _nodesPtr->end() != it; ++it ) {
             delete (*it);
         }
-        _nodes.clear();
+        _nodesPtr->clear();
         _dict.clear();
     }
 
@@ -111,14 +125,14 @@ public:
     DAG revert() const {
         DAG rg;
         // Place copy of nodes withoud pes.
-        for( auto it = _nodes.begin();
-             _nodes.end() != it;
+        for( auto it = _nodesPtr->begin();
+             _nodesPtr->end() != it;
              ++it ) {
             rg.insert_data( (*it)->data() );
         }
         // Establish reverted connections.
-        for( auto it = _nodes.begin();
-             _nodes.end() != it;
+        for( auto it = _nodesPtr->begin();
+             _nodesPtr->end() != it;
              ++it ) {
             Node * cn = rg( (*it)->data() );
             const Node * on = _dict.find((*it)->data())->second;
@@ -134,9 +148,9 @@ public:
     virtual size_t dfs( Order & ordered ) const {
         size_t nChains = 0,
                N = 0;  // overall processed
-        while( N != _nodes.size() ) {
+        while( N != _nodesPtr->size() ) {
             size_t nprocessed = 0;
-            for( auto it = _nodes.begin(); it != _nodes.end(); ++it ) {
+            for( auto it = _nodesPtr->begin(); it != _nodesPtr->end(); ++it ) {
                 if( Node::discovered == (*it)->_status ) {
                     continue;  // pass visited or open node.
                 }
@@ -183,6 +197,8 @@ private:
     std::unordered_map<std::string, Node *> _byLabels;
 public:
 
+    LabeledDAG() : Parent() {}
+
     Node & operator()(const std::string & l ) {
         return *_byLabels[l];
     }
@@ -196,8 +212,9 @@ public:
     /// Inserts node with given data ptr.
     virtual void insert( const std::string & label, const Data * d ) {
         auto nn = new Node(label, d, *this);
-        Parent::_nodes.insert( nn );
+        assert( Parent::_dictPtr );
         Parent::_dict[d] = nn;
+        Parent::_nodesPtr->insert( nn );
         _byLabels[label] = nn;
     }
 

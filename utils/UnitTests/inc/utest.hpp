@@ -21,14 +21,17 @@ public:
     typedef goo::App<Config, std::ostream> Parent;
 private:
     std::stringstream * _ss;
-    static LabeledDAG<TestingUnit> _modulesGraph;
+    static LabeledDAG<TestingUnit> * _modulesGraphPtr;
 public:
     class TestingUnit {
     private:
         virtual void _run( std::ostream & ) = 0;
         std::ostream * _outStream;
+        std::string _name;
     public:
-        TestingUnit() : _outStream(&(std::cout)) {}
+        TestingUnit( const std::string & nm ) :
+                _outStream( &(std::cout) ),
+                _name( nm ) {}
         void run( ) { _run( *_outStream ); }
         std::ostream & outs() { return *_outStream; }
         void outs( std::ostream & os ) { _outStream = &os; }
@@ -78,10 +81,25 @@ struct Config {
     LabeledDAG<UTApp::TestingUnit>::Order units;
 };
 
+# define GOO_UT_BGN( name )                                                     \
+void __ut_ctr_ ## name() __attribute__(( constructor(156) ));                   \
+namespace goo { namespace ut {                                                  \
+class UT_ ## name : public goo::ut::UTApp::TestingUnit {                        \
+public: UT_ ## name() : goo::ut::UTApp::TestingUnit( # name ) {}; protected:    \
+virtual void _run(std::ostream & out) override { using namespace goo;
+
+# define _ASSERT( expr, ... )                                                   \
+if( !(expr) ) { hraise( uTestFailure, __VA_ARGS__ ); }
+
+# define GOO_UT_END( name ) } };                                                \
+} } void __ut_ctr_ ## name(){                                                   \
+    goo::ut::UTApp::register_unit( # name, new goo::ut::UT_ ## name() );        \
+}
+
 }  // namespace ut
 }  // namespace goo
 
-# if 1
+# if 0
 namespace gooUT {
 
 class Unit {
@@ -114,7 +132,7 @@ public:
     virtual void run();
 
     static bool run_tests( int argc, char * argv[] );
-    static void enlist_modules( std::ostream & );
+    static void dump_modules_list_to( std::ostream & );
 
     friend void __init_units_dictionary();
     friend void __free_units_dictionary();
