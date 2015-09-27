@@ -157,10 +157,17 @@ int obtain_stacktrace( List & target ) {
             EMERGENCY_STACK_DEPTH_NENTRIES );
     for( Size i = 3; i < size; ++i ) {
         StackTraceInfoEntry entry {
+                # if 0 /* unsupported by GCC */
                 .addr       = (bfd_vma) stackPointers[i],
                 .soLibAddr  = 0, .lFound = 0, .lineno     = 0,
                 "",         "",         "",         "",
+                # else
+                0, 0,
+                "",         "",         "",         "",
+                # endif
                 # ifndef NO_BFD_LIB
+                (bfd_vma) stackPointers[i],
+                0,
                 0,
                 # endif
             };

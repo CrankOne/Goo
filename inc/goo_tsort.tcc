@@ -11,10 +11,23 @@
 
 namespace goo {
 
+/**@class DAG
+ * @brief Directed Acyclic Graph
+ *
+ * This template implements directed acyclic graph and some
+ * routines utilizing it.
+ * For details, see: https://en.wikipedia.org/wiki/Directed_acyclic_graph
+ *
+ * This DAG implementation is not so convinient as its labeled descendant,
+ * but meets most of the strighforward needs.
+ * (see LabeledDAG template)
+ * */
 template<typename AssociciatedDataT>
 class DAG {
 public:
     typedef AssociciatedDataT Data;
+
+    /// Aux type representing particular order of graph traversal.
     typedef std::forward_list<const Data *> Order;
 
     /// Auxilliary internal node class.
@@ -27,6 +40,7 @@ public:
         } _status;
     private:
         std::set<const Node *>   _deps;
+        /// Data constness should be guaranteed along all the DAG routines.
         const Data             * _data;
     public:
         Node( const Data * d ) : _status(undiscovered), _data(d) {}
@@ -38,12 +52,18 @@ public:
                                  _deps(nodes, nodes+n),
                                  _data(d) {}
 
-        Node & depends_from( const Node * nd ) {
+        Node & dependance_of( const Node * nd ) {
             _deps.insert(nd);
             return *this; }
+
+        Node & depends_on( Node & nd ) const {
+            nd.dependance_of( nd );
+            return *this; }
+
         virtual ~Node(){}
 
         const Data * data() const { return _data; }
+        
         bool is_terminal() const { return _deps.empty(); }
         const std::set<const Node *> & dependencies() const { return _deps; }
 
@@ -134,7 +154,7 @@ public:
             const Node * on = _dict.find((*it)->data())->second;
             for( auto depIt  = on->dependencies().begin();
                       on->dependencies().end() != depIt; ++depIt) {
-                rg((*depIt)->data())->depends_from( rg(cn->data()) );
+                rg((*depIt)->data())->dependance_of( rg(cn->data()) );
             }
         }
         return rg;
@@ -162,9 +182,19 @@ public:
     virtual void chain_for_node( const Data * d, Order & order ) {
         auto r = this->revert();
         r(d)->run_dfs_on_me( order );
+        // as the order obtaining in reverse
+        order.reverse();
     }
 };  // class DAG
 
+/**@class LabeledDAG
+ * @brief Directed Acyclic graph with labeled nodes and associated data.
+ *
+ * This class insertion and depth-searching routines.
+ *
+ * Note, that our DAG conception implies only pointer management (no
+ * data manipulation routines provided).
+ * */
 template<typename AssociciatedDataT>
 class LabeledDAG : protected DAG<AssociciatedDataT> {
 public:
@@ -184,7 +214,7 @@ protected:
                              _label(label),
                              _owner(set) {}
 
-        Node & depends_from( std::string & depLbl ) {
+        Node & dependance_of( std::string & depLbl ) {
             Parent::Node::insert( &(_owner(depLbl)) );
             return *this; }
         const std::string & label() const { return _label; }
@@ -236,10 +266,12 @@ public:
         return Parent::dfs(ordered);
     }
 
+    /// Obtain chain for node pointed out by particular label.
     virtual void chain_for_node_by_label( const std::string & label, Order & order ) {
         Parent::chain_for_node( _byLabels[label]->data(), order );
     }
 
+    /// Returns list of all nodes.
     const std::unordered_map<std::string, Node *> & index() const {
         return _byLabels;
     }

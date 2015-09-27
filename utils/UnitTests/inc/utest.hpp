@@ -21,20 +21,24 @@ public:
     typedef goo::App<Config, std::ostream> Parent;
 private:
     std::stringstream * _ss;
-    static LabeledDAG<TestingUnit> * _modulesGraphPtr;
+    /// The DAG is not a storage.
+    static LabeledDAG<TestingUnit>                        * _modulesGraphPtr;
+    static std::unordered_map<std::string, TestingUnit *> * _modulesStoragePtr;
 public:
     class TestingUnit {
     private:
-        virtual void _run( std::ostream & ) = 0;
+        virtual void _V_run( std::ostream & ) = 0;
         std::ostream * _outStream;
         std::string _name;
     public:
         TestingUnit( const std::string & nm ) :
                 _outStream( &(std::cout) ),
                 _name( nm ) {}
-        void run( ) { _run( *_outStream ); }
+        void run( ) { _V_run( *_outStream ); }
         std::ostream & outs() { return *_outStream; }
         void outs( std::ostream & os ) { _outStream = &os; }
+        void set_unit_name( const char * );
+        void set_dependencies( const char ** );
     };
 private:
     static std::unordered_set<TestingUnit*> _modules;
@@ -60,16 +64,17 @@ public:
 struct Config {
     /// Available functions of application. For descriptions, see _V_construct_config_object().
     enum Operations {
-        printHelp           = 0,
-        printBuildConfig    = 1,
-        listUnits           = 2,
-        dumpDOT             = 3,
-        runAll              = 4,
-        runChoosen          = 5,
+        unassigned          = 0,
+        printHelp           = 1,
+        printBuildConfig    = 2,
+        listUnits           = 3,
+        dumpDOT             = 4,
+        runAll              = 5,
+        runChoosen          = 6,
     } operation;
 
     /// Supplementary options.
-    bool silent,
+    bool quiet,
          keepGoing,
          printUnitsLogs,
          ignoreDeps;
@@ -78,7 +83,7 @@ struct Config {
     std::vector<std::string> names;
 
     /// Prepared unit sequence to run.
-    LabeledDAG<UTApp::TestingUnit>::Order units;
+    mutable LabeledDAG<UTApp::TestingUnit>::Order units;
 };
 
 # define GOO_UT_BGN( name )                                                     \
@@ -86,77 +91,18 @@ void __ut_ctr_ ## name() __attribute__(( constructor(156) ));                   
 namespace goo { namespace ut {                                                  \
 class UT_ ## name : public goo::ut::UTApp::TestingUnit {                        \
 public: UT_ ## name() : goo::ut::UTApp::TestingUnit( # name ) {}; protected:    \
-virtual void _run(std::ostream & out) override { using namespace goo;
+virtual void _V_run(std::ostream & os) override { using namespace goo;
 
 # define _ASSERT( expr, ... )                                                   \
-if( !(expr) ) { hraise( uTestFailure, __VA_ARGS__ ); }
+if( !(expr) ) { emraise( uTestFailure, __VA_ARGS__ ); }
 
-# define GOO_UT_END( name ) } };                                                \
+# define GOO_UT_END( name, ... ) } };                                           \
 } } void __ut_ctr_ ## name(){                                                   \
     goo::ut::UTApp::register_unit( # name, new goo::ut::UT_ ## name() );        \
 }
 
 }  // namespace ut
 }  // namespace goo
-
-# if 0
-namespace gooUT {
-
-class Unit {
-protected:
-    std::string         _name;
-    std::stringstream   _ss;
-    static std::map<std::string, Unit *> * _units;
-
-    virtual void _run( std::stringstream & ) = 0;
-public:
-    explicit Unit( const std::string & name ) : _name(name) {
-        if( !_units ) {
-            Unit::_units = new std::map<std::string, Unit *>();
-        }
-        (*_units)[name] = this;
-    }
-    virtual ~Unit() {
-        if(_units) {
-            _units->erase( _name );
-        }
-        if( _units->empty() ) {
-            delete _units;
-            _units = nullptr;
-        }
-    }
-    inline std::string name() const { return _name; }
-    inline std::string get_report() const { return _ss.str(); }
-
-
-    virtual void run();
-
-    static bool run_tests( int argc, char * argv[] );
-    static void dump_modules_list_to( std::ostream & );
-
-    friend void __init_units_dictionary();
-    friend void __free_units_dictionary();
-};
-
-}  // namespace HphST
-
-# define GOO_UT_BGN( name )                                     \
-static gooUT::Unit * __ptr_UT_ ## name = nullptr;               \
-void __ut_ctr_ ## name() __attribute__(( constructor(156) ));   \
-namespace gooUT { \
-class UT_ ## name : public Unit {             \
-public: UT_ ## name() : Unit( # name ) {}; protected:           \
-virtual void _run(std::stringstream & out) { using namespace goo;
-
-# define _ASSERT( expr, ... ) \
-if( !(expr) ) { hraise(uTestFailure, __VA_ARGS__ ) }
-
-# define GOO_UT_END( name ) } }; \
-} void __ut_ctr_ ## name(){ __ptr_UT_ ## name = new gooUT::UT_ ## name(); } \
-void __ut_dtr_ ## name() __attribute__(( destructor(156) ));   \
-void __ut_dtr_ ## name(){ if(__ptr_UT_ ## name) {delete __ptr_UT_ ## name;} }
-# endif  // 0
-
 
 # endif  // H_HPHST_UTEST_H
 

@@ -152,7 +152,7 @@ public:
 
     /// Configured application entry point.
     static int run() { int rc = _self->_V_run();
-                       delete _self;
+                       delete _self; _self = nullptr;
                        return rc; }
 
     // methods
@@ -160,7 +160,7 @@ public:
     /// Returns reference on common loging stream object.
     inline LogStreamT    & ls() { assert(_lStr); return *_lStr; }
     /// Returns reference on common config object.
-    inline ConfigObjectT * co() { assert(_cObj); return  _cObj; }
+    inline ConfigObjectT & co() { assert(_cObj); return *_cObj; }
     /// Returns reference on common config object (const version).
     inline const ConfigObjectT * co() const { assert(_cObj); return *_cObj; }
 };
