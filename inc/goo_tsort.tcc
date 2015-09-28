@@ -56,8 +56,8 @@ public:
             _deps.insert(nd);
             return *this; }
 
-        Node & depends_on( Node & nd ) const {
-            nd.dependance_of( nd );
+        const Node & depends_on( Node * nd ) const {
+            nd->dependance_of( this );
             return *this; }
 
         virtual ~Node(){}

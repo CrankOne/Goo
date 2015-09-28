@@ -246,6 +246,16 @@ UTApp::_V_run() {
     return EXIT_SUCCESS;
 }
 
+//
+// Unit
+//
+
+void
+UTApp::TestingUnit::set_dependencies(
+    const char [][48], uint8_t ) {
+    // TODO
+}
+
 }  // namespace ut
 }  // namespace goo
 

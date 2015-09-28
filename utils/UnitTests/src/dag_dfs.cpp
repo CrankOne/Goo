@@ -1,8 +1,8 @@
+# include <cstring>
 # include "utest.hpp"
 
-
-/**@file dag.cpp
- * @brief Direct acyclic graph sorting tests.
+/**@file dag_dfs.cpp
+ * @brief Depth-first for direct acyclic graph test.
  *
  * DAG perform a basis for unit testing functionality, so it should
  * be presented in some way. Currently there is no point to include
@@ -39,16 +39,17 @@ dump_order( std::ostream & os, const NumberHoldingGraph::Order & order ) {
 
 uint16_t
 char_to_n( char c ) {
-    return '0' - c;
+    return c - '0';
 }
 
 bool
-is_nth_resolved( const uint16_t indicators, int16_t n ) {
+is_nth_resolved( const uint16_t indicators, uint8_t n ) {
     return indicators & (0x1 << n );
 }
 
 void
-resolve_nth( uint16_t & indicators, int16_t n ) {
+resolve_nth( uint16_t & indicators, uint8_t n ) {
+    //std::cout << "Resolved: " << (int) n << std::endl;  // XXX
     indicators |= (0x1 << n );
 }
 
@@ -59,6 +60,7 @@ check_resolution_chain( const DepDecl * arr,
                         ) {
     // used to check order correctness. True bit means 'resolved'.
     uint16_t visitIndicatorBits = 0x0;
+    # if 0  // XXX: reverse :)
     for( auto it  = order.begin();
             order.end() != it; ++it ) {
         // find node denoted by order
@@ -90,12 +92,61 @@ check_resolution_chain( const DepDecl * arr,
         resolve_nth( visitIndicatorBits, char_to_n( cDecl->name ) );
     }
     // TODO: check target presence if need
+    # else
+    for(     auto it  = order.begin();
+         order.end() != it; ++it ) {
+        const char cNodeChar = **it;
+        for( const DepDecl * cDecl = arr; cDecl->name != '\0'; ++cDecl ) {
+            if( strchr(cDecl->deps, cNodeChar) ) {
+                if( !is_nth_resolved( visitIndicatorBits, char_to_n(cDecl->name) ) ) {
+                    std::stringstream ss;
+                    dump_order( ss, order );
+                    emraise( uTestFailure,
+                            "Ordered node refers to unresolved node; target: %c, order: %s, problem on: %c w dep %c.",
+                            target ? target : '!',
+                            ss.str().c_str(),
+                            cNodeChar,
+                            cDecl->name
+                        );
+                }
+            }
+        }
+        resolve_nth( visitIndicatorBits, char_to_n( cNodeChar ) );
+    }
+    // Check, if target is resolved:
+    if( !target ) {
+        // no target -- then all 10 bits should be set to 1; even an orphants
+        for( const DepDecl * cDecl = arr; cDecl->name != '\0'; ++cDecl ) {
+            uint8_t n = char_to_n( cDecl->name );
+            if( ! (visitIndicatorBits & (0x1 << n)) ) {
+                std::stringstream ss;
+                dump_order( ss, order );
+                emraise( uTestFailure, "Node %c unresolved for DFS DAG traversal. Order is: %s.",
+                        cDecl->name,
+                        ss.str().c_str()
+                    );
+            }
+        }
+    } else {
+        // Check only target.
+        uint8_t targetN = char_to_n( target );
+        if( ! (visitIndicatorBits & (0x1 << targetN)) ) {
+            std::stringstream ss;
+            dump_order( ss, order );
+            emraise( uTestFailure, "Target %c remained unvisited. Order is: %s.",
+                    target,
+                    ss.str().c_str()
+                );
+        }
+    }
+    # endif
 }
 
-GOO_UT_BGN( DAG )
+GOO_UT_BGN( DFS_DAG, "Direct acyclic graph depth-first search" )
 
 {  // Basic DAG
     DepDecl deps[] = {
+            // #   dep of:
             { '1', "6"      },
             { '2', "60"     },
             { '3', "7"      },
@@ -106,23 +157,24 @@ GOO_UT_BGN( DAG )
             { '8', "10"     },
             { '9', "0"      },
             { '0', ""       },
+            { '\0', "sentinel" },
         };
     os << "Now, the basic DAG testing procedures will be invoked:" << std::endl;
     NumberHoldingGraph ng;
     std::unordered_map<char, NumberHoldingGraph::Node *> nodesIndex;
     // Initialize nodes
-    for( uint8_t i = 0; i < sizeof(deps)/sizeof(DepDecl); ++i ) {
+    for( uint8_t i = 0; i < sizeof(deps)/sizeof(DepDecl) - 1; ++i ) {
         DepDecl * cnDataPtr = deps + i;
         cnDataPtr->n = ng.insert_data( &(cnDataPtr->name) );
         nodesIndex[cnDataPtr->name] = cnDataPtr->n;
     }
     os << _static_manualHelpInstructions << std::endl;
     // Set-up nodes dependencies.
-    for( uint8_t i = 0; i < sizeof(deps)/sizeof(DepDecl); ++i ) {
+    for( uint8_t i = 0; i < sizeof(deps)/sizeof(DepDecl) - 1; ++i ) {
         DepDecl * cnDataPtr = deps + i;
-        os << " node '" << cnDataPtr->name << "' depends on: ";
+        os << " node '" << cnDataPtr->name << "' is dependence of: ";
         for( char * c = cnDataPtr->deps; *c != '\0'; c++ ) {
-            cnDataPtr->n->depends_on( nodesIndex[*c] );
+            cnDataPtr->n->dependance_of( nodesIndex[*c] );
             os << *c << ",";
         }
         os << std::endl;
@@ -133,7 +185,7 @@ GOO_UT_BGN( DAG )
     NumberHoldingGraph::Order order;
     os << " - generic DFS" << std::endl;
     ng.dfs( order );
-    //check_resolution_chain( deps, order, 0 );  // check
+    check_resolution_chain( deps, order, 0 );  // check
     dump_order( os, order );
     os << std::endl;
     order.clear();
@@ -167,5 +219,5 @@ GOO_UT_BGN( DAG )
     os << "ok!" << std::endl;
 }
 
-GOO_UT_END( DAG )
+GOO_UT_END( DFS_DAG )
 

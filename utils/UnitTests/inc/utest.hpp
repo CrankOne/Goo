@@ -29,16 +29,18 @@ public:
     private:
         virtual void _V_run( std::ostream & ) = 0;
         std::ostream * _outStream;
-        std::string _name;
+        std::string _name,          ///< Short name used to identify unit.
+                    _verboseName;   ///< Unit description comment.
     public:
-        TestingUnit( const std::string & nm ) :
+        TestingUnit( const std::string & name, const std::string & verboseName ) :
                 _outStream( &(std::cout) ),
-                _name( nm ) {}
+                _name( name ),
+                _verboseName( verboseName ) {}
         void run( ) { _V_run( *_outStream ); }
         std::ostream & outs() { return *_outStream; }
         void outs( std::ostream & os ) { _outStream = &os; }
-        void set_unit_name( const char * );
-        void set_dependencies( const char ** );
+        const std::string & verbose_name() const { return _verboseName; }
+        void set_dependencies( const char [][48], uint8_t depLength );
     };
 private:
     static std::unordered_set<TestingUnit*> _modules;
@@ -86,19 +88,22 @@ struct Config {
     mutable LabeledDAG<UTApp::TestingUnit>::Order units;
 };
 
-# define GOO_UT_BGN( name )                                                     \
+# define GOO_UT_BGN( name, verbName )                                           \
 void __ut_ctr_ ## name() __attribute__(( constructor(156) ));                   \
 namespace goo { namespace ut {                                                  \
 class UT_ ## name : public goo::ut::UTApp::TestingUnit {                        \
-public: UT_ ## name() : goo::ut::UTApp::TestingUnit( # name ) {}; protected:    \
-virtual void _V_run(std::ostream & os) override { using namespace goo;
+public: UT_ ## name() : goo::ut::UTApp::TestingUnit( # name, verbName ) {};     \
+protected: virtual void _V_run(std::ostream & os) override { using namespace goo;
 
 # define _ASSERT( expr, ... )                                                   \
 if( !(expr) ) { emraise( uTestFailure, __VA_ARGS__ ); }
 
 # define GOO_UT_END( name, ... ) } };                                           \
 } } void __ut_ctr_ ## name(){                                                   \
-    goo::ut::UTApp::register_unit( # name, new goo::ut::UT_ ## name() );        \
+    const char depsString[][48] = { __VA_ARGS__ };                              \
+    goo::ut::UTApp::TestingUnit * utInst = new goo::ut::UT_ ## name();          \
+    goo::ut::UTApp::register_unit( # name, utInst );                            \
+    utInst->set_dependencies( depsString, sizeof(depsString)/48 );              \
 }
 
 }  // namespace ut
