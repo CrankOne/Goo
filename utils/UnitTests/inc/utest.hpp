@@ -31,6 +31,7 @@ public:
         std::ostream * _outStream;
         std::string _name,          ///< Short name used to identify unit.
                     _verboseName;   ///< Unit description comment.
+        std::unordered_set<std::string> _depNames;
     public:
         TestingUnit( const std::string & name, const std::string & verboseName ) :
                 _outStream( &(std::cout) ),
@@ -41,6 +42,7 @@ public:
         void outs( std::ostream & os ) { _outStream = &os; }
         const std::string & verbose_name() const { return _verboseName; }
         void set_dependencies( const char [][48], uint8_t depLength );
+        const std::unordered_set<std::string> & dep_names() const { return _depNames; }
     };
 private:
     static std::unordered_set<TestingUnit*> _modules;
@@ -53,6 +55,8 @@ protected:
     virtual std::ostream * _V_acquire_stream() override;
     /// Run configured application.
     virtual int _V_run() override;
+    /// Sets up all dependencies enlisted in units descriptions.
+    void _incorporate_dependencies();
 public:
     UTApp();
     ~UTApp();

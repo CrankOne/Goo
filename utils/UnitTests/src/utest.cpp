@@ -166,6 +166,8 @@ UTApp::_V_construct_config_object( int argc, char * argv[] ) const {
 
 void
 UTApp::_V_configure_application( const Config * c ) {
+    // Implying that all units now ready, set up dependency relations now.
+    _incorporate_dependencies();
     // Only continue for unit running tasks.
     if( c->operation < Config::runAll ) {
         return;
@@ -246,14 +248,37 @@ UTApp::_V_run() {
     return EXIT_SUCCESS;
 }
 
+void
+UTApp::_incorporate_dependencies() {
+    for( auto it  = _modulesStoragePtr->begin();
+              it != _modulesStoragePtr->end(); ++it ) {
+        auto dependantNode = _modulesGraphPtr->get_node( it->first );
+        for( auto depNameIt  = it->second->dep_names().begin();
+                  depNameIt != it->second->dep_names().end(); ++depNameIt ) {
+            auto depNodeIt = _modulesStoragePtr->find( *depNameIt );
+            if( _modulesStoragePtr->end() == depNodeIt ) {
+                emraise( noSuchKey, "Unit \"%s\" depends from unknown module: \"%s\".",
+                        it->first.c_str(),
+                        depNameIt->c_str()
+                    );
+            }
+            auto dependencyNode = _modulesGraphPtr->get_node( *depNameIt );
+            dependencyNode.dependance_of( &dependantNode );
+        }
+    }
+}
+
 //
 // Unit
 //
 
 void
 UTApp::TestingUnit::set_dependencies(
-    const char [][48], uint8_t ) {
-    // TODO
+        const char depNames[][48],
+        uint8_t nDepNames ) {
+    for( uint8_t i = 0; i < nDepNames; ++i ) {
+        _depNames.insert( depNames[i] );
+    }
 }
 
 }  // namespace ut

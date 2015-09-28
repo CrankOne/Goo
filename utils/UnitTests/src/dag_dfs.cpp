@@ -49,7 +49,6 @@ is_nth_resolved( const uint16_t indicators, uint8_t n ) {
 
 void
 resolve_nth( uint16_t & indicators, uint8_t n ) {
-    //std::cout << "Resolved: " << (int) n << std::endl;  // XXX
     indicators |= (0x1 << n );
 }
 
@@ -60,39 +59,6 @@ check_resolution_chain( const DepDecl * arr,
                         ) {
     // used to check order correctness. True bit means 'resolved'.
     uint16_t visitIndicatorBits = 0x0;
-    # if 0  // XXX: reverse :)
-    for( auto it  = order.begin();
-            order.end() != it; ++it ) {
-        // find node denoted by order
-        const DepDecl * cDecl = nullptr;
-        {
-            for( cDecl = arr; cDecl->name != '0'; cDecl++ ) {
-                if( cDecl->name == **it ) break;
-            }
-            if( (cDecl->name == '0' && **it != '0') || !cDecl ) {
-                emraise( badArchitect, "check_resolution_chain() UT routine broken." );
-            }
-        }
-        // check, if all its deps are resolved
-        {
-            for( const char * c = cDecl->deps; *c != '\0'; c++ ) {
-                if( !is_nth_resolved( visitIndicatorBits, char_to_n(*c) ) ) {
-                    std::stringstream ss;
-                    dump_order( ss, order );
-                    emraise( uTestFailure,
-                            "Ordered node refers to unresolved node; target: %c, order: %s, problem on: %c w dep %c.",
-                            target ? target : '!',
-                            ss.str().c_str(),
-                            cDecl->name,
-                            *c
-                        );
-                }
-            }
-        }
-        resolve_nth( visitIndicatorBits, char_to_n( cDecl->name ) );
-    }
-    // TODO: check target presence if need
-    # else
     for(     auto it  = order.begin();
          order.end() != it; ++it ) {
         const char cNodeChar = **it;
@@ -139,7 +105,6 @@ check_resolution_chain( const DepDecl * arr,
                 );
         }
     }
-    # endif
 }
 
 GOO_UT_BGN( DFS_DAG, "Direct acyclic graph depth-first search" )
@@ -147,16 +112,11 @@ GOO_UT_BGN( DFS_DAG, "Direct acyclic graph depth-first search" )
 {  // Basic DAG
     DepDecl deps[] = {
             // #   dep of:
-            { '1', "6"      },
-            { '2', "60"     },
-            { '3', "7"      },
-            { '4', ""       },
-            { '5', "389"    },
-            { '6', "9"      },
-            { '7', "982"    },
-            { '8', "10"     },
-            { '9', "0"      },
-            { '0', ""       },
+            { '1', "6"      }, { '2', "60"     },
+            { '3', "7"      }, { '4', ""       },
+            { '5', "389"    }, { '6', "9"      },
+            { '7', "982"    }, { '8', "10"     },
+            { '9', "0"      }, { '0', ""       },
             { '\0', "sentinel" },
         };
     os << "Now, the basic DAG testing procedures will be invoked:" << std::endl;

@@ -214,8 +214,11 @@ protected:
                              _label(label),
                              _owner(set) {}
 
-        Node & dependance_of( std::string & depLbl ) {
-            Parent::Node::insert( &(_owner(depLbl)) );
+        Node & dependance_of( const std::string & depLbl ) {
+            Parent::Node::dependance_of( &(_owner(depLbl)) );
+            return *this; }
+        Node & dependance_of( const Node * depNPtr ) {
+            Parent::Node::dependance_of( depNPtr );
             return *this; }
         const std::string & label() const { return _label; }
     };
@@ -225,8 +228,20 @@ public:
 
     LabeledDAG() : Parent() {}
 
-    Node & operator()(const std::string & l ) {
+    Node & get_node(const std::string & l ) {
         return *_byLabels[l];
+    }
+
+    Node & operator()(const std::string & l ) {
+        return get_node(l);
+    }
+
+    const Node & get_node(const std::string & l ) const {
+        return *_byLabels[l];
+    }
+
+    const Node & operator()(const std::string & l ) const {
+        return get_node(l);
     }
 
     /// Deletes nodes.
