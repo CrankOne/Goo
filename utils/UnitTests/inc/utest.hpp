@@ -20,6 +20,7 @@ public:
     class TestingUnit;
     typedef goo::App<Config, std::ostream> Parent;
 private:
+    /// Set to nullptr when cout is used.
     std::stringstream * _ss;
     /// The DAG is not a storage.
     static LabeledDAG<TestingUnit>                        * _modulesGraphPtr;
@@ -28,21 +29,28 @@ public:
     class TestingUnit {
     private:
         virtual void _V_run( std::ostream & ) = 0;
+        bool _outStreamOwn;
         std::ostream * _outStream;
-        std::string _name,          ///< Short name used to identify unit.
-                    _verboseName;   ///< Unit description comment.
+        std::string _verboseName;   ///< Unit description comment.
         std::unordered_set<std::string> _depNames;
+        int _ranResult;  ///< >0 if not run, ==0 if ok, <0 if failed.
     public:
-        TestingUnit( const std::string & name, const std::string & verboseName ) :
+        /// Ctr -- gets a verbose (displayed) name of module.
+        TestingUnit( const std::string & verboseName ) :
+                _outStreamOwn( false ),
                 _outStream( &(std::cout) ),
-                _name( name ),
-                _verboseName( verboseName ) {}
-        void run( ) { _V_run( *_outStream ); }
+                _verboseName( verboseName ),
+                _ranResult(1) {}
+        ~TestingUnit();
+        /// Runs module. Can throw exceptions.
+        void run( bool dryRun=false ) noexcept;
+        void make_own_outstream();
         std::ostream & outs() { return *_outStream; }
         void outs( std::ostream & os ) { _outStream = &os; }
         const std::string & verbose_name() const { return _verboseName; }
         void set_dependencies( const char [][48], uint8_t depLength );
         const std::unordered_set<std::string> & dep_names() const { return _depNames; }
+        int ran_result() const noexcept { return _ranResult; }
     };
 private:
     static std::unordered_set<TestingUnit*> _modules;
@@ -57,6 +65,8 @@ protected:
     virtual int _V_run() override;
     /// Sets up all dependencies enlisted in units descriptions.
     void _incorporate_dependencies();
+    /// Run module wrapper routine. Result < 0 indicates an error.
+    int _run_unit( const std::string &, std::ostream &, bool noRun=false );
 public:
     UTApp();
     ~UTApp();
@@ -96,7 +106,7 @@ struct Config {
 void __ut_ctr_ ## name() __attribute__(( constructor(156) ));                   \
 namespace goo { namespace ut {                                                  \
 class UT_ ## name : public goo::ut::UTApp::TestingUnit {                        \
-public: UT_ ## name() : goo::ut::UTApp::TestingUnit( # name, verbName ) {};     \
+public: UT_ ## name() : goo::ut::UTApp::TestingUnit( verbName ) {};             \
 protected: virtual void _V_run(std::ostream & os) override { using namespace goo;
 
 # define _ASSERT( expr, ... )                                                   \

@@ -129,6 +129,7 @@ UTApp::_V_construct_config_object( int argc, char * argv[] ) const {
                 {"report",          no_argument,        0,  'r' },
                 {"list",            no_argument,        0,  'l' },
                 {"selective",       required_argument,  0,  'u' },
+                {"skip",            required_argument,  0,  's' },
                 {"dot-graph",       no_argument,        0,   2  },
                 {"ignore-deps",     no_argument,        0,   1  },
                 {0,                 0,                  0,   0  }
@@ -150,6 +151,10 @@ UTApp::_V_construct_config_object( int argc, char * argv[] ) const {
                 case 'u' : {
                         _set_task( *cfg, Config::runChoosen );
                         tokenize_unit_names( optarg, cfg->names );
+                    } break;
+                case 's' : {
+                        // TODO: fill skip vector
+                        //tokenize_unit_names( optarg, cfg->names );
                     } break;
                 case 'c' : { _set_task( *cfg, Config::printBuildConfig ); } break;
                 case 'l' : { _set_task( *cfg, Config::listUnits ); } break;
@@ -217,6 +222,32 @@ UTApp::list_modules( std::ostream & os ) {
 }
 
 int
+UTApp::_run_unit( const std::string & modLabel,
+                  std::ostream & os,
+                  bool noRun ) {
+    TestingUnit * unit = (*_modulesStoragePtr)[(*_modulesGraphPtr)( modLabel ).label()];
+    ls() << ESC_CLRBOLD << std::setw(48)
+         << unit->verbose_name()
+         << ESC_CLRCLEAR
+         << " ... ";
+    unit->make_own_outstream();
+    unit->run( noRun );
+    if( 0 == unit->ran_result() ) {
+        ls() << ESC_BLDGREEN << "success" << ESC_CLRCLEAR;
+    } else if( 2 == unit->ran_result() ) {
+        ls() << ESC_BLDYELLOW << "skipped" << ESC_CLRCLEAR;
+    } else if( -1 == unit->ran_result() ) {
+        ls() << ESC_BLDRED << "failure" << ESC_CLRCLEAR;
+    } else if( -2 == unit->ran_result() ) {
+        ls() << ESC_BLDRED << "library error" << ESC_CLRCLEAR;
+    } else if( -3 == unit->ran_result() ) {
+        ls() << ESC_BLDRED << "third-party error" << ESC_CLRCLEAR;
+    }
+    ls() << std::endl;;
+    return unit->ran_result();
+}
+
+int
 UTApp::_V_run() {
     switch( UTApp::co().operation ) {
         case Config::printBuildConfig : {
@@ -230,14 +261,21 @@ UTApp::_V_run() {
         } break;
         case Config::runAll :
         case Config::runChoosen : {
-            // TODO: refine this (wrap in some kind of fancy-shmancy deco)
-            if( UTApp::co().ignoreDeps ) {
-                for( auto it  = UTApp::co().names.begin();
-                     UTApp::co().names.end() != it; ++it ) {
-                    (*_modulesStoragePtr)[(*_modulesGraphPtr)( *it ).label()]->run();
-                }
+            size_t nErrors = 0,
+                   nSkipped = 0,
+                   nRan = 0;
+            Parent::ls() << "Unit tests invokation:" << std::endl;
+            for( auto it  = UTApp::co().names.begin();
+                 UTApp::co().names.end() != it; ++it ) {
+                int rc = _run_unit( *it, Parent::ls() /*, dryRun*/ );
+                if( rc < 0 ) { ++nErrors; }
+                else if( rc == 0 ) { ++nRan; }
+                else if( rc == 2 ) { ++nSkipped; }
             }
-            // TODO
+            Parent::ls() << "Unit test routine is now finishing up:" << std::endl
+                         << " units ran : " << ESC_BLDGREEN << nRan << ESC_CLRCLEAR << std::endl
+                         << "   skipped : " << ESC_BLDYELLOW << nSkipped << ESC_CLRCLEAR << std::endl
+                         << "    errors : " << (nErrors > 0 ? ESC_BLDRED : ESC_BLDGREEN) << nErrors << ESC_CLRCLEAR << std::endl;
         } break;
         case Config::unassigned :
         case Config::printHelp :
@@ -278,6 +316,38 @@ UTApp::TestingUnit::set_dependencies(
         uint8_t nDepNames ) {
     for( uint8_t i = 0; i < nDepNames; ++i ) {
         _depNames.insert( depNames[i] );
+    }
+}
+
+void
+UTApp::TestingUnit::run( bool dryRun ) noexcept {
+    if( dryRun ) {
+        _ranResult = 2;
+        return;
+    }
+    try {
+        _V_run( *_outStream );
+    } catch( goo::Exception & ge ) {
+        if( goo::Exception::uTestFailure == ge.code() ) {
+            _ranResult = -1;  // Goo's UT expected error
+        } else {
+            _ranResult = -2;  // Other (unexpected) Goo's error
+        }
+    } catch( ... ) {
+        _ranResult = -3;  // third party exception
+    }
+    _ranResult = 0;
+}
+
+void
+UTApp::TestingUnit::make_own_outstream() {
+    outs(*(new std::stringstream()));
+    _outStreamOwn = true;
+}
+
+UTApp::TestingUnit::~TestingUnit() {
+    if( _outStreamOwn ) {
+        delete _outStream;
     }
 }
 
