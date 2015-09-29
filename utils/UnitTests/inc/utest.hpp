@@ -66,7 +66,7 @@ protected:
     /// Sets up all dependencies enlisted in units descriptions.
     void _incorporate_dependencies();
     /// Run module wrapper routine. Result < 0 indicates an error.
-    int _run_unit( const std::string &, std::ostream &, bool noRun=false );
+    int _run_unit( TestingUnit *, std::ostream &, bool noRun=false );
 public:
     UTApp();
     ~UTApp();
@@ -74,32 +74,6 @@ public:
     static void register_unit( const std::string & label,
                                TestingUnit * );
     static void list_modules( std::ostream & );
-};
-
-/// Unit test application config object.
-struct Config {
-    /// Available functions of application. For descriptions, see _V_construct_config_object().
-    enum Operations {
-        unassigned          = 0,
-        printHelp           = 1,
-        printBuildConfig    = 2,
-        listUnits           = 3,
-        dumpDOT             = 4,
-        runAll              = 5,
-        runChoosen          = 6,
-    } operation;
-
-    /// Supplementary options.
-    bool quiet,
-         keepGoing,
-         printUnitsLogs,
-         ignoreDeps;
-
-    /// Vector of unit names desired to run.
-    std::vector<std::string> names;
-
-    /// Prepared unit sequence to run.
-    mutable LabeledDAG<UTApp::TestingUnit>::Order units;
 };
 
 # define GOO_UT_BGN( name, verbName )                                           \

@@ -15,6 +15,32 @@
 namespace goo {
 namespace ut {
 
+/// Unit test application config object.
+struct Config {
+    /// Available functions of application. For descriptions, see _V_construct_config_object().
+    enum Operations {
+        unassigned          = 0,
+        printHelp           = 1,
+        printBuildConfig    = 2,
+        listUnits           = 3,
+        dumpDOT             = 4,
+        runAll              = 5,
+        runChoosen          = 6,
+    } operation;
+
+    /// Supplementary options.
+    bool quiet,
+         keepGoing,
+         printUnitsLogs,
+         ignoreDeps;
+
+    /// Vector of unit names desired to run.
+    std::vector<std::string> namesToEvaluate, namesToAvoid;
+
+    /// Prepared unit sequence to run.
+    mutable LabeledDAG<UTApp::TestingUnit>::Order units;
+};
+
 LabeledDAG<UTApp::TestingUnit> * UTApp::_modulesGraphPtr = nullptr;
 std::unordered_map<std::string, UTApp::TestingUnit *> * UTApp::_modulesStoragePtr = nullptr;
 
@@ -150,11 +176,10 @@ UTApp::_V_construct_config_object( int argc, char * argv[] ) const {
                 case 2: { _set_task( *cfg, Config::dumpDOT ); } break;
                 case 'u' : {
                         _set_task( *cfg, Config::runChoosen );
-                        tokenize_unit_names( optarg, cfg->names );
+                        tokenize_unit_names( optarg, cfg->namesToEvaluate );
                     } break;
                 case 's' : {
-                        // TODO: fill skip vector
-                        //tokenize_unit_names( optarg, cfg->names );
+                        tokenize_unit_names( optarg, cfg->namesToAvoid );
                     } break;
                 case 'c' : { _set_task( *cfg, Config::printBuildConfig ); } break;
                 case 'l' : { _set_task( *cfg, Config::listUnits ); } break;
@@ -183,17 +208,22 @@ UTApp::_V_configure_application( const Config * c ) {
     }
     // If it is a selective run, determine which modules we need.
     if( Config::runChoosen == c->operation ) {
-        for( auto it = c->names.begin(); c->names.end() != it; ++it ) {
+        // For all units pointed out:
+        for( auto it = c->namesToEvaluate.begin(); c->namesToEvaluate.end() != it; ++it ) {
             if( !c->ignoreDeps ) {
+                // if full-depth evaluation is not prohibited, obtain deps chain:
                 _modulesGraphPtr->chain_for_node_by_label( *it, c->units );
             } else {
+                // utherwise, just obtain the module pointer:
                 c->units.push_front( (*_modulesGraphPtr)( *it ).data() );
             }
         }
     }
-    if( !c->ignoreDeps ) {
-        c->units.reverse();
-    }
+    //if( !c->ignoreDeps ) {  // todo: XXX
+    //    c->units.reverse();
+    //}
+
+    // erase repititions:
     c->units.unique();
 }
 
@@ -222,10 +252,9 @@ UTApp::list_modules( std::ostream & os ) {
 }
 
 int
-UTApp::_run_unit( const std::string & modLabel,
+UTApp::_run_unit( TestingUnit * unit,
                   std::ostream & os,
                   bool noRun ) {
-    TestingUnit * unit = (*_modulesStoragePtr)[(*_modulesGraphPtr)( modLabel ).label()];
     ls() << ESC_CLRBOLD << std::setw(48)
          << unit->verbose_name()
          << ESC_CLRCLEAR
@@ -265,8 +294,10 @@ UTApp::_V_run() {
                    nSkipped = 0,
                    nRan = 0;
             Parent::ls() << "Unit tests invokation:" << std::endl;
-            for( auto it  = UTApp::co().names.begin();
-                 UTApp::co().names.end() != it; ++it ) {
+            for( auto it  = UTApp::co().units.begin();
+                 UTApp::co().units.end() != it; ++it ) {
+                // to avoid const casting, we provide a search among mutable storage:
+                TestingUnit * mutable ///
                 int rc = _run_unit( *it, Parent::ls() /*, dryRun*/ );
                 if( rc < 0 ) { ++nErrors; }
                 else if( rc == 0 ) { ++nRan; }
