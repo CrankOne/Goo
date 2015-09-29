@@ -30,7 +30,7 @@
  * Goo use exceptions as an general error reporting mechanism.
  * Exceptions on various build configurations provides a way
  * to extract a stacktrase information even when no debug
- * info is given (in that case this info is however rather
+ * info is given (in that case this info is not, however, rather
  * uninformative). To disable stactrace set the EM_STACK_UNWINDING cmake
  * option to OFF.
  *
@@ -39,7 +39,8 @@
  * description that usually provides a detailed description.
  *
  * Exceptions are thrown with emraise() macro with variadic
- * arguments and ANSI printf() format string.
+ * arguments and ANSI printf() format string. It is a recommended way
+ * as emraise internally checks for user reporting system (see below).
  *
  * There are three developments shortcuts:
  * _TODO_, _UNSUPPORTED_, _FORBIDDEN_CALL_.
@@ -54,6 +55,14 @@
  * message from that shortcut will be prefixed with info about
  * place where it was invoked: source file, line and current routine
  * name and signature.
+ *
+ * Taking into account that sometimes user desires to trigger its own
+ * error-reporting system routines, we provide a way to report an error
+ * to user's handler and, depending on its result throw or not a
+ * Goo's exception. See Exception::user_raise routine.
+ *
+ * It's recommended for your code that uses goo::Exception to check
+ * the Exception::user_raise() first.
  */
 
 /*!\def emraise
@@ -63,10 +72,12 @@
  * Format is standard for ANSI printf() family.
  * \param c is a encoded generic error ID from for_all_errorcodes macro.
  */
-# define emraise( c, ... ) while(true){ \
-    char bf[EMERGENCY_BUFLEN]; \
-    snprintf(bf, EMERGENCY_BUFLEN, __VA_ARGS__ ); \
-    throw goo::Exception((int) goo::Exception::c, bf );}
+# define emraise( c, ... ) while(true){                                 \
+    char bf[EMERGENCY_BUFLEN];                                          \
+    snprintf(bf, EMERGENCY_BUFLEN, __VA_ARGS__ );                       \
+    if( goo::Exception::user_raise((int) goo::Exception::c, bf ) ) {    \
+        throw goo::Exception((int) goo::Exception::c, bf );}            \
+    }
 
 /*!\def _TODO_
  * \brief Development helper macro to raise 'unimplemented' error.
@@ -88,7 +99,7 @@
 /*!\def eprintf
  * \brief Prints error message to standard Hph's error stream.
  * \ingroup errors */
-# ifdef PRINTF_SOURCE_INFO
+# ifdef SOURCE_POSITION_INFO
 # define eprintf( ... ) while(1) {      \
     char  bf[256];                      \
     char  prfxBf[512];                  \
@@ -117,7 +128,7 @@
  * Enabled only in debug builds.
  * \ingroup errors */
 # ifndef NDEBUG
-# ifdef PRINTF_SOURCE_INFO
+# ifdef SOURCE_POSITION_INFO
 # define dprintf( ... ) while(1) {      \
     char  bf[256];                      \
     char  prfxBf[512];                  \
@@ -128,7 +139,7 @@
     fputs(prfxBf, stderr);              \
     break;                              \
 };
-# else  // PRINTF_SOURCE_INFO
+# else  // SOURCE_POSITION_INFO
 # define dprintf( ... ) while(1) {      \
     char  bf[256];                      \
     char  prfxBf[512];                  \
@@ -139,7 +150,7 @@
     fputs(prfxBf, stderr);              \
     break;                              \
 };
-# endif // PRINTF_SOURCE_INFO
+# endif // SOURCE_POSITION_INFO
 # else
 # define dprintf( ... ) ((void)(0));
 # endif
@@ -147,7 +158,7 @@
 /*!\def warning
  * \brief Prints warn message to standard Hph's error stream.
  * \ingroup errors */
-# ifdef PRINTF_SOURCE_INFO
+# ifdef SOURCE_POSITION_INFO
 # define warning( ... ) while(1) {      \
     char  bf[256];                      \
     char  prfxBf[512];                  \
@@ -206,9 +217,9 @@ std::ostream & operator<<(std::ostream& os, const StackTraceInfoEntry & t);
 
 /*!\class Exception
  * \ingroup errors
- * \brief Haephestus exception instance.
+ * \brief Goo exception instance.
  *
- * Haephestus' own Exception class that holds following descriptive info:
+ * Goo's own Exception class that holds following descriptive info:
  * error code (see for_all_errorcodes macro).
  *
  * Use dump() to print all information carried by instance.
@@ -221,6 +232,11 @@ public:
         static const ErrCode nm;
     for_all_errorcodes( declare_static_const )
     # undef declare_static_const
+    /// User's handler slot. Should return true wher exception throw is approved.
+    static bool (*user_raise)( const ErrCode      c,
+                               const em::String & s );
+    /// Default raise trigger -- always approves exception throw.
+    static bool goo_raise( const ErrCode, const em::String & );
 protected:
     ErrCode       _code;
     em::String    _what;

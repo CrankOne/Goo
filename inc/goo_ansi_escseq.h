@@ -5,7 +5,7 @@
  * Shell colors
  */
 
-# ifdef PRINTING_ANSI_ESC
+# ifdef ANSI_ESCSEQ_PRINT
 
 # define ESC_CLRBOLD    "\033[0;1m"
 # define ESC_CLRITALIC  "\033[0;3m"
@@ -36,7 +36,7 @@
 
 # define ESC_CLRCLEAR   "\033[0m"
 
-# else /* PRINTING_ANSI_ESC */
+# else /* ANSI_ESCSEQ_PRINT */
 
 # define ESC_CLRBOLD    ""
 # define ESC_CLRITALIC  ""
@@ -67,5 +67,5 @@
 
 # define ESC_CLRCLEAR   ""
 
-# endif  /* PRINTING_ANSI_ESC */
+# endif  /* ANSI_ESCSEQ_PRINT */
 # endif  /* H_GOO_ANSI_ESCAPE_SEQUENCES_H */

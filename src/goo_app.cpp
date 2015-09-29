@@ -11,7 +11,7 @@ namespace goo {
 
 /**@namespace aux
  *
- * Sys namespace constains Hephaestus auxillary classes. One usually
+ * Sys namespace constains Goo auxillary classes. One usually
  * has no need to deal with these objects.
  */ namespace aux {
 

@@ -7,23 +7,17 @@
  *  goo_versioning.c)
  */
 
-#cmakedefine EXTENDED_TYPES     0x1
-#cmakedefine PRINTF_SOURCE_INFO 0x2
-#cmakedefine EM_STACK_UNWINDING 0x4
-#cmakedefine PRINTING_ANSI_ESC  0x8
-#cmakedefine ENABLE_GDS         0x10
-#cmakedefine ENABLE_ALLOCATORS  0x20
-#cmakedefine ENABLE_TENSORS     0x40
-#cmakedefine ENABLE_DATASTREAMS 0x80
-#cmakedefine ENABLE_PTREE       0x100
-#cmakedefine HASKELL_MODULE     0x200
+#cmakedefine TYPES_128BIT_LENGTH    0
+#cmakedefine SOURCE_POSITION_INFO   1
+#cmakedefine EM_STACK_UNWINDING     2
+#cmakedefine ANSI_ESCSEQ_PRINT      3
 
-#cmakedefine ZLIB_FOUND         0x1
-#cmakedefine LZO_FOUND          0x2
-#cmakedefine BZIP2_FOUND        0x4
-#cmakedefine PNG_FOUND          0x8
-#cmakedefine FLTK_FOUND         0x10
-#cmakedefine GIT_FOUND          0x20
+#cmakedefine ZLIB_FOUND             0
+#cmakedefine LZO_FOUND              1
+#cmakedefine BZIP2_FOUND            2
+#cmakedefine PNG_FOUND              3
+#cmakedefine FLTK_FOUND             4
+#cmakedefine GIT_FOUND              5
 
 # define BUILD_C_FLAGS          @CMAKE_C_FLAGS@
 # define BUILD_CXX_FLAGS        @CMAKE_CXX_FLAGS@
@@ -48,7 +42,7 @@
 # endif
 
 # ifndef PACKAGE
-#   define PACKAGE Haephestus
+#   define PACKAGE Goo
 #   define PACKAGE_VERSION GOO_VERSION_MAJOR GOO_VERSION_MINOR
 # endif
 

@@ -18,6 +18,13 @@
 
 namespace goo {
 
+bool
+Exception::goo_raise( const ErrCode, const em::String & ) { return true; }
+
+// Set default emraise behaviour to 'always throw':
+bool (*Exception::user_raise)( const ErrCode,
+                               const em::String & ) = Exception::goo_raise;
+
 namespace em {
 
 # ifdef EM_STACK_UNWINDING

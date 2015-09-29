@@ -30,7 +30,7 @@ Syntax:\n\r\
         [-l/--list] [--dot-graph] [-K/--keep-going] [-u/--selective " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR "] \\\n\r\
         [-r/--report] [--ignore-deps]\n\r\
 \n\r\
-Provides unit testing functionality for Hephaestus library. \n\r\
+Provides unit testing functionality for Goo library. \n\r\
 \n\r\
 Sequentially runs routines that exploits a partial set of library's\n\r\
 functions for a bugs, side effects or other misbehaviour.\n\r\
@@ -251,7 +251,7 @@ int
 UTApp::_V_run() {
     switch( UTApp::co().operation ) {
         case Config::printBuildConfig : {
-            build_info();
+            build_info( stdout );
         } break;
         case Config::listUnits : {
             list_modules( std::cout );

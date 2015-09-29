@@ -94,7 +94,7 @@
  * data types like 128-bit ones.
  */
 
-# ifndef EXTENDED_TYPES
+# ifndef TYPES_128BIT_LENGTH
 # define for_all_atomic_datatypes(m)                    \
     m(0x9,           uint8_t,   UByte,      UInt8     ) \
     m(0x1,            int8_t,   SByte,      Int8      ) \
@@ -108,7 +108,7 @@
     m(0xa,            double,   Float8,     Float64   ) \
     /* ... */
 
-# else
+# else  /* TYPES_128BIT_LENGTH */
 # define for_all_atomic_datatypes(m)                    \
     m(0x9,           uint8_t,   UByte,      UInt8     ) \
     m(0x1,            int8_t,   SByte,      Int8      ) \
@@ -124,7 +124,7 @@
     m(0xa,            double,   Float8,     Float64   ) \
     m(0x12,      long double,   Float16,    Float128  ) \
     /* ... */
-# endif
+# endif /* TYPES_128BIT_LENGTH */
 
 /*!\def for_all_errorcodes
  * \ingroup errors
