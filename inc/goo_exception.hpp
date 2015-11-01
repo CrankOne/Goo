@@ -1,5 +1,5 @@
-# ifndef HPH_EXCEPTION_HPP
-# define HPH_EXCEPTION_HPP
+# ifndef GOO_EXCEPTION_HPP
+# define GOO_EXCEPTION_HPP
 
 # include "goo_types.h"
 # include "goo_ansi_escseq.h"
@@ -97,7 +97,7 @@
 # define _FORBIDDEN_CALL_ emraise( badArchitect, "(forbidden call) %s:%d %s", __FILE__, __LINE__, __PRETTY_FUNCTION__ )
 
 /*!\def eprintf
- * \brief Prints error message to standard Hph's error stream.
+ * \brief Prints error message to standard Goo's error stream.
  * \ingroup errors */
 # ifdef SOURCE_POSITION_INFO
 # define eprintf( ... ) while(1) {      \
@@ -124,7 +124,7 @@
 # endif
 
 /*!\def dprintf
- * \brief Prints debug message to standard Hph's error stream.
+ * \brief Prints debug message to standard Goo's error stream.
  * Enabled only in debug builds.
  * \ingroup errors */
 # ifndef NDEBUG
@@ -156,7 +156,7 @@
 # endif
 
 /*!\def warning
- * \brief Prints warn message to standard Hph's error stream.
+ * \brief Prints warn message to standard Goo's error stream.
  * \ingroup errors */
 # ifdef SOURCE_POSITION_INFO
 # define warning( ... ) while(1) {      \
@@ -253,7 +253,7 @@ public:
 
     virtual ~Exception( ) throw();
 
-    /// Hph's error code getter.
+    /// Goo's error code getter.
     inline ErrCode code() const { return _code; }
     /// Generic method for printing a brief info.
     virtual const char * what() const throw() { return _what.c_str(); }
@@ -275,19 +275,35 @@ String demangle_function( const String & name );
 extern "C" {
 # endif
 
-/**@brief raises custom HPH-exception from c-code
+/**@brief raises custom GOO-exception from c-code
  *
- * C-function with C++ linkage that throws HPH-exception.
+ * C-function with C++ linkage that throws Goo-exception.
  * Not defined for C++ code.
  */
 extern int C_error( ErrCode, const char * fmt, ... );
+
+# define declare_error_code_C_alias( code, name, descr ) \
+extern const ErrCode goo_e_ ## name;
+for_all_statuscodes( declare_error_code_C_alias )
+# undef declare_error_code_C_alias
 
 # ifdef __cplusplus
 } // extern "C"
 # endif
 
 
+# ifndef NDEBUG
+# ifdef __cplusplus /* C++ --- use exception */
+# define DBG_NULLPTR_CHECK( ptr, ... ) \
+{ if(!ptr){ emraise( nullPtr, __VA_ARGS__ ); } }
+# else  /* pure C --- use wrapper */
+# define DBG_NULLPTR_CHECK( ptr, ... ) \
+{ if(!ptr){ emraise( nullPtr, __VA_ARGS__ ); } }
+# endif
+# endif  /* NDEBUG */
+
+
 /*! @} */
 
-# endif  /* HPH_EXCEPTION_HPP */
+# endif  /* GOO_EXCEPTION_HPP */
 

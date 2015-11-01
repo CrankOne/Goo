@@ -1,4 +1,4 @@
-find_library( BFD_LIB	    NAMES bfd	    PATH /usr/lib /usr/lib64 )
+find_library( GOO_LIB NAMES bfd PATH /usr/lib /usr/lib64 )
 
 include(CheckCSourceCompiles)
 check_c_source_compiles(

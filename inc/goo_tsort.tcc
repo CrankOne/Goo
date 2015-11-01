@@ -8,6 +8,7 @@
 # include <set>
 
 # include "goo_exception.hpp"
+# include "goo_iterable.tcc"
 
 namespace goo {
 
@@ -25,6 +26,7 @@ namespace goo {
 template<typename AssociciatedDataT>
 class DAG {
 public:
+    /// Defined data type template parameter.
     typedef AssociciatedDataT Data;
 
     /// Aux type representing particular order of graph traversal.
@@ -33,6 +35,7 @@ public:
     /// Auxilliary internal node class.
     class Node {
     public:
+        /// DFS search markers (for internal use).
         mutable enum DfsStatus {
             undiscovered,
             opened,
@@ -43,26 +46,27 @@ public:
         /// Data constness should be guaranteed along all the DAG routines.
         const Data             * _data;
     public:
+        /// Default node constructor from existing data pointer.
         Node( const Data * d ) : _status(undiscovered), _data(d) {}
-        Node( Node * nodes,
-              size_t n ) : _status(undiscovered),
-                           _deps(nodes, nodes+n) {}
-        Node( Node * nodes, size_t n,
-              const Data * d ) : _status(undiscovered),
-                                 _deps(nodes, nodes+n),
-                                 _data(d) {}
 
+        /// Ctr for dereferred data association.
+        Node() : _status(undiscovered), _data(nullptr) {}
+
+        /// Sets the relation 'node nd depends on this node'.
         Node & dependance_of( const Node * nd ) {
             _deps.insert(nd);
             return *this; }
 
+        /// Sets the relation 'this node depends on nd'.
         const Node & depends_on( Node * nd ) const {
             nd->dependance_of( this );
             return *this; }
 
+        /// dtr: no heap operations.
         virtual ~Node(){}
 
-        const Data * data() const { return _data; }
+        /// Returns data pointer.
+        const Data * data_ptr() const { return _data; }
         
         bool is_terminal() const { return _deps.empty(); }
         const std::set<const Node *> & dependencies() const { return _deps; }
@@ -144,17 +148,17 @@ public:
         for( auto it = _nodesPtr->begin();
              _nodesPtr->end() != it;
              ++it ) {
-            rg.insert_data( (*it)->data() );
+            rg.insert_data( (*it)->data_ptr() );
         }
         // Establish reverted connections.
         for( auto it = _nodesPtr->begin();
              _nodesPtr->end() != it;
              ++it ) {
-            Node * cn = rg( (*it)->data() );
-            const Node * on = _dict.find((*it)->data())->second;
+            Node * cn = rg( (*it)->data_ptr() );
+            const Node * on = _dict.find((*it)->data_ptr())->second;
             for( auto depIt  = on->dependencies().begin();
                       on->dependencies().end() != depIt; ++depIt) {
-                rg((*depIt)->data())->dependance_of( rg(cn->data()) );
+                rg((*depIt)->data_ptr())->dependance_of( rg(cn->data_ptr()) );
             }
         }
         return rg;
@@ -283,7 +287,7 @@ public:
 
     /// Obtain chain for node pointed out by particular label.
     virtual void chain_for_node_by_label( const std::string & label, Order & order ) {
-        Parent::chain_for_node( _byLabels[label]->data(), order );
+        Parent::chain_for_node( _byLabels[label]->data_ptr(), order );
     }
 
     /// Returns list of all nodes.

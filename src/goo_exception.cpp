@@ -263,7 +263,7 @@ struct __ExceptionDescrDictionary {
 };
 
 __ExceptionDescrDictionary __jDict[] = {
-    for_all_errorcodes( declare_dict_entry )
+    for_all_statuscodes( declare_dict_entry )
     { 0, nullptr }
 };
 

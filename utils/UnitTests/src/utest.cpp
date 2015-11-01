@@ -215,7 +215,7 @@ UTApp::_V_configure_application( const Config * c ) {
                 _modulesGraphPtr->chain_for_node_by_label( *it, c->units );
             } else {
                 // utherwise, just obtain the module pointer:
-                c->units.push_front( (*_modulesGraphPtr)( *it ).data() );
+                c->units.push_front( (*_modulesGraphPtr)( *it ).data_ptr() );
             }
         }
     }
@@ -297,8 +297,8 @@ UTApp::_V_run() {
             for( auto it  = UTApp::co().units.begin();
                  UTApp::co().units.end() != it; ++it ) {
                 // to avoid const casting, we provide a search among mutable storage:
-                TestingUnit * mutable ///
-                int rc = _run_unit( *it, Parent::ls() /*, dryRun*/ );
+                //TestingUnit * mutable // TODO
+                int rc = _run_unit( const_cast<TestingUnit *>(*it), Parent::ls() /*, dryRun*/ );
                 if( rc < 0 ) { ++nErrors; }
                 else if( rc == 0 ) { ++nRan; }
                 else if( rc == 2 ) { ++nSkipped; }

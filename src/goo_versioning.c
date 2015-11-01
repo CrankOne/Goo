@@ -58,6 +58,7 @@ build_info( FILE * outf ) {
     fprintf( outf, "  git VCS commit string .... : %s\n\r", gooVersioning.gitCommitStr );
     fprintf( outf, "  built on ................. : %s:%s\n\r", STRINGIFY_MACRO_ARG(BUILDER_HOSTNAME),
                                                         STRINGIFY_MACRO_ARG(CMAKE_SYSTEM) );
+    fprintf( outf, "  install prefix ........... : %s\n\r", STRINGIFY_MACRO_ARG(CMAKE_INSTALL_PREFIX) );
     fprintf( outf, "Misc parameters:\n\r" );
     fprintf( outf, "  emergency buffer length .. : %zd\n\r", (size_t) EMERGENCY_BUFLEN );
     fprintf( outf, "  emergency stack depth .... : %zd\n\r", (size_t) EMERGENCY_STACK_DEPTH_NENTRIES );
@@ -109,7 +110,9 @@ build_info( FILE * outf ) {
     fprintf( outf, "Oracle):\n\r" );
     fprintf( outf, "  version .................. : " __SUNPRO_C "\n\r" );
 #endif
+    fprintf( outf, "  C compiler path .......... : " STRINGIFY_MACRO_ARG(C_COMPILER) "\n\r" );
     fprintf( outf, "  C flags .................. : " STRINGIFY_MACRO_ARG(BUILD_C_FLAGS) "\n\r" );
+    fprintf( outf, "  C++ compiler path ........ : " STRINGIFY_MACRO_ARG(CXX_COMPILER) "\n\r" );
     fprintf( outf, "  C++ flags ................ : " STRINGIFY_MACRO_ARG(BUILD_CXX_FLAGS) "\n\r" );
     fprintf( outf, "  Haskell flags ............ : " STRINGIFY_MACRO_ARG(CMAKE_Haskell_FLAGS) "\n\r" );
 };

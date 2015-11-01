@@ -21,6 +21,9 @@
 
 # define BUILD_C_FLAGS          @CMAKE_C_FLAGS@
 # define BUILD_CXX_FLAGS        @CMAKE_CXX_FLAGS@
+# define CXX_COMPILER           @CMAKE_CXX_COMPILER@
+# define C_COMPILER             @CMAKE_C_COMPILER@
+# define CMAKE_INSTALL_PREFIX   @CMAKE_INSTALL_PREFIX@
 # define BUILDER_HOSTNAME       @BUILDER_HOSTNAME@
 # define CMAKE_SYSTEM           @CMAKE_SYSTEM@
 # define BUILD_TYPE             @CMAKE_BUILD_TYPE@

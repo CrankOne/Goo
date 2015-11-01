@@ -17,7 +17,7 @@ struct HPH_Versioning{
 
 extern const struct HPH_Versioning hphVersioning;
 
-/** Prints build conf to stdout. */
+/** Prints build conf to stream. */
 void build_info( FILE * );
 
 # ifdef __cplusplus
