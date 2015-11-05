@@ -76,7 +76,7 @@ iApp::add_handler( SignalCode code,
                     )
             );
         if( suppressDefault ) {
-            warning( "default system \
+            wprintf( "default system \
 handler suppression has no effect when adding \
 handler is not first in stack." );
         }

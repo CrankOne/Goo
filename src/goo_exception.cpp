@@ -15,6 +15,7 @@
 # include <cstdlib>
 # include <cstring>
 # include <cctype>
+# include <cstdarg>
 
 namespace goo {
 
@@ -158,10 +159,10 @@ supplement_stacktrace( List & target, size_t n ) {
  */
 int obtain_stacktrace( List & target ) {
     target.clear();
-    void * stackPointers[EMERGENCY_STACK_DEPTH_NENTRIES];
+    void * stackPointers[GOO_EMERGENCY_STACK_DEPTH_NENTRIES];
     const size_t size = backtrace(
             stackPointers,
-            EMERGENCY_STACK_DEPTH_NENTRIES );
+            GOO_EMERGENCY_STACK_DEPTH_NENTRIES );
     for( Size i = 3; i < size; ++i ) {
         StackTraceInfoEntry entry {
                 # if 0 /* unsupported by GCC */
@@ -306,13 +307,13 @@ Exception::dump(std::ostream & os) const throw() {
     os << ESC_BLDYELLOW << std::setw(15) << std::right << "stacktrace" << ESC_CLRCLEAR":"
        << " (most recent call last)"
        << std::endl;
-    //Size maxStackFrameHeadLen = EMERGENCY_STACK_DEPTH_NENTRIES;
+    //Size maxStackFrameHeadLen = GOO_EMERGENCY_STACK_DEPTH_NENTRIES;
     Size stackFrameHeadLen = 0;
     for( auto it = _stacktrace.begin();
                    _stacktrace.end() != it; ++it) {
         os << "\t#" << ++stackFrameHeadLen - 1 << " " << *it << std::endl;
         
-        //if( ! EMERGENCY_STACK_DEPTH_NENTRIES && (stackFrameHeadLen > maxStackFrameHeadLen) ) {
+        //if( ! GOO_EMERGENCY_STACK_DEPTH_NENTRIES && (stackFrameHeadLen > maxStackFrameHeadLen) ) {
         //    os << "\t\t...(and " << _stacktrace.size() - stackFrameHeadLen << " entries more)..." << std::endl;
         //    break;
         //}
@@ -347,6 +348,29 @@ void
 Exception::_get_trace() throw() {
     em::obtain_stacktrace( _stacktrace );
 }
+
+extern "C" {
+
+//
+// C bindings
+//
+
+# define define_error_code_C_alias( code, name, descr ) \
+extern const ErrCode goo_e_ ## name = code;
+for_all_statuscodes( define_error_code_C_alias )
+# undef define_error_code_C_alias
+
+int
+C_error( ErrCode code, const char * fmt, ... ) {
+    char emBuf[GOO_EMERGENCY_BUFLEN];
+    va_list argptr;
+    va_start(argptr, fmt);
+    snprintf(emBuf, GOO_EMERGENCY_BUFLEN, fmt, argptr);
+    va_end(argptr);
+    throw goo::Exception( code, emBuf );
+}
+
+}  // extern "C"
 
 # endif  // EM_STACK_UNWINDING
 

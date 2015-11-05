@@ -161,7 +161,7 @@
     m(25,       threadError,        "execution stopped due to in-thread error") \
     m(50,       nwGeneric,          "network error") \
     m(100,      ioError,            "common I/O error") \
-    m(101,      notFound,           "data is not found at location") \
+    m(101,      notFound,           "data is not found at location") /* TODO: rename to noSuchData */ \
     m(102,      corruption,         "malformed data") \
     m(103,      badValue,           "got unacceptable numeric value") \
     m(104,      fileNotReachable,   "file is unreachable") \
@@ -259,7 +259,7 @@ template<> AtomicTypeID get_atomic_typeid< cnm >();
 for_all_atomic_datatypes(declare_typeid_getter)
 # undef declare_typeid_getter
 
-};  // namespace goo
+}  // namespace goo
 
 # endif  // __cplusplus
 

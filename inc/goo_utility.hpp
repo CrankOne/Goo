@@ -12,7 +12,7 @@
 
 namespace std {
 template<bool B, typename T = void> using disable_if = enable_if<!B, T>;
-};
+}
 
 namespace stdE {
 

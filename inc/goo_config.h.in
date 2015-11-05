@@ -19,14 +19,14 @@
 #cmakedefine FLTK_FOUND             4
 #cmakedefine GIT_FOUND              5
 
-# define BUILD_C_FLAGS          @CMAKE_C_FLAGS@
-# define BUILD_CXX_FLAGS        @CMAKE_CXX_FLAGS@
-# define CXX_COMPILER           @CMAKE_CXX_COMPILER@
-# define C_COMPILER             @CMAKE_C_COMPILER@
-# define CMAKE_INSTALL_PREFIX   @CMAKE_INSTALL_PREFIX@
-# define BUILDER_HOSTNAME       @BUILDER_HOSTNAME@
-# define CMAKE_SYSTEM           @CMAKE_SYSTEM@
-# define BUILD_TYPE             @CMAKE_BUILD_TYPE@
+# define GOO_BUILD_C_FLAGS          @CMAKE_C_FLAGS@
+# define GOO_BUILD_CXX_FLAGS        @CMAKE_CXX_FLAGS@
+# define GOO_CXX_COMPILER           @CMAKE_CXX_COMPILER@
+# define GOO_C_COMPILER             @CMAKE_C_COMPILER@
+# define GOO_CMAKE_INSTALL_PREFIX   @CMAKE_INSTALL_PREFIX@
+# define GOO_BUILDER_HOSTNAME       @BUILDER_HOSTNAME@
+# define GOO_CMAKE_SYSTEM           @CMAKE_SYSTEM@
+# define GOO_BUILD_TYPE             @CMAKE_BUILD_TYPE@
 
 /*
  * Versioning
@@ -53,16 +53,16 @@
  * Feature-dependent constants
  */
 
-# ifndef EMERGENCY_BUFLEN
-#   define EMERGENCY_BUFLEN (256*1024)
+# ifndef GOO_EMERGENCY_BUFLEN
+#   define GOO_EMERGENCY_BUFLEN (256*1024)
 # endif
 
-# ifndef EMERGENCY_STACK_DEPTH_NENTRIES
-#   define EMERGENCY_STACK_DEPTH_NENTRIES 16
+# ifndef GOO_EMERGENCY_STACK_DEPTH_NENTRIES
+#   define GOO_EMERGENCY_STACK_DEPTH_NENTRIES 16
 # endif
 
-# ifndef DEFAULT_ZLIB_COMPRESSION_LEVEL
-#   define DEFAULT_ZLIB_COMPRESSION_LEVEL 9
+# ifndef GOO_DEFAULT_ZLIB_COMPRESSION_LEVEL
+#   define GOO_DEFAULT_ZLIB_COMPRESSION_LEVEL 9
 # endif
 
 # ifdef __cplusplus

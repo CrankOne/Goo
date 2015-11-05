@@ -54,9 +54,10 @@ public:
     };
 private:
     static std::unordered_set<TestingUnit*> _modules;
+    std::string _appName;
 protected:
     /// Creates instance of type ConfigObjectT according to command-line arguments
-    virtual Config * _V_construct_config_object( int argc, char * argv[] ) const override;
+    virtual Config * _V_construct_config_object( int argc, char * const argv[] ) const override;
     /// Configures application according to recently constructed config object.
     virtual void _V_configure_application( const Config * ) override;
     /// Should create the logging stream of type LogStreamT (app already configured).
@@ -68,7 +69,7 @@ protected:
     /// Run module wrapper routine. Result < 0 indicates an error.
     int _run_unit( TestingUnit *, std::ostream &, bool noRun=false );
 public:
-    UTApp();
+    UTApp( const std::string & appname );
     ~UTApp();
 
     static void register_unit( const std::string & label,

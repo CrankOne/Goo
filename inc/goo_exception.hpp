@@ -48,7 +48,7 @@
  * There are also several helper macro providing standard way to
  * report things:
  *  * dprintf() -- to print a debug info (disabled when NDEBUG macro provided)
- *  * warning() -- to print a warning.
+ *  * wprintf() -- to print a warning.
  *  * eprintf() -- to print an error without throwing an exception.
  * Each macro shortcut uses ANSI printf() syntax and have buffer length
  * limited to 512 bytes. When NDEBUG definition is not defined each
@@ -73,8 +73,8 @@
  * \param c is a encoded generic error ID from for_all_errorcodes macro.
  */
 # define emraise( c, ... ) while(true){                                 \
-    char bf[EMERGENCY_BUFLEN];                                          \
-    snprintf(bf, EMERGENCY_BUFLEN, __VA_ARGS__ );                       \
+    char bf[GOO_EMERGENCY_BUFLEN];                                      \
+    snprintf(bf, GOO_EMERGENCY_BUFLEN, __VA_ARGS__ );                   \
     if( goo::Exception::user_raise((int) goo::Exception::c, bf ) ) {    \
         throw goo::Exception((int) goo::Exception::c, bf );}            \
     }
@@ -155,11 +155,11 @@
 # define dprintf( ... ) ((void)(0));
 # endif
 
-/*!\def warning
+/*!\def wprintf
  * \brief Prints warn message to standard Goo's error stream.
  * \ingroup errors */
 # ifdef SOURCE_POSITION_INFO
-# define warning( ... ) while(1) {      \
+# define wprintf( ... ) while(1) {      \
     char  bf[256];                      \
     char  prfxBf[512];                  \
     snprintf(prfxBf, 256, ESC_BLDYELLOW "[W%7s]" ESC_CLRCLEAR " at %s:%d %s", hctime(), __FILE__, __LINE__, __PRETTY_FUNCTION__); \
@@ -170,7 +170,7 @@
     break;                              \
 };
 # else
-# define warning( ... ) while(1) {      \
+# define wprintf( ... ) while(1) {      \
     char  bf[256];                      \
     char  prfxBf[512];                  \
     snprintf(prfxBf, 256, ESC_BLDYELLOW "[W%7s]" ESC_CLRCLEAR " ", hctime() ); \
@@ -280,7 +280,7 @@ extern "C" {
  * C-function with C++ linkage that throws Goo-exception.
  * Not defined for C++ code.
  */
-extern int C_error( ErrCode, const char * fmt, ... );
+int C_error( ErrCode, const char * fmt, ... );
 
 # define declare_error_code_C_alias( code, name, descr ) \
 extern const ErrCode goo_e_ ## name;

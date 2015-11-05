@@ -388,7 +388,7 @@ public:
             std::find( _subscribers.begin(), _subscribers.end(), &subs ) ) {
                 emraise(nonUniq,
                   "Repitative subscription of the same object %p.",
-                  &subs);
+                  (void *) &subs);
         }
         _subscribers.push_back(&subs);
     }
@@ -397,7 +397,8 @@ public:
             std::find( _subscribers.begin(), _subscribers.end(), &subs );
         if( _subscribers.end() == it ) {
             emraise(noSuchKey,
-                  "Has no subscriber %p to unsubscribe.", &subs);
+                  "Has no subscriber %p to unsubscribe.",
+                  (void *) &subs);
         }
         _subscribers.push_back(&subs);
     }

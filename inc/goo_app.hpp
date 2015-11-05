@@ -120,21 +120,18 @@ class App : public aux::iApp {
 public:
     typedef App<ConfigObjectT, LogStreamT> SelfAbstractType;
 private:
-    /// Stream for logging.
+    /// Stream for standard logging.
     LogStreamT  * _lStr;
     /// Config object.
     ConfigObjectT * _cObj;
-
 protected:
     /// Creates instance of type ConfigObjectT according to command-line arguments
-    virtual ConfigObjectT * _V_construct_config_object( int argc, char * argv[] ) const = 0;
+    virtual ConfigObjectT * _V_construct_config_object( int argc, char * const argv[] ) const = 0;
     /// Configures application according to recently constructed config object.
     virtual void _V_configure_application( const ConfigObjectT * ) = 0;
     /// Should create the logging stream of type LogStreamT (app already configured).
     virtual LogStreamT * _V_acquire_stream() = 0;
 protected:
-    int argc;
-    char ** argv;
     App() : _lStr(nullptr), _cObj(nullptr) {}
     virtual ~App() {}
 public:
@@ -142,9 +139,8 @@ public:
     // general application management
 
     /// Creates application instance. Must be invoked just after entry point.
-    static void init(int argc_, char * argv_[], App<ConfigObjectT, LogStreamT> * app) {
+    static void init(int argc_, char * const argv_[], App<ConfigObjectT, LogStreamT> * app) {
         _self = app;
-        app->argc = argc_; app->argv = argv_;
         app->_V_configure_application(
             app->_cObj = app->_V_construct_config_object(argc_, argv_) );
         app->_lStr = app->_V_acquire_stream();

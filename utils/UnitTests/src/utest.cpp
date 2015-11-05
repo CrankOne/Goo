@@ -112,7 +112,7 @@ _set_task( Config & cfgObj, Config::Operations op ) {
 // UTApp
 //
 
-UTApp::UTApp() : _ss(nullptr) {}
+UTApp::UTApp( const std::string & appName ) : _ss(nullptr), _appName(appName) {}
 
 UTApp::~UTApp() {
     if(_ss) {
@@ -132,7 +132,7 @@ UTApp::register_unit( const std::string & label,
 }
 
 Config *
-UTApp::_V_construct_config_object( int argc, char * argv[] ) const {
+UTApp::_V_construct_config_object( int argc, char * const argv[] ) const {
     // default config object:
     Config * cfg = new Config {
         Config::unassigned,     // Run all modules in order.
@@ -280,7 +280,7 @@ int
 UTApp::_V_run() {
     switch( UTApp::co().operation ) {
         case Config::printBuildConfig : {
-            build_info( stdout );
+            goo_build_info( stdout );
         } break;
         case Config::listUnits : {
             list_modules( std::cout );
@@ -311,7 +311,7 @@ UTApp::_V_run() {
         case Config::unassigned :
         case Config::printHelp :
         default : {
-            goo::ut::_print_usage( Parent::argv[0] );
+            goo::ut::_print_usage( _appName.c_str() );
         } break;
     };
     return EXIT_SUCCESS;

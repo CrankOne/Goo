@@ -48,21 +48,21 @@ static const char __libDescrDict[][128] = {
 };
 
 void
-build_info( FILE * outf ) {
+goo_build_info( FILE * outf ) {
     fprintf( outf, "%s configuration dump:\n\r", STRINGIFY_MACRO_ARG(PACKAGE) );
     fprintf( outf, "General build info:\n\r" );
     fprintf( outf, "  version .................. : %s (%s)\n\r", STRINGIFY_MACRO_ARG(PACKAGE_VERSION),
-                                                          STRINGIFY_MACRO_ARG(BUILD_TYPE));
+                                                          STRINGIFY_MACRO_ARG(GOO_BUILD_TYPE));
     fprintf( outf, "  build timestamp .......... : %s\n\r", gooVersioning.buildTimestamp );
     fprintf( outf, "  git VCS commit hash ...... : %s\n\r", gooVersioning.gitCommitHash );
     fprintf( outf, "  git VCS commit string .... : %s\n\r", gooVersioning.gitCommitStr );
-    fprintf( outf, "  built on ................. : %s:%s\n\r", STRINGIFY_MACRO_ARG(BUILDER_HOSTNAME),
-                                                        STRINGIFY_MACRO_ARG(CMAKE_SYSTEM) );
-    fprintf( outf, "  install prefix ........... : %s\n\r", STRINGIFY_MACRO_ARG(CMAKE_INSTALL_PREFIX) );
+    fprintf( outf, "  built on ................. : %s:%s\n\r", STRINGIFY_MACRO_ARG(GOO_BUILDER_HOSTNAME),
+                                                        STRINGIFY_MACRO_ARG(GOO_CMAKE_SYSTEM) );
+    fprintf( outf, "  install prefix ........... : %s\n\r", STRINGIFY_MACRO_ARG(GOO_CMAKE_INSTALL_PREFIX) );
     fprintf( outf, "Misc parameters:\n\r" );
-    fprintf( outf, "  emergency buffer length .. : %zd\n\r", (size_t) EMERGENCY_BUFLEN );
-    fprintf( outf, "  emergency stack depth .... : %zd\n\r", (size_t) EMERGENCY_STACK_DEPTH_NENTRIES );
-    fprintf( outf, "  default zlib compression . : %zd\n\r", (size_t) DEFAULT_ZLIB_COMPRESSION_LEVEL );
+    fprintf( outf, "  emergency buffer length .. : %zd\n\r", (size_t) GOO_EMERGENCY_BUFLEN );
+    fprintf( outf, "  emergency stack depth .... : %zd\n\r", (size_t) GOO_EMERGENCY_STACK_DEPTH_NENTRIES );
+    fprintf( outf, "  default zlib compression . : %zd\n\r", (size_t) GOO_DEFAULT_ZLIB_COMPRESSION_LEVEL );
     fprintf( outf, "Features (0x%x):\n\r", gooVersioning.encodedFeatures );
     for( UByte n = 0; n < sizeof(__featuresDescrDict)/128; ++n ) {
         if( gooVersioning.encodedFeatures & (((uint32_t) 0x1) << n) ) {
@@ -110,11 +110,11 @@ build_info( FILE * outf ) {
     fprintf( outf, "Oracle):\n\r" );
     fprintf( outf, "  version .................. : " __SUNPRO_C "\n\r" );
 #endif
-    fprintf( outf, "  C compiler path .......... : " STRINGIFY_MACRO_ARG(C_COMPILER) "\n\r" );
-    fprintf( outf, "  C flags .................. : " STRINGIFY_MACRO_ARG(BUILD_C_FLAGS) "\n\r" );
-    fprintf( outf, "  C++ compiler path ........ : " STRINGIFY_MACRO_ARG(CXX_COMPILER) "\n\r" );
-    fprintf( outf, "  C++ flags ................ : " STRINGIFY_MACRO_ARG(BUILD_CXX_FLAGS) "\n\r" );
-    fprintf( outf, "  Haskell flags ............ : " STRINGIFY_MACRO_ARG(CMAKE_Haskell_FLAGS) "\n\r" );
+    fprintf( outf, "  C compiler path .......... : " STRINGIFY_MACRO_ARG(GOO_C_COMPILER) "\n\r" );
+    fprintf( outf, "  C flags .................. : " STRINGIFY_MACRO_ARG(GOO_BUILD_C_FLAGS) "\n\r" );
+    fprintf( outf, "  C++ compiler path ........ : " STRINGIFY_MACRO_ARG(GOO_CXX_COMPILER) "\n\r" );
+    fprintf( outf, "  C++ flags ................ : " STRINGIFY_MACRO_ARG(GOO_BUILD_CXX_FLAGS) "\n\r" );
+    fprintf( outf, "  Haskell flags ............ : " STRINGIFY_MACRO_ARG(GOO_CMAKE_Haskell_FLAGS) "\n\r" );
 };
 
 
