@@ -25,15 +25,17 @@
 {
 
 # The beginning `!' symbol is reserved for special directive that
-# has immediate side effect on parser. They are called `isntructions'.
+# has immediate side effect on parser. They are called `instructions'.
 # For example:
-
-!requires "Geo3";
-
+!requires Geo3;
 # imports some external module named `Geo3' whom declarations are
 # now available by symbol lookup resolutin `::', e.g. `Geo3::Vector'.
 
-!math-evaluator "Default";
+
+# (EXP) This statment sets math-evaluator:
+
+!math-evaluator Default;
+
 
 # This instruction forbids closures at all. Such behaviour is convinient for
 # strict thread-safe code. By default GDS allows closures, but only for immutable
@@ -51,12 +53,14 @@ Basics = {
     # Defining a simple value:
     a = 5;
 
-#<<<<<<< HEAD
-# Разница между `=' и `<-' в том что первое — causes немедленный eval(rvalue),
-# второе не causes.
-#=======
     # Defining a simple value of strict type:
-    Float8 b = 32.1;
+    Sys:Numeric:Float8 b = 32.1;
+
+    # import statement allows to create a shortcut. Direct:
+    !import Sys:Arithmetic:Numeric;
+    # or aliased:
+    !import Sys:Quantity:energy as work;
+    !import Sys:SymTable = SymTable;
 
     # Defining a value of classed type:
     Numeric c = 123/12;
@@ -64,7 +68,7 @@ Basics = {
     # Forward value declaration:
     Numeric d;
 
-    # Equivalent form of Scope creation:
+    # Equivalent forms of Scope creation:
     symTable1 = {
         foo = 1;
         bar = 2;
@@ -93,40 +97,67 @@ Basics = {
                         # symbols to current manipulation. Can be used
                         # to resolve dreferred symbols like variable aliases
                         # and so on.
+                        # Supports all scopes operators, plus some special
+                        # type/value restriction qualifiers (expr. starts with `for').
+    # Note, that one can not write:
+    #h = 2*z;
+    # as `z' couldn't be resolved.
+};
+
+Units = {
+    import Sys:Quantity;
+    Quantity:energy energyDeposition = 30 keV;  # Strict declaration
+    g = 9.8 m/sec;  # automatic deuction
+    wayPassed( Quantity:time t ) <- g*T^2/2;
 };
 
 PiecewiseFunctions = {
 
-    f1(x) <- x < -1 ? 0,    # Here, the simple piecewise function is defined
+    f0(x) <- x < -1 ? 0,    # Here, the simple piecewise function is defined
           |- x >  1 ? 0,    # in form, very similar to Haskell syntax.
-          ^-          x^2;  # `|-' and '^-' is a special literals meaning
-                            # `else if' and `else' correspondingly. The part
+          ^-          x^2;  # `|-', '`-', '\-', '<|' and '^-' is a special literals meaning
+                            # `else if' or `else'. The part
                             # before the question mark `?' should be logical
                             # expression.
 
-    f2(x) <- -1 < x < 1 ? 0     # This function is similar to `f1' and only demonstrates
-          ^-              x^2;  # the usage of ternary comparison operator.
+    f1(x) <- -1 < x < 1 ? 0     # This function is similar to `f1' and only demonstrates
+          ^-            x^2;    # the usage of ternary comparison operator.
+
+    # (EXP)
+    f2(x) <- x > -1 ? <|                # more sophisticated function doing the same.
+           |           \- x < 1 ? 1,    # One can combine expression like an SCII-art tree.
+           `- 0;
 
 
-    # Another syntax:
+    # One another syntax uses if/else keywords.
     f3(x) <-    x if -1 < x < 1,
              -x^2 if -1 < x,
               x^2 otherwise;
 
-    # We can declare a typed function like so:
+    # We can declare a typed function like so: (TODO)
     f4</Numeric/>(Numeric a, Numeric b, String c);
+    #f4( Numeric <- Numeric, Numeric, String );
+    #f4( Numeric, Numeric, String -> Numeric )
 
     # That is equivalent with:
     shouldBeTrue1 = typeof(f4) == </Numeric/>(Numeric, Numeric, String);
 
     # A typed function that returns a function (functional) looks a bit more sophisticated:
-    F1</</Float16, Float16/>(Float t)/>(String s)
-          <- s == "ellipse"  ? <- {a*M::cos(t), b*sin(t)},
+    #F1</</Float16, Float16/>(Float t)/>(String s)
+    #      <- s == "ellipse"  ? <- {a*M::cos(t), b*sin(t)},
+    #      |- s == "parabola" ? <- {t, t^2}
+    #      ;
+    F1( (Float, Float <- Float t) <- String s )
+          <- s == "ellipse"  ? <- {a*M:cos(t), b*sin(t)},
           |- s == "parabola" ? <- {t, t^2}
           ;
 
     # Carrying:
-    F2</</Numeric/>(Numeric)/>(ff</Numeric/>(Numrtic, Numeric)) <- ff(x, 1.25);
+    F2( ( Numeric <- Numeric ) <- ( Numeric <- Numeric, Numeric ) ff ) <-  ff(x, 1.25)
+    # Decarrying
+    F3( x1 <- ( Numeric <- Numeric x1 ) ff, Numeric x2_ )
+        /: d=x2_ :/ <- ff( x1, x2 )
+    #F2</</Numeric/>(Numeric)/>(ff</Numeric/>(Numrtic, Numeric)) <- ff(x, 1.25);
     # That's equivalent with more laconic:
     F2equiv /:y=1.25:/= f;
 
@@ -138,10 +169,26 @@ PiecewiseFunctions = {
 };
 
 DereferredBasics = {
-    a <- /0..99/;   # `a' now has a type `Sequence' that can be used as follows:
-    b = a[5];       # `b' is now of type Int32 and stores a value `4';
+    a.. <- 0..99;   # `a' now has a type `Sequence' that can be used as follows:
+    b = a_5;        # `b' is now of type Int32 and stores a value `4';
 
-    # ... TODO: more
+
+    # Variadic function:
+    sum( Numeric <- Numeric x.. ) /: n = len(x..) :/
+    # is equivalent with:
+    #sum( Numeric <- Numeric x..[n] )
+        <- n > 2 ? sum( x[0], x[1..n] )
+        ^-         x[0] + x[1]
+        ;
+
+    # Note, that example above leads to accumulation of rounding error. In order
+    # to avoid this issue, one can declare pairwise sum:
+    pairwise_sum( Numeric <- Numeric x..[n], N=8 )
+        <- n < N ? sum( x..[n] )
+        ^-         pairwise_sum( x[0:floor(n/2.)], N ) + pairwise_sum( x[floor(n/2.)..n], N )
+        ;
+
+    # notes about operator exp?
 };
 
 Constructors = {
@@ -176,6 +223,9 @@ Constructors = {
                             # `-i - j - k' mathematical expression will be yielded.
 };
 
+
+# (EXP) Tensors:
+
 Tensors = {
     # TODO: indexed with [[...]]
 };
@@ -195,7 +245,7 @@ Types = {
 
 
 #
-# The rewriting rules sub-language:
+# (EXP) The rewriting rules sub-language:
 #
 
 # The {: and :} defines rewriting rules that further called `Algebra'
@@ -215,4 +265,4 @@ Algebra SimpleNumericals = {:
 :};
 
 }
-#>>>>>>> d6b0cce2f39f530aa69861f61ab75d29898d77ef
+

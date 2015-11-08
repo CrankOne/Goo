@@ -1,0 +1,83 @@
+(#
+ # Numerical algebra
+ #
+ # This module defines numerical class and algebraic operations available
+ # for him.
+ #)
+
+!sys-module;
+
+class Numeric {
+    !from Sys:types import *;
+
+    class Integral = {
+        types = {
+                @uint8_t,    @int8_t,
+                @uint16_t,   @int16_t,
+                @uint32_t,   @int32_t,
+                @bigInt
+                };
+        @operations = {
+                @/:f = `ops/integral/division_remainder':/divisionRemainder
+            }
+    };
+
+    class Float  = {
+        types = {
+                @float16_t,
+                @float32_t,
+                @float64_t
+                };
+    };
+
+    class Rational = {
+        types = Integral:types..
+                @rational
+                ;
+    };
+
+    class Real = {
+        !from Sys:types import *;
+
+        types = Rational:types..
+                Float:types..
+                ;
+    };
+
+    #operations = {
+    #    @ /:f = `ops/numerical/unary_negotiation':/     unaryMinus,
+    #    @ /:f = `ops/numerical/binary_sum':/            binaryPlus,
+    #    @ /:f = `ops/numerical/binary_prod':/           binaryProduct,
+    #    @ /:f = `ops/numerical/binary_divide':/         binaryDivide
+    #};
+};
+
+@classes .= Numeric;
+
+@rewritingRules /:
+            for a, b, c is Sys:Numeric, a != 0, b != 0, c != 0;
+            for n is Sys:Numeric:Integral;
+            for NaN is @NaN;
+            for Inf is @Inf;
+            :/ .= {
+    a/0 => Inf;
+    0/a => 0;
+    0/0 => NaN;
+    a + NaN => NaN;
+    a * NaN => NaN;
+    a / NaN => NaN;
+    a + Inf => Inf;
+    a - Inf => - Inf;
+    a * Inf => Inf;
+    a / Inf => 0;
+    a + 0 => a;
+
+    a*1 <=> a;
+    a^(-1) <=> 1/a;
+
+    a + b <=> b + a;        # infix binary sum is commutative
+    a*b <=> b*a;            # infix binary production is commutative
+    a*(b+c) <=> a*b + a*c;  # production is distributive among summation
+    a*a <=> a^2;            # integral exponentiation
+};
+
