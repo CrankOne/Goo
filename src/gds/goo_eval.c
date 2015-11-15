@@ -1,4 +1,4 @@
-
+# if 0
 /*
  *
  * # Bits               Hex code    Meaning
@@ -77,4 +77,5 @@ gds_function_eval( struct gds_Parser * P,
 
     return 0;
 }
+# endif
 

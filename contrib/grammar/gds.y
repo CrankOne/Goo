@@ -23,12 +23,16 @@ void yyerror();
 
 %union {
                   const char * strval;
+          struct gds_Literal * literal;
 }
 
 %token              T_TRUE      T_FALSE
-%token              P_INJECTION P_ASSIGN    P_PIECEWISE_ELIF  P_PIECEWISE_ELSE
-%token              P_GET       P_LET       P_EET       P_NET
-%token              P_LAND      P_LXOR      P_LOR       P_BETWEEN
+%token              P_INJECTION P_ASSIGN    P_PIECEWISE_ELIF    P_PIECEWISE_ELSE
+%token              P_GET       P_LET       P_EET               P_NET
+%token              P_LAND      P_LXOR      P_LOR               P_BETWEEN
+%token              P_NOT
+%token              P_FOR       P_IS
+%token              P_CTX_MOD_OPEN P_CTX_MOD_CLOSE
 
 %token              TI_BIN  TI_OCT  TI_HEX  TI_ESC  TI_DEC
 %type<strval>       TI_BIN  TI_OCT  TI_HEX  TI_ESC  TI_DEC
@@ -39,6 +43,10 @@ void yyerror();
 %token              T_STRING_LITERAL UNKNWN_SYM
 %type<strval>       T_STRING_LITERAL UNKNWN_SYM
 
+
+%type<literal>      literal numerical integral floatingPoint logic string;
+
+
 %left P_LAND
 %left P_LOR P_LXOR
 %left '!'
@@ -48,45 +56,39 @@ void yyerror();
 %left '*' '/'
 %right '^' '%'          /* exponentiation */
 
-%start Scope
+%start expression
 
 %%
 
-/*
- * Scope
- */
+     expression : literal   { /*$$ = gds_expression_from_literal(P, $1); TODO */ }
+                ;
 
-Scope       : '{' ExprList '}'
-            ;
+        literal : logic         { $$ = $1; }
+                | numerical     { $$ = $1; }
+                | string        { $$ = $1; }
+                ;
 
-ExprList    : Expr
-            | ExprList ';' Expr
-            ;
+      numerical : integral      { $$ = $1; }
+                | floatingPoint { $$ = $1; }
+                ; 
 
-Expr        : FuncDecl
-            | VarDecl
-            ;
+       integral : TI_BIN    { $$ = interpret_bin_integral(P, $1); }
+                | TI_OCT    { $$ = interpret_oct_integral(P, $1); }
+                | TI_HEX    { $$ = interpret_hex_integral(P, $1); }
+                | TI_ESC    { $$ = interpret_esc_integral(P, $1); }
+                | TI_DEC    { $$ = interpret_dec_integral(P, $1); }
+                ;
 
-VarDecl     : UNKNWNID '=' RVal
-            ;
+  floatingPoint : TF_DEC    { $$ = interpret_float_dec(P, $1); }
+                | TF_HEX    { $$ = interpret_float_hex(P, $1); }
+                ;
 
-FuncDecl    : FuncDclLVal '=' FuncTail
-            ;
+         string : T_STRING_LITERAL { $$ = interpret_string_literal( P, $1 ); }
+                ;
 
-FuncDclLVal : UNKNWNID '(' ArgList ')'
-            | UNKNWNID '[' '[' TensorIndexes ']' ']' '(' ArgList ')'
-            ;
-
-FuncTail    : MathFunc
-            | PcwsFunc
-            ;
-
-PcwsFunc    : PcwsFunc P_PIECEWISE_ELIF PcwsPair
-            | PcwsFunc P_PIECEWISE_ELSE MathFunc
-            ;
-
-PcwsPair    : LogicFunc '?' MathFunc
-            ;
+          logic : T_TRUE    { $$ = interpret_logic_true(P); }
+                | T_FALSE   { $$ = interpret_logic_false(P); }
+                ;
 
 %%
 # include <stdlib.h>

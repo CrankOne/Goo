@@ -76,7 +76,9 @@ void gds_warn( struct gds_Parser * P, const char * det );
 
 "<-"                                { return P_INJECTION; }
 "|-"                                { return P_PIECEWISE_ELIF; }
+"elif"                              { return P_PIECEWISE_ELIF; }
 "^-"                                { return P_PIECEWISE_ELSE; }
+"else"                              { return P_PIECEWISE_ELSE; }
 
     /* LOGICAL OPERATORS */
 
@@ -94,8 +96,8 @@ void gds_warn( struct gds_Parser * P, const char * det );
 
     /* LITERALS */
 
-[Tt]rue|[Ee]nable|[Oo]n             { MEMTOKEN(T_TRUE); }
-[Ff]alse|[Dd]isable|[Oo]ff          { MEMTOKEN(T_TRUE); }
+[Tt]rue|[Ee]nable|[Oo]n|[Yy]es      { MEMTOKEN(T_TRUE); }
+[Ff]alse|[Dd]isable|[Oo]ff|[Nn]o    { MEMTOKEN(T_FALSE); }
 
 "b"[01]+{IS}?                       { MEMTOKEN(TI_BIN); }
 {HP}{H}+{IS}?				        { MEMTOKEN(TI_HEX); }
@@ -134,6 +136,13 @@ void gds_warn( struct gds_Parser * P, const char * det );
                                         rt = lookup_symbol(yyget_extra(yyscanner), yytext );
                                         return rt;
                                     }
+
+    /* CONTEXT MANIPULATION */
+
+"/:"                                { return P_CTX_MOD_OPEN; }
+":/"                                { return P_CTX_MOD_CLOSE; }
+"for"                               { return P_FOR; }
+"is"                                { return P_IS; }
 
     /* SIMPLE GRAMMAR TERMINALS */
 
@@ -189,6 +198,7 @@ void gds_warn( struct gds_Parser * P, const char * det );
  */
 int
 lookup_symbol( struct gds_Parser * P, const char * sym ) {
+    # if 0
     int8_t rt = 0,
            wasScopeResolution = 0;
     const char * c = sym;
@@ -286,6 +296,9 @@ lookup_symbol( struct gds_Parser * P, const char * sym ) {
             return UNKNWN_SYM;
         }
     };
+    # else
+    return 0;
+    # endif
 }
 
 /*

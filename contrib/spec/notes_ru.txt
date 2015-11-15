@@ -65,6 +65,7 @@
       тип, а запоминает промежуточную форму ассоциированную с именем.
       `<=>' Биекция. В зависимости от контекста имеет значения:
         - form of bi-assotiative array
+        - form of non-standard indexed enumerated array
         - rewriting rule for math processor
       TODO ...
     = Expression

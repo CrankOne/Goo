@@ -1,0 +1,58 @@
+This was escaped from gds.y last time I decided to start with simple terms:
+
+/*
+ * Scope
+ */
+
+EvalTerm    : instrsList
+            | Scope
+            /* TODO .= --- scope-modifier */
+            ;
+
+InstrsList  : '!' INSTRUCTION
+            | InstrsList
+            | expression
+            ;
+
+Scope       : '{' Dict '}'
+            | '{' Tuple '}'
+            ;
+
+Dict        : DictEntry ';'
+            | Dict DictEntry ';'
+            ;
+
+DictEntry   : UNKNWNID CtxModifier EQUALS expression
+            | UNKNWNID EQUALS expression
+            | UNKNWNID CtxModifier INJECT expression
+            | UNKNWNID INJECT expression
+            | UNKNWNID '(' ArgLst ')' CtxModifier INJECT exprssion
+            | UNKNWNID '(' ArgLst ')' INJECT exprssion
+            ;
+
+ContextModifier     :   P_CTX_MOD_OPEN CtxModifier P_CTX_MOD_CLOSE
+                    ;
+
+CtxModifier         : DictEntry ';'
+                    | SymbolRestrictionRule ';'
+                    | CtxModifier DictEntry ';'
+                    | CtxModifier SymbolRestrictionRule ';'
+                    ;
+
+SymbolRestrictionRule   : FOR unknownIdentifiersList IS symbolRestrictionList
+                        ;
+
+unknownIdentifiersList  : UNKNWNID
+                        | unknownIdentifiersList ',' UNKNWNID
+                        ;
+
+symbolRestrictionList   : symbolRestriction
+                        | symbolRestrictionList ',' symbolRestriction
+                        ;
+
+symbolRestriction   : TYPE
+                    | ARITHMETIC_TYPE
+                    | UNKNWNID NOTEQUALS expression
+                    ;
+
+

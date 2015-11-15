@@ -1,3 +1,4 @@
+# include <stdlib.h>
 # include "gds/goo_interpreter.h"
 # include "gds/goo_variables.h"
 
