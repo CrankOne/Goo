@@ -2,7 +2,7 @@ prefix=/home/crank/Projects/goo.install
 exec_prefix=${prefix}
 includedir=${prefix}/include/goo
 libdir=${exec_prefix}/lib
-commitHash=2df8e5e8b40876a7866361d392c2f006386e6975
+commitHash=ace8e4ed4aab6c61c36e0b3f01e3a2b7ba63a9ad
 
 Name: goo
 Description: The goo library.

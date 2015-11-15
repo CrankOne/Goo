@@ -58,6 +58,7 @@
 # define             IS_LOGIC_TYPE(tcode)   ( tcode == 0xc )
 # define          IS_COMPOUND_TYPE(tcode)   ( 1 && (tcode & 0x80) )
 
+# if 0
 /** Not-a-number macro when it isn't defined. */
 # ifndef NaN
 #   ifndef NAN
@@ -65,6 +66,7 @@
 #   else
 #       define NaN NAN
 #   endif
+# endif
 # endif
 
 
