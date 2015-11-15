@@ -92,6 +92,7 @@ void gds_warn( struct gds_Parser * P, const char * det );
 "or"                                { return P_LOR; }
 "^^"                                { return P_LXOR; }
 "xor"                               { return P_LXOR; }
+"not"                               { return P_NOT; }
 ".."                                { return P_BETWEEN; }
 
     /* LITERALS */
