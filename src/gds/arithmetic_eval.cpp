@@ -1,8 +1,6 @@
 # include "gds/arithmetic_eval.h"
 # include <unordered_map>
 
-typedef uint32_t BinOpKey;
-
 static_assert(sizeof( BinOpKey ) >= 2*sizeof(TypeCode) + sizeof(BinaryArithOpCode),
         "Binary arithmetic indexing type is smaller than need.");
 
@@ -18,36 +16,26 @@ gds_alloc_binop_table() {
 # define TABLE(a, b) BOTable * b = reinterpret_cast<BOTable*>(a->hashTable)
 
 void
-free_alloc_binop_table( struct GDS_BinOpArithmetic * tableStruct ) {
+gds_free_alloc_binop_table( struct GDS_BinOpArithmetic * tableStruct ) {
     TABLE( tableStruct, table );
     delete table;
     tableStruct->hashTable = NULL;
     free( tableStruct );
 }
 
-// TODO: check
-static BinOpKey
-compose_binop_key( TypeCode leftT, TypeCode rightT, BinaryArithOpCode binOpCode) {
-    return leftT
-         | ( ((BinOpKey) rightT) << sizeof(TypeCode) )
-         | ( ((BinOpKey) binOpCode) << 2*sizeof(TypeCode) )
-         ;
-}
-
-// TODO: check
 int
-add_binary_operator_table_entry(
-    struct GDS_BinOpArithmetic * tableStruct,
-    BinaryArithOpCode binOpCode,
-    TypeCode leftT, TypeCode rightT, TypeCode resultT,
-    BinaryOperatorFunction func,
-    uint8_t doOverride ) {
+gds_add_binary_operator_table_entry(
+        struct GDS_BinOpArithmetic * tableStruct,
+        BinaryArithOpCode binOpCode,
+        TypeCode leftT, TypeCode rightT, TypeCode resultT,
+        BinaryOperatorFunction func,
+        uint8_t doOverride ) {
     TABLE( tableStruct, table );
     int r = -3;
     for( r = -3; r < -1; r++ ) {
         auto insertionResult = table->insert(
                 std::pair< BinOpKey, std::pair<TypeCode, BinaryOperatorFunction> >(
-                    compose_binop_key( leftT, rightT, binOpCode ),
+                    gds_compose_binop_key( leftT, rightT, binOpCode ),
                     std::pair<TypeCode, BinaryOperatorFunction>( resultT, func )
                 )
             );

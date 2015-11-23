@@ -46,6 +46,7 @@ public:
         void run( bool dryRun=false ) noexcept;
         void make_own_outstream();
         std::ostream & outs() { return *_outStream; }
+        const std::ostream & outs() const { return *_outStream; }
         void outs( std::ostream & os ) { _outStream = &os; }
         const std::string & verbose_name() const { return _verboseName; }
         void set_dependencies( const char [][48], uint8_t depLength );
