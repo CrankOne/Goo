@@ -3,7 +3,7 @@
 # include "goo_types.h"
 
 /* Note: implemented in C++ part */
-int binop_key_is_unique( BinaryArithOpCode );
+int binop_key_is_unique( BinOpKey );
 
 static const TypeCode _static_typeCodes[] = {
     # define substitute_code( code, u1, u2, u3 ) code,
@@ -27,7 +27,7 @@ goo_gds__check_codes_structures() {
         const TypeCode left = _static_typeCodes[i];
         for( uint16_t j = 0; j < _static_typeCodesSize; ++j ) {
             const TypeCode right = _static_typeCodes[j];
-            for( uint16_t k = 0; k < _static_binopCodesSize; ++k, rc++ ) {
+            for( uint16_t k = 0; k < _static_binopCodesSize; ++k, rc+=4 ) {
                 BinaryArithOpCode opcode = _static_binopCodes[k];
                 {
                     BinOpKey key = gds_compose_binop_key( left, right, opcode );

@@ -138,7 +138,7 @@ UTApp::_V_construct_config_object( int argc, char * const argv[] ) const {
         Config::unassigned,     // Run all modules in order.
         false,                  // Be verbose
         false,                  // Abort on unit failure.
-        true,                   // Print reports about each ran unit after all.
+        false,                  // Print reports about each ran unit after all.
         false,                  // Take into account unit dependencies on selective run.
     };
 
