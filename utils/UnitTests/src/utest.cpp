@@ -377,6 +377,7 @@ UTApp::TestingUnit::run( bool dryRun ) noexcept {
     try {
         _V_run( *_outStream );
     } catch( goo::Exception & ge ) {
+        ge.dump(outs());
         if( goo::Exception::uTestFailure == ge.code() ) {
             _ranResult = -1;  // Goo's UT expected error
             return;

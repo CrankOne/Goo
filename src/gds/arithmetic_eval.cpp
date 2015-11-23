@@ -6,7 +6,7 @@ static_assert(sizeof( BinOpKey ) >= 2*sizeof(TypeCode) + sizeof(BinaryArithOpCod
 
 typedef std::unordered_map<BinOpKey, std::pair<TypeCode, BinaryOperatorFunction> > BOTable;
 
-GDS_BinOpArithmetic *
+extern "C" GDS_BinOpArithmetic *
 gds_alloc_binop_table() {
     GDS_BinOpArithmetic * r = (GDS_BinOpArithmetic *) malloc(sizeof(GDS_BinOpArithmetic));
     r->hashTable = new BOTable();
@@ -15,15 +15,15 @@ gds_alloc_binop_table() {
 
 # define TABLE(a, b) BOTable * b = reinterpret_cast<BOTable*>(a->hashTable)
 
-void
-gds_free_alloc_binop_table( struct GDS_BinOpArithmetic * tableStruct ) {
+extern "C" void
+gds_free_binop_table( struct GDS_BinOpArithmetic * tableStruct ) {
     TABLE( tableStruct, table );
     delete table;
     tableStruct->hashTable = NULL;
     free( tableStruct );
 }
 
-int
+extern "C" int
 gds_add_binary_operator_table_entry(
         struct GDS_BinOpArithmetic * tableStruct,
         BinaryArithOpCode binOpCode,
@@ -31,8 +31,10 @@ gds_add_binary_operator_table_entry(
         BinaryOperatorFunction func,
         uint8_t doOverride ) {
     TABLE( tableStruct, table );
-    int r = -3;
-    for( r = -3; r < -1; r++ ) {
+    bool doRepeatInsertion = false,
+         overriden = false;
+    do {
+        doRepeatInsertion = false;
         auto insertionResult = table->insert(
                 std::pair< BinOpKey, std::pair<TypeCode, BinaryOperatorFunction> >(
                     gds_compose_binop_key( leftT, rightT, binOpCode ),
@@ -41,16 +43,19 @@ gds_add_binary_operator_table_entry(
             );
         if( !insertionResult.second ) {
             if( insertionResult.first->second.second == func ) {
-                r = 1;
+                return 1;
             }
-            if( !doOverride ) {
-                r = -1;
+            if( doOverride ) {
+                doRepeatInsertion = true;
+                overriden = true;
+                table->erase( insertionResult.first );
+            } else {
+                return -1;
             }
-            table->erase( insertionResult.first );
         } else {
-            r = 0;
+            return overriden ? 2 : 0;
         }
-    }
-    return r;
+    } while(doRepeatInsertion);
+    return -3;
 }
 

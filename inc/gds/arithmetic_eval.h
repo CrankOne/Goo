@@ -3,6 +3,10 @@
 
 # include "gds/expression.h"
 
+# ifdef __cplusplus
+extern "C" {
+# endif
+
 /** This function only evaluates simple binary arithmetics. The point is to
  * resolve corresponding evaluation function that actually does the job. */
 int
@@ -34,31 +38,33 @@ struct GDS_BinOpArithmetic {
 };
 
 struct GDS_BinOpArithmetic * gds_alloc_binop_table();
-void gds_free_alloc_binop_table( struct GDS_BinOpArithmetic * );
+void gds_free_binop_table( struct GDS_BinOpArithmetic * );
 
-# ifdef __cplusplus
-extern "C" {
-# endif
 BinOpKey gds_compose_binop_key(TypeCode, TypeCode, BinaryArithOpCode);
 TypeCode gds_binop_left_oprand_type( BinOpKey k );
 TypeCode gds_binop_right_oprand_type( BinOpKey k );
 BinaryArithOpCode gds_binop_operator_type( BinOpKey k );
-# ifdef __cplusplus
-}
-# endif
 
 /** Returns:
  * 0 on successful insertion;
  * 1 on reentrant insertion (insertion of the same function instance);
+ * 2 on override (only available on doOverride).
  * -1 on collision (if doOverride == 0, insertion won't be provided).
+ * -3 indicates algorithm error.
  */
 int
 gds_add_binary_operator_table_entry(
     struct GDS_BinOpArithmetic * table,
     BinaryArithOpCode binOpCode,
-    TypeCode, TypeCode,
+    TypeCode, TypeCode, TypeCode,
     BinaryOperatorFunction,
     uint8_t doOverride );
+
+/* TODO: added operating functions tests */
+
+# ifdef __cplusplus
+}
+# endif
 
 # endif  /* H_GOO_GDS_INTERP_TABLES_H */
 

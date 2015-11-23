@@ -31,7 +31,7 @@ for_all_atomic_datatypes( declare_initializer_function )
 # define for_each_binary_arithmetic_lexical_operator( m )   \
     m( "+",             0x1,    summation )                 \
     m( "-",             0x2,    subtraction )               \
-    m( "*",             0x3,    product )                   \
+    m( "*",             0x3,    production )                \
     m( "/",             0x4,    division )                  \
     m( "^",             0x5,    exponentiation )            \
     m( "%%",            0x6,    divRemainder )              \
