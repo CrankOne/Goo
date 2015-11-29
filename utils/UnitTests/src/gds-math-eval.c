@@ -31,9 +31,8 @@ testing_function_summation1(
     assert( l );
     assert( r );
     assert( R );
-    R->type = Float4_T_code;
     R->value.Float4Val = (l->value.UIntVal) + (r->value.Float4Val);
-    return Float4_T_code;
+    return R->type = Float4_T_code;
 }
 
 static TypeCode
@@ -41,7 +40,7 @@ testing_function_summation2(
                 struct ArithmeticConstant * l,
                 struct ArithmeticConstant * r,
                 struct ArithmeticConstant * R) {
-    return 1;
+    return 0;
 }
 
 static TypeCode
@@ -52,9 +51,8 @@ testing_function_production3(
     assert( l );
     assert( r );
     assert( R );
-    R->type = Float4_T_code;
     R->value.Float4Val = (l->value.UByteVal)*(r->value.Float4Val);
-    return Float4_T_code;
+    return R->type = Float4_T_code;
 }
 
 int
@@ -131,12 +129,11 @@ goo_gds__check_simple_arithmetics_evaluation() {
     /* Now test arithmetics evaluation:
      * 10.02 == 3*(1 + 2.34)
      *
-     *   (*) [=> deduces Float4]
+     *   (*) [=> be deduced to Float4]
      *    | - 3 : UByte
-     *    \ - (+) [=> deduces Float4]
+     *    \ - (+) [=> be deduced to Float4]
      *         |- 1 : UInt32
      *         \- 2.34 : Float4
-     *
      * */
     {
         struct GDSExpression nodes[5],
@@ -230,7 +227,6 @@ goo_gds__check_simple_arithmetics_evaluation() {
             return -41;
         }
         if( res.value.Float4Val < 10.02 - 1e-4 || res.value.Float4Val > 10.02 ) {
-            printf( "%e\n", res.value.Float4Val );
             return -42;
         }
 
