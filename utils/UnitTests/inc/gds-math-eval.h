@@ -5,6 +5,7 @@
 extern "C" {
 # endif
 int goo_gds__check_codes_structures();
+int goo_gds__check_simple_arithmetics_evaluation();
 # ifdef __cplusplus
 }  // extern "C"
 # endif

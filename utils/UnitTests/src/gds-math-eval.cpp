@@ -24,8 +24,11 @@ GOO_UT_BGN( GDS_MATH_EVAL, "GDS simple arithmetic evaluator" )
 
 {
     int rc = goo_gds__check_codes_structures();
-    _ASSERT( !rc, "Checking of arithmetic operations subtable code system failed: %d.", rc );
+    _ASSERT( !rc, "Checking of arithmetic operations subtable code system failed #1: %d.", rc );
     os << "Code table test passed with rc = " << rc << std::endl;
+    rc = goo_gds__check_simple_arithmetics_evaluation();
+    _ASSERT( !rc, "Checking of arithmetic operations subtable code system failed #1: %d.", rc );
+    os << "Simple evaluation test passed with rc = " << rc << std::endl;
 }
 
 GOO_UT_END( GDS_MATH_EVAL )

@@ -7,60 +7,78 @@
 extern "C" {
 # endif
 
-/** This function only evaluates simple binary arithmetics. The point is to
- * resolve corresponding evaluation function that actually does the job. */
-int
-gds_evaluate_binary_arithmetical_operator(
-    BinaryArithOpCode binOpCode,
-    struct ArithmeticConstant * const left,
-    struct ArithmeticConstant * const right,
-    struct ArithmeticConstant result );
+/**\defgroup GDS-simple-arithmetics
+ * 
+ * @{*/
 
-/** Returns type code of result considering operator and operand types following
- * the suggestion that simple arithmetic type operation always issues only the
- * simple arithmetic type. This function is useful for strict type checking, but
- * is less generic than TODO(function that returns GDS type code) */
-TypeCode
+/**\brief Binary operator key type.*/
+typedef uint32_t BinOpKey;
+
+/**\brief Simple arithmetic table structure. */
+struct GDS_BinOpArithmetic {
+    /** C++ std::unordered_map< TypeCode.TypeCode, pair(resType, SimpleArithmeticBinaryOperator) > */
+    void * hashTable;
+};
+
+/**\brief Provides search among table of simple arithmetic callbacks. */
+SimpleArithmeticBinaryOperator
+gds_get_binary_operator_function_for(
+        struct GDS_BinOpArithmetic * table,
+        BinOpKey,
+        TypeCode * );
+
+/**\brief Returns result binary operator result type for given left/right
+ * operand types.
+ */ TypeCode
 gds_earn_binary_arithmetical_operator_result_type(
+    struct GDS_BinOpArithmetic * tableStruct,
     BinaryArithOpCode binOpCode,
     TypeCode,
     TypeCode);
 
+/**\brief Tries to figure out returning type of overall expression
+ * assuming that all sub-expressions are simple arithmetics.
+ */ TypeCode
+gds_deduce_arithmetical_expression_result_type(
+    struct GDS_BinOpArithmetic *,
+    struct GDSExpression *);
 
-typedef uint32_t BinOpKey;
+/**\brief Recursively resolves binary operator calculating function pointers. */
+TypeCode
+gds_recache_binary_arithmetical_operator_functions(
+    struct GDS_BinOpArithmetic *,
+    struct GDSExpression *);
 
-/** Type of binary operator calculator callback function. */
-typedef int (*BinaryOperatorFunction)( struct ArithmeticConstant *, struct ArithmeticConstant * );
-
-struct GDS_BinOpArithmetic {
-    /* std::unordered_map< TypeCode.TypeCode, pair(resType, BinaryOperatorFunction) > */
-    void * hashTable;
-};
-
+/**\brief (ctr) Allocate simple arithmetics table. */
 struct GDS_BinOpArithmetic * gds_alloc_binop_table();
+/**\brief (dtr) Free simple arithmetics table. */
 void gds_free_binop_table( struct GDS_BinOpArithmetic * );
 
+/**\brief Returns properly-formed binary operator numerical identifier. */
 BinOpKey gds_compose_binop_key(TypeCode, TypeCode, BinaryArithOpCode);
+/**\brief Obtains left operand type code from operator numerical identifier. */
 TypeCode gds_binop_left_oprand_type( BinOpKey k );
+/**\brief Obtains right operand type code from operator numerical identifier. */
 TypeCode gds_binop_right_oprand_type( BinOpKey k );
+/**\brief Obtains arithmetical operator code from full operator numerical identifier. */
 BinaryArithOpCode gds_binop_operator_type( BinOpKey k );
 
-/** Returns:
- * 0 on successful insertion;
- * 1 on reentrant insertion (insertion of the same function instance);
- * 2 on override (only available on doOverride).
- * -1 on collision (if doOverride == 0, insertion won't be provided).
- * -3 indicates algorithm error.
- */
-int
+/**\brief Inserts evaluator function in simple arithmetics table.
+ */ int
 gds_add_binary_operator_table_entry(
     struct GDS_BinOpArithmetic * table,
     BinaryArithOpCode binOpCode,
-    TypeCode, TypeCode, TypeCode,
-    BinaryOperatorFunction,
+    TypeCode leftT, TypeCode rightT, TypeCode resultT,
+    SimpleArithmeticBinaryOperator func,
     uint8_t doOverride );
 
-/* TODO: added operating functions tests */
+
+/**\brief simple arithmetics evaluator.
+ */ TypeCode gds_evaluate_binary_arithmetical_operator(
+        struct BinaryArithmeticOperator *,
+        struct ArithmeticConstant * );
+
+/** @} */
 
 # ifdef __cplusplus
 }

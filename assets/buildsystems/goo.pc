@@ -2,7 +2,7 @@ prefix=/usr/local
 exec_prefix=${prefix}
 includedir=${prefix}/include/goo
 libdir=${exec_prefix}/lib
-commitHash=ad0878816ac69ec93f31b15e0d53cebc64a41e08
+commitHash=5b5b3715ff7886c4bce77ee8880930e9dfc93283
 
 Name: goo
 Description: The goo library.
