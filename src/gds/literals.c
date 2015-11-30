@@ -5,6 +5,9 @@
 
 # ifdef ENABLE_GDS
 
+/* TODO */
+# if 0
+
 # define for_each_escseq_shortcut(m)        \
     m( 'a',     0x07 ) m( 'b',     0x08 )   \
     m( 'f',     0x0c ) m( 'n',     0x0a )   \
@@ -380,6 +383,8 @@ gds_literal_heapfree( struct gds_Parser * P, struct gds_Literal * inst ) {
     if( !inst ) { return; }
     gds_heap_erase(P->literals, inst);
 }
+
+# endif
 
 # endif  /* ENABLE_GDS */
 

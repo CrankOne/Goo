@@ -9,6 +9,7 @@
 # include "gds/interpreter.h"
 # include "goo_exception.hpp"
 
+# if 0
 //
 // Hashtable
 //
@@ -123,6 +124,7 @@ gds_heap_erase( gds_Heap hp_, void * chunk ) {
     # endif
     free( *it );
 }
+# endif
 
 # endif  // ENABLE_GDS
 

@@ -1,47 +1,5 @@
-TODO:
- - For short string literal quotes are also copied.
- - Parse escape sequences inside a string: \077, \\, \n, etc.
- - Parsing a string literal prefixed with (u8|u|U|L) yields no effects of used storaging type.
- - Truncation/narrowing warnings during parsing the literals.
- - Identifiers should be able to begin with \ symbol.
+0. Think about `numerical.gds`
+1. Fix literals.
+2. Implement grammatics according to `spec_2.gds` and `numerical.gds`.
 
-
-TODO // 23/03/015
-
-The following produces simple logic functions:
-    `gds_logic_unary'
-    `gds_logic_bin'
-    `gds_logic_ternary_math'
-    `gds_logic_from_math'
-that further are arranged into the 1/2/3-ary tree with
-    `gds_logic_math'
-
-The following is related to picewise functions and should be implemented via macro:
-    ✔`gds_parser_new_PcwsTrmList'
-    ✔`gds_PcwsTrmList_append'
-with ✔`struct PcwsTrmList' structure that keeps track the set of argument pieces until the
-    `gds_math_piecewise_unite'
-will be invoked in order to produce evaluable function. All the pieces are created with
-    ✔`gds_math_piecewise_term_new'
-function that simply produces a temporary pair of condition/function.
-
-This functions:
-    `gds_math_new_func_from_array'
-    `gds_math_new_func_from_var'
-    `gds_math_new_func_from_range'
-    `gds_math_substitute_function'
-creates a function-like wrapper for the appropriate objects in order to smoothly embed it into
-the entire math expression tree.
-
-This creates a special `range' object:
-    `gds_range_new'
-
-This two operates with temporary associative array prototype
-    `gds_asc_array_pair_new'
-    `gds_asc_array_new'
-that is further should be turned into real expression with:
-    TODO: ???
-while the
-    `gds_array_subset'
-is an indexing operation.
 

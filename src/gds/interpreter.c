@@ -6,6 +6,7 @@
 
 # ifdef ENABLE_GDS
 
+# if 0
 /*
  * Parser object C-wrapper.
  */
@@ -255,7 +256,6 @@ gds_parser_pop_locvar_arglist(
     }
 }
 
-# if 0
 struct gds_Function *
 gds_parser_deepcopy_function(
         struct gds_Parser * P,

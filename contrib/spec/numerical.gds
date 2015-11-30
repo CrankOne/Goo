@@ -7,19 +7,22 @@
 
 !sys-module;
 
+integralTypesList = {
+    @uint8_t,    @int8_t,
+    @uint16_t,   @int16_t,
+    @uint32_t,   @int32_t,
+    @bigInt
+};
+
 class Numeric {
     !from Sys:types import *;
 
     class Integral = {
-        types = {
-                @uint8_t,    @int8_t,
-                @uint16_t,   @int16_t,
-                @uint32_t,   @int32_t,
-                @bigInt
-                };
-        @operations = {
-                @/:f = `ops/integral/division_remainder':/divisionRemainder
-            }
+        types = integralTypesList;
+        operators = {
+                binary = '%s_%s_%s'%( {'summation', 'production', } );  # TODO TODO TODO
+                #@ /:f = `ops/integral/division_remainder':/ divisionRemainder;
+            };
     };
 
     class Float  = {
