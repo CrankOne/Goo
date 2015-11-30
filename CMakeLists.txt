@@ -96,7 +96,10 @@ if( ENABLE_GDS )
         message( WARNING "FLEX cmake-module not found; trying to use custom module" )
         include(contrib/cmake/FindFLEX.custom)
     endif( NOT FLEX_FOUND )
-    BISON_TARGET(GDSParser contrib/grammar/gds.y ${CMAKE_CURRENT_SOURCE_DIR}/src/gds_parser.generated.c VERBOSE ${CMAKE_CURRENT_BINARY_DIR}/gds.dbg)
+    BISON_TARGET(GDSParser contrib/grammar/gds.y
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gds_parser.generated.c
+        VERBOSE ${CMAKE_CURRENT_BINARY_DIR}/gds.dbg
+        COMPILE_FLAGS "--graph=${CMAKE_CURRENT_BINARY_DIR}/gds.dot" )
     FLEX_TARGET(GDSLexer   contrib/grammar/gds.l ${CMAKE_CURRENT_SOURCE_DIR}/src/gds_lexer.generated.c)
     ADD_FLEX_BISON_DEPENDENCY(GDSLexer GDSParser)
 endif( ENABLE_GDS )
