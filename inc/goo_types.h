@@ -58,6 +58,7 @@
 # define             IS_LOGIC_TYPE(tcode)   ( tcode == 0xc )
 # define          IS_COMPOUND_TYPE(tcode)   ( 1 && (tcode & 0x80) )
 
+# if 0
 /** Not-a-number macro when it isn't defined. */
 # ifndef NaN
 #   ifndef NAN
@@ -65,6 +66,7 @@
 #   else
 #       define NaN NAN
 #   endif
+# endif
 # endif
 
 
@@ -94,7 +96,7 @@
  * data types like 128-bit ones.
  */
 
-# ifndef EXTENDED_TYPES
+# ifndef TYPES_128BIT_LENGTH
 # define for_all_atomic_datatypes(m)                    \
     m(0x9,           uint8_t,   UByte,      UInt8     ) \
     m(0x1,            int8_t,   SByte,      Int8      ) \
@@ -108,7 +110,7 @@
     m(0xa,            double,   Float8,     Float64   ) \
     /* ... */
 
-# else
+# else  /* TYPES_128BIT_LENGTH */
 # define for_all_atomic_datatypes(m)                    \
     m(0x9,           uint8_t,   UByte,      UInt8     ) \
     m(0x1,            int8_t,   SByte,      Int8      ) \
@@ -124,7 +126,7 @@
     m(0xa,            double,   Float8,     Float64   ) \
     m(0x12,      long double,   Float16,    Float128  ) \
     /* ... */
-# endif
+# endif /* TYPES_128BIT_LENGTH */
 
 /*!\def for_all_errorcodes
  * \ingroup errors
@@ -161,7 +163,7 @@
     m(25,       threadError,        "execution stopped due to in-thread error") \
     m(50,       nwGeneric,          "network error") \
     m(100,      ioError,            "common I/O error") \
-    m(101,      notFound,           "data is not found at location") \
+    m(101,      notFound,           "data is not found at location") /* TODO: rename to noSuchData */ \
     m(102,      corruption,         "malformed data") \
     m(103,      badValue,           "got unacceptable numeric value") \
     m(104,      fileNotReachable,   "file is unreachable") \
@@ -260,7 +262,7 @@ template<> AtomicTypeID get_atomic_typeid< cnm >();
 for_all_atomic_datatypes(declare_typeid_getter)
 # undef declare_typeid_getter
 
-};  // namespace goo
+}  // namespace goo
 
 # endif  // __cplusplus
 

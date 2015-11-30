@@ -1,5 +1,5 @@
-# ifndef HPH_EXCEPTION_HPP
-# define HPH_EXCEPTION_HPP
+# ifndef GOO_EXCEPTION_HPP
+# define GOO_EXCEPTION_HPP
 
 # include "goo_types.h"
 # include "goo_ansi_escseq.h"
@@ -8,7 +8,7 @@
 # ifdef __cplusplus
 #   include <string>
 #   include <exception>
-#   ifdef EXCEPTION_BACTRACE
+#   ifdef EM_STACK_UNWINDING
 #       include <forward_list>
 #       ifndef NO_BFD_LIB
 #           include <bfd.h>
@@ -30,8 +30,8 @@
  * Goo use exceptions as an general error reporting mechanism.
  * Exceptions on various build configurations provides a way
  * to extract a stacktrase information even when no debug
- * info is given (in that case this info is however rather
- * uninformative). To disable stactrace set the EXCEPTION_BACTRACE cmake
+ * info is given (in that case this info is not, however, rather
+ * uninformative). To disable stactrace set the EM_STACK_UNWINDING cmake
  * option to OFF.
  *
  * Each exception reason is encoded by unique number from enum.
@@ -39,7 +39,8 @@
  * description that usually provides a detailed description.
  *
  * Exceptions are thrown with emraise() macro with variadic
- * arguments and ANSI printf() format string.
+ * arguments and ANSI printf() format string. It is a recommended way
+ * as emraise internally checks for user reporting system (see below).
  *
  * There are three developments shortcuts:
  * _TODO_, _UNSUPPORTED_, _FORBIDDEN_CALL_.
@@ -47,13 +48,21 @@
  * There are also several helper macro providing standard way to
  * report things:
  *  * dprintf() -- to print a debug info (disabled when NDEBUG macro provided)
- *  * warning() -- to print a warning.
+ *  * wprintf() -- to print a warning.
  *  * eprintf() -- to print an error without throwing an exception.
  * Each macro shortcut uses ANSI printf() syntax and have buffer length
  * limited to 512 bytes. When NDEBUG definition is not defined each
  * message from that shortcut will be prefixed with info about
  * place where it was invoked: source file, line and current routine
  * name and signature.
+ *
+ * Taking into account that sometimes user desires to trigger its own
+ * error-reporting system routines, we provide a way to report an error
+ * to user's handler and, depending on its result throw or not a
+ * Goo's exception. See Exception::user_raise routine.
+ *
+ * It's recommended for your code that uses goo::Exception to check
+ * the Exception::user_raise() first.
  */
 
 /*!\def emraise
@@ -63,10 +72,12 @@
  * Format is standard for ANSI printf() family.
  * \param c is a encoded generic error ID from for_all_errorcodes macro.
  */
-# define emraise( c, ... ) while(true){ \
-    char bf[EMERGENCY_BUFLEN]; \
-    snprintf(bf, EMERGENCY_BUFLEN, __VA_ARGS__ ); \
-    throw goo::Exception((int) goo::Exception::c, bf );}
+# define emraise( c, ... ) while(true){                                 \
+    char bf[GOO_EMERGENCY_BUFLEN];                                      \
+    snprintf(bf, GOO_EMERGENCY_BUFLEN, __VA_ARGS__ );                   \
+    if( goo::Exception::user_raise((int) goo::Exception::c, bf ) ) {    \
+        throw goo::Exception((int) goo::Exception::c, bf );}            \
+    }
 
 /*!\def _TODO_
  * \brief Development helper macro to raise 'unimplemented' error.
@@ -86,9 +97,9 @@
 # define _FORBIDDEN_CALL_ emraise( badArchitect, "(forbidden call) %s:%d %s", __FILE__, __LINE__, __PRETTY_FUNCTION__ )
 
 /*!\def eprintf
- * \brief Prints error message to standard Hph's error stream.
+ * \brief Prints error message to standard Goo's error stream.
  * \ingroup errors */
-# ifdef PRINTF_SOURCE_INFO
+# ifdef SOURCE_POSITION_INFO
 # define eprintf( ... ) while(1) {      \
     char  bf[256];                      \
     char  prfxBf[512];                  \
@@ -113,11 +124,11 @@
 # endif
 
 /*!\def dprintf
- * \brief Prints debug message to standard Hph's error stream.
+ * \brief Prints debug message to standard Goo's error stream.
  * Enabled only in debug builds.
  * \ingroup errors */
 # ifndef NDEBUG
-# ifdef PRINTF_SOURCE_INFO
+# ifdef SOURCE_POSITION_INFO
 # define dprintf( ... ) while(1) {      \
     char  bf[256];                      \
     char  prfxBf[512];                  \
@@ -128,7 +139,7 @@
     fputs(prfxBf, stderr);              \
     break;                              \
 };
-# else  // PRINTF_SOURCE_INFO
+# else  // SOURCE_POSITION_INFO
 # define dprintf( ... ) while(1) {      \
     char  bf[256];                      \
     char  prfxBf[512];                  \
@@ -139,16 +150,16 @@
     fputs(prfxBf, stderr);              \
     break;                              \
 };
-# endif // PRINTF_SOURCE_INFO
+# endif // SOURCE_POSITION_INFO
 # else
 # define dprintf( ... ) ((void)(0));
 # endif
 
-/*!\def warning
- * \brief Prints warn message to standard Hph's error stream.
+/*!\def wprintf
+ * \brief Prints warn message to standard Goo's error stream.
  * \ingroup errors */
-# ifdef PRINTF_SOURCE_INFO
-# define warning( ... ) while(1) {      \
+# ifdef SOURCE_POSITION_INFO
+# define wprintf( ... ) while(1) {      \
     char  bf[256];                      \
     char  prfxBf[512];                  \
     snprintf(prfxBf, 256, ESC_BLDYELLOW "[W%7s]" ESC_CLRCLEAR " at %s:%d %s", hctime(), __FILE__, __LINE__, __PRETTY_FUNCTION__); \
@@ -159,7 +170,7 @@
     break;                              \
 };
 # else
-# define warning( ... ) while(1) {      \
+# define wprintf( ... ) while(1) {      \
     char  bf[256];                      \
     char  prfxBf[512];                  \
     snprintf(prfxBf, 256, ESC_BLDYELLOW "[W%7s]" ESC_CLRCLEAR " ", hctime() ); \
@@ -182,9 +193,8 @@ typedef std::string String;
 # error "Allocators subsystem is supported, but actual emString implementation is still unimplemented."
 # endif
 
+# ifdef EM_STACK_UNWINDING
 struct StackTraceInfoEntry {
-    bfd_vma     addr,           ///< runtime ELF address
-                soLibAddr;      ///< static shared library ELF address
     unsigned int lFound;        ///< 1 if line was found, 0 otherwise.
     unsigned int lineno;        ///< line number
     String      function,       ///< function name (possibly, mangled)
@@ -192,6 +202,8 @@ struct StackTraceInfoEntry {
                 srcFilename,    ///< source filename
                 failure;        ///< failure reason
 # ifndef NO_BFD_LIB
+    bfd_vma     addr,           ///< runtime ELF address
+                soLibAddr;      ///< static shared library ELF address
     asymbol **  sTable;
 # endif
 };
@@ -199,13 +211,15 @@ typedef std::forward_list<StackTraceInfoEntry> List; // TODO
 
 std::ostream & operator<<(std::ostream& os, const StackTraceInfoEntry & t);
 
+# endif  // EM_STACK_UNWINDING
+
 }  // namespace em (emergency)
 
 /*!\class Exception
  * \ingroup errors
- * \brief Haephestus exception instance.
+ * \brief Goo exception instance.
  *
- * Haephestus' own Exception class that holds following descriptive info:
+ * Goo's own Exception class that holds following descriptive info:
  * error code (see for_all_errorcodes macro).
  *
  * Use dump() to print all information carried by instance.
@@ -218,10 +232,15 @@ public:
         static const ErrCode nm;
     for_all_errorcodes( declare_static_const )
     # undef declare_static_const
+    /// User's handler slot. Should return true wher exception throw is approved.
+    static bool (*user_raise)( const ErrCode      c,
+                               const em::String & s );
+    /// Default raise trigger -- always approves exception throw.
+    static bool goo_raise( const ErrCode, const em::String & );
 protected:
     ErrCode       _code;
     em::String    _what;
-    # ifdef EXCEPTION_BACTRACE
+    # ifdef EM_STACK_UNWINDING
     em::List      _stacktrace;
     void _get_trace() throw();
     # endif
@@ -234,7 +253,7 @@ public:
 
     virtual ~Exception( ) throw();
 
-    /// Hph's error code getter.
+    /// Goo's error code getter.
     inline ErrCode code() const { return _code; }
     /// Generic method for printing a brief info.
     virtual const char * what() const throw() { return _what.c_str(); }
@@ -256,19 +275,35 @@ String demangle_function( const String & name );
 extern "C" {
 # endif
 
-/**@brief raises custom HPH-exception from c-code
+/**@brief raises custom GOO-exception from c-code
  *
- * C-function with C++ linkage that throws HPH-exception.
+ * C-function with C++ linkage that throws Goo-exception.
  * Not defined for C++ code.
  */
-extern int C_error( ErrCode, const char * fmt, ... );
+int C_error( ErrCode, const char * fmt, ... );
+
+# define declare_error_code_C_alias( code, name, descr ) \
+extern const ErrCode goo_e_ ## name;
+for_all_statuscodes( declare_error_code_C_alias )
+# undef declare_error_code_C_alias
 
 # ifdef __cplusplus
 } // extern "C"
 # endif
 
 
+# ifndef NDEBUG
+# ifdef __cplusplus /* C++ --- use exception */
+# define DBG_NULLPTR_CHECK( ptr, ... ) \
+{ if(!ptr){ emraise( nullPtr, __VA_ARGS__ ); } }
+# else  /* pure C --- use wrapper */
+# define DBG_NULLPTR_CHECK( ptr, ... ) \
+{ if(!ptr){ emraise( nullPtr, __VA_ARGS__ ); } }
+# endif
+# endif  /* NDEBUG */
+
+
 /*! @} */
 
-# endif  /* HPH_EXCEPTION_HPP */
+# endif  /* GOO_EXCEPTION_HPP */
 

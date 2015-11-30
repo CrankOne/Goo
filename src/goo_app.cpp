@@ -11,7 +11,7 @@ namespace goo {
 
 /**@namespace aux
  *
- * Sys namespace constains Hephaestus auxillary classes. One usually
+ * Sys namespace constains Goo auxillary classes. One usually
  * has no need to deal with these objects.
  */ namespace aux {
 
@@ -76,7 +76,7 @@ iApp::add_handler( SignalCode code,
                     )
             );
         if( suppressDefault ) {
-            warning( "default system \
+            wprintf( "default system \
 handler suppression has no effect when adding \
 handler is not first in stack." );
         }

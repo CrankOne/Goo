@@ -12,7 +12,7 @@
 
 namespace std {
 template<bool B, typename T = void> using disable_if = enable_if<!B, T>;
-};
+}
 
 namespace stdE {
 
@@ -192,21 +192,6 @@ void cf_write( FILE *, Size, const void * );
 
 /// fread() with exception on error shortcut
 void cf_read( FILE *, Size, void * );
-
-template<typename T>
-T closest_value(std::vector<T> const& vec, T value) {
-    auto it = std::lower_bound(vec.begin(), vec.end(), value);
-    if(it == vec.end()) {  // all elements are less than ``value''
-        return *vec.crbegin();
-    } else if( it == vec.cbegin() ) {  // all elements are greater then ``value''
-        return *it;
-    }
-    const T & right = *it,
-            & left  = *(--it);
-    T distanceBefore = value - left,
-      distanceAfter  = right - value;
-    return ( distanceBefore > distanceAfter ? right : left );
-}
 
 /// Uses printf()-like syntax to produce std::string in one-line expr.
 std::string strfmt( const char * fmt, ... );

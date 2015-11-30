@@ -1,7 +1,7 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
-# include "gds/goo_interpreter.h"
+# include "gds/interpreter.h"
 
 # ifdef ENABLE_GDS
 

@@ -24,7 +24,7 @@ TQ  \"{3}
 %s FORMULA
 
 %{
-# include "gds/goo_interpreter.h"
+# include "gds/interpreter.h"
 # include "gds_parser.generated.h"
 # define MEMTOKEN(tc)                                                   \
     yyget_lval( yyscanner )->strval =                                   \

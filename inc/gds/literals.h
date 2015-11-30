@@ -3,7 +3,6 @@
 
 # include "goo_config.h"
 # include "goo_types.h"
-# include "gds/goo_gds_forwards.h"
 
 # ifdef ENABLE_GDS
 

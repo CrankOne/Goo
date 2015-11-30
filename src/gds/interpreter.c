@@ -2,7 +2,7 @@
 # include <string.h>
 # include <stdio.h>
 # include <assert.h>
-# include "gds/goo_interpreter.h"
+# include "gds/interpreter.h"
 
 # ifdef ENABLE_GDS
 

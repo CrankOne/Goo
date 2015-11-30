@@ -13,18 +13,21 @@ set( GOO_VERSION_MINOR 1 )
 # Right below are some build options that can be enabled or
 # disabled by -D<option_name>=<ON|OFF> option given to CMake.
 
-
-option( PRINTF_SOURCE_INFO  "Supplement printing lines with source file info."  OFF)
-option( EXCEPTION_BACTRACE  "C++ exception throw produce a stack unwinding."    ON )
-option( PRINTING_ANSI_ESC   "Terminal messages coloring."                       ON )
+option( TYPES_128BIT_LENGTH     "Enable 128-bit length types."                      OFF)
+option( SOURCE_POSITION_INFO    "Supplement printing lines with source file info."  OFF)
+option( EM_STACK_UNWINDING      "C++ exception throw produce a stack unwinding."    ON )
+option( ANSI_ESCSEQ_PRINT       "Terminal messages coloring."                       ON )
 # The lines below is a development features, basically located at other
 # git branches:
-option( ENABLE_GDS          "Goo Declarative Semantics."                        ON )
-option( ENABLE_ALLOCATORS   "Goo's own allocators subsystem."                   OFF)
-option( ENABLE_TENSORS      "Tensorial algebra support template classes."       OFF)
-option( ENABLE_DATASTREAMS  "Goo's serialization template classes."             OFF)
-option( ENABLE_PTREE        "Goo's getopt()-like mechanism."                    OFF)
-option( HASKELL_MODULE      "Haskell extensions."                               OFF)
+option( ENABLE_GDS              "Goo Declarative Semantics."                        OFF)
+option( ENABLE_ALLOCATORS       "Goo's own allocators subsystem."                   OFF)
+option( ENABLE_TENSORS          "Tensorial algebra support template classes."       OFF)
+option( ENABLE_DATASTREAMS      "Goo's serialization template classes."             OFF)
+option( ENABLE_PTREE            "Goo's getopt()-like mechanism."                    OFF)
+option( HASKELL_MODULE          "Haskell extensions."                               OFF)
+option( GOO_INSTALL_HEADERS     "Install library headers at prefix path."           ON )
+option( GENERATE_PKGCFG_MODULE  "Generates pkg-config module."                      ON )
+option( GENERATE_CMAKE_MODULE   "Generates library's FindGoo.cmake module."         ON )
 
 #
 # Find third-party packages
@@ -34,9 +37,9 @@ find_package( ZLIB  )
 find_package( Lzo   )
 find_package( BZip2 )
 find_package( Git   )
-if( EXCEPTION_BACTRACE )
-    find_package( BFD   )
-endif( EXCEPTION_BACTRACE )
+if( EM_STACK_UNWINDING )
+    find_package( BFD  REQUIRED )
+endif( EM_STACK_UNWINDING )
 if( GIT_FOUND )
     # obtain current commit hash
     EXECUTE_PROCESS(COMMAND git rev-parse HEAD OUTPUT_VARIABLE COMMIT_HASH
@@ -63,7 +66,7 @@ ADD_CUSTOM_TARGET(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake") 
 
 #
-# Switch installation prefix, if provided (otherwise, set to /usr/local)
+# If installation prefix is default, set it to /usr/local
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "/usr/local" CACHE PATH "default install path" FORCE )
 endif()
@@ -113,8 +116,8 @@ set( GOO_LIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/inc/" )
 
 #
 # Configure compiler -- base flags
-set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -I${GOO_LIB_INCLUDE_DIR} -std=c99" )
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -I${GOO_LIB_INCLUDE_DIR} -std=gnu++11" )
+set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++11" )
 if( CMAKE_COMPILER_IS_GNUCXX )
     set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -rdynamic" )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic" )
@@ -154,6 +157,10 @@ else()
     set( CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -DNDEBUG -O3" )
 endif()
 
+include_directories(
+        ${GOO_LIB_INCLUDE_DIR}
+    )
+
 #
 # Configure source
 file(GLOB_RECURSE GOO_LIB_SOURCES src/*.c*)
@@ -161,6 +168,27 @@ configure_file (
     "${GOO_LIB_INCLUDE_DIR}/goo_config.h.in"
     "${GOO_LIB_INCLUDE_DIR}/goo_config.h"
 )
+
+if( GENERATE_PKGCFG_MODULE )
+    configure_file (
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc.in"
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc"
+        @ONLY
+    )
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc"
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/share/pkgconfig )
+endif( GENERATE_PKGCFG_MODULE )
+
+if( GENERATE_CMAKE_MODULE )
+    configure_file (
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake.in"
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake"
+        @ONLY
+    )
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake"
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules )
+endif( GENERATE_CMAKE_MODULE )
+
 if( GIT_FOUND )
     # This fake causes cmake to reconfigure itself when git versioning
     # information is changed.
@@ -178,6 +206,10 @@ add_library( goo SHARED
     )
 
 install( TARGETS goo LIBRARY DESTINATION lib )
+if( GOO_INSTALL_HEADERS )
+    install( DIRECTORY inc/ DESTINATION include/goo FILES_MATCHING PATTERN
+        "*.h" PATTERN "*.hpp" PATTERN "*.tcc" PATTERN "*.itcc" )
+endif( GOO_INSTALL_HEADERS )
 
 #
 # Misc third-party libraries
@@ -191,15 +223,15 @@ if( BZIP2_FOUND )
     target_link_libraries( goo ${BZIP2_LIBRARIES} )
 endif( BZIP2_FOUND )
 
-if( EXCEPTION_BACTRACE )
+if( EM_STACK_UNWINDING )
     if( BFD_FOUND )
-        target_link_libraries( goo ${BFD_LIB} )
+        target_link_libraries( goo ${BFD_LIBRARY} )
     endif( BFD_FOUND )
     if( HASKELL_MODULE )
         target_link_libraries( goo HSrts-ghc${CMAKE_Haskell_NUMERIC_VERSION} )
     endif( HASKELL_MODULE )
-    # ... ither bactrace libs here
-endif( EXCEPTION_BACTRACE )
+    # ... other bactrace libs here
+endif( EM_STACK_UNWINDING )
 
 #
 # Build enabled routines

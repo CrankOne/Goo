@@ -5,9 +5,10 @@
  * Shell colors
  */
 
-# ifdef PRINTING_ANSI_ESC
+# ifdef ANSI_ESCSEQ_PRINT
 
-# define ESC_CLRBOLD    "\033[1;30m"
+# define ESC_CLRBOLD    "\033[0;1m"
+# define ESC_CLRITALIC  "\033[0;3m"
 
 # define ESC_BLDRED     "\033[1;31m"
 # define ESC_BLDGREEN   "\033[1;32m"
@@ -35,9 +36,10 @@
 
 # define ESC_CLRCLEAR   "\033[0m"
 
-# else /* PRINTING_ANSI_ESC */
+# else /* ANSI_ESCSEQ_PRINT */
 
 # define ESC_CLRBOLD    ""
+# define ESC_CLRITALIC  ""
 
 # define ESC_BLDRED     ""
 # define ESC_BLDGREEN   ""
@@ -47,7 +49,13 @@
 # define ESC_BLDCYAN    ""
 # define ESC_BLDWHITE   ""
 
+# define ESC_CLRRED     ""
 # define ESC_CLRGREEN   ""
+# define ESC_CLRYELLOW  ""
+# define ESC_CLRBLUE    ""
+# define ESC_CLRVIOLET  ""
+# define ESC_CLRCYAN    ""
+# define ESC_CLRWHITE   ""
 
 # define ESC_UNLRED     ""
 # define ESC_UNLGREEN   ""
@@ -59,5 +67,5 @@
 
 # define ESC_CLRCLEAR   ""
 
-# endif  /* PRINTING_ANSI_ESC */
+# endif  /* ANSI_ESCSEQ_PRINT */
 # endif  /* H_GOO_ANSI_ESCAPE_SEQUENCES_H */

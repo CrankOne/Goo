@@ -1,4 +1,6 @@
-find_library( BFD_LIB	    NAMES bfd	    PATH /usr/lib /usr/lib64 )
+#find_library( BFD_LIBRARY NAMES bfd PATH /usr/lib /usr/lib64 )
+
+find_package_handle_standard_args(bfd DEFAULT_MSG BFD_LIBRARY )
 
 include(CheckCSourceCompiles)
 check_c_source_compiles(
@@ -8,10 +10,7 @@ check_c_source_compiles(
   int main(void) {
   return 0;
   }" BFD_WORKS)
-if( BFD_LIB AND BFD_WORKS)
-	set( BFD_FOUND TRUE )
-endif( BFD_LIB AND BFD_WORKS)
+#if( BFD_LIBRARY AND BFD_WORKS)
+#    message( STATUS "Found libbfd: ${BFD_LIBRARY}")
+#endif( BFD_LIBRARY AND BFD_WORKS)
 
-if( BFD_FOUND )
-	message( STATUS "Found libbfd: ${BFD_LIB}")
-endif( BFD_FOUND )

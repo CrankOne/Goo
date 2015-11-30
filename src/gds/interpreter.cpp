@@ -6,7 +6,7 @@
 # include <unordered_set>
 # include <cassert>
 
-# include "gds/goo_interpreter.h"
+# include "gds/interpreter.h"
 # include "goo_exception.hpp"
 
 //

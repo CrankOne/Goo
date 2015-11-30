@@ -37,13 +37,9 @@
 
 # include <stdio.h>
 
-# include "goo_gds_forwards.h"
-# include "goo_literals.h"
-# include "goo_variables.h"
-# include "goo_functions.h"
-# include "goo_expressions.h"
-# include "goo_array.h"
-# include "goo_range.h"
+/*# include "goo_gds_forwards.h"*/
+# include "literals.h"
+# include "expression.h"
 
 # ifdef __cplusplus
 extern "C" {
@@ -153,10 +149,7 @@ for_all_parser_lists(gds_list_declare_routines);
  */
 
 # define for_all_parser_owned_pools(m)              \
-    m( struct, Literal,     256*1024    )           \
-    m( struct, Function,    256*1024    )           \
-    m( struct, Expr,     4*1024*1024    )           \
-    m( struct, PcwsTrm,          256    )
+    m( struct, Literal,     256*1024    )
 
 /*
  * Parser
@@ -265,8 +258,10 @@ void gds_parser_push_locvar_arglist( struct gds_Parser *, union gds_ArgList * );
 /** Denies current local variables dictionary and sets current to previous. */
 void gds_parser_pop_locvar_arglist( struct gds_Parser * P );
 
+# if 0
 /** Produces pools-unrelated deep copy of a function. */
 struct gds_Function * gds_parser_deepcopy_function( struct gds_Parser * P, struct gds_Function * f );
+# endif
 
 /*
  * Flex-related routines.
