@@ -1,5 +1,5 @@
-# ifndef H_HPHST_UTEST_H
-# define H_HPHST_UTEST_H
+# ifndef H_GOO_UTEST_H
+# define H_GOO_UTEST_H
 
 # include <string>
 # include <map>
@@ -99,5 +99,5 @@ if( !(expr) ) { emraise( uTestFailure, __VA_ARGS__ ); }
 }  // namespace ut
 }  // namespace goo
 
-# endif  // H_HPHST_UTEST_H
+# endif  // H_GOO_UTEST_H
 

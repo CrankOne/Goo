@@ -4,7 +4,7 @@
 
 # include "goo_app.hpp"
 # include "goo_versioning.h"
-# include "gds/goo_interpreter.h"
+# include "gds/interpreter.h"
 
 static struct GDSIConf {
     uint8_t v;
@@ -15,7 +15,7 @@ class GDSInterpreterApplication :
     public goo::App<GDSIConf, std::ostream> {
 public:
     /// Creates instance of type ConfigObjectT according to command-line arguments
-    virtual GDSIConf * _V_construct_config_object( int argc, char * argv[] ) const override;
+    virtual GDSIConf * _V_construct_config_object( int argc, char * const argv[] ) const override;
     /// Configures application according to recently constructed config object.
     virtual void _V_configure_application( const GDSIConf * ) override;
     /// Should create the logging stream of type LogStreamT (app already configured).
@@ -49,7 +49,7 @@ Official repository page for this version:\n\r\
 ", utilname);}
 
 GDSIConf *
-GDSInterpreterApplication::_V_construct_config_object( int argc, char * argv[] ) const {
+GDSInterpreterApplication::_V_construct_config_object( int argc, char * const argv[] ) const {
     {
         int c;
         while (1) {
@@ -109,11 +109,11 @@ GDSInterpreterApplication::_V_run() {
     gds_eval_string( P, "True" );
     gds_parser_destroy(P);
     # else
-    if( co()->v ) {
+    if( co().v ) {
         std::cout << "Goo Declarative Semantics interpreter application." << std::endl
-                  << " Build: " << hphVersioning.buildTimestamp << ", "
-                     << hphVersioning.gitCommitHash << ";" << std::endl
-                  << " Features: 0x" << std::hex << hphVersioning.encodedFeatures 
+                  << " Build: " << gooVersioning.buildTimestamp << ", "
+                     << gooVersioning.gitCommitHash << ";" << std::endl
+                  << " Features: 0x" << std::hex << gooVersioning.encodedFeatures 
                      << ";" << std::endl;
         if( _static_gdsiConf.files.empty() ) {
             std::cout << "No source files provided -- starting interactive session."
@@ -134,7 +134,7 @@ GDSInterpreterApplication::_V_run() {
                     std::cerr << "Couldn't open file \"" << *it << "\"." << std::endl;
                     continue;  // TODO: explaination.
                 }
-                if( co()->v ) {
+                if( co().v ) {
                     std::cout << "Processing file \"" << *it << "\"..." << std::endl;
                 }
                 gds_eval_file( P, inFile );

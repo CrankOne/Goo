@@ -1,4 +1,4 @@
-#find_library( BFD_LIBRARY NAMES bfd PATH /usr/lib /usr/lib64 )
+find_library( BFD_LIBRARY NAMES bfd PATH /usr/lib /usr/lib64 )
 
 find_package_handle_standard_args(bfd DEFAULT_MSG BFD_LIBRARY )
 
