@@ -255,6 +255,7 @@ gds_parser_pop_locvar_arglist(
     }
 }
 
+# if 0
 struct gds_Function *
 gds_parser_deepcopy_function(
         struct gds_Parser * P,
@@ -267,6 +268,7 @@ gds_parser_deepcopy_function(
     free( f->content.asFunction.name );
     return copiedF;
 }
+# endif
 
 # endif  /* ENABLE_GDS */
 

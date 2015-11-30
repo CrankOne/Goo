@@ -45,6 +45,9 @@
 extern "C" {
 # endif /* __cplusplus */
 
+/** \note implemented in lexer file */
+void gds_error( struct gds_Parser * P, const char * det );
+
 /**@typedef gds_Hashtable
  * @brief A GDS hash table -- string-indexed dictionary of arbitrary data.
  *

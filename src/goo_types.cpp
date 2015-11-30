@@ -4,7 +4,7 @@
 # include "goo_exception.hpp"
 # include "goo_types.h"
 # ifdef ENABLE_GDS
-# include "gds/goo_interpreter.h"
+# include "gds/interpreter.h"
 # endif
 
 namespace goo {

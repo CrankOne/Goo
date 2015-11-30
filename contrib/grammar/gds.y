@@ -1,7 +1,7 @@
 %{
 # include <assert.h>
 # include <string.h>
-# include "gds/goo_interpreter.h"
+# include "gds/interpreter.h"
 
 /* See:
  * http://lists.gnu.org/archive/html/bug-bison/2014-02/msg00002.html
@@ -94,7 +94,7 @@ void yyerror();
 # include <stdlib.h>
 # include <stdio.h>
 # include <string.h>
-# include "gds/goo_interpreter.h"
+# include "gds/interpreter.h"
 
 void
 yyerror( struct YYLTYPE * locp, struct gds_Parser * P, const char * msg ) {
