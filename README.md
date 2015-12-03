@@ -1,6 +1,6 @@
 *This readme is realated only for generic (master) branch of Goo library.*
 
-# The Goo
+# The Goo [[#](#the-goo)]
 
 This library composes together some stuff I've done during my
 scientific application development. I'm trying to follow a strict
@@ -13,7 +13,7 @@ poor-implemented things. Actually, many of them (e.g.
 boost::variables\_map) were just found inconvinient to me, so I'd
 prefer to develop my own replacement.
 
-# Brief installation notes
+# Brief installation notes [[#](#brief-install)]
 
 If one came to this page, it most probably means that this library is need
 as a dependency since I often include it into other projects. If so, I would
@@ -30,7 +30,7 @@ recomment to use this snippet for quick build and non-obtrusive installation:
 One can choose any path for DESTDIR where goo library would be installed. Just
 be sure you can point out this directory for subsequent build operations.
 
-## Master branch description
+## Master branch description [[#](#branch-description)]
 
 Each module I develop here usually has its own branch. The `master`
 branch is intended to be only compilative all-in-one branch for putting
@@ -40,7 +40,7 @@ The `master` branch contains only generic application framework library for
 all descendant branches: application class, exceptions and modest unit-testing
 facility.
 
-## Other branches
+## Other branches [[#](#other-branches)]
 
 Excluding several initial commits, I've planning to develop the
 following things in parallel before thhe first release at
@@ -63,7 +63,7 @@ following things in parallel before thhe first release at
 One can not probably find all of them at my [bitbucket repo](https://bitbucket.org/CrankOne/goo/)
 whilst I'm working on those features mostly at my spare time on a whim.
 
-# License
+# License [[#](#license-info)]
 
 All non-contributed code here can be distributed by the terms of MIT
 license and thereby are free for commercial use.
