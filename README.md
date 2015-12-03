@@ -13,7 +13,7 @@ poor-implemented things. Actually, many of them (e.g.
 boost::variables\_map) were just found inconvinient to me, so I'd
 prefer to develop my own replacement.
 
-# <a name="quick-install"></a> Brief installation notes
+# Brief installation notes
 
 If one came to this page, it most probably means that this library is need
 as a dependency since I often include it into other projects. If so, I would
@@ -67,4 +67,3 @@ whilst I'm working on those features mostly at my spare time on a whim.
 
 All non-contributed code here can be distributed by the terms of MIT
 license and thereby are free for commercial use.
-
