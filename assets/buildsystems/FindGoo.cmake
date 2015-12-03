@@ -23,7 +23,7 @@ cmake_minimum_required( VERSION 3.1 )
 #                           awk -F ":" '{print $2}' | sed -e 's/^[ \t]*//;s/[ \t]*$//'
 # gives the path of used C++-compiler.
 
-list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "/home/crank/Projects/goo.install/lib" isSystemDir)
+list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "/usr/local/lib" isSystemDir)
 
 # find pkg config
 find_package(PkgConfig)
@@ -31,9 +31,9 @@ find_package(PkgConfig)
 if( ${PKGCONFIG_FOUND} )
     if("${isSystemDir}" STREQUAL "-1")
         # doesn't wok (why? -- cmake 3.1 pkgconfig module should support it this way)
-        #set( PKG_CONFIG_USE_CMAKE_PREFIX_PATH "/home/crank/Projects/goo.install/share/pkgconfig" )
+        #set( PKG_CONFIG_USE_CMAKE_PREFIX_PATH "/usr/local/share/pkgconfig" )
         # or, for earlier CMake versions:
-        set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/home/crank/Projects/goo.install/share/pkgconfig" )
+        set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/share/pkgconfig" )
     endif("${isSystemDir}" STREQUAL "-1")
     pkg_check_modules(pc_goo QUIET goo)  # use prefix wc_goo...
     if("${pc_goo_FOUND}" STREQUAL "1")
@@ -59,8 +59,8 @@ else( ${PKGCONFIG_FOUND} )
     message( SEND_ERROR "pkgconfig isn't found. Pure CMake configuration is unimplemented yet (TODO). Sorry." )
 endif( ${PKGCONFIG_FOUND} )
 
-set( goo_C_FLAGS   "   -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99 -rdynamic"   )
-set( goo_CXX_FLAGS " -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++11 -rdynamic" )
+set( goo_C_FLAGS   " -Wall -std=c99   -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99"   )
+set( goo_CXX_FLAGS " -Wall -std=gnu++11 -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++11" )
 
 message( STATUS "Found goo library configuration:" )
 message( STATUS "    built for: debug" )
