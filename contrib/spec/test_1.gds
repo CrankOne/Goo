@@ -1,7 +1,0 @@
-# Simplest interpretator test:
-
-# This line makes interpreter to print out root expression/scope
-!evaluator printout
-
-1.23  # should cause printout of single floating point value
-

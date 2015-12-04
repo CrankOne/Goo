@@ -25,6 +25,7 @@ option( ENABLE_TENSORS          "Tensorial algebra support template classes."   
 option( ENABLE_DATASTREAMS      "Goo's serialization template classes."             OFF)
 option( ENABLE_PTREE            "Goo's getopt()-like mechanism."                    OFF)
 option( HASKELL_MODULE          "Haskell extensions."                               OFF)
+# Install options:
 option( GOO_INSTALL_HEADERS     "Install library headers at prefix path."           ON )
 option( GENERATE_PKGCFG_MODULE  "Generates pkg-config module."                      ON )
 option( GENERATE_CMAKE_MODULE   "Generates library's FindGoo.cmake module."         ON )
