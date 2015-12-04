@@ -13,7 +13,7 @@ poor-implemented things. Actually, many of them (e.g.
 boost::variables\_map) were just found inconvinient to me, so I'd
 prefer to develop my own replacement.
 
-# Short install recommendations
+# <a name="quick-install"></a> Brief installation notes
 
 If one came to this page, it most probably means that this library is need
 as a dependency since I often include it into other projects. If so, I would
@@ -27,7 +27,8 @@ recomment to use this snippet for quick build and non-obtrusive installation:
     $ make
     $ make DESTDIR=/opt/goo install
 
-One can choose any path for DESTDIR where goo library would be installed.
+One can choose any path for DESTDIR where goo library would be installed. Just
+be sure you can point out this directory for subsequent build operations.
 
 ## Master branch description
 
