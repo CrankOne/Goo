@@ -2,6 +2,7 @@
 # include <assert.h>
 # include <string.h>
 # include "gds/interpreter.h"
+# include "gds/expression.h"
 
 /* See:
  * http://lists.gnu.org/archive/html/bug-bison/2014-02/msg00002.html
@@ -23,7 +24,7 @@ void yyerror();
 
 %union {
                   const char * strval;
-          struct gds_Literal * literal;
+   struct ArithmeticConstant * arithLit;
 }
 
 %token              T_TRUE      T_FALSE
@@ -44,7 +45,7 @@ void yyerror();
 %type<strval>       T_STRING_LITERAL UNKNWN_SYM
 
 
-%type<literal>      literal numerical integral floatingPoint logic string;
+%type<arithLit> numerical integral floatingPoint;
 
 
 %left P_LAND
@@ -60,34 +61,42 @@ void yyerror();
 
 %%
 
-     expression : literal   { /*$$ = gds_expression_from_literal(P, $1); TODO */ }
-                ;
-
-        literal : logic         { $$ = $1; }
-                | numerical     { $$ = $1; }
-                | string        { $$ = $1; }
+     expression : numerical  { /*$$ = gds_expression_from_literal(P, $1); TODO */ }
                 ;
 
       numerical : integral      { $$ = $1; }
                 | floatingPoint { $$ = $1; }
                 ; 
 
-       integral : TI_BIN    { $$ = interpret_bin_integral(P, $1); }
-                | TI_OCT    { $$ = interpret_oct_integral(P, $1); }
-                | TI_HEX    { $$ = interpret_hex_integral(P, $1); }
-                | TI_ESC    { $$ = interpret_esc_integral(P, $1); }
-                | TI_DEC    { $$ = interpret_dec_integral(P, $1); }
+       integral : TI_BIN    {
+                                $$ = gds_parser_new_ArithmeticConstant(P);
+                                RIF( gds_interpr_integral_literal, $$, $1, 2 );
+                            }
+                | TI_OCT    {
+                                $$ = gds_parser_new_ArithmeticConstant(P);
+                                RIF( gds_interpr_integral_literal, $$, $1, 8 );
+                            }
+                | TI_HEX    {
+                                $$ = gds_parser_new_ArithmeticConstant(P);
+                                RIF( gds_interpr_integral_literal, $$, $1, 16 );
+                            }
+                | TI_ESC    {   $$ = gds_parser_new_ArithmeticConstant(P);
+                                RIF( gds_interpr_esc_integral, $$, $1 );
+                            }
+                | TI_DEC    {
+                                $$ = gds_parser_new_ArithmeticConstant(P);
+                                RIF( gds_interpr_integral_literal, $$, $1, 10 );
+                            }
                 ;
 
-  floatingPoint : TF_DEC    { $$ = interpret_float_dec(P, $1); }
-                | TF_HEX    { $$ = interpret_float_hex(P, $1); }
-                ;
-
-         string : T_STRING_LITERAL { $$ = interpret_string_literal( P, $1 ); }
-                ;
-
-          logic : T_TRUE    { $$ = interpret_logic_true(P); }
-                | T_FALSE   { $$ = interpret_logic_false(P); }
+  floatingPoint : TF_DEC    { 
+                                $$ = gds_parser_new_ArithmeticConstant(P);
+                                RIF( gds_interpr_float_literal, $$, $1, 10 );
+                            }
+                | TF_HEX    {   
+                                $$ = gds_parser_new_ArithmeticConstant(P);
+                                RIF( gds_interpr_float_literal, $$, $1, 16 );
+                            }
                 ;
 
 %%

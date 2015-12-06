@@ -1,12 +1,12 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
-# include "gds/interpreter.h"
+# include <errno.h>
+# include <limits.h>
+# include "gds/literals.h"
+# include "gds/errtable.h"
 
 # ifdef ENABLE_GDS
-
-/* TODO */
-# if 0
 
 # define for_each_escseq_shortcut(m)        \
     m( 'a',     0x07 ) m( 'b',     0x08 )   \
@@ -18,7 +18,7 @@
     /* ... */
 
 uint32_t
-interpret_escseq(const char * s) {
+gds_interpret_escseq(const char * s) {
     uint32_t res = 0;
     switch(*s) {
         # define case_(chr, code) \
@@ -75,12 +75,14 @@ integral_parse_typemod_postfix( const char * intStr ) {
     return flags;
 }
 
-struct gds_Literal *
+static int /* typemod to 0x80 to parse */
 interpret_bin_integral(
-        struct gds_Parser * P,
-        const char * s ){
-    struct gds_Literal * v = gds_parser_new_Literal(P);
-    uint8_t typemod = integral_parse_typemod_postfix( s );
+        struct ArithmeticConstant * A,
+        const char * s,
+        uint8_t typemod ){
+    if( 0x80 == typemod ) {
+        typemod = integral_parse_typemod_postfix( s );
+    }
     unsigned long
     # ifdef EXTENDED_TYPES
         long
@@ -107,284 +109,167 @@ interpret_bin_integral(
         if( typemod & 0x4 ) {
             # ifdef EXTENDED_TYPES
             if( typemod & 0x1 ) {
-                v->data.UInt64Val = *((unsigned long long *) &val);
-                v->typecode = UInt128_CT;
+                A->value.ULLongVal = *((unsigned long long *) &val);
+                A->type = ULLong_T_code;
                 /*printf("XXX: \"%s\" bin int, ull, %llu.\n", s, val);*/
             } else {
-                v->data.Int64Val = *((long long *) &val);
-                v->typecode = UInt128_CT;
+                A->value.LLongVal = *((long long *) &val);
+                A->type = LLong_T_code;
                 /*printf("XXX: \"%s\" bin int, ll, %lld.\n", s, val);*/
             }
             # else
-            char bf[64];
-            snprintf(bf, 64, "\"%s\" -- 128-bit integer is unsupported", s );
-            gds_error( P, bf );
+            return -1;
             # endif
         } else {
             if( typemod & 0x1 ) {
-                v->data.UInt32Val = *((unsigned long *) &val);
-                v->typecode = UInt64_CT;
+                A->value.ULongVal = *((unsigned long *) &val);
+                A->type = ULong_T_code;
                 /*printf("XXX: \"%s\" bin int, ul, %lu.\n", s, val);*/
             } else {
-                v->data.Int32Val = *((long *) &val);
-                v->typecode = UInt64_CT;
+                A->value.SLongVal = *((long *) &val);
+                A->type = SLong_T_code;
                 /*printf("XXX: \"%s\" bin int, l, %ld.\n", s, val);*/
             }
         }
     } else {
         if( typemod & 0x1 ) {
-            v->data.UInt32Val = *((unsigned *) &val);
-            v->typecode = UInt32_CT;
+            A->value.UIntVal = *((unsigned *) &val);
+            A->type = UInt_T_code;
             /*printf("XXX: \"%s\" bin int, u, %u.\n", s, (unsigned int) val);*/
         } else {
-            v->data.Int32Val = *((int *) &val);
-            v->typecode = UInt32_CT;
+            A->value.SIntVal = *((int *) &val);
+            A->type = SInt_T_code;
             /*printf("XXX: \"%s\" bin int, %d.\n", s, (int) val);*/
         }
     }
-    return v;
+    return 0;
 }
 
-struct gds_Literal *
-interpret_oct_integral(
-        struct gds_Parser * P,
-        const char * s ){
-    /* TODO:
-     *  1) Check truncation errors here (strtoi has special behaviour);
-     *  2) Check extra symbols on tail and warn, if they're invalid.
-     */
-    struct gds_Literal * v = gds_parser_new_Literal(P);
+int
+gds_interpr_integral_literal(
+        struct ArithmeticConstant * A,
+        const char * s,
+        const uint8_t base
+        ) {
+    char * endCPtr = NULL;
+    errno = 0;
     uint8_t typemod = integral_parse_typemod_postfix( s );
-    char * endCPtr;
-    if( typemod & 0x2 ) {
-        if( typemod & 0x4 ) {
-            # ifdef EXTENDED_TYPES
-            if( typemod & 0x1 ) {
-                v->data.UInt64Val = strtoull( s, &endCPtr, 8 );
-                v->typecode = UInt128_CT;
+
+    # define check_ranges( val, min, max )                      \
+    if (    (errno == ERANGE && (val == max || val == min ))    \
+         || (errno != 0 && val == 0) ) {                        \
+       return -2; }
+
+    if( 2 == base ) { /* base 2 is special (can't be treated with strtoi() f-ns ) */
+        interpret_bin_integral( A, s, typemod );
+    } else if(
+                8 != base
+            && 10 != base
+            && 16 != base ) {
+        return -1;  /* base unsupported */
+    } else {
+        /* TODO:
+         *  1) Check truncation errors here (strtoi has special behaviour);
+         *  2) Check extra symbols on tail and warn, if they're invalid.
+         */
+        if( typemod & 0x2 ) {
+            if( typemod & 0x4 ) {
+                # ifdef EXTENDED_TYPES
+                if( typemod & 0x1 ) {
+                    A->value.ULLongVal = strtoull( s, &endCPtr, base );
+                    A->type = ULLong_T_code;
+                    check_ranges( /* TODO */ );
+                } else {
+                    A->value.LLongVal = strtoll( s, &endCPtr, base );
+                    A->type = LLong_T_code;
+                    check_ranges( /* TODO */ );
+                }
+                # else
+                return -1;
+                # endif
             } else {
-                v->data.Int64Val = strtoll( s, &endCPtr, 8 );
-                v->typecode = UInt128_CT;
+                if( typemod & 0x1 ) {
+                    A->value.ULongVal = strtoul( s, &endCPtr, base );
+                    A->type = ULong_T_code;
+                    check_ranges( A->value.ULongVal, 0, ULONG_MAX );
+                } else {
+                    A->value.SLongVal = strtol( s, &endCPtr, base );
+                    A->type = SLong_T_code;
+                    check_ranges( A->value.SLongVal, LONG_MIN, LONG_MAX );
+                }
             }
-            # else
-            char bf[64];
-            snprintf(bf, 64, "\"%s\" -- 128-bit integer is unsupported", s );
-            gds_error( P, bf );
-            # endif
         } else {
             if( typemod & 0x1 ) {
-                v->data.UInt64Val = strtoul( s, &endCPtr, 8 );
-                v->typecode = UInt64_CT;
+                A->value.UIntVal = strtoul( s, &endCPtr, base );
+                A->type = UInt_T_code;
+                check_ranges( A->value.UIntVal, 0, UINT_MAX );
             } else {
-                v->data.Int64Val = strtol( s, &endCPtr, 8 );
-                v->typecode = UInt64_CT;
+                A->value.SIntVal = strtol( s, &endCPtr, base );
+                A->type = SInt_T_code;
+                check_ranges( A->value.SIntVal, INT_MIN, INT_MAX );
             }
         }
-    } else {
-        if( typemod & 0x1 ) {
-            v->data.UInt32Val = strtoul( s, &endCPtr, 8 );
-            v->typecode = UInt32_CT;
-        } else {
-            v->data.Int32Val = strtol( s, &endCPtr, 8 );
-            v->typecode = Int32_CT;
+        if( endCPtr == s ) {
+            return -3; /* no digits were found */
+        }
+        if( '\0' != *endCPtr ) {
+            return 1;  /* extra symbols on tail */
         }
     }
-    return v;
-}
+    # undef check_ranges
+    return 0;
+} gds_declare_result_table_for_function(gds_interpr_integral_literal) {
+        { -1, "128-bytes long types are unsupported." },
+        { -2, "Integer value is too large and can not be correctly interpreted." },
+        { -3, "No digits where found for integral constant." },
+        {  1, "Extra symbols on tail." },
+    };
 
-struct gds_Literal *
-interpret_hex_integral(
-        struct gds_Parser * P,
-        const char * s ){
-    /* TODO:
-     *  1) Check truncation errors here (strtoi has special behaviour);
-     *  2) Check extra symbols on tail and warn, if they're invalid.
-     */
-    struct gds_Literal * v = gds_parser_new_Literal(P);
-    uint8_t typemod = integral_parse_typemod_postfix( s );
-    char * endCPtr;
-    if( typemod & 0x2 ) {
-        if( typemod & 0x4 ) {
-            # ifdef EXTENDED_TYPES
-            if( typemod & 0x1 ) {
-                v->data.UInt64Val = strtoull( s, &endCPtr, 16 );
-                v->typecode = UInt128_CT;
-            } else {
-                v->data.Int64Val = strtoll( s, &endCPtr, 16 );
-                v->typecode = UInt128_CT;
-            }
-            # else
-            char bf[64];
-            snprintf(bf, 64, "\"%s\" -- 128-bit integer is unsupported", s );
-            gds_error( P, bf );
-            # endif
-        } else {
-            if( typemod & 0x1 ) {
-                v->data.UInt64Val = strtoul( s, &endCPtr, 16 );
-                v->typecode = UInt64_CT;
-            } else {
-                v->data.Int64Val = strtol( s, &endCPtr, 16 );
-                v->typecode = UInt64_CT;
-            }
-        }
-    } else {
-        if( typemod & 0x1 ) {
-            v->data.UInt32Val = strtoul( s, &endCPtr, 16 );
-            v->typecode = UInt32_CT;
-        } else {
-            v->data.Int32Val = strtol( s, &endCPtr, 16 );
-            v->typecode = Int32_CT;
-        }
-    }
-    return v;
-}
-
-struct gds_Literal *
-interpret_esc_integral(
-        struct gds_Parser * P,
-        const char * s ){
-    struct gds_Literal * v = gds_parser_new_Literal(P);
-    v->data.UInt8Val = interpret_escseq( s + 2 );
-    return v;
-}
-
-struct gds_Literal *
-interpret_dec_integral(
-        struct gds_Parser * P,
-        const char * s ){
-    /* TODO:
-     *  1) Check truncation errors here (strtoi has special behaviour);
-     *  2) Check extra symbols on tail and warn, if they're invalid.
-     */
-    struct gds_Literal * v = gds_parser_new_Literal(P);
-    uint8_t typemod = integral_parse_typemod_postfix( s );
-    char * endCPtr;
-    if( typemod & 0x2 ) {
-        if( typemod & 0x4 ) {
-            # ifdef EXTENDED_TYPES
-            if( typemod & 0x1 ) {
-                v->data.UInt64Val = strtoull( s, &endCPtr, 10 );
-                v->typecode = UInt128_CT;
-            } else {
-                v->data.Int64Val = strtoll( s, &endCPtr, 10 );
-                v->typecode = UInt128_CT;
-            }
-            # else
-            char bf[64];
-            snprintf(bf, 64, "\"%s\" -- 128-bit integer is unsupported", s );
-            gds_error( P, bf );
-            # endif
-        } else {
-            if( typemod & 0x1 ) {
-                v->data.UInt64Val = strtoul( s, &endCPtr, 10 );
-                v->typecode = UInt64_CT;
-            } else {
-                v->data.Int64Val = strtol( s, &endCPtr, 10 );
-                v->typecode = Int64_CT;
-            }
-        }
-    } else {
-        if( typemod & 0x1 ) {
-            v->data.UInt32Val = strtoul( s, &endCPtr, 10 );
-            v->typecode = UInt32_CT;
-        } else {
-            v->data.Int32Val = strtol( s, &endCPtr, 10 );
-            v->typecode = Int32_CT;
-        }
-    }
-    return v;
-}
 
 /* float */
 
-struct gds_Literal *
-interpret_float_dec(
-        struct gds_Parser * P,
-        const char * s ){
-    struct gds_Literal * v = gds_parser_new_Literal(P);
+int  /* TODO: use base ? */
+gds_interpr_float_literal(
+        struct ArithmeticConstant * A,
+        const char * s,
+        uint8_t base ) {
     uint8_t typemod = integral_parse_typemod_postfix( s );
     char * endptr;
 
     if( typemod & 0x2 ) {
-        v->data.Float64Val = strtold( s, &endptr );
-        v->typecode = Float64_CT;
+        A->value.Float8Val = strtold( s, &endptr );
+        A->type = Float8_T_code;
         /*printf("XXX: treat \"%s\" as double constant in decimal form: %e %a.\n",
             s, v->data.Float64Val, v->data.Float64Val);*/
     } else {
-        v->data.Float32Val = strtod( s, &endptr );
-        v->typecode = Float32_CT;
+        A->value.Float4Val = strtod( s, &endptr );
+        A->type = Float4_T_code;
         /*printf("XXX: treat \"%s\" as float constant in decimal form: %e %a.\n",
             s, v->data.Float32Val, v->data.Float32Val);*/
     }
-    return v;
-}
+    return 0;
+} gds_declare_result_table_for_function(gds_interpr_float_literal) {
+        { 0, "ok" },  /* unused */
+        /* ... */
+    };
 
-struct gds_Literal *
-interpret_float_hex(
-        struct gds_Parser * P,
+int
+gds_interpr_esc_integral(
+        struct ArithmeticConstant * A,
         const char * s ){
-    struct gds_Literal * v = gds_parser_new_Literal(P);
-    uint8_t typemod = integral_parse_typemod_postfix( s );
-    char * endptr;
+    A->value.UByteVal = gds_interpret_escseq( s + 2 );
+    A->type = UByte_T_code;
+    return 0;
+} gds_declare_result_table_for_function(gds_interpr_esc_integral) {
+        { 0, "ok" },  /* unused */
+        /* ... */
+    };
 
-    if( typemod & 0x2 ) {
-        v->data.Float64Val = strtold( s, &endptr );
-        v->typecode = Float64_CT;
-        /*printf("XXX: treat \"%s\" as double constant in hexidecimal form: %e %a.\n",
-            s, v->data.Float64Val, v->data.Float64Val);*/
-    } else {
-        v->data.Float32Val = strtod( s, &endptr );
-        v->typecode = Float32_CT;
-        /*printf("XXX: treat \"%s\" as float constant in hexidecimal form: %e %a.\n",
-            s, v->data.Float32Val, v->data.Float32Val);*/
-    }
-    return v;
+gds_declare_expl_registry { uint8_t nFunction;
+    gds_register_error_explainations_for( gds_interpr_integral_literal );
+    gds_register_error_explainations_for( gds_interpr_esc_integral );
+    gds_register_error_explainations_for( gds_interpr_float_literal );
 }
-
-/* string literal */
-
-struct gds_Literal *
-interpret_string_literal(
-        struct gds_Parser * P,
-        const char * s ){
-    size_t len = strlen(s);
-    char * copy = gds_heap_alloc(P->literals, len+1);
-    strcpy( copy, s );
-    struct gds_Literal * v = gds_parser_new_Literal(P);
-    v->data.stringValPtr = copy;
-    return v;
-}
-
-struct gds_Literal *
-interpret_logic_true( struct gds_Parser * P ) {
-    struct gds_Literal * v = gds_parser_new_Literal(P);
-    v->typecode = logic_CT;
-    v->data.logicVal = 0xff;
-    return v;
-}
-
-struct gds_Literal *
-interpret_logic_false( struct gds_Parser * P ) {
-    struct gds_Literal * v = gds_parser_new_Literal(P);
-    v->typecode = logic_CT;
-    v->data.logicVal = 0x0;
-    return v;
-}
-
-struct gds_Literal *
-gds_literal_heapcopy( struct gds_Parser * P,  struct gds_Literal * o ) {
-    struct gds_Literal * c = gds_heap_alloc(P->literals, sizeof(struct gds_Literal));
-    memcpy(c, o, sizeof(struct gds_Literal));
-    return c;
-}
-
-void
-gds_literal_heapfree( struct gds_Parser * P, struct gds_Literal * inst ) {
-    if( !inst ) { return; }
-    gds_heap_erase(P->literals, inst);
-}
-
-# endif
 
 # endif  /* ENABLE_GDS */
 
