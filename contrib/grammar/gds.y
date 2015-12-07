@@ -3,6 +3,7 @@
 # include <string.h>
 # include "gds/interpreter.h"
 # include "gds/expression.h"
+# include "gds/literals.h"
 
 /* See:
  * http://lists.gnu.org/archive/html/bug-bison/2014-02/msg00002.html

@@ -21,27 +21,7 @@ extern "C" {
 void gds_error(
         struct gds_Parser * P,
         const char * details ) {
-    emraise( gdsError,
-        "Parser %p at " ESC_CLRGREEN "%s" ESC_CLRCLEAR ":" ESC_BLDYELLOW "%u" ESC_CLRCLEAR ":" ESC_CLRYELLOW "%u-%u" ESC_CLRCLEAR " got an error: " ESC_UNLRED "%s" ESC_CLRCLEAR,
-        P,
-        P->currentFilename,
-        P->location.first_line,
-        P->location.first_column,
-        P->location.last_column,
-        details);
-}
-
-void gds_warn(
-        struct gds_Parser * P,
-        const char * details ) {
-    fprintf( stderr,
-        "Parser %p at " ESC_CLRGREEN "%s" ESC_CLRCLEAR ":" ESC_BLDYELLOW "%u" ESC_CLRCLEAR ":" ESC_CLRYELLOW "%u-%u" ESC_CLRCLEAR " warns: " ESC_UNLYELLOW "%s" ESC_CLRCLEAR,
-        P,
-        P->currentFilename,
-        P->location.first_line,
-        P->location.first_column,
-        P->location.last_column,
-        details);
+    emraise( gdsError, "Parser %p / %s", P, details);
 }
 
 }  // extern "C"

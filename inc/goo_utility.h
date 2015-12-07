@@ -10,25 +10,25 @@
 extern "C" {
 # endif
 
-/** Generates a triangle-distributed numbers with given width(?). */
+/**\brief Generates a triangle-distributed numbers with given width(?). */
 double goo_dstr_triangular( const double c );
 
-/** Returns current timestamp. Uses internal static buffer. */
+/**\brief Returns current timestamp. Uses internal static buffer. */
 const char * hctime();
 
-/** Returns fancy text timestamp. Uses internal static buffer. */
+/**\brief Returns fancy text timestamp. Uses internal static buffer. */
 const char * get_timestamp();
 
-/** Quick factorial up to 12. */
+/**\brief Quick factorial up to 12. */
 unsigned long factorial_16( unsigned char );
 
-/** Writes rounded memory size up to Tb into buffer and returns buffer. */
+/**\brief Writes rounded memory size up to Tb into buffer and returns buffer. */
 char *
 rounded_mem_size( unsigned long toPrint,
                   char * buffer,
                   unsigned char bufLength );
 
-/**@brief Writes fancy-formatted size string.
+/**\brief Writes fancy-formatted size string.
  *
  * Produces result in form of:
  *   `[N-Tb?]\`[N-Gb?]\`[N-Mb?]\`[N-kb?]\`[N-b]`
@@ -41,11 +41,20 @@ fancy_mem_size( unsigned long toPrint,
                   char * buffer,
                   unsigned char bufLength );
 
-/** A static buffer (uses own) version of rounded_mem_size(). */
+/**\brief  A static buffer (uses own) version of rounded_mem_size(). */
 char * rounded_mem_size_stb( unsigned long toPrint );
 
-/** A static buffer (uses own) version of fancy_mem_size(). */
+/**\brief A static buffer (uses own) version of fancy_mem_size(). */
 char * fancy_mem_size_stb( unsigned long toPrint );
+
+
+/**\brief Replaces pattern in string without heap (re)allocation. */
+int replace_string( const char * sourceString,
+                    const char * origToken,
+                    const char * replacement,
+                    char * buffer,
+                    const size_t bufferLength);
+
 
 # ifdef __cplusplus
 }

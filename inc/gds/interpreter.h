@@ -10,11 +10,12 @@
 # define H_GOO_INTERPRETER_H
 
 # include "goo_config.h"
-# include "goo_ansi_escseq.h"
 
 # ifdef ENABLE_GDS
 
-# include "arithmetic_eval.h"
+# include "goo_ansi_escseq.h"
+# include "gds/arithmetic_eval.h"
+# include "gds/diagnostic.h"
 
 # ifdef __cplusplus
 extern "C" {
@@ -22,8 +23,43 @@ extern "C" {
 
 struct gds_Parser;
 
-/** \note implemented in lexer file */
-void gds_error( struct gds_Parser * P, const char * det );
+/**\struct gds_ContextAddendum
+ * \brief A context complementary fragment (semantic scope, actually).
+ *
+ * During expression processing the parser itself keeps track of symbols
+ * as a sets of named objects whose lifetime is bound to certain scopes.
+ * This scopes, internally, are presented with this gds_ContextAddendum
+ * structure.
+ *
+ * The token replication mechanism does not imply freeng token inside an
+ * active context addendum, so once allocated they're available until
+ * addendum will be freed.
+ *
+ * Context addendums are managed via following functions:
+ *    * \ref gds_context_init_addendum()
+ *    * \ref gds_parser_scope_open()
+ *    * \ref gds_parser_scope_close()
+ *    * \ref gds_parser_context_extension_bgn()
+ *    * \ref gds_parser_context_extension_end()
+ */
+struct gds_ContextAddendum {
+    char * tokensPoolPtr,
+         * currentTokenEndPtr,
+         * tokensPoolEndPtr;
+    /* ... */
+    struct gds_ContextAddendum * next;
+};
+
+void gds_context_init_addendum( struct gds_ContextAddendum *, struct gds_Parser * );
+
+/* \func gds_lexer_replicate_token
+ * \brief Uses current context to allocate token replica.
+ *
+ * Is mostly used by lexer inside a \ref MEMTOKEN macro.
+ *
+ * \see gds_ContextAddendum
+ */
+char * gds_lexer_replicate_token( struct gds_Parser *, const char * );
 
 /**\struct gds_Parser
  * 
@@ -45,93 +81,21 @@ struct gds_Parser {
                  first_column,  last_column;
     } location;
     /* }}} */
+
+    struct gds_ContextAddendum rootContexts[256],
+                               * topContextPtr;
 };
 
-/**\enum GDS_DiagnosticStatus
- * \brief This values is used by \ref gds_diagnostic_message() to indicate message type.
- * \see gds_diagnostic_message()
- *
- * TODO: move it outta here
+void gds_parser_context_extension_bgn( struct gds_Parser * );
+void gds_parser_context_extension_end( struct gds_Parser * );
+void gds_parser_scope_open(  struct gds_Parser * );
+void gds_parser_scope_close( struct gds_Parser * );
+
+/*
+ * Constructors
  */
-enum GDS_DiagnosticStatus {
-    gds_kDiagnostic_warning = 0x2,
-    gds_kDiagnostic_error = 0x3,
-    /* ... */
-};
 
-/**\func gds_diagnostic_message
- * \brief A function providing messaging while lexer/parser/evaluator is active.
- *
- * Acts like printf()-family accepting same format chars + some useful shortcuts,
- * enclosed in `${}`:
- *   * `${location}` corresponds to current input position. Depending on file/stdin
- * is used, can hold input filename.
- * TODO: we'll probable need additional shortcuts.
- *
- * \param p  a GDS parser instanc
- * TODO: doc
- * TODO: move it outta here
- */
-void gds_diagnostic_message(
-        struct gds_Parser * p,
-        enum GDS_DiagnosticStatus status,
-        const char * fmt, ... );
-
-/**\func gds_abort
- * \brief Interrupts current parser sesion returning code provided in
- * second argument.
- *
- * TODO: doc
- * TODO: move it outta here
- * */
-void gds_abort( struct gds_Parser *, int );
-
-/**\def gds_treat_function_result
- * \brief A shortcut for routing between \ref gds_error_printf
- * / \ref gds_wrnng_printf variadic-arguments function.
- *
- * When rc parameter is 0, mothing will happen. Otherwise, depending
- * on rc warning/error treatment mechanism will be invoked.
- */
-# define gds_treat_function_result( f, rc )     \
-if(rc) {                                        \
-    if( rc < 0 ) {                              \
-        gds_diagnostic_message( P,              \
-                gds_kDiagnostic_error,          \
-"${location}:" ESC_BLDRED "error" ESC_CLRCLEAR ": invokation of %s(...) issued: %s",    \
-                # f,                            \
-                gds_get_error_description_for(  \
-                        (void(*)()) f, rc ) );  \
-        gds_abort(P, -1);                       \
-    } else if( rc > 0 ) {                       \
-        gds_diagnostic_message( P,              \
-                gds_kDiagnostic_warning,        \
-"${location}:" ESC_BLDYELLOW "warning" ESC_CLRCLEAR ": invokation of %s(...) issued: %s",    \
-                # f,                            \
-                gds_get_error_description_for(  \
-                        (void(*)()) f, rc ) );  \
-    }                                           \
-}
-
-/**\def RIF 
- * \brief An error-handling macro for dealing with \ref gds_Parser
- * error tables.
- *
- * This macro wraps the specific function call. It invokes function
- * provided in first argument with other macro parameters as its
- * function arguments and stores result. When result is not equal
- * to zero, it will treat the result with \ref gds_treat_function_result().
- *
- * \see gds_treat_function_result()
- * \see gds_Parser
- * \see gds_ParserRoutineResultTable
- * */
-# define RIF( function_name, ... )                  \
-{ int rc = function_name( __VA_ARGS__ );            \
-  gds_treat_function_result(function_name, rc);     }
-
-
-struct ArithmeticConstant * gds_parser_new_ArithmeticConstant( struct gds_Parser * );
+struct ArithmeticConstant * gds_context_new_ArithmeticConstant( struct gds_Parser * );
 
 # ifdef __cplusplus
 }

@@ -152,3 +152,77 @@ fancy_mem_size_stb( unsigned long toPrint ) {
 }
 
 
+/** Utility function providing string substitution. All the strings
+ * provided to the function are required to do not overlap. Only
+ * rudimentary check for non-NULL, non-emptiness are provided
+ * inside this function.
+ *
+ * \param sourceString is a pointer to the string containing sequence(s)
+ * that is (are) to be substituted
+ * \param origToken is a sequence to be substituted
+ * \param replacement is a sequence to be substituted instead of `origToken`.
+ * \param buffer a destination buffer, where output is to be written.
+ * \param bufferLength is a length of target buffer.
+ *
+ * \returns -1 if at least one of arguments provided is NULL or
+ * has zero length;
+ * \returns -2 if provided buffer length is insufficient.
+ * \returns positive number corresponding to number of provided
+ * substitutions.
+ */
+int
+replace_string( const char * restrict sourceString,
+                const char * restrict origToken,
+                const char * restrict replacement,
+                char * restrict buffer,
+                const size_t bufferLength) {
+    if(     !sourceString
+         || !buffer
+         || !origToken
+         || !bufferLength
+         || !replacement ) return -1;  /* bad argument */
+    /* routine parameters */
+    # define MAX_OCCURENCES 32
+    /* variables */
+    const size_t replacementLength = strlen(replacement),
+                        origLength = strlen(origToken),
+                      sourceLength = strlen(sourceString)
+                                   ;
+    size_t nOccurences = 0;
+    const char * occurences[MAX_OCCURENCES],
+               * occurence = sourceString,
+               * cSrc, * replPtr;
+    char * cDst;
+    if(     !replacementLength
+         || !origLength
+         || !sourceString ) {
+        return -1;
+    }
+    /* Find all matches and cache their positions. */
+	while(     (occurence = strstr(occurence, origToken)) != NULL
+            && nOccurences < MAX_OCCURENCES ) {
+        occurences[nOccurences++] = occurence;
+        ++occurence;
+    }
+    occurences[nOccurences] = 0;
+    if( bufferLength < sourceLength - nOccurences*( replacementLength - origLength ) ) {
+        return -2;
+    }
+    nOccurences = 0;
+    for( cSrc = sourceString, cDst = buffer; '\0' != *cSrc; ++cDst, ++cSrc ) {
+        if( cSrc != occurences[nOccurences] ) {
+            *cDst = *cSrc;
+            continue;
+        }
+        /* occurence */
+        cSrc += origLength - 1;
+        for( replPtr = replacement; '\0' != *replPtr; ++replPtr ) {
+            *(cDst++) = *replPtr;
+        }
+        nOccurences++;
+        cDst--;
+    }
+    *cDst = '\0';
+    return nOccurences;
+}
+

@@ -21,6 +21,7 @@ TQ  \"{3}
 %x COMMENT
 %x INL_COMMENT
 %x STRING_LIT
+%x INLINE_CONTEXT
 %s FORMULA
 
 %{
@@ -28,7 +29,7 @@ TQ  \"{3}
 # include "gds_parser.generated.h"
 # define MEMTOKEN(tc)                                                   \
     yyget_lval( yyscanner )->strval =                                   \
-        gds_parser_replicate_token( yyget_extra(yyscanner), yytext );   \
+        gds_lexer_replicate_token( yyget_extra(yyscanner), yytext );    \
     return tc;
 
 #define YY_USER_ACTION                                              \
@@ -53,10 +54,7 @@ TQ  \"{3}
 int comment(yyscan_t scanner);
 int yyparse(struct gds_Parser * P);
 void yyerror( struct YYLTYPE * locp, struct gds_Parser * P, const char * msg );
-int lookup_symbol( struct gds_Parser * P, const char * sym );
-
-void gds_error( struct gds_Parser * P, const char * det );
-void gds_warn( struct gds_Parser * P, const char * det );
+/*int lookup_symbol( struct gds_Parser * P, const char * sym );*/
 %}
 
 %option nounput yylineno never-interactive
@@ -114,8 +112,7 @@ void gds_warn( struct gds_Parser * P, const char * det );
 {HP}{H}+"."{P}{FS}?			        { MEMTOKEN(TF_HEX); }
 
 
-    /* MULTILINE STRING LITERALS */
-
+    /* MULTILINE STRING LITERALS
 {SP}?{TQ}                           { yy_push_state(STRING_LIT, yyscanner);
                                       gds_parser_str_lit( yyget_extra(yyscanner), yytext );
                                     }
@@ -128,33 +125,37 @@ void gds_warn( struct gds_Parser * P, const char * det );
 }
 
 ({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { MEMTOKEN(T_STRING_LITERAL); }
+*/
 
     /* IDENTIFIERS */
 
-(({L}{A}{0,127})::)*{L}{A}{0,127}   {   int rt;
-                                        yyget_lval( yyscanner )->strval =
-                                            gds_parser_replicate_token( yyget_extra(yyscanner), yytext );
-                                        rt = lookup_symbol(yyget_extra(yyscanner), yytext );
+(({L}{A}{0,127})::)*{L}{A}{0,127}   {   int rt = 0; /* TODO */
+                                        /*yyget_lval( yyscanner )->strval =
+                                            gds_lexer_replicate_token( yyget_extra(yyscanner), yytext );
+                                        rt = lookup_symbol(yyget_extra(yyscanner), yytext );*/
                                         return rt;
                                     }
 
     /* CONTEXT MANIPULATION */
 
-"/:"                                { return P_CTX_MOD_OPEN; }
-":/"                                { return P_CTX_MOD_CLOSE; }
-"for"                               { return P_FOR; }
-"is"                                { return P_IS; }
+"/:"                                { BEGIN(INLINE_CONTEXT);
+                                      gds_parser_context_extension_bgn( yyget_extra(yyscanner) );
+                                      return P_CTX_MOD_OPEN; }
+<INLINE_CONTEXT>":/"                { BEGIN(INITIAL);
+                                      gds_parser_context_extension_end( yyget_extra(yyscanner) );
+                                      return P_CTX_MOD_CLOSE; }
+<INLINE_CONTEXT>"for"               { return P_FOR; }
+<INLINE_CONTEXT>"is"                { return P_IS; }
 
     /* SIMPLE GRAMMAR TERMINALS */
 
-";"                                 { gds_parser_free_buffer( yyget_extra(yyscanner) );
-                                      return ';'; }
+";"                                 { return ';'; }
 ">"                                 { return '>'; }
 "<"                                 { return '<'; }
 ":"                                 { return ':'; }
 "="                                 { return P_ASSIGN; }
-"{"                                 { return '{'; }
-"}"                                 { return '}'; }
+"{"                                 { gds_parser_scope_open(yyget_extra(yyscanner));  return '{'; }
+"}"                                 { gds_parser_scope_close(yyget_extra(yyscanner)); return '}'; }
 "("                                 { return '('; }
 ")"                                 { return ')'; }
 "/"                                 { return '/'; }
@@ -180,127 +181,6 @@ void gds_warn( struct gds_Parser * P, const char * det );
                                     }
 
 %%
-
-/*
- * Symbol lookup routine.
- */
-
-/**@function lookup_symbol
- * @brief Provides search among current session hashtables.
- *
- * This routine resolves named identifier in current context, sets the
- * appropriate YYSTYPE's lval union field and returns terminal code.
- * When symbol isn't found, lval stays unchanged.
- *
- * @param[in] P         current parser (context)
- * @param[in] sym       C-string containing null-teminated identifier str.
- * @param[out] lval     Scanner's lval instance to be affilated with.
- * @returns appropriate terminal code, or UNKNWN_SYM, if no symbols found. 
- */
-int
-lookup_symbol( struct gds_Parser * P, const char * sym ) {
-    # if 0
-    int8_t rt = 0,
-           wasScopeResolution = 0;
-    const char * c = sym;
-    char   cSymName[128] = {'\0'},
-         * cDest;
-
-    struct gds_Module * cModule = &(P->thisModule);
-
-    do {
-        for( cDest = cSymName;
-             '\0' != *c;
-             c++ ) {
-            if( ':' == *c && ':' == *(++c) ) {
-                *(++cDest) = '\0';
-                wasScopeResolution = 1;
-                printf( " - \"%s\" /\n", cSymName );  /*XXX*/
-                break;
-            }
-            *(cDest++) = *c;
-        }
-        {  /* Try to resolve symbol as function, variable, or submodule.
-            * All non-module names aren't allowed here, the point is
-            * to figure out shadowing naming.
-            */
-            void * result;
-            rt = gds_parser_module_resolve_symbol( cModule,
-                                                   cSymName,
-                                                  &result );
-            if( rt > 0x1 && &(P->thisModule) != cModule ) {
-                /* Here, we aren't in current module's context and we got
-                 * an unkown symbol, that means something goes wrong.
-                 */
-                char bf[2560];
-                if( rt > 0x1 ) {
-                    snprintf(bf, 2560, "Symbol \"%s\" in identifier \"%s\" refers to non-module.",
-                             cSymName, sym);
-                    gds_error(P, bf);
-                } else if( !rt ) {
-                    snprintf(bf, 2560, "Identifier \"%s\" can not be resolved due to unkown symbol \"%s\".",
-                             sym, cSymName);
-                    gds_error(P, bf);
-                }
-            }
-        }
-    } while( '\0' != *c );
-
-    if( !wasScopeResolution && P->currentLocArgListChain ) {
-        /* Now, try to resolve symbol as locvar, if we're in function declaration. */
-        const union gds_ArgList * c = *(P->currentLocArgListChain);
-        uint8_t lvno = 0;
-        if( c->head.first ) {
-            c = c->head.first;
-            do {
-                if( !strcmp( c->entry.this_, cSymName ) ) {
-                    yyget_lval( P->scanner )->locvarNo = lvno;
-                    /* printf( "LEXER: sym \"%s\" resolved as locvar #%d.\n",
-                            cSymName, (int) lvno ); XXX */
-                    return LOCVAR;
-                }
-                lvno++;
-                c = c->entry.next;
-            } while( c );
-        }
-    }
-
-    void * result;
-    rt = gds_parser_module_resolve_symbol(
-                 cModule,
-                 cSymName,
-                &result );
-    switch( rt ) {
-        case 0x8 : { /* type */
-            yyget_lval( P->scanner )->GTID = result;
-            printf("LEXER: \"%s\" resolved as a type.\n", sym);
-            return TYPEID;
-        } break;
-        case 0x4 : { /* function */
-            yyget_lval( P->scanner )->func = result;
-            printf("LEXER: \"%s\" resolved as a function.\n", sym);
-            return DCLRD_FUN;
-        } break;
-        case 0x2 : { /* variable */
-            yyget_lval( P->scanner )->value = result;
-            printf("LEXER: \"%s\" resolved as a variable.\n", sym);
-            return DCLRD_VAR;
-        } break;
-        case 0x1 : { /* submodule */
-            yyget_lval( P->scanner )->module = result;
-            printf("LEXER: \"%s\" resolved as a module name.\n", sym);
-            return DCLRD_MDLE;
-        } break;
-        case 0:
-        default: { /* Symbol isn't known */
-            printf("LEXER: \"%s\" is unresolved.\n", sym);
-            return UNKNWN_SYM;
-        }
-    };
-    # else
-    return 0;
-    # endif
-}
 
 /*
  * Entry points
