@@ -40,6 +40,9 @@ gds_parser_new() {
     struct gds_Parser * P = malloc( sizeof(struct gds_Parser) );
     P->scanner = NULL;
 
+    P->runtimeLogStream = P->stdoutStream = stdout;
+    P->errStream = stderr;
+
     /* Initialize contexts pool */
     bzero( P->rootContexts, sizeof(P->rootContexts) );
 

@@ -13,6 +13,7 @@
 
 # ifdef ENABLE_GDS
 
+# include <stdio.h>
 # include "goo_ansi_escseq.h"
 # include "gds/arithmetic_eval.h"
 # include "gds/diagnostic.h"
@@ -73,6 +74,11 @@ char * gds_lexer_replicate_token( struct gds_Parser *, const char * );
  * in FLEX/LEX `extra` section.
  */
 struct gds_Parser {
+    FILE * runtimeLogStream,
+         * stdoutStream,
+         * errStream
+         ;
+
     /* YACC/FLEX section {{{ */
     void * scanner;
     char currentFilename[128];
