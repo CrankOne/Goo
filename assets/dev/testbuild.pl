@@ -216,12 +216,14 @@ sub do_build {
 #
 # Parse arguments:
 my $rootCMakeLists = "CMakeLists.txt";
+my $verbose;
 my $dryRun;
 my @fwddCMakeOpts;
 my @fwddMakeOpts;
 my $ftNumMaskExpr = '-1 < $ftCode';
 my @bConfOnly;
 GetOptions("root-file|L=s" => \$rootCMakeLists,
+               "v|verbose" => \$verbose,
                "dry-run|d" => \$dryRun,
         "ft-mask-expr|E=s" => \$ftNumMaskExpr,
             "bconf-only=s" => \@bConfOnly,
@@ -613,54 +615,27 @@ library.
 
 e.g.:
 
-    $ /home/crank/Projects/goo/assets/dev/testbuild.pl  \
-        -L /home/crank/Projects/CERN/P-348/p348g4/CMakeLists.txt \
-        -C "-DCMAKE_MODULE_PATH=/home/crank/Projects/goo.install/share/cmake/Modules/" \
-        -C "-DCMAKE_LIBRARY_PATH=/home/crank/Projects/CERN/P-348/p348-daq/coral/src/DaqDataDecoding/src/" \
-        -M "-j 6" \
-        --dry-run \
-        -E '$ftCode == 0x32a'
+    $ /home/crank/Projects/goo/assets/dev/testbuild.pl \
+            -L /home/crank/Projects/CERN/P-348/p348g4/CMakeLists.txt \
+            -C "-DCMAKE_MODULE_PATH=/home/crank/Projects/goo.install/share/cmake/Modules/" \
+            -C "-DCMAKE_LIBRARY_PATH=/home/crank/Projects/CERN/P-348/p348-daq/coral/src/DaqDataDecoding/src/" \
+            -M "-j 6" \
+            -E '$ftCode == 0x312' \
+            --bconf-only=debug
 
 =head1 OPTIONS
 
 =over 4
 
-=item B<--root-file,-L> =I<CMakeLists.txt>
+=item B<--root-file>=I<CMakeLists.txt>
 
 A path to project's main C<CMakeLists.txt> file where tag search routine
 will start from.
 
-=item B<--dry-run,-d>
+=item B<--dry>
 
 Makes the script to skip actual building procedures --- only parse cmake files
-and print a usual report. Invokation of subsequent building shell
-script will be provided with dry option.
-
-=item B<--ft-mask-expr,-E> =I<'-1 < $ftCode'>
-
-Accepts any Perl5 expression statement. If statment evaluates to 'true', the
-build will be included in schedule, otherwise it will be omitted. This crutch
-is designed for selective build option: it is intended to use expression
-within $ftCode (feature code) variable to choose or to exclude concrete builds.
-For build config choosing, use the B<--bconf-only> option(s). Also, avoid of
-quotation expression with inch signs "" (double quotes) as it tries to interpolate
-$ftCode as BASH variable.
-
-=item B<--bconf-only>
-
-Specify, which build configuration is to include to schedule. May be provided
-multiple times.
-
-=item B<--fwd-cmake-opt,-C>
-
-As it can be seen from synopsis example, forwards its argument to CMake command
-as command-line argument. Arguments will be placed just after CMake command in order
-they are appeared in this script.
-
-=item B<--fwd-make-opt,-M>
-
-As it can be seen from synopsis example, forwards its argument to GNU make command
-as command-line argument. Idea is the as same as for B<--fwd-cmake-opt> option.
+and print a usual report.
 
 =back
 
@@ -744,9 +719,11 @@ Advanced logs management, including error/warnings collection and more
 laconic output for some common cases.
 
 =item *
-It is hard to say for now how much C<#\option>s can be provided as they're
-are represent internally as Perl integer variable bit flags. One should
-deal with this limitation some day.
+Should support selective option exclusion.
+
+=item *
+Should support selective build exclusion (by feature codes) with ability
+to exclude it in range or by mask or whatever.
 
 =back
 

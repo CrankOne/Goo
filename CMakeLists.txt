@@ -214,12 +214,13 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake"
     DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules )
 endif( GENERATE_CMAKE_MODULE )
 
-if( GIT_FOUND )
-    # This fake causes cmake to reconfigure itself when git versioning
-    # information is changed.
-    configure_file( ${CMAKE_SOURCE_DIR}/.git/COMMIT_EDITMSG
-                    ${CMAKE_CURRENT_BINARY_DIR}/COMMIT_EDITMSG )
-endif( GIT_FOUND )
+# XXX :
+#if( GIT_FOUND )
+#    # This fake causes cmake to reconfigure itself when git versioning
+#    # information is changed.
+#    configure_file( ${CMAKE_SOURCE_DIR}/.git/COMMIT_EDITMSG
+#                    ${CMAKE_CURRENT_BINARY_DIR}/COMMIT_EDITMSG )
+#endif( GIT_FOUND )
 
 
 #
