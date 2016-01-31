@@ -73,6 +73,9 @@ public:
     /// Goo's alias to acquire environmental variable (std::getenv())
     std::string envvar( const std::string & ) const;
 
+    /// Returns true, if instance was created.
+    static bool exists() { return _self; }
+
     template<typename ConfigObjectT,
              typename LogStreamT> friend class goo::App;
 };
