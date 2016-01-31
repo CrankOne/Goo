@@ -13,21 +13,34 @@ set( GOO_VERSION_MINOR 1 )
 # Right below are some build options that can be enabled or
 # disabled by -D<option_name>=<ON|OFF> option given to CMake.
 
+#\option
 option( TYPES_128BIT_LENGTH     "Enable 128-bit length types."                      OFF)
+#\option
 option( SOURCE_POSITION_INFO    "Supplement printing lines with source file info."  OFF)
+#\option
 option( EM_STACK_UNWINDING      "C++ exception throw produce a stack unwinding."    ON )
+#\option
 option( ANSI_ESCSEQ_PRINT       "Terminal messages coloring."                       ON )
 # The lines below is a development features, basically located at other
 # git branches:
+#\option
 option( ENABLE_GDS              "Goo Declarative Semantics."                        OFF)
+#\option
 option( ENABLE_ALLOCATORS       "Goo's own allocators subsystem."                   OFF)
+#\option
 option( ENABLE_TENSORS          "Tensorial algebra support template classes."       OFF)
+#\option
 option( ENABLE_DATASTREAMS      "Goo's serialization template classes."             OFF)
+#\option
 option( ENABLE_PTREE            "Goo's getopt()-like mechanism."                    OFF)
+#\option
 option( HASKELL_MODULE          "Haskell extensions."                               OFF)
 # Install options:
+#\option
 option( GOO_INSTALL_HEADERS     "Install library headers at prefix path."           ON )
+#\option
 option( GENERATE_PKGCFG_MODULE  "Generates pkg-config module."                      ON )
+#\option
 option( GENERATE_CMAKE_MODULE   "Generates library's FindGoo.cmake module."         ON )
 
 #
@@ -58,6 +71,19 @@ else( GIT_FOUND )
 endif( GIT_FOUND )
 
 #
+# If installation prefix is default, set it to /usr/local
+if( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
+    set(CMAKE_INSTALL_PREFIX "/usr/local" CACHE PATH "default install path" FORCE )
+    message( STATUS "NOTE: Install prefix is set to \""
+        ${CMAKE_INSTALL_PREFIX} "\" as it was set to default. "
+        "To override this specification, use -DCMAKE_INSTALL_PREFIX=<path> "
+        "option." )
+else( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
+    message( STATUS "NOTE: Install prefix is manually set to \""
+        ${CMAKE_INSTALL_PREFIX} "\"." )
+endif( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
+
+#
 # Add custom uninstall target (CMake by default does not provide it)
 CONFIGURE_FILE(
   "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/cmake_uninstall.cmake.in"
@@ -65,12 +91,6 @@ CONFIGURE_FILE(
   IMMEDIATE @ONLY)
 ADD_CUSTOM_TARGET(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake") 
-
-#
-# If installation prefix is default, set it to /usr/local
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX "/usr/local" CACHE PATH "default install path" FORCE )
-endif()
 
 SITE_NAME( BUILDER_HOSTNAME )
 
@@ -142,15 +162,19 @@ list(GET SPLITTED_PATH 0 buildDir)
 message( STATUS "Building in directory ${buildDir}" )
 if( buildDir STREQUAL "debug" )
     message( STATUS "NOTE: debug build" )
+    #\buildconf
     set( CMAKE_BUILD_TYPE "Debug" )
 elseif( buildDir STREQUAL "release" )
     message( STATUS "NOTE: release build" )
+    #\buildconf
     set( CMAKE_BUILD_TYPE "Release" )
 elseif( buildDir STREQUAL "minsizerel" )
     message( STATUS "NOTE: minimized size build" )
+    #\buildconf
     set( CMAKE_BUILD_TYPE "MinSizeRel" )
 elseif( buildDir STREQUAL "relwdebinfo" )
     message( STATUS "NOTE: release build with debugging info" )
+    #\buildconf
     set( CMAKE_BUILD_TYPE "RelWithDebInfo" )
 else()
     message( STATUS "NOTE: custom build" )
@@ -190,12 +214,13 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake"
     DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules )
 endif( GENERATE_CMAKE_MODULE )
 
-if( GIT_FOUND )
-    # This fake causes cmake to reconfigure itself when git versioning
-    # information is changed.
-    configure_file( ${CMAKE_SOURCE_DIR}/.git/COMMIT_EDITMSG
-                    ${CMAKE_CURRENT_BINARY_DIR}/COMMIT_EDITMSG )
-endif( GIT_FOUND )
+# XXX :
+#if( GIT_FOUND )
+#    # This fake causes cmake to reconfigure itself when git versioning
+#    # information is changed.
+#    configure_file( ${CMAKE_SOURCE_DIR}/.git/COMMIT_EDITMSG
+#                    ${CMAKE_CURRENT_BINARY_DIR}/COMMIT_EDITMSG )
+#endif( GIT_FOUND )
 
 
 #
@@ -231,11 +256,12 @@ if( EM_STACK_UNWINDING )
     if( HASKELL_MODULE )
         target_link_libraries( goo HSrts-ghc${CMAKE_Haskell_NUMERIC_VERSION} )
     endif( HASKELL_MODULE )
-    # ... other bactrace libs here
+    # ... other backtrace libs here
 endif( EM_STACK_UNWINDING )
 
 #
 # Build enabled routines
 # for build_<util> options see CMakeLists.txt in utils/
+#\project-subdir
 add_subdirectory(utils)
 
