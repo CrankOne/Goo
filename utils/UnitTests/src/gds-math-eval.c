@@ -18,7 +18,7 @@ static const uint16_t _static_typeCodesSize = sizeof( _static_typeCodes ) / size
 
 static const BinaryArithOpCode _static_binopCodes[] = {
     # define substitute_code( u1, code, dscr ) code,
-    for_each_binary_arithmetic_lexical_operator( substitute_code )
+    for_each_common_binary_arithmetic_lexical_operator( substitute_code )
     # undef substitute_code
 };
 static const uint16_t _static_binopCodesSize = sizeof( _static_binopCodes ) / sizeof( BinaryArithOpCode );

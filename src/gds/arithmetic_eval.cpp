@@ -54,7 +54,7 @@ gds_free_binop_table( struct GDS_BinOpArithmetic * tableStruct ) {
  *
  * \param tableStruct a simple arithmetics evaluator function table.
  * \param binOpCode binary operator code according
- * to \ref for_each_binary_arithmetic_lexical_operator macro.
+ * to \ref for_each_common_binary_arithmetic_lexical_operator macro.
  * \param leftT left operand type code
  * \param rightT right operand type code
  * \param resultT expected result type code
@@ -126,7 +126,7 @@ gds_get_binary_operator_function_for(
 
 /**\param tableStruct a simple arithmetics evaluator function table.
  * \param binOpCode binary operator code according
- * to \ref for_each_binary_arithmetic_lexical_operator macro.
+ * to \ref for_each_common_binary_arithmetic_lexical_operator macro.
  * \param leftT left operand type code
  * \param rightT right operand type code
  * \returns type code of result considering operator and operand types following

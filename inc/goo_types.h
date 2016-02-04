@@ -97,7 +97,7 @@
  */
 
 # ifndef TYPES_128BIT_LENGTH
-# define for_all_atomic_datatypes(m, ...)                                   \
+# define for_all_integer_datatypes( m, ... )                                \
     m(0x9,           uint8_t,   UByte,      UInt8     , ## __VA_ARGS__ )    \
     m(0x1,            int8_t,   SByte,      Int8      , ## __VA_ARGS__ )    \
     m(0x19,         uint16_t,   UShort,     UInt16    , ## __VA_ARGS__ )    \
@@ -106,12 +106,14 @@
     m(0x21,          int32_t,   SInt,       Int32     , ## __VA_ARGS__ )    \
     m(0x39,         uint64_t,   ULong,      UInt64    , ## __VA_ARGS__ )    \
     m(0x31,          int64_t,   SLong,      Int64     , ## __VA_ARGS__ )    \
+    /* ... */
+# define for_all_atomic_datatypes(m, ...)                                   \
+    for_all_integer_datatypes( m, ## __VA_ARGS__ )                          \
     m(0x2,             float,   Float4,     Float32   , ## __VA_ARGS__ )    \
     m(0xa,            double,   Float8,     Float64   , ## __VA_ARGS__ )    \
     /* ... */
-
 # else  /* TYPES_128BIT_LENGTH */
-# define for_all_atomic_datatypes(m, ...)               \
+# define for_all_integer_datatypes( m, ... )                                \
     m(0x9,           uint8_t,   UByte,      UInt8     , ## __VA_ARGS__ )    \
     m(0x1,            int8_t,   SByte,      Int8      , ## __VA_ARGS__ )    \
     m(0x19,         uint16_t,   UShort,     UInt16    , ## __VA_ARGS__ )    \
@@ -122,6 +124,9 @@
     m(0x31,          int64_t,   SLong,      Int64     , ## __VA_ARGS__ )    \
     m(0x79,        uint128_t,   ULLong,     UInt64    , ## __VA_ARGS__ )    \
     m(0x71,         int128_t,   SLLong,     Int64     , ## __VA_ARGS__ )    \
+    /* ... */
+# define for_all_atomic_datatypes(m, ...)                                   \
+    for_all_integer_datatypes(m, ## __VA_ARGS__ )                           \
     m(0x2,             float,   Float4,     Float32   , ## __VA_ARGS__ )    \
     m(0xa,            double,   Float8,     Float64   , ## __VA_ARGS__ )    \
     m(0x12,      long double,   Float16,    Float128  , ## __VA_ARGS__ )    \
