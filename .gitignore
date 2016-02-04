@@ -21,3 +21,5 @@ utils/DeuPi0/g4deu/bin/*
 utils/DeuPi0/g4deu/obj/*
 CMakeCache.txt
 CMakeFiles
+assets/buildsystems/goo.pc
+src/gds_parser.generated.output

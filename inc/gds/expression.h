@@ -3,7 +3,6 @@
  *
  * GDS generic expression data type representation.
  * */
-
 # ifndef H_GOO_GDS_EXPR_NODE_H
 # define H_GOO_GDS_EXPR_NODE_H
 
@@ -46,13 +45,13 @@ struct GDSExpression * gds_init_arithmetic_value_expr(
  *
  * Enlists supported binary operators.
  * */
-# define for_each_binary_arithmetic_lexical_operator( m )   \
-    m( "+",             0x1,    summation )                 \
-    m( "-",             0x2,    subtraction )               \
-    m( "*",             0x3,    production )                \
-    m( "/",             0x4,    division )                  \
-    m( "^",             0x5,    exponentiation )            \
-    m( "%%",            0x6,    divRemainder )              \
+# define for_each_binary_arithmetic_lexical_operator( m, ... )              \
+    m( "+",             0x1,    summation, ## __VA_ARGS__ )                 \
+    m( "-",             0x2,    subtraction, ## __VA_ARGS__ )               \
+    m( "*",             0x3,    production, ## __VA_ARGS__ )                \
+    m( "/",             0x4,    division, ## __VA_ARGS__ )                  \
+    m( "^",             0x5,    exponentiation, ## __VA_ARGS__ )            \
+    /*m( "%%",            0x6,    divRemainder, ## __VA_ARGS__ )*/          \
     /* ... */
 
 typedef uint8_t BinaryArithOpCode;
@@ -101,12 +100,12 @@ struct GDSExpression * gds_init_binary_operator_expr(
  * \ingroup xmacro GDS-expression
  * \brief GDS expression subtypes table.
  * */
-# define for_each_gds_expr_node_type( m )                               \
-    m( unresolved,      0x0,    "Unresolved expression operand." )      \
-    m( arithmConstant,  0x2,    "GDS numeric expression operand." )     \
-    m( binArithOperator,0x3,    "GDS binary arithmetical operator." )   \
-    m( function,        0x4,    "GDS functional expression." )          \
-    m( scope,           0x5,    "Scope / associative array." )          \
+# define for_each_gds_expr_node_type( m, ... )                                  \
+    m( unresolved,      0x0,    "Unresolved expression operand.", ## __VA_ARGS__ )  \
+    m( arithmConstant,  0x2,    "GDS numeric expression operand.", ## __VA_ARGS__ )  \
+    m( binArithOperator,0x3,    "GDS binary arithmetical operator.", ## __VA_ARGS__ )  \
+    m( function,        0x4,    "GDS functional expression.", ## __VA_ARGS__ )  \
+    m( scope,           0x5,    "Scope / associative array.", ## __VA_ARGS__ )  \
     /* ... */
 
 /**\struct GDSExpression

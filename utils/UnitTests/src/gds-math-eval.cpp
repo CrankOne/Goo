@@ -1,5 +1,6 @@
 # include <cstring>
 # include <set>
+# include <cstddef>
 # include "utest.hpp"
 # include "gds-math-eval.h"
 # include "gds/arithmetic_eval.h"
@@ -23,6 +24,30 @@ binop_key_is_unique( BinOpKey c ) {
 GOO_UT_BGN( GDS_MATH_EVAL, "GDS simple arithmetic evaluator" )
 
 {
+    {
+        struct DataOffsets {
+                const char * name;
+                size_t offset, size; } arithOffsets[] = {
+            # define set_offset_entry_table( code, cTypeName, gooName, gdsName )    \
+                { # cTypeName,                                                      \
+                  offsetof( ArithmeticConstant::ArithmeticValue, gooName ## Val ),  \
+                  sizeof( cTypeName ) } ,
+            for_all_atomic_datatypes( set_offset_entry_table )
+            # undef set_offset_entry_table
+        };
+        char * bf;
+        size_t bflen;
+        FILE * of = ::open_memstream( &bf, &bflen );
+        fprintf( of, "In whole %zu bytes:\n", sizeof(ArithmeticConstant::ArithmeticValue) );
+        for( struct DataOffsets & entry : arithOffsets ) {
+            fprintf(of, " %-10s  %3zu %3zu\n", entry.name, entry.offset, entry.size );
+        }
+        ::fclose(of);
+        os << bf;
+        free( bf );
+    }
+    
+
     int rc = goo_gds__check_codes_structures();
     _ASSERT( !rc, "Checking of arithmetic operations subtable code system failed #1: %d.", rc );
     os << "Code table test passed with rc = " << rc << std::endl;
