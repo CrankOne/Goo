@@ -18,6 +18,8 @@
 #cmakedefine PNG_FOUND              3
 #cmakedefine FLTK_FOUND             4
 #cmakedefine GIT_FOUND              5
+#cmakedefine OPENGL_FOUND           6
+#cmakedefine OPENGL_GLU_FOUND       7
 
 # define GOO_BUILD_C_FLAGS          @CMAKE_C_FLAGS@
 # define GOO_BUILD_CXX_FLAGS        @CMAKE_CXX_FLAGS@
@@ -69,6 +71,15 @@
 # include <stdexcept>
 # endif
 
+# ifdef __cplusplus
+namespace goo {
+namespace g3D {
+typedef @GOO3D_REAL_TYPE@ Real;
+}
+}
+# else
+typedef @GOO3D_REAL_TYPE@ goo_g3D_Real_t;
+# endif
 
 /*
  * Streaming parameters

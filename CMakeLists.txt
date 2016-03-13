@@ -29,6 +29,9 @@ option( GOO_INSTALL_HEADERS     "Install library headers at prefix path."       
 option( GENERATE_PKGCFG_MODULE  "Generates pkg-config module."                      ON )
 option( GENERATE_CMAKE_MODULE   "Generates library's FindGoo.cmake module."         ON )
 
+# Parameter:
+set( GOO3D_REAL_TYPE "float" CACHE STRING "Default C-type for 3D graphic geometry." )
+
 #
 # Find third-party packages
 # 
@@ -38,6 +41,7 @@ find_package( ZLIB  )
 find_package( Lzo   )
 find_package( BZip2 )
 find_package( Git   )
+find_package( OpenGL )
 if( EM_STACK_UNWINDING )
     find_package( BFD REQUIRED )
 endif( EM_STACK_UNWINDING )
@@ -56,6 +60,10 @@ else( GIT_FOUND )
     SET( COMMIT_HASH "<unknown>" )
     SET( GIT_STRING "gitInfo:'unavailable';" )
 endif( GIT_FOUND )
+
+if( OPENGL_FOUND AND NOT OPENGL_GLU_FOUND )
+    message( FATAL_ERROR "OpenGL without GLU support detected." )
+endif()
 
 #
 # Disables Haskell module. Some Goo routines are written on Haskell.
@@ -204,6 +212,13 @@ endif( LZO_FOUND )
 if( BZIP2_FOUND )
     target_link_libraries( goo ${BZIP2_LIBRARIES} )
 endif( BZIP2_FOUND )
+if( OPENGL_FOUND )
+    target_link_libraries( goo ${OPENGL_gl_LIBRARY} )
+endif( OPENGL_FOUND )
+if( OPENGL_GLU_FOUND )
+    target_link_libraries( goo ${OPENGL_glu_LIBRARY} )
+endif( OPENGL_GLU_FOUND )
+
 
 if( EM_STACK_UNWINDING )
     if( BFD_FOUND )

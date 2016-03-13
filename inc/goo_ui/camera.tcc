@@ -6,9 +6,23 @@
 // implementation based on:
 // http://content.gpwiki.org/index.php/OpenGL:Tutorials:Using_Quaternions_to_represent_rotation
 
-namespace hph {
+namespace goo {
 namespace g3D {
 
+/**@brief Template for quaternion-based camera objects.
+ *
+ * Suggested application of this template is related to view control
+ * abstraction in 3D senes, typically in OpenGL. The main point is to
+ * provide smooth control over camera avoiding «gimbal lock» problem
+ * which is common issue for naive angular implementations.
+ *
+ * This class provides an «eye» object with «up-vector» and
+ * «Look-At-Point» (LAt) for more
+ * intelligible representation. One can move «Eye» itself, LAt-point or
+ * both objects simultaneously invoking subset of handy methods.
+ * Auxilliary frustum state information is also handled by this class
+ * instance.
+ * */
 template<typename Vector,
          typename ValT>
 class iCamera {
@@ -170,7 +184,7 @@ iCamera<Vector, ValT>::_recache_rotation_matrix() {
 }
 
 } // namespace g3D
-} // namespace hph
+} // namespace goo
 
 # endif  // H_GOO_CAMERA_H
 

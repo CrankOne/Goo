@@ -1,6 +1,6 @@
-# include <iostream>
+# include "goo_ui/viewer_3d_fltk.hpp"
 
-# include "goo_config.h"
+# ifdef FLTK_FOUND
 
 //# include "fl_frame_slider.hpp"
 # include "fl_3D_viewer.hpp"
@@ -11,29 +11,6 @@
 
 namespace hph {
 namespace ui {
-
-//
-// Camera
-//
-
-OGLCamera::Parent::Config OGLCamera::defaultCamCfg;
-
-void
-OGLCamera::_V_update(Float8 width, Float8 height) const {
-    glMatrixMode( GL_PROJECTION );
-    glLoadIdentity();
-
-    gluPerspective( _current._aperture,
-        (GLfloat)width/(GLfloat)height,
-        _current._nearCut, _current._farCut );
-
-    glMatrixMode( GL_MODELVIEW );
-    glLoadIdentity();
-    g3D::Vector3Dim<g3D::Real> eye = _current._LAt + _current._eye;
-    gluLookAt( eye.x(),             eye.y(),            eye.z(), // TODO
-               _current._LAt.x(),   _current._LAt.y(),  _current._LAt.z(),
-               _current._upV.x(),  _current._upV.y(),  _current._upV.z() );
-}
 
 //
 // OGLViewport
@@ -1156,5 +1133,8 @@ run_viewer( Application * app ) {
      win.show();
      return(Fl::run());
 }
+
 # endif
+
+# endif  // FLTK_FOUND
 

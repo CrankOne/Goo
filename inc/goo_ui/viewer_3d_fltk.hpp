@@ -1,5 +1,5 @@
-# ifndef H_FL3D_VIEWER_H
-# define H_FL3D_VIEWER_H
+# ifndef H_GOO_3D_FLTK_VIEWER_WINDOW_H
+# define H_GOO_3D_FLTK_VIEWER_WINDOW_H
 
 # include "goo_config.h"
 
@@ -39,20 +39,8 @@
 # include "fl_frame_slider.hpp"
 # include "fl_color_ruler.hpp"
 
-namespace hph {
-namespace ui {
-
-// concrete camera subclass
-class OGLCamera : public hph::g3D::iCamera<g3D::Vector3Dim<g3D::Real>, g3D::Real> {
-public:
-    typedef hph::g3D::iCamera<g3D::Vector3Dim<g3D::Real>, g3D::Real> Parent;
-
-    static Parent::Config defaultCamCfg;
-protected:
-    virtual void _V_update(Float8 width, Float8 height) const override;
-public:
-    OGLCamera() : Parent(defaultCamCfg) {}
-};
+namespace goo {
+namespace g3d {
 
 //
 // 3D OGLViewport
@@ -148,10 +136,9 @@ public:
 };
 
 }  // namespace ui
-}  // namespace hph
+}  // namespace goo
 
-# else   // TODO: GLFW
-# error "Sorry, but GLFW is unsupported for a while. You can use a FLTK viewer, or completly disable Goo's UI support."
 # endif  // FLTK_FOUND
-# endif  // H_FL3D_VIEWER_H
+
+# endif  // H_GOO_3D_FLTK_VIEWER_WINDOW_H
 

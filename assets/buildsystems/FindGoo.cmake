@@ -59,8 +59,8 @@ else( ${PKGCONFIG_FOUND} )
     message( SEND_ERROR "pkgconfig isn't found. Pure CMake configuration is unimplemented yet (TODO). Sorry." )
 endif( ${PKGCONFIG_FOUND} )
 
-set( goo_C_FLAGS   " -Wall -std=c99   -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99"   )
-set( goo_CXX_FLAGS " -Wall -std=gnu++11 -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++11" )
+set( goo_C_FLAGS   "   -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99 -rdynamic"   )
+set( goo_CXX_FLAGS " -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++11 -rdynamic" )
 
 message( STATUS "Found goo library configuration:" )
 message( STATUS "    built for: debug" )
