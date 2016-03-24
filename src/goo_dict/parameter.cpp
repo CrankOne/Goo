@@ -83,6 +83,68 @@ iAbstractParameter::to_string( char * str ) const {
 # undef require_uninitialized
 # undef require_initialized
 
+/*
+ * TODO: all arithmetic parameter implementations based
+ * on GDS parsing routines.
+ */
+
+void
+Parameter<bool>::_V_from_string( const char * str ) {
+    if( !strcmp( str, "true" ) ) {
+        _set_value(true);
+    } else if( !strcmp( str, "false" ) ) {
+        _set_value(false);
+    } else {
+        emraise( badParameter,
+            "%s seems to be not a logic-type argument.",
+            str );
+    }
+}
+
+void
+Parameter<bool>::_V_deserialize( const UByte * series ) {
+    if( *series == 0x0 ) {
+        _set_value( false );
+    } else if( *series == 0x1 ) {
+        _set_value( true );
+    } else {
+        emraise( corruption,
+            "Got %u numeric value in byte while logic value expected.",
+            (unsigned int) *series );
+    }
+}
+
+Size
+Parameter<bool>::_V_serialized_length() const {
+    return 1;
+}
+
+void
+Parameter<bool>::_V_serialize( UByte * series ) const {
+    if( value() ) {
+        series[0] = 0x1;
+    } else {
+        series[0] = 0x0;
+    }
+}
+
+size_t
+Parameter<bool>::_V_string_length() const {
+    if( value() ) {
+        return 4;  // for `true'
+    } else {
+        return 5;  // for `false'
+    }
+}
+
+void
+Parameter<bool>::_V_to_string( char * str ) const {
+    if( value() ) {
+        strncpy( str, "true", 4 );
+    } else {
+        strncpy( str, "true", 5 );
+    }
+}
 
 }  // namespace dict
 }  // namespace goo

@@ -161,6 +161,7 @@
     m(17,       narrowConversion,   "narrow number conversion is possible") \
     m(18,       uninitialized,      "operation invoked for uninitialized data") \
     m(25,       threadError,        "execution stopped due to in-thread error") \
+    m(26,       assertFailed,       "assertion check failure") \
     m(50,       nwGeneric,          "network error") \
     m(100,      ioError,            "common I/O error") \
     m(101,      notFound,           "data is not found at location") /* TODO: rename to noSuchData */ \

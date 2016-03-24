@@ -40,15 +40,19 @@ public:
     void serialize( UByte * ) const;
     size_t string_length() const;
     void to_string( char * ) const;
+
+    virtual bool is_section() const { return false; }
 };  // class iAbstractParameter
 
 
 template<typename ValueT>
-class iParameter {
+class iParameter : public iAbstractParameter {
 public:
     typedef ValueT Value;
 private:
     Value _value;
+protected:
+    void _set_value( const ValueT & );
 public:
     iParameter( const char * name,
                 const char * description);
@@ -79,6 +83,46 @@ template<typename ValueT> const ValueT &
 iParameter<ValueT>::value() const {
     return _value;
 }
+
+template<typename ValueT> void
+iParameter<ValueT>::_set_value( const ValueT & val ) {
+    _value = val;
+}
+
+template<typename ValueT>
+class Parameter {};  // No defailt implementation.
+
+// Specializations:
+
+# if 0  // TODO
+# define declare_explicit_specialization( typecode, cType, gnm, gdsnm ) \
+template<>                                                       \
+class Parameter<cType> : public iParameter<cType> {              \
+protected:                                                       \
+    virtual void _V_from_string( const char * )  override;       \
+    virtual void _V_deserialize( const UByte * ) override;       \
+    virtual Size _V_serialized_length() const    override;       \
+    virtual void _V_serialize( UByte * ) const   override;       \
+    virtual size_t _V_string_length() const      override;       \
+    virtual void _V_to_string( char * ) const    override;       \
+};
+
+for_all_atomic_datatypes( declare_explicit_specialization )
+
+# undef declare_explicit_specialization
+# else
+template<>
+class Parameter<bool> : public iParameter<bool> {
+protected:
+    virtual void _V_from_string( const char * )  override;
+    virtual void _V_deserialize( const UByte * ) override;
+    virtual Size _V_serialized_length() const    override;
+    virtual void _V_serialize( UByte * ) const   override;
+    virtual size_t _V_string_length() const      override;
+    virtual void _V_to_string( char * ) const    override;
+};
+# endif
+
 
 }  // namespace dict
 }  // namespace goo
