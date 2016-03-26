@@ -36,7 +36,7 @@ public:
        const char * description,
        ParameterT && defaultValue );
 
-    friend class Dictionary;
+    friend class Configuration;
 };  // class InsertionProxy
 
 

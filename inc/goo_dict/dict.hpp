@@ -32,22 +32,28 @@ protected:
 
     Dictionary( const char *, const char * );
 
-public:
-
-    virtual bool is_section() const override { return true; }
-
     friend class InsertionProxy;
 };  // class Dictionary
 
 
 class Configuration : public Dictionary {
 public:
-    Configuration();
+    /// Ctr expects the `name' here to be an application name and `description'
+    /// to be an application description.
+    Configuration( const char * name, const char * description );
     ~Configuration();
 
+    /// Parses command-line arguments.
     void extract( int argc, char * const argv[] );
 
+    /// Returns certain paramater by its name or full path.
     const iAbstractParameter & get_parameter( const std::string & ) const;
+
+    /// Constructs a bound insertion proxy instance object.
+    InsertionProxy insertion_proxy();
+
+    /// Produces an `usage' instruction text to the stream provided by arg.
+    void usage_text( std::ostream &, bool enableASCIIColoring = false );
 };  // class Configuration
 
 }  // namespace dicts

@@ -6,10 +6,19 @@
 namespace goo {
 namespace dict {
 
+const iAbstractParameter::ParameterEntryFlag
+iAbstractParameter::set         = 0x1,      // otherwise --- uninitialized still
+iAbstractParameter::option      = 0x2,      // otherwise --- has value
+iAbstractParameter::positional  = 0x4,      // otherwise --- has name
+iAbstractParameter::atomic      = 0x8,      // otherwise --- it is a dictionary
+iAbstractParameter::singular    = 0x10,     // otherwise --- can be repeated multiple times
+iAbstractParameter::required    = 0x20,     // otherwise --- is optional
+iAbstractParameter::shortened   = 0x40;     // otherwise --- has not one-char shortcut
+
 iAbstractParameter::iAbstractParameter( const char * name,
                                         const char * description,
-                                        bool hasDefault ) :
-                        _isSet(false), _hasDefault( hasDefault ) {
+                                        ParameterEntryFlag flags ) :
+                                        _flags( flags ) {
     const size_t nLen = strlen(name),
                  dLen = strlen(description);
     name = new char [nLen + 1];
@@ -34,15 +43,10 @@ iAbstractParameter::description() const {
     return _description;
 }
 
-bool
-iAbstractParameter::has_default() const {
-    return _hasDefault;
-}
-
 # define require_uninitialized \
-if(!_isSet) { emraise( badState, "Pre-initialization operation invoked for initialized parameter instance." ); }
+if(!is_set()) { emraise( badState, "Pre-initialization operation invoked for initialized parameter instance." ); }
 # define require_initialized \
-if(_isSet) { emraise( badState, "Post-initialization operation invoked for uninitialized parameter instance." ); }
+if(is_set()) { emraise( badState, "Post-initialization operation invoked for uninitialized parameter instance." ); }
 
 void
 iAbstractParameter::from_string( const char * str ) {
@@ -145,6 +149,20 @@ Parameter<bool>::_V_to_string( char * str ) const {
         strncpy( str, "true", 5 );
     }
 }
+
+// TODO
+# if 0
+Parameter<bool>::Parameter( const char * name,
+                            const char * description ) :
+            iParameter<bool>(name, description) {
+}
+
+Parameter<bool>::Parameter( const char * name,
+                            const char * description,
+                            bool defaultValue ) :
+            iParameter<bool>(name, description, defaultValue ) {
+}
+# endif
 
 }  // namespace dict
 }  // namespace goo

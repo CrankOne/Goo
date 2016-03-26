@@ -1,4 +1,5 @@
 # include "goo_dict/dict.hpp"
+# include "goo_dict/insertion_proxy.tcc"
 # include "goo_exception.hpp"
 
 namespace goo {
@@ -54,6 +55,34 @@ Dictionary::_V_string_length() const {
 void
 Dictionary::_V_to_string( char * ) const {
     _TODO_  // TODO
+}
+
+//
+//
+
+InsertionProxy
+Configuration::insertion_proxy() {
+    return InsertionProxy( this );
+}
+
+void
+Configuration::extract( int argc, char * const argv[] ) {
+    _TODO_  // TODO
+}
+
+Configuration::Configuration( const char * name, const char * descr ) : Dictionary(name, descr) {
+    _TODO_  // TODO
+}
+
+Configuration::~Configuration() {
+    _TODO_  // TODO
+}
+
+void
+Configuration::usage_text( std::ostream & os,
+                           bool enableASCIIColoring ) {
+    os << name() << " --- " << description() << std::endl
+       << "Usage:" << std::endl;
 }
 
 }  // namespace dict
