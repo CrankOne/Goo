@@ -43,6 +43,7 @@ iAbstractParameter::description() const {
     return _description;
 }
 
+# if 0  // XXX
 # define require_uninitialized \
 if(!is_set()) { emraise( badState, "Pre-initialization operation invoked for initialized parameter instance." ); }
 # define require_initialized \
@@ -87,6 +88,9 @@ iAbstractParameter::to_string( char * str ) const {
 # undef require_uninitialized
 # undef require_initialized
 
+# endif
+
+# if 0
 /*
  * TODO: all arithmetic parameter implementations based
  * on GDS parsing routines.
@@ -149,18 +153,19 @@ Parameter<bool>::_V_to_string( char * str ) const {
         strncpy( str, "true", 5 );
     }
 }
+# endif
 
 // TODO
-# if 0
+# if 1
 Parameter<bool>::Parameter( const char * name,
                             const char * description ) :
-            iParameter<bool>(name, description) {
+            iParameter<bool>(0, name, '\0', description) {
 }
 
 Parameter<bool>::Parameter( const char * name,
                             const char * description,
                             bool defaultValue ) :
-            iParameter<bool>(name, description, defaultValue ) {
+            iParameter<bool>(0, name, '\0', description, defaultValue ) {
 }
 # endif
 

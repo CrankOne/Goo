@@ -16,7 +16,7 @@ namespace dict {
  *  - unnamed positional arguments      ()
  *  - sections (dictionaries itself)
  */
-class iAbstractParameter {
+class iAbstractParameter /* {{{ */ {
 public:
     typedef UByte ParameterEntryFlag;
     static const ParameterEntryFlag
@@ -35,16 +35,6 @@ private:
 protected:
     void set_set_flag();
 
-    virtual void _V_from_string( const char * ) = 0;
-    virtual void _V_deserialize( const UByte * ) = 0;
-
-
-    virtual Size _V_serialized_length() const = 0;
-    virtual void _V_serialize( UByte * ) const = 0;
-
-    virtual size_t _V_string_length() const = 0;
-    virtual void _V_to_string( char * ) const = 0;
-
     iAbstractParameter( const char * name,
                         const char * description,
                         ParameterEntryFlag flags );
@@ -55,24 +45,6 @@ public:
 
     /// Returns pointer to description string.
     const char * description() const;
-
-    /// Sets value of parameter according to ASCII-text expression given.
-    void from_string( const char * );
-
-    /// Sets value of parameter according to byte sequence provided.
-    void deserialize( const UByte * );
-
-    /// Writes byte sequence representing value.
-    void serialize( UByte * ) const;
-
-    /// Returns length of byte sequence representing serialized value.
-    Size serialized_length() const;
-
-    /// Returns length of ASCII-text representation.
-    size_t string_length() const;
-
-    /// Writes ASCII-text representation by pointer provided.
-    void to_string( char * ) const;
 
     /// Returns true, if parameter has a value set (even if it is a default one).
     bool is_set() const {
@@ -118,10 +90,10 @@ public:
     bool has_shortened_character() const {
             return _flags & shortened;
         }
-};  // class iAbstractParameter
+};  /*}}}*/ // class iAbstractParameter
 
 template<typename ValueT>
-class iParameter : public iAbstractParameter {
+class iParameter : public iAbstractParameter /*{{{*/ {
 public:
     typedef ValueT Value;
 private:
@@ -144,7 +116,7 @@ public:
     ~iParameter() {}
 
     const ValueT & value() const;
-};  // class iParameter
+}; /*}}}*/  // class iParameter
 
 
 template<typename ValueT>
@@ -205,13 +177,6 @@ for_all_atomic_datatypes( declare_explicit_specialization )
 # else
 template<>
 class Parameter<bool> : public iParameter<bool> {
-protected:
-    virtual void _V_from_string( const char * )  override;
-    virtual void _V_deserialize( const UByte * ) override;
-    virtual Size _V_serialized_length() const    override;
-    virtual void _V_serialize( UByte * ) const   override;
-    virtual size_t _V_string_length() const      override;
-    virtual void _V_to_string( char * ) const    override;
 public:
     Parameter( const char * name,
                const char * description );
