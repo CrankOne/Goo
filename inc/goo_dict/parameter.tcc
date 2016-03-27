@@ -50,14 +50,28 @@ protected:
                         ParameterEntryFlag flags );
     virtual ~iAbstractParameter();
 public:
+    /// Returns pointer to name string.
     const char * name() const;
+
+    /// Returns pointer to description string.
     const char * description() const;
 
+    /// Sets value of parameter according to ASCII-text expression given.
     void from_string( const char * );
+
+    /// Sets value of parameter according to byte sequence provided.
     void deserialize( const UByte * );
-    Size serialized_length() const;
+
+    /// Writes byte sequence representing value.
     void serialize( UByte * ) const;
+
+    /// Returns length of byte sequence representing serialized value.
+    Size serialized_length() const;
+
+    /// Returns length of ASCII-text representation.
     size_t string_length() const;
+
+    /// Writes ASCII-text representation by pointer provided.
     void to_string( char * ) const;
 
     /// Returns true, if parameter has a value set (even if it is a default one).
