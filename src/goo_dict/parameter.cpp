@@ -150,19 +150,18 @@ Parameter<bool>::_V_to_string( char * str ) const {
     }
 }
 
-// TODO
-# if 0
+
 Parameter<bool>::Parameter( const char * name,
-                            const char * description ) :
+                            const char * description,
+                            char shortcut ) :
             iParameter<bool>(name, description) {
 }
 
-Parameter<bool>::Parameter( const char * name,
+Parameter<bool>::Parameter( char shortcut,
                             const char * description,
                             bool defaultValue ) :
             iParameter<bool>(name, description, defaultValue ) {
 }
-# endif
 
 }  // namespace dict
 }  // namespace goo

@@ -27,6 +27,16 @@ Dictionary::insert_section( Dictionary * instPtr ) {
 // iAbstractParameter interface implementation
 //////////////////////////////////////////////
 
+size_t
+Dictionary::_V_string_length() const {
+    _TODO_  // TODO
+}
+
+void
+Dictionary::_V_to_string( char * ) const {
+    _TODO_  // TODO
+}
+
 void
 Dictionary::_V_from_string( const char * ) {
     _TODO_  // TODO: need for parser to be specified
@@ -44,16 +54,6 @@ Dictionary::_V_serialized_length() const {
 
 void
 Dictionary::_V_serialize( UByte * ) const {
-    _TODO_  // TODO
-}
-
-size_t
-Dictionary::_V_string_length() const {
-    _TODO_  // TODO
-}
-
-void
-Dictionary::_V_to_string( char * ) const {
     _TODO_  // TODO
 }
 
