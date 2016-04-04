@@ -2,6 +2,7 @@
 # define H_GOO_PARAMETERS_DICTIONARY_H
 
 # include <map>
+# include <vector>
 
 # include <iostream>
 //# include "goo_dict/insertion_proxy.hpp"
@@ -17,13 +18,6 @@ private:
     std::map<std::string, iAbstractParameter *> _parameters;
     std::map<std::string, Dictionary *> _dictionaries;
 protected:
-    virtual void _V_from_string( const char * ) override;
-    virtual void _V_deserialize( const UByte * ) override;
-    virtual Size _V_serialized_length() const override;
-    virtual void _V_serialize( UByte * ) const override;
-    virtual size_t _V_string_length() const override;
-    virtual void _V_to_string( char * ) const override;
-
     /// Inserts parameter instance created by insertion proxy.
     void insert_parameter( iAbstractParameter * );
 
@@ -37,6 +31,11 @@ protected:
 
 
 class Configuration : public Dictionary {
+public:
+    struct Tokens {
+        std::vector<std::string>                positionalValues;
+        std::multimap<std::string, std::string> options;
+    };
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
@@ -54,6 +53,8 @@ public:
 
     /// Produces an `usage' instruction text to the stream provided by arg.
     void usage_text( std::ostream &, bool enableASCIIColoring = false );
+
+    void command_line_argument_to_tokens( int argc, char * argv[], struct Tokens & tokens );
 };  // class Configuration
 
 }  // namespace dicts

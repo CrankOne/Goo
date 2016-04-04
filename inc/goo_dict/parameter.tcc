@@ -16,7 +16,7 @@ namespace dict {
  *  - unnamed positional arguments      ()
  *  - sections (dictionaries itself)
  */
-class iAbstractParameter {
+class iAbstractParameter /* {{{ */ {
 public:
     typedef UByte ParameterEntryFlag;
     static const ParameterEntryFlag
@@ -35,30 +35,16 @@ private:
 protected:
     void set_set_flag();
 
-    virtual void _V_from_string( const char * ) = 0;
-    virtual void _V_deserialize( const UByte * ) = 0;
-
-
-    virtual Size _V_serialized_length() const = 0;
-    virtual void _V_serialize( UByte * ) const = 0;
-
-    virtual size_t _V_string_length() const = 0;
-    virtual void _V_to_string( char * ) const = 0;
-
     iAbstractParameter( const char * name,
                         const char * description,
                         ParameterEntryFlag flags );
     virtual ~iAbstractParameter();
 public:
+    /// Returns pointer to name string.
     const char * name() const;
-    const char * description() const;
 
-    void from_string( const char * );
-    void deserialize( const UByte * );
-    Size serialized_length() const;
-    void serialize( UByte * ) const;
-    size_t string_length() const;
-    void to_string( char * ) const;
+    /// Returns pointer to description string.
+    const char * description() const;
 
     /// Returns true, if parameter has a value set (even if it is a default one).
     bool is_set() const {
@@ -104,7 +90,7 @@ public:
     bool has_shortcut() const {
             return _flags & shortened;
         }
-};  // class iAbstractParameter
+};  /*}}}*/ // class iAbstractParameter
 
 
 /**@class iParameter
@@ -114,7 +100,7 @@ public:
  * Defines common value-operation routines.
  * */
 template<typename ValueT>
-class iParameter : public iAbstractParameter {
+class iParameter : public iAbstractParameter /*{{{*/ {
 public:
     typedef ValueT Value;
 private:
@@ -222,13 +208,6 @@ for_all_atomic_datatypes( declare_explicit_specialization )
  * */
 template<>
 class Parameter<bool> : public iParameter<bool> {
-protected:
-    virtual void _V_from_string( const char * )  override;
-    virtual void _V_deserialize( const UByte * ) override;
-    virtual Size _V_serialized_length() const    override;
-    virtual void _V_serialize( UByte * ) const   override;
-    virtual size_t _V_string_length() const      override;
-    virtual void _V_to_string( char * ) const    override;
 public:
     Parameter( const char * name,
                const char * description,
