@@ -158,7 +158,7 @@ public:
     /// Returns reference on common config object.
     inline ConfigObjectT & co() { assert(_cObj); return *_cObj; }
     /// Returns reference on common config object (const version).
-    inline const ConfigObjectT * co() const { assert(_cObj); return *_cObj; }
+    inline const ConfigObjectT & co() const { assert(_cObj); return *_cObj; }
 };
 
 }  // namespace goo
