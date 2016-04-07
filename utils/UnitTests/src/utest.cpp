@@ -79,7 +79,6 @@ Keys:\n\r\
 Report bugs to crank@qcrypt.org.\n\r\
 Official repository page for this version:\n\r\
     <https://bitbucket.org/CrankOne/goo>\n\r\
-Gluck auf!\n\r\
 ", utilname);}
 
 static void
@@ -138,7 +137,7 @@ UTApp::_V_construct_config_object( int argc, char * const argv[] ) const {
         Config::unassigned,     // Run all modules in order.
         false,                  // Be verbose
         false,                  // Abort on unit failure.
-        true,                   // Print reports about each ran unit after all.
+        false,                  // Print reports about each ran unit after all.
         false,                  // Take into account unit dependencies on selective run.
     };
 
@@ -160,8 +159,7 @@ UTApp::_V_construct_config_object( int argc, char * const argv[] ) const {
                 {"ignore-deps",     no_argument,        0,   1  },
                 {0,                 0,                  0,   0  }
             };
-
-            c = getopt_long(argc, argv, "chvskrlu:",
+            c = getopt_long(argc, argv, "hcqKrlsu:s:",
                 long_options, &option_index);
             if (c == -1)
                 break;
@@ -212,6 +210,7 @@ UTApp::_V_configure_application( const Config * c ) {
         for( auto it = c->namesToEvaluate.begin(); c->namesToEvaluate.end() != it; ++it ) {
             if( !c->ignoreDeps ) {
                 // if full-depth evaluation is not prohibited, obtain deps chain:
+                // TODO: _modulesGraphPtr = 0 causes segfault when module is not found.
                 _modulesGraphPtr->chain_for_node_by_label( *it, c->units );
             } else {
                 // utherwise, just obtain the module pointer:
@@ -307,6 +306,24 @@ UTApp::_V_run() {
                          << " units ran : " << ESC_BLDGREEN << nRan << ESC_CLRCLEAR << std::endl
                          << "   skipped : " << ESC_BLDYELLOW << nSkipped << ESC_CLRCLEAR << std::endl
                          << "    errors : " << (nErrors > 0 ? ESC_BLDRED : ESC_BLDGREEN) << nErrors << ESC_CLRCLEAR << std::endl;
+            if( UTApp::co().printUnitsLogs ) {
+                Parent::ls() << "REPORTS:" << std::endl;
+                for( auto it  = UTApp::co().units.begin();
+                     UTApp::co().units.end() != it; ++it ) {
+                    if( 2 == (*it)->ran_result() ) {
+                        continue;
+                    }
+                    Parent::ls() << "UNIT ";
+                    if( (*it)->ran_result() == 0 ) {
+                        Parent::ls() << ESC_BLDGREEN;
+                    } else {
+                        Parent::ls() << ESC_BLDRED;
+                    }
+                    Parent::ls() << (*it)->verbose_name() << ESC_CLRCLEAR << ":" << std::endl;
+                    Parent::ls() << dynamic_cast<const std::stringstream&>(
+                                (*it)->outs()).str() << std::endl;
+                }
+            }
         } break;
         case Config::unassigned :
         case Config::printHelp :
@@ -359,13 +376,17 @@ UTApp::TestingUnit::run( bool dryRun ) noexcept {
     try {
         _V_run( *_outStream );
     } catch( goo::Exception & ge ) {
+        ge.dump(outs());
         if( goo::Exception::uTestFailure == ge.code() ) {
             _ranResult = -1;  // Goo's UT expected error
+            return;
         } else {
             _ranResult = -2;  // Other (unexpected) Goo's error
+            return;
         }
     } catch( ... ) {
         _ranResult = -3;  // third party exception
+        return;
     }
     _ranResult = 0;
 }

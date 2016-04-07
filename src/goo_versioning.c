@@ -2,7 +2,7 @@
 # include "goo_versioning.h"
 # include "goo_utility.h"
 
-const struct HPH_Versioning gooVersioning = {
+const struct Goo_Versioning gooVersioning = {
     .buildTimestamp = BUILD_TIMESTAMP,
      .gitCommitHash = COMMIT_HASH,
       .gitCommitStr = GIT_STRING,

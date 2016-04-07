@@ -73,6 +73,9 @@ public:
     /// Goo's alias to acquire environmental variable (std::getenv())
     std::string envvar( const std::string & ) const;
 
+    /// Returns true, if instance was created.
+    static bool exists() { return _self; }
+
     template<typename ConfigObjectT,
              typename LogStreamT> friend class goo::App;
 };
@@ -139,11 +142,12 @@ public:
     // general application management
 
     /// Creates application instance. Must be invoked just after entry point.
-    static void init(int argc_, char * const argv_[], App<ConfigObjectT, LogStreamT> * app) {
+    static SelfAbstractType * init(int argc_, char * argv_[], App<ConfigObjectT, LogStreamT> * app) {
         _self = app;
         app->_V_configure_application(
             app->_cObj = app->_V_construct_config_object(argc_, argv_) );
         app->_lStr = app->_V_acquire_stream();
+        return app;
     }
 
     /// Configured application entry point.

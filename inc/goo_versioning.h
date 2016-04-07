@@ -7,7 +7,7 @@
 extern "C" {
 # endif
 
-struct HPH_Versioning{
+struct Goo_Versioning{
     const char * buildTimestamp;
     const char * gitCommitHash;
     const char * gitCommitStr;
@@ -15,7 +15,7 @@ struct HPH_Versioning{
              encodedLibsSupport;
 } ;
 
-extern const struct HPH_Versioning hphVersioning;
+extern const struct Goo_Versioning gooVersioning;
 
 /** Prints build conf to stream. */
 void goo_build_info( FILE * );

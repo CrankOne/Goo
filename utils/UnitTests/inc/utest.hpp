@@ -1,5 +1,5 @@
-# ifndef H_HPHST_UTEST_H
-# define H_HPHST_UTEST_H
+# ifndef H_GOO_UTEST_H
+# define H_GOO_UTEST_H
 
 # include <string>
 # include <map>
@@ -46,6 +46,7 @@ public:
         void run( bool dryRun=false ) noexcept;
         void make_own_outstream();
         std::ostream & outs() { return *_outStream; }
+        const std::ostream & outs() const { return *_outStream; }
         void outs( std::ostream & os ) { _outStream = &os; }
         const std::string & verbose_name() const { return _verboseName; }
         void set_dependencies( const char [][48], uint8_t depLength );
@@ -98,5 +99,5 @@ if( !(expr) ) { emraise( uTestFailure, __VA_ARGS__ ); }
 }  // namespace ut
 }  // namespace goo
 
-# endif  // H_HPHST_UTEST_H
+# endif  // H_GOO_UTEST_H
 
