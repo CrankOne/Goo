@@ -87,11 +87,18 @@ public:
             return !is_mandatory();
         }
     /// Returns true, if parameter has a single-character shortcut.
-    bool has_shortened_character() const {
+    bool has_shortcut() const {
             return _flags & shortened;
         }
 };  /*}}}*/ // class iAbstractParameter
 
+
+/**@class iParameter
+ * @brief A valued intermediate class representing dictionary entry with
+ * value of certain type.
+ *
+ * Defines common value-operation routines.
+ * */
 template<typename ValueT>
 class iParameter : public iAbstractParameter /*{{{*/ {
 public:
@@ -105,38 +112,41 @@ protected:
 public:
     iParameter( ParameterEntryFlag,
                 const char * name,
-                char shortcut,
-                const char * description );
+                const char * description,
+                char shortcut_ = '\0' );
 
     iParameter( ParameterEntryFlag,
                 const char * name,
-                char shortcut,
                 const char * description,
-                const ValueT & defaultValue );
+                const ValueT & defaultValue,
+                char shortcut_ = '\0' );
+
     ~iParameter() {}
 
     const ValueT & value() const;
-}; /*}}}*/  // class iParameter
+
+    char shortcut() const { return _shortcut; }
+};  // class iParameter
 
 
 template<typename ValueT>
 iParameter<ValueT>::iParameter( ParameterEntryFlag flags,
                                 const char * name,
-                                char shortcut,
-                                const char * description ) :
+                                const char * description,
+                                char shortcut_ ) :
         iAbstractParameter( name, description, flags ),
-        _shortcut(shortcut) {
+        _shortcut(shortcut_) {
     // TODO: check for consistency
 }
 
 template<typename ValueT>
 iParameter<ValueT>::iParameter( ParameterEntryFlag flags,
                                 const char * name,
-                                char shortcut,
                                 const char * description,
-                                const ValueT & defaultValue ) :
+                                const ValueT & defaultValue,
+                                char shortcut_ ) :
         iAbstractParameter( name, description, flags ),
-        _shortcut(shortcut),
+        _shortcut(shortcut_),
         _value(defaultValue) {
     // TODO: check for consistency, i.e. `required' flag can not be
     // set for default-valued parameter and parameter with dictionary
@@ -153,8 +163,15 @@ iParameter<ValueT>::_set_value( const ValueT & val ) {
     _value = val;
 }
 
+
+/**@class Parameter
+ * @brief User-side implementation class. Extension point for user parameters type.
+ *
+ * There is no default implementation of this class --- only standard C classes
+ * are implemented in Goo library.
+ */
 template<typename ValueT>
-class Parameter {};  // No defailt implementation.
+class Parameter {};  // Defailt implementation is empty.
 
 // Specializations:
 
@@ -175,14 +192,28 @@ for_all_atomic_datatypes( declare_explicit_specialization )
 
 # undef declare_explicit_specialization
 # else
+
+/**@brief Logic option argument type.
+ *
+ * Most common usage of this object is to provide logical flag for
+ * enabling/disabling some functionality. E.g.:
+ *      $ do_something -v
+ * Or, with equivalent meaning:
+ *      $ do_something --verbose=true
+ * Besides of true/false values, the following synonims are accepted:
+ *      true : True, TRUE, yes, Yes, YES, enable, Enable, ENABLE, on, On, ON
+ *      false: False, FALSE, no, No, NO, disable, Disable, DISABLE, off, Off, OFF
+ * Note, that this kind of argument can not be required and always has default
+ * value set to false.
+ * */
 template<>
 class Parameter<bool> : public iParameter<bool> {
 public:
     Parameter( const char * name,
-               const char * description );
-    Parameter( const char * name,
                const char * description,
-               bool defaultValue );
+               char shortcut = '\0' );
+    Parameter( char shortcut,
+               const char * description );
 };
 # endif
 

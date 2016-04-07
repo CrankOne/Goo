@@ -4,6 +4,8 @@
 
 # include <cstring>
 
+# if 0
+
 namespace goo {
 namespace dict {
 
@@ -29,8 +31,73 @@ Dictionary::insert_section( Dictionary * instPtr ) {
 // iAbstractParameter interface implementation
 //////////////////////////////////////////////
 
+size_t
+Dictionary::_V_string_length() const {
+    _TODO_  // TODO
+}
+
+void
+Dictionary::_V_to_string( char * ) const {
+    _TODO_  // TODO
+}
+
+void
+Dictionary::_V_from_string( const char * ) {
+    _TODO_  // TODO: need for parser to be specified
+}
+
+void
+Dictionary::_V_deserialize( const UByte * ) {
+    _TODO_  // TODO:
+}
+
+Size
+Dictionary::_V_serialized_length() const {
+    _TODO_  // TODO
+}
+
+void
+Dictionary::_V_serialize( UByte * ) const {
+    _TODO_  // TODO
+}
+
 //
 //
+
+||||||| merged common ancestors
+void
+Dictionary::_V_from_string( const char * ) {
+    _TODO_  // TODO: need for parser to be specified
+}
+
+void
+Dictionary::_V_deserialize( const UByte * ) {
+    _TODO_  // TODO:
+}
+
+Size
+Dictionary::_V_serialized_length() const {
+    _TODO_  // TODO
+}
+
+void
+Dictionary::_V_serialize( UByte * ) const {
+    _TODO_  // TODO
+}
+
+size_t
+Dictionary::_V_string_length() const {
+    _TODO_  // TODO
+}
+
+void
+Dictionary::_V_to_string( char * ) const {
+    _TODO_  // TODO
+}
+
+//
+//
+
 
 void
 command_line_argument_to_tokens( int argc,
@@ -77,4 +144,6 @@ Configuration::usage_text( std::ostream & os,
 
 }  // namespace dict
 }  // namespace dict
+
+# endif
 
