@@ -25,3 +25,5 @@ utils/DeuPi0/g4deu/bin/*
 utils/DeuPi0/g4deu/obj/*
 CMakeCache.txt
 CMakeFiles
+assets/buildsystems/FindGoo.cmake
+assets/buildsystems/goo.pc
