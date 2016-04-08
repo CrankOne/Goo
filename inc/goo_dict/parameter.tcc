@@ -2,6 +2,7 @@
 # define H_GOO_PARAMETERS_DICTIONARY_DICTIONARY_H
 
 # include "goo_types.h"
+# include "goo_exception.hpp"
 
 namespace goo {
 namespace dict {
@@ -28,23 +29,36 @@ public:
             required,
             shortened
         ;
+    //static const ParameterEntryFlag
+    //        option_baseFlags
+    //    ;
 private:
-    char * _name,
-         * _description;
+    char * _name,           ///< Name of the option. Can be set to nullptr.
+         * _description;    ///< Description of the option. Can be set to nullptr.
+    /// Stores logical description of an instance.
     ParameterEntryFlag _flags;
+    /// Used only when shortened flag is set.
+    char _shortcut;
 protected:
+    /// Sets the «set» flag translating instance to initialized state.
     void set_set_flag();
 
+    /// Single ctr can be only invoked by descendants.
     iAbstractParameter( const char * name,
                         const char * description,
-                        ParameterEntryFlag flags );
-    virtual ~iAbstractParameter();
+                        ParameterEntryFlag flags,
+                        char shortcut = '\0');
 public:
+    virtual ~iAbstractParameter();
+
     /// Returns pointer to name string.
     const char * name() const;
 
     /// Returns pointer to description string.
     const char * description() const;
+
+    /// Returns shortcut if it was set. Otherwise returns '\0'.
+    char shortcut() const { return _shortcut; }
 
     /// Returns true, if parameter has a value set (even if it is a default one).
     bool is_set() const {
@@ -104,21 +118,19 @@ class iParameter : public iAbstractParameter /*{{{*/ {
 public:
     typedef ValueT Value;
 private:
-    /// Used only when shortened flag is set.
-    char _shortcut;
     Value _value;
 protected:
     void _set_value( const ValueT & );
 public:
-    iParameter( ParameterEntryFlag,
-                const char * name,
+    iParameter( const char * name,
                 const char * description,
+                ParameterEntryFlag,
                 char shortcut_ = '\0' );
 
-    iParameter( ParameterEntryFlag,
-                const char * name,
+    iParameter( const char * name,
                 const char * description,
                 const ValueT & defaultValue,
+                ParameterEntryFlag,
                 char shortcut_ = '\0' );
 
     ~iParameter() {}
@@ -130,27 +142,25 @@ public:
 
 
 template<typename ValueT>
-iParameter<ValueT>::iParameter( ParameterEntryFlag flags,
-                                const char * name,
+iParameter<ValueT>::iParameter( const char * name,
                                 const char * description,
+                                ParameterEntryFlag flags,
                                 char shortcut_ ) :
-        iAbstractParameter( name, description, flags ),
-        _shortcut(shortcut_) {
-    // TODO: check for consistency
+        iAbstractParameter( name, description, flags ) {
+    // Checks for consistency:
+    /* ... */
 }
 
 template<typename ValueT>
-iParameter<ValueT>::iParameter( ParameterEntryFlag flags,
-                                const char * name,
+iParameter<ValueT>::iParameter( const char * name,
                                 const char * description,
                                 const ValueT & defaultValue,
+                                ParameterEntryFlag flags,
                                 char shortcut_ ) :
         iAbstractParameter( name, description, flags ),
-        _shortcut(shortcut_),
         _value(defaultValue) {
-    // TODO: check for consistency, i.e. `required' flag can not be
-    // set for default-valued parameter and parameter with dictionary
-    // and so on...
+    // Checks for consistency:
+    /* ... */
 }
 
 template<typename ValueT> const ValueT &
@@ -203,17 +213,58 @@ for_all_atomic_datatypes( declare_explicit_specialization )
  * Besides of true/false values, the following synonims are accepted:
  *      true : True, TRUE, yes, Yes, YES, enable, Enable, ENABLE, on, On, ON
  *      false: False, FALSE, no, No, NO, disable, Disable, DISABLE, off, Off, OFF
- * Note, that this kind of argument can not be required and always has default
- * value set to false.
+ * Note, that this kind of argument can not be required, nor repeated.
+ * Possible construction variants:
+ *      .p<bool>( 'v', "Enables verbose output" )
+ *      .p<bool>( 'q', "Be quiet", true )
+ *      .p<bool>( "quet", "Be quiet", true )
+ *      .p<bool>( "verbose", "Enables verbose output" )
+ *      .p<bool>( 'v', "verbose", "Enables verbose output" )
+ *      .p<bool>( 'q', "quet", "Be quiet", true )
+ * If there are default argument specified, the argument for such kind of an option
+ * is mandatory. Otherwise, it must be omitted. E.g.:
+ *   o to enable `.p<bool>( 'v', "Enables verbose output" )` it is enough to:
+ *      $ myprogram -v
+ *   o contraversary, for .p<bool>( 'q', "Be quiet", true ) it is necessary to:
+ *      $ myprogram -q false
+ * This aspect affects generated help message.
  * */
 template<>
 class Parameter<bool> : public iParameter<bool> {
 public:
-    Parameter( const char * name,
-               const char * description,
-               char shortcut = '\0' );
-    Parameter( char shortcut,
-               const char * description );
+    /// Only long option ctr.
+    Parameter( const char * name_,
+               const char * description_ );
+    /// Long option with shortcut.
+    Parameter( char shortcut_,
+               const char * name_,
+               const char * description_ );
+    /// Only short option.
+    Parameter( char shortcut_,
+               const char * description_ );
+    /// Only long option ctr.
+    Parameter( const char * name_,
+               const char * description_,
+               bool default_ );
+    /// Long option with shortcut.
+    Parameter( char shortcut_,
+               const char * name_,
+               const char * description_,
+               bool default_ );
+    /// Only short option.
+    Parameter( char shortcut_,
+               const char * description_,
+               bool default_ );
+
+    // This is to prevent implicit conversion from char * to bool --- fails at compile time.
+    Parameter( const char *,
+               const char *,
+               const char * );
+    // This is to prevent implicit conversion from char * to bool --- fails at compile time.
+    Parameter( char,
+               const char *,
+               const char *,
+               const char * );
 };
 # endif
 

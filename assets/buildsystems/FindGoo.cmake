@@ -23,7 +23,7 @@ cmake_minimum_required( VERSION 3.1 )
 #                           awk -F ":" '{print $2}' | sed -e 's/^[ \t]*//;s/[ \t]*$//'
 # gives the path of used C++-compiler.
 
-list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "/home/crank/Projects/goo.install/lib" isSystemDir)
+list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "/usr/local/lib" isSystemDir)
 
 # find pkg config
 find_package(PkgConfig)
@@ -31,9 +31,9 @@ find_package(PkgConfig)
 if( ${PKGCONFIG_FOUND} )
     if("${isSystemDir}" STREQUAL "-1")
         # doesn't wok (why? -- cmake 3.1 pkgconfig module should support it this way)
-        #set( PKG_CONFIG_USE_CMAKE_PREFIX_PATH "/home/crank/Projects/goo.install/share/pkgconfig" )
+        #set( PKG_CONFIG_USE_CMAKE_PREFIX_PATH "/usr/local/share/pkgconfig" )
         # or, for earlier CMake versions:
-        set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/home/crank/Projects/goo.install/share/pkgconfig" )
+        set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/share/pkgconfig" )
     endif("${isSystemDir}" STREQUAL "-1")
     pkg_check_modules(pc_goo QUIET goo)  # use prefix wc_goo...
     if("${pc_goo_FOUND}" STREQUAL "1")

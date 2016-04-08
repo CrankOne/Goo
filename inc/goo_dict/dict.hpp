@@ -25,6 +25,7 @@ protected:
     void insert_section( Dictionary * );
 
     Dictionary( const char *, const char * );
+    ~Dictionary();
 
     friend class InsertionProxy;
 };  // class Dictionary

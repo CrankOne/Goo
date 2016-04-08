@@ -4,7 +4,7 @@
 
 # include <cstring>
 
-# if 0
+# if 1
 
 namespace goo {
 namespace dict {
@@ -13,7 +13,18 @@ Dictionary::Dictionary( const char * name_,
                         const char * description_ ) :
             iAbstractParameter(name_,
                                description_,
-                               false ) {
+                               0 ) {
+}
+
+Dictionary::~Dictionary() {
+    for( auto it = _parameters.begin();
+         it != _parameters.end(); ++it ) {
+        delete it->second;
+    }
+    for( auto it = _dictionaries.begin();
+         it != _dictionaries.end(); ++it ) {
+        delete it->second;
+    }
 }
 
 void
@@ -30,74 +41,6 @@ Dictionary::insert_section( Dictionary * instPtr ) {
 
 // iAbstractParameter interface implementation
 //////////////////////////////////////////////
-
-size_t
-Dictionary::_V_string_length() const {
-    _TODO_  // TODO
-}
-
-void
-Dictionary::_V_to_string( char * ) const {
-    _TODO_  // TODO
-}
-
-void
-Dictionary::_V_from_string( const char * ) {
-    _TODO_  // TODO: need for parser to be specified
-}
-
-void
-Dictionary::_V_deserialize( const UByte * ) {
-    _TODO_  // TODO:
-}
-
-Size
-Dictionary::_V_serialized_length() const {
-    _TODO_  // TODO
-}
-
-void
-Dictionary::_V_serialize( UByte * ) const {
-    _TODO_  // TODO
-}
-
-//
-//
-
-||||||| merged common ancestors
-void
-Dictionary::_V_from_string( const char * ) {
-    _TODO_  // TODO: need for parser to be specified
-}
-
-void
-Dictionary::_V_deserialize( const UByte * ) {
-    _TODO_  // TODO:
-}
-
-Size
-Dictionary::_V_serialized_length() const {
-    _TODO_  // TODO
-}
-
-void
-Dictionary::_V_serialize( UByte * ) const {
-    _TODO_  // TODO
-}
-
-size_t
-Dictionary::_V_string_length() const {
-    _TODO_  // TODO
-}
-
-void
-Dictionary::_V_to_string( char * ) const {
-    _TODO_  // TODO
-}
-
-//
-//
-
 
 void
 command_line_argument_to_tokens( int argc,
@@ -127,12 +70,11 @@ Configuration::insertion_proxy() {
     return InsertionProxy( this );
 }
 
-Configuration::Configuration( const char * name, const char * descr ) : Dictionary(name, descr) {
-    _TODO_  // TODO
+Configuration::Configuration( const char * name_,
+                              const char * descr_ ) : Dictionary(name_, descr_) {
 }
 
 Configuration::~Configuration() {
-    _TODO_  // TODO
 }
 
 void
