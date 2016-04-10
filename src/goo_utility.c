@@ -7,7 +7,7 @@
 # include "goo_utility.h"
 
 double
-hph_dstr_triangular( const double c ) {
+goo_dstr_triangular( const double c ) {
     double u = rand()/(double)(RAND_MAX);
     return u < c ? sqrt(c*u) : 1 - sqrt( (1-c)*(1-u) );
 }

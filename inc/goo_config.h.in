@@ -11,6 +11,7 @@
 #cmakedefine SOURCE_POSITION_INFO   1
 #cmakedefine EM_STACK_UNWINDING     2
 #cmakedefine ANSI_ESCSEQ_PRINT      3
+#cmakedefine ENABLE_GDS             4
 
 #cmakedefine ZLIB_FOUND             0
 #cmakedefine LZO_FOUND              1
@@ -63,6 +64,18 @@
 
 # ifndef GOO_DEFAULT_ZLIB_COMPRESSION_LEVEL
 #   define GOO_DEFAULT_ZLIB_COMPRESSION_LEVEL 9
+# endif
+
+# ifndef GDS_PARSER_EXPR_REPLICA_BUF_LENGTH
+#   define GDS_PARSER_EXPR_REPLICA_BUF_LENGTH 1024
+# endif
+
+# ifndef GDS_PARSER_NSCOPES
+#   define GDS_PARSER_NSCOPES 128
+# endif
+
+# ifndef GDS_PARSER_STRING_BUF_LEN
+#   define GDS_PARSER_STRING_BUF_LEN 1024*1024
 # endif
 
 # ifdef __cplusplus

@@ -32,11 +32,6 @@ protected:
 
 
 class Configuration : public Dictionary {
-public:
-    struct Tokens {
-        std::vector<std::string>                positionalValues;
-        std::multimap<std::string, std::string> options;
-    };
 private:
     // getopt_long() aux caches:
     mutable void * _longOptionsPtr;
@@ -48,6 +43,7 @@ public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
     Configuration( const char * name, const char * description );
+
     ~Configuration();
 
     /// Parses command-line arguments.
@@ -62,7 +58,11 @@ public:
     /// Produces an `usage' instruction text to the stream provided by arg.
     void usage_text( std::ostream &, bool enableASCIIColoring = false );
 
-    void command_line_argument_to_tokens( int argc, char * argv[], struct Tokens & tokens );
+    /// A wrapper to glibc's wordexp() function.
+    static Size tokenize_string( const std::string &, char **& argvTokens );
+
+    /// Cleaner for tokenized string
+    static void free_tokens( size_t argcTokens, char ** argvTokens );
 };  // class Configuration
 
 }  // namespace dicts

@@ -1,5 +1,5 @@
-# ifndef HPH_TYPES_H
-# define HPH_TYPES_H
+# ifndef GOO_TYPES_H
+# define GOO_TYPES_H
 
 # include <stdint.h>
 # include "goo_config.h"
@@ -16,7 +16,7 @@
  */
 
 /*! \file goo_types.h
- * \brief Contains atomic Hph's types and definitions.
+ * \brief Contains atomic Goo's types and definitions.
  * 
  * Note the following types table:
  *  #   C-name b0000-0000  hex#
@@ -172,6 +172,7 @@
     m(106,      objNotConstructed,  "requested object was not constructed" ) \
     m(107,      singletonRepCtr,    "singleton repeated construction" ) \
     m(108,      badArchitect,       "architectural incompleteness or undefined state" ) \
+    m(254,      gdsError,           "Declarative Semantics language parsing error") \
     m(255,      thirdParty,         "thirt-party code error") \
     /* ... */
 

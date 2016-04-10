@@ -1,4 +1,5 @@
 # include <cstring>
+# include <wordexp.h>
 # include "utest.hpp"
 # include "goo_dict/insertion_proxy.tcc"
 
@@ -9,6 +10,7 @@
  * */
 
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
+    //os << "**** **** ****" << std::endl;
     // const char * const argv_[] = {};
 
     {
@@ -29,6 +31,14 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     }
 
     {
+        const char ex1[] = "./foo -1vqfalse";
+        char ** argv;
+        int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
+        for( int n = 0; n < argc; ++n ) {
+            std::cerr << argv[n] << std::endl;  // TODO cout -> os
+        }
+
+        goo::dict::Configuration::free_tokens( argc, argv );
     }
 
     //conf.usage_text( os );
