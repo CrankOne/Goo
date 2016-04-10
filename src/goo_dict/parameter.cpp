@@ -7,25 +7,61 @@ namespace goo {
 namespace dict {
 
 const iAbstractParameter::ParameterEntryFlag
-iAbstractParameter::set         = 0x1,      // otherwise --- uninitialized still
-iAbstractParameter::option      = 0x2,      // otherwise --- has value
-iAbstractParameter::positional  = 0x4,      // otherwise --- has name
-iAbstractParameter::atomic      = 0x8,      // otherwise --- it is a dictionary
-iAbstractParameter::singular    = 0x10,     // otherwise --- can be repeated multiple times
-iAbstractParameter::required    = 0x20,     // otherwise --- is optional
-iAbstractParameter::shortened   = 0x40;     // otherwise --- has not one-char shortcut
+    iAbstractParameter::set         = 0x1,      // otherwise --- uninitialized still
+    iAbstractParameter::option      = 0x2,      // otherwise --- has value
+    iAbstractParameter::positional  = 0x4,      // otherwise --- has name or shortcut
+    iAbstractParameter::atomic      = 0x8,      // otherwise --- it is a dictionary
+    iAbstractParameter::singular    = 0x10,     // otherwise --- can be repeated multiple times
+    iAbstractParameter::required    = 0x20,     // otherwise --- is optional
+    iAbstractParameter::shortened   = 0x40;     // otherwise --- has not one-char shortcut
 
-iAbstractParameter::iAbstractParameter( const char * name,
-                                        const char * description,
-                                        ParameterEntryFlag flags ) :
-                                        _flags( flags ) {
-    const size_t nLen = strlen(name),
-                 dLen = strlen(description);
-    name = new char [nLen + 1];
-    description = new char [dLen + 1];
-    strncpy( _name, name, nLen );
-    strncpy( _description, description, dLen );
+// XXX
+//const iAbstractParameter::ParameterEntryFlag
+//    iAbstractParameter::option_baseFlags = 0x0 |
+//        iAbstractParameter::atomic
 
+iAbstractParameter::iAbstractParameter( const char * name_,
+                                        const char * description_,
+                                        ParameterEntryFlag flags,
+                                        char shortcut_ ) :
+                                        _flags( flags ),
+                                        _shortcut( shortcut_ ) {
+    const size_t nLen = name_ ? strlen(name_) : 0;
+    // Checks for consistency:
+    if( '\0' != shortcut_ && !isalnum(shortcut_) ) {
+        emraise( malformedArguments,
+                 "Won't create entry with shortcut of code %d.", (int) shortcut_ );
+    }
+    if( '\0' == shortcut_ && !name_ && is_atomic() ) {
+        emraise( malformedArguments,
+                 "Won't create entry \"%s\" without name_ and shortcut.", name_ );
+    }
+    if( name_ && !nLen ) {
+        emraise( malformedArguments,
+                 "Won't create entry without name (if you want to omit long name, use NULL)." );
+    }
+    if( !description_ ) {
+        emraise( malformedArguments,
+                 "Won't create entry with NULL description." );
+    }
+    if( has_shortcut() && is_positional() ) {
+        emraise( malformedArguments,
+                 "Wrong entry description: positional and has shortcut." );
+    }
+    if( is_set() && is_mandatory() ) {
+        emraise( malformedArguments,
+                 "Wrong entry description: is mandatory and has default value." );
+    }
+    /* ... */
+    const size_t dLen = strlen(description_);
+    if( name_ ) {
+        _name = new char [nLen + 1];
+        strncpy( _name, name_, nLen + 1 );
+    } else {
+        _name = nullptr;
+    }
+    _description = new char [dLen + 1];
+    strncpy( _description, description_, dLen + 1 );
 }
 
 iAbstractParameter::~iAbstractParameter() {
@@ -156,21 +192,90 @@ Parameter<bool>::_V_to_string( char * str ) const {
 # endif
 
 # if 0
-Parameter<bool>::Parameter( const char * name,
-                            const char * description,
-                            char shortcut ) :
-            iParameter<bool>(name, description) {
+Parameter<bool>::Parameter( char shortcut,
+                            const char * name,
                             const char * description ) :
-            iParameter<bool>(name, description) {
-                            const char * description ) :
-            iParameter<bool>(0, name, '\0', description) {}
+            iParameter<bool>( name,
+                              description,
+                              iAbstractParameter::atomic |
+                              ( !name ? iAbstractParameter::positional : 0x0),
+                              shortcut ) {}
+# endif
+
+Parameter<bool>::Parameter( const char * name_,
+                            const char * description_ ) :
+            iParameter<bool>( name_,
+                              description_,
+                              iAbstractParameter::set |
+                              iAbstractParameter::atomic |
+                              iAbstractParameter::singular |
+                              iAbstractParameter::option
+                            ) {}
+
+
+Parameter<bool>::Parameter( char shortcut_,
+                            const char * name_,
+                            const char * description_ ) :
+            iParameter<bool>( name_,
+                              description_,
+                              iAbstractParameter::set |
+                              iAbstractParameter::atomic |
+                              iAbstractParameter::singular |
+                              iAbstractParameter::option |
+                              iAbstractParameter::shortened,
+                              shortcut_
+                            ) {}
+
+Parameter<bool>::Parameter( char shortcut_,
+                            const char * description_ ) :
+            iParameter<bool>( nullptr,
+                              description_,
+                              iAbstractParameter::set |
+                              iAbstractParameter::atomic |
+                              iAbstractParameter::singular |
+                              iAbstractParameter::option |
+                              iAbstractParameter::shortened,
+                              shortcut_
+                            ) {}
+
+
+Parameter<bool>::Parameter( const char * name_,
+                            const char * description_,
+                            bool default_ )  :
+            iParameter<bool>( name_,
+                              description_,
+                              iAbstractParameter::set |
+                              iAbstractParameter::atomic |
+                              iAbstractParameter::singular
+                            ) {}
+
+
+Parameter<bool>::Parameter( char shortcut_,
+                            const char * name_,
+                            const char * description_,
+                            bool default_ ) :
+            iParameter<bool>( name_,
+                              description_,
+                              iAbstractParameter::set |
+                              iAbstractParameter::atomic |
+                              iAbstractParameter::singular |
+                              iAbstractParameter::shortened,
+                              shortcut_,
+                              default_
+                            ) {}
 
 Parameter<bool>::Parameter( char shortcut,
-                            const char * description,
-                            bool defaultValue ) :
-            iParameter<bool>(0, name, '\0', description, defaultValue ) {
-}
-# endif
+                            const char * description_,
+                            bool default_ ) :
+            iParameter<bool>( nullptr,
+                              description_,
+                              iAbstractParameter::set |
+                              iAbstractParameter::atomic |
+                              iAbstractParameter::singular |
+                              iAbstractParameter::shortened,
+                              '\0',
+                              default_
+                            ) {}
 
 }  // namespace dict
 }  // namespace goo

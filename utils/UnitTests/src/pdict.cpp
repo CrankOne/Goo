@@ -9,20 +9,29 @@
  * */
 
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
-    # if 0
-    const char * const argv_[] = {
-        "parameter-one",    "true",
-        "parameter-two",    "false"
-    };
-    # endif
+    // const char * const argv_[] = {};
 
-    goo::dict::Configuration conf( "theApplication", "Testing parameter set." );
+    {
+        goo::dict::Configuration conf( "theApplication", "Testing parameter set." );
 
-    conf.insertion_proxy()
-        .p<bool>( "parameter-one",  "Parameter `one'." )
-        ;
+        conf.insertion_proxy()
+            .p<bool>( '1', "parameter-one",  "First parameter" )
+            .p<bool>( 'v', "Enables verbose output" )
+            .p<bool>( 'q', "Be quiet", true )
+            .p<bool>( "quet", "Be quiet", true )
+            .p<bool>( "verbose", "Enables verbose output" )
+            .p<bool>( 'V', "verbose2", "Enables verbose output" )
+            .p<bool>( 'Q', "quet2", "Be quiet", true )
+            //.p<bool>( 12, "one", "two", "three" )  // should be failed at linkage
+            //.p<bool>( "one", "two", "three" )  // should be failed at linkage
+            ;
+        // Check default is set correctly:
+    }
 
-    conf.usage_text( os );
+    {
+    }
+
+    //conf.usage_text( os );
 
 } GOO_UT_END( PDICT )
 

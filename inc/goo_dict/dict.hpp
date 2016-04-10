@@ -25,6 +25,7 @@ protected:
     void insert_section( Dictionary * );
 
     Dictionary( const char *, const char * );
+    ~Dictionary();
 
     friend class InsertionProxy;
 };  // class Dictionary
@@ -36,6 +37,13 @@ public:
         std::vector<std::string>                positionalValues;
         std::multimap<std::string, std::string> options;
     };
+private:
+    // getopt_long() aux caches:
+    mutable void * _longOptionsPtr;
+    mutable char * _shortOptionsPtr;
+protected:
+    const void * _form_long_options() const;
+    const char * _create_short_opt_string() const;
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.

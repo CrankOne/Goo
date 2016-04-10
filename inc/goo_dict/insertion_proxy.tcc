@@ -27,37 +27,16 @@ public:
     /// Closes most recent section and switches to its previous (or finalizes last).
     InsertionProxy & end_sect( const char * = nullptr );
 
-    template<typename ParameterT> InsertionProxy &
-    p( const char * name,
-       const char * description );
-
-    template<typename ParameterT> InsertionProxy &
-    p( const char * name,
-       const char * description,
-       ParameterT && defaultValue );
+    template<typename ParameterT, class ... Types> InsertionProxy &
+    p( Types ... args ) {
+        _stack.top()->insert_parameter(
+                new Parameter<ParameterT>( args ... )
+            );
+        return *this;
+    }
 
     friend class Configuration;
 };  // class InsertionProxy
-
-
-template<typename ParameterT> InsertionProxy &
-InsertionProxy::p( const char * name,
-                   const char * description ) {
-    _stack.top()->insert_parameter(
-            new Parameter<ParameterT>( name, description )
-        );
-    return *this;
-}
-
-template<typename ParameterT> InsertionProxy &
-InsertionProxy::p( const char * name,
-                   const char * description,
-                   ParameterT && defaultValue ) {
-    _stack.top()->insert_parameter(
-            new Parameter<ParameterT>( name, description, defaultValue )
-        );
-    return *this;
-}
 
 }  // namespace goo
 }  // namespace dict
