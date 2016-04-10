@@ -51,6 +51,10 @@ protected:
 public:
     virtual ~iAbstractParameter();
 
+    // TODO:
+    ///// Outputs usage string.
+    //void 
+
     /// Returns pointer to name string.
     const char * name() const;
 
@@ -267,7 +271,6 @@ public:
                const char * );
 };
 # endif
-
 
 }  // namespace dict
 }  // namespace goo
