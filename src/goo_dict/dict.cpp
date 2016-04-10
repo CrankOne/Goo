@@ -24,6 +24,10 @@ Dictionary::~Dictionary() {
          it != _parameters.end(); ++it ) {
         delete it->second;
     }
+    for( auto it = _onlyShortParameters.begin();
+         it != _onlyShortParameters.end(); ++it ) {
+        delete it->second;
+    }
     for( auto it = _dictionaries.begin();
          it != _dictionaries.end(); ++it ) {
         delete it->second;
@@ -32,8 +36,13 @@ Dictionary::~Dictionary() {
 
 void
 Dictionary::insert_parameter( iAbstractParameter * instPtr ) {
-    _parameters.emplace( instPtr->name(),
-                         instPtr );
+    if( instPtr->name() ) {
+        _parameters.emplace( instPtr->name(),
+                             instPtr );
+    } else {
+        _onlyShortParameters.emplace( instPtr->shortcut(),
+                                      instPtr );
+    }
 }
 
 void

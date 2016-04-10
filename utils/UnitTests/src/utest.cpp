@@ -32,7 +32,8 @@ struct Config {
     bool quiet,
          keepGoing,
          printUnitsLogs,
-         ignoreDeps;
+         ignoreDeps,
+         noCatch;
 
     /// Vector of unit names desired to run.
     std::vector<std::string> namesToEvaluate, namesToAvoid;
@@ -73,9 +74,12 @@ Keys:\n\r\
     --dot-graph ..............  print to stdout a DOT graph of units.\n\r\
     -u/--selective " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR " .....  run only named unit or unit in list\n\r\
                                 delimeted with comma.\n\r\
+    -s/--skip " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR " ..........  skip selected units.\n\r\
     --ignore-deps ............  ignore unit dependencies (for selective runs)\n\r\
     -r/--report ..............  print development reports (unit\n\r\
                                 runtime messages) to stdout.\n\r\
+    -E/--no-catch ............  do not catch any unexpected exceptions during\n\r\
+                                unit(s) run\n\r\
 Report bugs to crank@qcrypt.org.\n\r\
 Official repository page for this version:\n\r\
     <https://bitbucket.org/CrankOne/goo>\n\r\
@@ -155,11 +159,12 @@ UTApp::_V_construct_config_object( int argc, char * const argv[] ) const {
                 {"list",            no_argument,        0,  'l' },
                 {"selective",       required_argument,  0,  'u' },
                 {"skip",            required_argument,  0,  's' },
+                {"no-catch",        no_argument,        0,  'E' },
                 {"dot-graph",       no_argument,        0,   2  },
                 {"ignore-deps",     no_argument,        0,   1  },
                 {0,                 0,                  0,   0  }
             };
-            c = getopt_long(argc, argv, "hcqKrlsu:s:",
+            c = getopt_long(argc, argv, "hcqKrlsEu:s:",
                 long_options, &option_index);
             if (c == -1)
                 break;
@@ -170,6 +175,7 @@ UTApp::_V_construct_config_object( int argc, char * const argv[] ) const {
                 case 'K' : { cfg->keepGoing = true;  } break;
                 case 'q' : { cfg->quiet = true;      } break;
                 case 'r' : { cfg->printUnitsLogs = true; } break;
+                case 'E' : { cfg->noCatch = true; } break;
                 // TASKS
                 case 2: { _set_task( *cfg, Config::dumpDOT ); } break;
                 case 'u' : {
@@ -259,7 +265,11 @@ UTApp::_run_unit( TestingUnit * unit,
          << ESC_CLRCLEAR
          << " ... ";
     unit->make_own_outstream();
-    unit->run( noRun );
+    if( co().noCatch ) {
+        unit->run_unsafe( noRun );
+    } else {
+        unit->run( noRun );
+    }
     if( 0 == unit->ran_result() ) {
         ls() << ESC_BLDGREEN << "success" << ESC_CLRCLEAR;
     } else if( 2 == unit->ran_result() ) {
@@ -368,6 +378,16 @@ UTApp::TestingUnit::set_dependencies(
 }
 
 void
+UTApp::TestingUnit::run_unsafe( bool dryRun ) {
+    if( dryRun ) {
+        _ranResult = 2;
+        return;
+    }
+    _V_run( *_outStream );
+    _ranResult = 0;
+}
+
+void
 UTApp::TestingUnit::run( bool dryRun ) noexcept {
     if( dryRun ) {
         _ranResult = 2;
@@ -384,6 +404,10 @@ UTApp::TestingUnit::run( bool dryRun ) noexcept {
             _ranResult = -2;  // Other (unexpected) Goo's error
             return;
         }
+    } catch( std::exception & e ) {
+        outs() << "std::exception cought. e.what(): \"" << e.what() << "\"" << std::endl;
+        _ranResult = -3;
+        return;
     } catch( ... ) {
         _ranResult = -3;  // third party exception
         return;

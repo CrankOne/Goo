@@ -1,0 +1,1 @@
+CC=/usr/bin/clang CXX=/usr/bin/clang++ cmake -DCMAKE_USER_MAKE_RULES_OVERRIDE=/home/crank/Projects/goo/ClangOverrides.txt -D_CMAKE_TOOLCHAIN_PREFIX=llvm- ../../goo

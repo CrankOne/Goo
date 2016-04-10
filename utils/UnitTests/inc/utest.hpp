@@ -44,6 +44,7 @@ public:
         ~TestingUnit();
         /// Runs module. Can throw exceptions.
         void run( bool dryRun=false ) noexcept;
+        void run_unsafe( bool dryRun=false );
         void make_own_outstream();
         std::ostream & outs() { return *_outStream; }
         const std::ostream & outs() const { return *_outStream; }

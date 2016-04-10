@@ -10,7 +10,7 @@
  * */
 
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
-    //os << "**** **** ****" << std::endl;
+    // os << "**** **** ****" << std::endl;
     // const char * const argv_[] = {};
 
     {
@@ -20,7 +20,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .p<bool>( '1', "parameter-one",  "First parameter" )
             .p<bool>( 'v', "Enables verbose output" )
             .p<bool>( 'q', "Be quiet", true )
-            .p<bool>( "quet", "Be quiet", true )
+            .p<bool>( "quiet", "Be quiet", true )
             .p<bool>( "verbose", "Enables verbose output" )
             .p<bool>( 'V', "verbose2", "Enables verbose output" )
             .p<bool>( 'Q', "quet2", "Be quiet", true )
@@ -31,11 +31,11 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     }
 
     {
-        const char ex1[] = "./foo -1vqfalse";
+        const char ex1[] = "./foo -1vqfalse --quiet=true";
         char ** argv;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
         for( int n = 0; n < argc; ++n ) {
-            std::cerr << argv[n] << std::endl;  // TODO cout -> os
+            os << argv[n] << std::endl;
         }
 
         goo::dict::Configuration::free_tokens( argc, argv );

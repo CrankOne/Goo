@@ -16,6 +16,7 @@ class InsertionProxy;
 class Dictionary : public iAbstractParameter {
 private:
     std::map<std::string, iAbstractParameter *> _parameters;
+    std::map<char, iAbstractParameter *> _onlyShortParameters;
     std::map<std::string, Dictionary *> _dictionaries;
 protected:
     /// Inserts parameter instance created by insertion proxy.

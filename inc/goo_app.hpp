@@ -159,10 +159,14 @@ public:
 
     /// Returns reference on common loging stream object.
     inline LogStreamT    & ls() { assert(_lStr); return *_lStr; }
+    /// Returns whether or not log instance object was set.
+    inline bool ls_is_set() const { return _lStr; }
     /// Returns reference on common config object.
     inline ConfigObjectT & co() { assert(_cObj); return *_cObj; }
     /// Returns reference on common config object (const version).
-    inline const ConfigObjectT * co() const { assert(_cObj); return *_cObj; }
+    inline const ConfigObjectT & co() const { assert(_cObj); return *_cObj; }
+    /// Returns whether or not config instance object was set.
+    inline bool co_is_set() const { return _cObj; }
 };
 
 }  // namespace goo

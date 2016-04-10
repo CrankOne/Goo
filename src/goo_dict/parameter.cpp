@@ -34,7 +34,7 @@ iAbstractParameter::iAbstractParameter( const char * name_,
     }
     if( '\0' == shortcut_ && !name_ && is_atomic() ) {
         emraise( malformedArguments,
-                 "Won't create entry \"%s\" without name_ and shortcut.", name_ );
+                 "Won't create entry without long name and shortcut." );
     }
     if( name_ && !nLen ) {
         emraise( malformedArguments,
@@ -256,25 +256,25 @@ Parameter<bool>::Parameter( char shortcut_,
                             bool default_ ) :
             iParameter<bool>( name_,
                               description_,
+                              default_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
                               iAbstractParameter::singular |
                               iAbstractParameter::shortened,
-                              shortcut_,
-                              default_
+                              shortcut_
                             ) {}
 
-Parameter<bool>::Parameter( char shortcut,
+Parameter<bool>::Parameter( char shortcut_,
                             const char * description_,
                             bool default_ ) :
             iParameter<bool>( nullptr,
                               description_,
+                              default_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
                               iAbstractParameter::singular |
                               iAbstractParameter::shortened,
-                              '\0',
-                              default_
+                              shortcut_
                             ) {}
 
 }  // namespace dict

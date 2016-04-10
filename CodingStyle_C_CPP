@@ -1,0 +1,42 @@
+/* - One can found here a three types of C/C++ source files:
+ *      1. Declaration headers (.h for C, .hpp for C++)
+ *      2. Implementation files (.c for C, .cpp for C++)
+ *      3. Template implementation headers (.tcc, C++ only)
+ * - For C only /**/ comments are allowed (not // !)
+ * - All defined classes and types have a pure camel-case naming:
+ *       class ClassName;
+ *       typedef int TypeName.
+ * - All variables have camel-case naming with first small letter:
+ *       int a;
+ *       float glorboficationCoefficient;
+ * - All functions and class methods are named within underscore symbol:
+ *       int my_function();
+ *       float do_stuff( int k, Vector direction );
+ * - For implementation and scopes the opening curly bracket should be
+ * at the same line where last significant symbol is located (no
+ * newlines before them):
+ *      for( i = 0; i < 10; i++ ) {
+ *          // ...
+ *      }
+ *      // but:
+ *      int long_function_name(
+ *              int varA,
+ *              int varB
+ *                            ){
+ *          // ...
+ *      }
+ * - At implementation, the returning type should be separated with newline
+ * from the function name:
+ *      int
+ *      foo() {
+ *          // ...
+ *      }
+ * - Any local typenames and static objects should have _local_ or _static_
+ * prefix before its name:
+ *      struct _local_LocalStruct {};
+ *      static int _static_magicNumber = 42;
+ * - No global-nonstatic variables are allowed; use singletons if in doubt.
+ * - All #include-sentinels should be enclosed with H_ and _H prefix/postfix.
+ */
+
+

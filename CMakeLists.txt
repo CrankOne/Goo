@@ -52,7 +52,7 @@ find_package( Lzo   )
 find_package( BZip2 )
 find_package( Git   )
 if( EM_STACK_UNWINDING )
-    find_package( BFD  REQUIRED )
+    find_package( BFD REQUIRED )
 endif( EM_STACK_UNWINDING )
 if( GIT_FOUND )
     # obtain current commit hash
@@ -256,11 +256,7 @@ if( EM_STACK_UNWINDING )
     if( HASKELL_MODULE )
         target_link_libraries( goo HSrts-ghc${CMAKE_Haskell_NUMERIC_VERSION} )
     endif( HASKELL_MODULE )
-<<<<<<< HEAD
-    # ... other bactrace libs here
-=======
     # ... other backtrace libs here
->>>>>>> master
 endif( EM_STACK_UNWINDING )
 
 #

@@ -150,7 +150,7 @@ iParameter<ValueT>::iParameter( const char * name,
                                 const char * description,
                                 ParameterEntryFlag flags,
                                 char shortcut_ ) :
-        iAbstractParameter( name, description, flags ) {
+        iAbstractParameter( name, description, flags, shortcut_ ) {
     // Checks for consistency:
     /* ... */
 }
@@ -161,7 +161,7 @@ iParameter<ValueT>::iParameter( const char * name,
                                 const ValueT & defaultValue,
                                 ParameterEntryFlag flags,
                                 char shortcut_ ) :
-        iAbstractParameter( name, description, flags ),
+        iAbstractParameter( name, description, flags, shortcut_ ),
         _value(defaultValue) {
     // Checks for consistency:
     /* ... */
