@@ -31,12 +31,15 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     }
 
     {
-        const char ex1[] = "./foo -1vqfalse --quiet=true";
+        const char ex1[] = "./foo -121c1d2 -d12";
         char ** argv;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
         for( int n = 0; n < argc; ++n ) {
             os << argv[n] << std::endl;
         }
+
+        goo::dict::Configuration conf( "theApplication", "Testing parameter set." );
+        conf.extract( argc, argv );
 
         goo::dict::Configuration::free_tokens( argc, argv );
     }

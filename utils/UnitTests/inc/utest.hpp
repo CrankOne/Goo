@@ -41,7 +41,7 @@ public:
                 _outStream( &(std::cout) ),
                 _verboseName( verboseName ),
                 _ranResult(1) {}
-        ~TestingUnit();
+        virtual ~TestingUnit();
         /// Runs module. Can throw exceptions.
         void run( bool dryRun=false ) noexcept;
         void run_unsafe( bool dryRun=false );

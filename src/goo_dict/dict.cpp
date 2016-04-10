@@ -6,6 +6,7 @@
 # include <unistd.h>
 # include <getopt.h>
 # include <wordexp.h>
+# include <list>
 
 # if 1
 
@@ -24,8 +25,8 @@ Dictionary::~Dictionary() {
          it != _parameters.end(); ++it ) {
         delete it->second;
     }
-    for( auto it = _onlyShortParameters.begin();
-         it != _onlyShortParameters.end(); ++it ) {
+    for( auto it = _byShortcutIndexed.begin();
+             it != _byShortcutIndexed.end(); ++it ) {
         delete it->second;
     }
     for( auto it = _dictionaries.begin();
@@ -36,12 +37,14 @@ Dictionary::~Dictionary() {
 
 void
 Dictionary::insert_parameter( iAbstractParameter * instPtr ) {
-    if( instPtr->name() ) {
+    if( instPtr->has_shortcut() ) {
+        _byShortcutIndexed.emplace( instPtr->shortcut(),
+                                    instPtr );
+    } else if( instPtr->name() ) {
         _parameters.emplace( instPtr->name(),
                              instPtr );
     } else {
-        _onlyShortParameters.emplace( instPtr->shortcut(),
-                                      instPtr );
+        emraise( badArchitect, "Got parameter without name and shortcut." );
     }
 }
 
@@ -54,21 +57,22 @@ Dictionary::insert_section( Dictionary * instPtr ) {
 // iAbstractParameter interface implementation
 //////////////////////////////////////////////
 
+# if 0
 const void *
 Configuration::_form_long_options() const {
     # if 0
     // ...
-    return _longOptionsPtr;
+    return _cache_longOptionsPtr;
     # else
     struct ::option * lOpts = new struct ::option [7];
     lOpts[0] = {"add",     required_argument, 0,  0 };
-    lOpts[0] = {"append",  no_argument,       0,  0 };
-    lOpts[0] = {"delete",  required_argument, 0,  0 };
-    lOpts[0] = {"verbose", no_argument,       0,  0 };
-    lOpts[0] = {"create",  required_argument, 0, 'c'};
-    lOpts[0] = {"file",    required_argument, 0,  0 };
-    lOpts[0] = {0,         0,                 0,  0 };
-    return _longOptionsPtr = lOpts;
+    lOpts[1] = {"append",  no_argument,       0,  0 };
+    lOpts[2] = {"delete",  required_argument, 0,  0 };
+    lOpts[3] = {"verbose", no_argument,       0,  0 };
+    lOpts[4] = {"create",  required_argument, 0, 'c'};
+    lOpts[5] = {"file",    required_argument, 0,  0 };
+    lOpts[6] = {0,         0,                 0,  0 };
+    return _cache_longOptionsPtr = lOpts;
     # endif
 }
 
@@ -76,39 +80,30 @@ const char *
 Configuration::_create_short_opt_string() const {
     # if 0
     // ...
-    return _shortOptionsPtr;
+    return _cache_shortOptionsPtr;
     # else
     const char src[] = "-:abc:d:012";
     char * sOpts = new char [ strlen(src) + 1 ];
     strcpy( sOpts, src );
-    return _shortOptionsPtr = sOpts;
+    return _cache_shortOptionsPtr = sOpts;
     # endif
 }
-
-# if 0
-void
-Configuration::command_line_argument_to_tokens( int argc,
-                                                char * argv[],
-                                                struct Configuration::Tokens & tokens ) {
-    if( argc < 2 ) {
-        tokens.positionalValues.clear();
-        tokens.options.clear();
-        return;
-    }
-    // argv[0]  --- omit name of the application.
-    for( int i = 1; i < argc; ++i ) {
-        const char * const & argument = argv[i];
-        const size_t argLength = strlen( argument );
-        if( !argLength ) {
-            emraise(malformedArguments, "Got an empty argument at %d-th position.", i);
-        }
-        if( '-' == argument[0] ) {  // guess, this is an option
-            // ...
-        } else {  // this is an argument
-        }
-    }
-}
 # endif
+
+void
+Configuration::_recache_getopt_arguments() const {
+    std::list<::option *> lOpts;
+    std::string sOpts = "-:";
+
+    //for( auto it = _byShortcutIndexed.cbegin();
+    //          _byShortcutIndexed.end() != it; ++it ) {
+    //    //
+    //}
+
+    _TODO_ // TODO: copy lOpts / sOpts to _cache_*s
+
+    _getoptCachesValid = true;
+}
 
 void
 Configuration::extract( int argc, char * const argv[] ) {
@@ -194,10 +189,12 @@ Configuration::extract( int argc, char * const argv[] ) {
     # endif
     opterr = 0;  // prevent default `app_name : invalid option -- '%c'' message
     optind = 0;  // forses rescan with each parameters vector
-    const struct ::option * longOptions = reinterpret_cast<const ::option *>( _form_long_options() );
-    const char * shrtOptStr = _create_short_opt_string();
+    if( !_getoptCachesValid ) {
+        _recache_getopt_arguments();
+    }
+    const struct ::option * longOptions = reinterpret_cast<const ::option *>( _cache_longOptionsPtr );
     int optIndex = 0, c;
-    while( -1 != (c = getopt_long( argc, argv, shrtOptStr, longOptions, &optIndex )) ) {
+    while( -1 != (c = getopt_long( argc, argv, _cache_shortOptionsPtr, longOptions, &optIndex )) ) {
         if( isalnum(c) ) {
             // TODO: indicates this is an option with shortcut (or a shortcut-only option)
         } else if( 1 == c ) {
@@ -223,16 +220,17 @@ Configuration::insertion_proxy() {
 
 Configuration::Configuration( const char * name_,
                               const char * descr_ ) : Dictionary(name_, descr_),
-                                                      _longOptionsPtr(nullptr),
-                                                      _shortOptionsPtr(nullptr) {
+                                                      _cache_longOptionsPtr( nullptr ),
+                                                      _cache_shortOptionsPtr( nullptr ),
+                                                      _getoptCachesValid( false ) {
 }
 
 Configuration::~Configuration() {
-    if( _longOptionsPtr ) {
-        delete [] reinterpret_cast<::option *>(_longOptionsPtr);
+    if( _cache_longOptionsPtr ) {
+        delete [] reinterpret_cast<::option *>(_cache_longOptionsPtr);
     }
-    if( _shortOptionsPtr ) {
-        delete [] _shortOptionsPtr;
+    if( _cache_shortOptionsPtr ) {
+        delete [] _cache_shortOptionsPtr;
     }
 }
 
@@ -274,6 +272,19 @@ Configuration::free_tokens( size_t argcTokens, char ** argvTokens ) {
     for( size_t n = 0; n < argcTokens; ++n ) {
         free( argvTokens[n] );
     }
+    free( argvTokens );
+}
+
+void
+Configuration::insert_parameter( iAbstractParameter * p_ ) {
+    _getoptCachesValid = false;
+    Dictionary::insert_parameter( p_ );
+}
+
+void
+Configuration::insert_section( Dictionary * sect ) {
+    _getoptCachesValid = false;
+    Dictionary::insert_section( sect );
 }
 
 }  // namespace dict

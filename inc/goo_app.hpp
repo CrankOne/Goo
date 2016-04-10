@@ -134,9 +134,11 @@ protected:
     virtual void _V_configure_application( const ConfigObjectT * ) = 0;
     /// Should create the logging stream of type LogStreamT (app already configured).
     virtual LogStreamT * _V_acquire_stream() = 0;
+    /// Frees memory allocated for config object.
+    virtual void _V_free_config_object() { delete _cObj; }
 protected:
     App() : _lStr(nullptr), _cObj(nullptr) {}
-    virtual ~App() {}
+    virtual ~App() { _V_free_config_object(); }
 public:
 
     // general application management

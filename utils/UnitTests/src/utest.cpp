@@ -118,8 +118,22 @@ _set_task( Config & cfgObj, Config::Operations op ) {
 UTApp::UTApp( const std::string & appName ) : _ss(nullptr), _appName(appName) {}
 
 UTApp::~UTApp() {
-    if(_ss) {
-        //delete _ss; 
+    // free units:
+    for( auto it = _modulesStoragePtr->begin();
+         _modulesStoragePtr && _modulesStoragePtr->end() != it;
+         ++it ) {
+        delete it->second;
+    }
+    // free containers:
+    if( _modulesGraphPtr ) {
+        delete _modulesGraphPtr;
+    }
+    if( _modulesStoragePtr ) {
+        delete _modulesStoragePtr;
+    }
+    // free stringstream, if it wasn't set to standard objects:
+    if(_ss && _ss != &(std::cout) && _ss != &(std::cerr)) {
+        delete _ss;
     }
 }
 

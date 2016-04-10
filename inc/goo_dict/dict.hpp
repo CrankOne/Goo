@@ -16,14 +16,14 @@ class InsertionProxy;
 class Dictionary : public iAbstractParameter {
 private:
     std::map<std::string, iAbstractParameter *> _parameters;
-    std::map<char, iAbstractParameter *> _onlyShortParameters;
-    std::map<std::string, Dictionary *> _dictionaries;
+    std::map<char, iAbstractParameter *>        _byShortcutIndexed;
+    std::map<std::string, Dictionary *>         _dictionaries;
 protected:
     /// Inserts parameter instance created by insertion proxy.
-    void insert_parameter( iAbstractParameter * );
+    virtual void insert_parameter( iAbstractParameter * );
 
     /// Inserts dictionary instance created by insertion proxy.
-    void insert_section( Dictionary * );
+    virtual void insert_section( Dictionary * );
 
     Dictionary( const char *, const char * );
     ~Dictionary();
@@ -35,11 +35,18 @@ protected:
 class Configuration : public Dictionary {
 private:
     // getopt_long() aux caches:
-    mutable void * _longOptionsPtr;
-    mutable char * _shortOptionsPtr;
+    mutable void * _cache_longOptionsPtr;
+    mutable char * _cache_shortOptionsPtr;
+    mutable bool _getoptCachesValid;
 protected:
-    const void * _form_long_options() const;
-    const char * _create_short_opt_string() const;
+    /// Recursively iterates through all the options and section producing getopt()-strings.
+    void _recache_getopt_arguments() const;
+
+    /// Inserts parameter instance created by insertion proxy with caches invalidation.
+    virtual void insert_parameter( iAbstractParameter * ) override;
+
+    /// Inserts dictionary instance created by insertion proxy with caches invalidation.
+    virtual void insert_section( Dictionary * ) override;
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
