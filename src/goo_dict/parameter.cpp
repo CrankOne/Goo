@@ -2,9 +2,14 @@
 # include "goo_exception.hpp"
 
 # include <cstring>
+# include <regex>
 
 namespace goo {
 namespace dict {
+
+static const std::regex
+        _static_logicalTermRegex_True(  "(true|enable|on|yes)",   std::regex_constants::icase ),
+        _static_logicalTermRegex_False( "(false|disable|off|no)", std::regex_constants::icase );
 
 const iAbstractParameter::ParameterEntryFlag
     iAbstractParameter::set         = 0x1,      // otherwise --- uninitialized still
@@ -157,6 +162,25 @@ Parameter<bool>::Parameter( char shortcut_,
                               iAbstractParameter::shortened,
                               shortcut_
                             ) {}
+
+void
+Parameter<bool>::parse_argument( const char * argStr ) {
+    // _static_logicalTermRegex_True
+    if( std::regex_match( argStr, _static_logicalTermRegex_True ) ) {
+        _set_value( true );
+    } else if( std::regex_match( argStr, _static_logicalTermRegex_False) ) {
+        _set_value( false );
+    } else {
+        emraise( badParameter,
+                 "Expression \"%s\" can not be parsed as logical option.",
+                 argStr );
+    }
+}
+
+void
+Parameter<bool>::set_option( bool a ) {
+    _set_value( true );
+}
 
 }  // namespace dict
 }  // namespace goo

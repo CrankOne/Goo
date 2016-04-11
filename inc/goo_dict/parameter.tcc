@@ -11,10 +11,14 @@ namespace dict {
  * @brief An abstract parameter is a base class for most entity in
  * Goo's dictionaries
  *
+ * We're following here to POSIX convention, so option-arguments are
+ * never optional:
+ * http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html#tag_12_02
+ *
  * The following subclasses are expected:
- *  - single-char keys                  (flags or with values, multiple time)
- *  - long options                      (flags or with values)
- *  - unnamed positional arguments      ()
+ *  - single-char keys (here referred as `shortcuts')   (flags or with values, multiple time)
+ *  - long options                                      (flags or with values)
+ *  - unnamed positional arguments
  *  - sections (dictionaries itself)
  */
 class iAbstractParameter /* {{{ */ {
@@ -29,9 +33,6 @@ public:
             required,
             shortened
         ;
-    //static const ParameterEntryFlag
-    //        option_baseFlags
-    //    ;
 private:
     char * _name,           ///< Name of the option. Can be set to nullptr.
          * _description;    ///< Description of the option. Can be set to nullptr.
@@ -51,9 +52,8 @@ protected:
 public:
     virtual ~iAbstractParameter();
 
-    // TODO:
-    ///// Outputs usage string.
-    //void 
+    /// Parses argument from string representation.
+    virtual void parse_argument( const char * ) = 0;
 
     /// Returns pointer to name string.
     const char * name() const;
@@ -187,25 +187,10 @@ iParameter<ValueT>::_set_value( const ValueT & val ) {
 template<typename ValueT>
 class Parameter {};  // Defailt implementation is empty.
 
-// Specializations:
 
-# if 0  // TODO
-# define declare_explicit_specialization( typecode, cType, gnm, gdsnm ) \
-template<>                                                       \
-class Parameter<cType> : public iParameter<cType> {              \
-protected:                                                       \
-    virtual void _V_from_string( const char * )  override;       \
-    virtual void _V_deserialize( const UByte * ) override;       \
-    virtual Size _V_serialized_length() const    override;       \
-    virtual void _V_serialize( UByte * ) const   override;       \
-    virtual size_t _V_string_length() const      override;       \
-    virtual void _V_to_string( char * ) const    override;       \
-};
-
-for_all_atomic_datatypes( declare_explicit_specialization )
-
-# undef declare_explicit_specialization
-# else
+//
+// Specializations
+/////////////////
 
 /**@brief Logic option argument type.
  *
@@ -269,8 +254,16 @@ public:
                const char *,
                const char *,
                const char * );
+
+    /// Sets parameter value from string. Following strings are acceptable
+    /// with appropriate meaning (case insensitive):
+    /// (true|enable|on|yes)    logically corresponds to `true';
+    /// (false|disable|off|no)  logically corresponds to `false'.
+    virtual void parse_argument( const char * ) override;
+
+    /// This method is used mostly by Configuration class.
+    virtual void set_option( bool );
 };
-# endif
 
 }  // namespace dict
 }  // namespace goo

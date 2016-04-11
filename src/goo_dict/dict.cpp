@@ -1,12 +1,14 @@
 # include "goo_dict/dict.hpp"
 # include "goo_dict/insertion_proxy.tcc"
 # include "goo_exception.hpp"
+# include "goo_utility.hpp"
 
 # include <cstring>
 # include <unistd.h>
 # include <getopt.h>
 # include <wordexp.h>
 # include <list>
+# include <cassert>
 
 # if 1
 
@@ -54,6 +56,62 @@ Dictionary::insert_section( Dictionary * instPtr ) {
                            instPtr );
 }
 
+void
+Dictionary::_insert_long_option( const std::string & nameprefix,
+                                 Dictionary::LongOptionEntries & q,
+                                 const iAbstractParameter & p ) {
+    assert( p.name() );
+    struct ::option o = {
+        strdup((nameprefix + p.name()).c_str()),  // TODO: cleanup
+        (p.has_value() ? required_argument : no_argument),
+        NULL,
+        (p.has_shortcut() ? p.shortcut() : 
+            (p.has_value() ? 2 : 1) ) };
+    q.push( malloc(sizeof(struct ::option)) );
+    memcpy( q.back(), &o, sizeof(o) );
+}
+
+void
+Dictionary::_append_options( const std::string & nameprefix,
+                             ShortOptString & shrtOpts,
+                             LongOptionEntries & longOpts ) const {
+    //std::cout << "XXX: " << _byShortcutIndexed.size() << ", "  // XXX
+    //                     << _parameters.size() << std::endl;   // XXX
+    // Form short options string (without any prefixes here):
+    for( auto it  = _byShortcutIndexed.cbegin();
+              it != _byShortcutIndexed.cend(); ++it ) {
+        iAbstractParameter & pRef = *(it->second);
+        // It is mandatory for options in this container to
+        // have shortcut. It is useful to check that.
+        assert( pRef.shortcut() == it->first );
+        assert( pRef.has_shortcut() );
+        shrtOpts.push( pRef.shortcut() );
+        if( pRef.has_value() ) {
+            shrtOpts.push( ':' );
+        }
+        if( pRef.name() ) {
+            _insert_long_option( nameprefix, longOpts, pRef );
+        }
+    }
+    // Form long options struct:
+    for( auto it  = _parameters.cbegin();
+              it != _parameters.cend(); ++it ) {
+        iAbstractParameter & pRef = *(it->second);
+        // Options at this container must not have
+        // shortcuts as they are stored at _byShortcutIndexed
+        assert( pRef.name() == it->first );
+        assert( ! pRef.has_shortcut() );
+        _insert_long_option( nameprefix, longOpts, pRef );
+    }
+    // Now, recursively traverse via all sub-dictionaries:
+    for( auto it  = _dictionaries.cbegin();
+              it != _dictionaries.cend(); ++it ) {
+        assert( it->second->name() == it->first );
+        std::string sectPrefix = nameprefix + it->second->name();
+        it->second->_append_options( sectPrefix, shrtOpts, longOpts );
+    }
+}
+
 // iAbstractParameter interface implementation
 //////////////////////////////////////////////
 
@@ -92,125 +150,99 @@ Configuration::_create_short_opt_string() const {
 
 void
 Configuration::_recache_getopt_arguments() const {
-    std::list<::option *> lOpts;
-    std::string sOpts = "-:";
+    _free_caches_if_need();
 
-    //for( auto it = _byShortcutIndexed.cbegin();
-    //          _byShortcutIndexed.end() != it; ++it ) {
-    //    //
-    //}
+    Configuration::ShortOptString    sOptsQ;
+    Configuration::LongOptionEntries lOptsQ;
+    _append_options( "", sOptsQ, lOptsQ );
+    static const char _static_shortOptionsPrefix[] = "-:";  // todo: move to define
+    const size_t sOptsStrLen = sizeof(_static_shortOptionsPrefix) + sOptsQ.size() - 1;
 
-    _TODO_ // TODO: copy lOpts / sOpts to _cache_*s
+    _cache_shortOptionsPtr             = new char [ sOptsStrLen + 1 ];
+    struct ::option * longOptionsPtr_t = new struct ::option [ lOptsQ.size() + 1 ];
+    _cache_longOptionsPtr = longOptionsPtr_t;
+
+    {  // Form short options string:
+        memcpy( _cache_shortOptionsPtr, _static_shortOptionsPrefix,
+                sizeof(_static_shortOptionsPrefix) );
+        for( char * c = _cache_shortOptionsPtr + sizeof(_static_shortOptionsPrefix) - 1;
+                        !sOptsQ.empty();
+                        ++c, sOptsQ.pop() ) {
+            *c = sOptsQ.front();
+        }
+        _cache_shortOptionsPtr[sOptsStrLen] = '\0';
+    }
+
+    {  // Form long options structures array:
+        longOptionsPtr_t[lOptsQ.size()] = {NULL, 0, 0, 0};  // sentinel
+        for( struct ::option * c = longOptionsPtr_t;
+             !lOptsQ.empty();
+             ++c, lOptsQ.pop() ) {
+            memcpy(c, lOptsQ.front(), sizeof(struct ::option));
+        }
+    }
 
     _getoptCachesValid = true;
 }
 
 void
-Configuration::extract( int argc, char * const argv[] ) {
-    # if 0
-    int c;
-    while (1) {
-        static struct option long_options[] = {
-                /* These options set a flag. */
-                {"verbose", no_argument,       &verbose_flag, 1},
-                {"brief",   no_argument,       &verbose_flag, 0},
-                /* These options don’t set a flag.
-                   We distinguish them by their indices. */
-                {"add",     no_argument,       0, 'a'},
-                {"append",  no_argument,       0, 'b'},
-                {"delete",  required_argument, 0, 'd'},
-                {"create",  required_argument, 0, 'c'},
-                {"file",    required_argument, 0, 'f'},
-                {0, 0, 0, 0}
-        };
-        /* getopt_long stores the option index here. */
-        int option_index = 0;
-
-        c = getopt_long(argc, argv, "abc:d:f:",
-                        long_options, &option_index);
-
-        /* Detect the end of the options. */
-        if (c == -1)
-            break;
-
-        switch (c) {
-            case 0:
-                /* If this option set a flag, do nothing else now. */
-                if (long_options[option_index].flag != 0)
-                    break;
-                printf ("option %s", long_options[option_index].name);
-                if (optarg)
-                    printf (" with arg %s", optarg);
-                printf ("\n");
-            break;
-
-            case 'a':
-                puts ("option -a\n");
-            break;
-
-            case 'b':
-                puts ("option -b\n");
-            break;
-
-            case 'c':
-                printf ("option -c with value `%s'\n", optarg);
-            break;
-
-            case 'd':
-                printf ("option -d with value `%s'\n", optarg);
-            break;
-
-            case 'f':
-                printf ("option -f with value `%s'\n", optarg);
-            break;
-
-            case '?':
-                /* getopt_long already printed an error message. */
-            break;
-
-            default:
-                abort ();
-        }
-    }
-    /* Instead of reporting ‘--verbose’
-       and ‘--brief’ as they are encountered,
-       we report the final status resulting from them. */
-    if (verbose_flag)
-        puts ("verbose flag is set");
-
-    /* Print any remaining command line arguments (not options). */
-    if (optind < argc) {
-        printf ("non-option ARGV-elements: ");
-        while (optind < argc)
-            printf ("%s ", argv[optind++]);
-        putchar ('\n');
-    }
-    exit (0);
-    # endif
-    opterr = 0;  // prevent default `app_name : invalid option -- '%c'' message
-    optind = 0;  // forses rescan with each parameters vector
+Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) {
+    # define log_extraction( ... ) if( verbose ) { *verbose << strfmt( __VA_ARGS__ ); }
+    ::opterr = 0;  // prevent default `app_name : invalid option -- '%c'' message
+    ::optind = 0;  // forses rescan with each parameters vector
     if( !_getoptCachesValid ) {
         _recache_getopt_arguments();
     }
     const struct ::option * longOptions = reinterpret_cast<const ::option *>( _cache_longOptionsPtr );
+    if( verbose ) {
+        log_extraction( "== Short options string:\n\"%s\"\n"
+                        "Long options:\n",
+                        _cache_shortOptionsPtr );
+        for( const struct ::option * it = longOptions; it->name; ++it ) {
+            *verbose << "    -- " << it->name << (required_argument == it->has_arg ? '!' :
+                                                 (optional_argument == it->has_arg ? '?' : ' '))
+                     << std::endl;
+        }
+    }
     int optIndex = 0, c;
     while( -1 != (c = getopt_long( argc, argv, _cache_shortOptionsPtr, longOptions, &optIndex )) ) {
         if( isalnum(c) ) {
-            // TODO: indicates this is an option with shortcut (or a shortcut-only option)
+            // indicates this is an option with shortcut (or a shortcut-only option)
+            auto pIt = _shortcuts.find( c );
+            if( _shortcuts.end() == pIt ) {
+                emraise( badState, "Shortcut option '%c' (0%o) unknown.", c, c );
+            }
+            if( pIt->second->has_value() ) {
+                log_extraction( "c=%c (0%o) considered as a parameter with argument \"%s\".\n",
+                                c, c, optarg );
+                // TODO ...
+            } else {
+                log_extraction( "c=%c (0%o) considered as an option.\n", c, c );
+                // TODO ...
+            }
         } else if( 1 == c ) {
-            // TODO: indicates this is a kind of long option (without arg)
+            // Indicates this is a kind of long option (without arg)
+            log_extraction( "Got an option \"%s\".\n", longOptions[optind].name );
+            // TODO
         } else if( 2 == c ) {
-            // TODO: indicates this is a long parameter (with arg)
+            // Indicates this is a long parameter (with arg)
+            log_extraction( "Got parameter \"%s=%s\".\n", longOptions[optind].name, optarg );
+            // TODO
         } else if( '?' == c ) {
-            // TODO: fprintf( stderr, "Unrecognized option `%c' (%d).\n", optopt, (int) optopt );
+            emraise( badParameter, "Option '%c' (0%o) unrecognized.", optopt, (int) optopt );
         } else if( ':' == c ) {
-            // TODO: fprintf( stderr, "Missed option argument.\n" );
+            // todo: any additional info?
+            emraise( argumentExpected, "Parametered option expects an argument." );
         } else if(  01 == c ) {
-            // TODO: this is a positional argument
+            // this is a positional argument
+            log_extraction( "\"%s\" considered as a positional argument.\n", ::optarg );
+            // TODO ...
         } else {
-            // TODO: fprintf( stderr, "?? getopt returned character code 0%o ??\n", c);
+            emraise( badValue, "getopt() returned character code 0%o.", c );
         }
     }
+    // TODO: further processing of positional arguments.
+    # undef log_extraction
 }
 
 InsertionProxy
@@ -225,13 +257,18 @@ Configuration::Configuration( const char * name_,
                                                       _getoptCachesValid( false ) {
 }
 
-Configuration::~Configuration() {
+void
+Configuration::_free_caches_if_need() const {
     if( _cache_longOptionsPtr ) {
         delete [] reinterpret_cast<::option *>(_cache_longOptionsPtr);
     }
     if( _cache_shortOptionsPtr ) {
         delete [] _cache_shortOptionsPtr;
     }
+}
+
+Configuration::~Configuration() {
+    _free_caches_if_need();
 }
 
 void
@@ -279,12 +316,30 @@ void
 Configuration::insert_parameter( iAbstractParameter * p_ ) {
     _getoptCachesValid = false;
     Dictionary::insert_parameter( p_ );
+    if( p_->has_shortcut() ) {
+        auto it = _shortcuts.find( p_->shortcut() );
+        if( it != _shortcuts.end() ) {
+            emraise( nonUniq, "Configuration \"%s\":%p already has shortened option '-%c'.",
+                    this->name(), this,
+                    p_->shortcut() );
+        }
+        _shortcuts.emplace( p_->shortcut(), p_ );
+    }
+    // TODO: _longOptions
 }
 
 void
 Configuration::insert_section( Dictionary * sect ) {
     _getoptCachesValid = false;
     Dictionary::insert_section( sect );
+}
+
+void
+Configuration::_insert_shortened_parameter( iAbstractParameter * ) {
+}
+
+void
+Configuration::_insert_fully_qualified_parameter( const std::string &, iAbstractParameter * ) {
 }
 
 }  // namespace dict

@@ -166,6 +166,7 @@
     m(17,       narrowConversion,   "narrow number conversion is possible", ## __VA_ARGS__ ) \
     m(18,       uninitialized,      "operation invoked for uninitialized data", ## __VA_ARGS__ ) \
     m(19,       assertFailed,       "assertion check failed", ## __VA_ARGS__ ) \
+    m(20,       argumentExpected,   "argument is expected in context", ## __VA_ARGS__ ) \
     m(25,       threadError,        "execution stopped due to in-thread error", ## __VA_ARGS__ ) \
     m(50,       nwGeneric,          "network error", ## __VA_ARGS__ ) \
     m(100,      ioError,            "common I/O error", ## __VA_ARGS__ ) \

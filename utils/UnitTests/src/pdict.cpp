@@ -28,18 +28,15 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             //.p<bool>( "one", "two", "three" )  // should be failed at linkage
             ;
         // Check default is set correctly:
-    }
 
-    {
-        const char ex1[] = "./foo -121c1d2 -d12";
+        const char ex1[] = "./foo -1vqfalse --quiet=true --verbose -V --quet2 false";
         char ** argv;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
         for( int n = 0; n < argc; ++n ) {
             os << argv[n] << std::endl;
         }
 
-        goo::dict::Configuration conf( "theApplication", "Testing parameter set." );
-        conf.extract( argc, argv );
+        conf.extract( argc, argv, &os );
 
         goo::dict::Configuration::free_tokens( argc, argv );
     }
