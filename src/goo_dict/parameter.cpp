@@ -8,8 +8,8 @@ namespace goo {
 namespace dict {
 
 static const std::regex
-        _static_logicalTermRegex_True(  "(true|enable|on|yes)",   std::regex_constants::icase ),
-        _static_logicalTermRegex_False( "(false|disable|off|no)", std::regex_constants::icase );
+        _static_logicalTermRegex_True(  "(true|enable|on|yes|1)",   std::regex_constants::icase ),
+        _static_logicalTermRegex_False( "(false|disable|off|no|0)", std::regex_constants::icase );
 
 const iAbstractParameter::ParameterEntryFlag
     iAbstractParameter::set         = 0x1,      // otherwise --- uninitialized still
@@ -83,6 +83,16 @@ const char *
 iAbstractParameter::description() const {
     return _description;
 }
+
+//
+// Singular parameter
+////////////////////
+
+iSingularParameter::iSingularParameter( const char * name_,
+                                        const char * description_,
+                                        ParameterEntryFlag flags_,
+                                        char shortcut_ ) :
+        iAbstractParameter( name_, description_, flags_, shortcut_ ) {}
 
 //
 // Logic values (option)
@@ -180,6 +190,15 @@ Parameter<bool>::parse_argument( const char * argStr ) {
 void
 Parameter<bool>::set_option( bool a ) {
     _set_value( true );
+}
+
+std::string
+Parameter<bool>::to_string() const {
+    if( value() ) {
+        return "True";
+    } else {
+        return "False";
+    }
 }
 
 }  // namespace dict

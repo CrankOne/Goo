@@ -54,8 +54,8 @@ private:
     mutable char * _cache_shortOptionsPtr;
     mutable bool _getoptCachesValid;
 
-    std::unordered_map<char, iAbstractParameter *>      _shortcuts;
-    std::unordered_map<std::string, iAbstractParameter> _longOptions;
+    std::unordered_map<char, iAbstractParameter *>          _shortcuts;
+    std::unordered_map<std::string, iAbstractParameter *>   _longOptions;
 
     void _free_caches_if_need() const;
 protected:

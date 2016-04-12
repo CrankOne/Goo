@@ -38,6 +38,7 @@ private:
          * _description;    ///< Description of the option. Can be set to nullptr.
     /// Stores logical description of an instance.
     ParameterEntryFlag _flags;
+protected:
     /// Used only when shortened flag is set.
     char _shortcut;
 protected:
@@ -51,9 +52,6 @@ protected:
                         char shortcut = '\0');
 public:
     virtual ~iAbstractParameter();
-
-    /// Parses argument from string representation.
-    virtual void parse_argument( const char * ) = 0;
 
     /// Returns pointer to name string.
     const char * name() const;
@@ -110,6 +108,22 @@ public:
         }
 };  /*}}}*/ // class iAbstractParameter
 
+class iSingularParameter : public iAbstractParameter {
+public:
+    /// Returns single-char shortcut for this parameter.
+    char shortcut() const { return _shortcut; }
+
+    /// Parses argument from string representation.
+    virtual void parse_argument( const char * ) = 0;
+
+    /// Forms a human-readable string to be displayed at logs.
+    virtual std::string to_string() const = 0;
+
+    iSingularParameter( const char * name,
+                        const char * description,
+                        ParameterEntryFlag flags,
+                        char shortcut = '\0' );
+};
 
 /**@class iParameter
  * @brief A valued intermediate class representing dictionary entry with
@@ -118,7 +132,7 @@ public:
  * Defines common value-operation routines.
  * */
 template<typename ValueT>
-class iParameter : public iAbstractParameter /*{{{*/ {
+class iParameter : public iSingularParameter /*{{{*/ {
 public:
     typedef ValueT Value;
 private:
@@ -140,8 +154,6 @@ public:
     ~iParameter() {}
 
     const ValueT & value() const;
-
-    char shortcut() const { return _shortcut; }
 };  // class iParameter
 
 
@@ -150,7 +162,7 @@ iParameter<ValueT>::iParameter( const char * name,
                                 const char * description,
                                 ParameterEntryFlag flags,
                                 char shortcut_ ) :
-        iAbstractParameter( name, description, flags, shortcut_ ) {
+        iSingularParameter( name, description, flags, shortcut_ ) {
     // Checks for consistency:
     /* ... */
 }
@@ -161,7 +173,7 @@ iParameter<ValueT>::iParameter( const char * name,
                                 const ValueT & defaultValue,
                                 ParameterEntryFlag flags,
                                 char shortcut_ ) :
-        iAbstractParameter( name, description, flags, shortcut_ ),
+        iSingularParameter( name, description, flags, shortcut_ ),
         _value(defaultValue) {
     // Checks for consistency:
     /* ... */
@@ -257,12 +269,15 @@ public:
 
     /// Sets parameter value from string. Following strings are acceptable
     /// with appropriate meaning (case insensitive):
-    /// (true|enable|on|yes)    logically corresponds to `true';
-    /// (false|disable|off|no)  logically corresponds to `false'.
+    /// (true|enable|on|yes|1)    logically corresponds to `true';
+    /// (false|disable|off|no|0)  logically corresponds to `false'.
     virtual void parse_argument( const char * ) override;
 
     /// This method is used mostly by Configuration class.
     virtual void set_option( bool );
+
+    /// Returns 'True' or 'False' depending on current value.
+    virtual std::string to_string() const override;
 };
 
 }  // namespace dict

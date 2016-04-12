@@ -212,13 +212,23 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
             if( _shortcuts.end() == pIt ) {
                 emraise( badState, "Shortcut option '%c' (0%o) unknown.", c, c );
             }
-            if( pIt->second->has_value() ) {
+            iAbstractParameter & parameter = *(pIt->second);
+            if( parameter.has_value() ) {
                 log_extraction( "c=%c (0%o) considered as a parameter with argument \"%s\".\n",
                                 c, c, optarg );
-                // TODO ...
+                // TODO: static_cast() if has singular flag.
+                //parameter.parse_argument( optarg );
+                //log_extraction( "c=%c (0%o) is set to \"%s\".\n",
+                //                c, c, parameter.to_string().c_str() );
             } else {
                 log_extraction( "c=%c (0%o) considered as an option.\n", c, c );
-                // TODO ...
+                try {
+                    dynamic_cast<Parameter<bool>&>(parameter).set_option(true);
+                    log_extraction( "c=%c (0%o) has been set.\n", c, c );
+                } catch( std::bad_cast & e ) {
+                    emraise( badCast, "Option '%c' can not be considered as option and requires an argument.",
+                             c );
+                }
             }
         } else if( 1 == c ) {
             // Indicates this is a kind of long option (without arg)
