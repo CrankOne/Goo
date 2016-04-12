@@ -181,6 +181,26 @@ Configuration::_recache_getopt_arguments() const {
 }
 
 void
+Configuration::_set_argument_parameter( iAbstractParameter & p,
+                                        const char * strval,
+                                        std::ostream * verbose ) {
+    if( p.is_singular() ) {
+        iSingularParameter & sp = auth_cast<iSingularParameter&>(p);
+        sp.parse_argument( strval );
+        if( verbose ) {
+            *verbose << strfmt( "    ...set to \"%s\".", sp.to_string().c_str() ) << std::endl;
+        }
+    } else {
+        _TODO_ ;
+        // TODO auth_cast<iListParameter&>(p).append_argument( strval );
+        //if( verbose ) {
+        //   *verbose << strfmt( "    ...appended with \"%s\".", sp.to_string().c_str() ) << std::endl;
+        //}
+        // or whatever ...
+    }
+}
+
+void
 Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) {
     # define log_extraction( ... ) if( verbose ) { *verbose << strfmt( __VA_ARGS__ ); }
     ::opterr = 0;  // prevent default `app_name : invalid option -- '%c'' message
@@ -204,22 +224,19 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
         if( isalnum(c) ) {
             // indicates this is an option with shortcut (or a shortcut-only option)
             auto pIt = _shortcuts.find( c );
-            if( _shortcuts.end() == pIt ) {
+            if( _shortcuts.end() == pIt ) {  // impossibru!
                 emraise( badState, "Shortcut option '%c' (0%o) unknown.", c, c );
             }
             iAbstractParameter & parameter = *(pIt->second);
             if( parameter.has_value() ) {
                 log_extraction( "c=%c (0%o) considered as a parameter with argument \"%s\".\n",
                                 c, c, optarg );
-                // TODO: static_cast() if has singular flag.
-                //parameter.parse_argument( optarg );
-                //log_extraction( "c=%c (0%o) is set to \"%s\".\n",
-                //                c, c, parameter.to_string().c_str() );
+                _set_argument_parameter( parameter, optarg, verbose );
             } else {
                 log_extraction( "c=%c (0%o) considered as an option.\n", c, c );
                 try {
                     dynamic_cast<Parameter<bool>&>(parameter).set_option(true);
-                    log_extraction( "c=%c (0%o) has been set.\n", c, c );
+                    log_extraction( "    ...c=%c (0%o) has been set (=True).\n", c, c );
                 } catch( std::bad_cast & e ) {
                     emraise( badCast, "Option '%c' can not be considered as option and requires an argument.",
                              c );
@@ -227,12 +244,28 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
             }
         } else if( 1 == c ) {
             // Indicates this is a kind of long option (without arg)
-            log_extraction( "Got an option \"%s\".\n", longOptions[optind].name );
-            // TODO
+            log_extraction( "\"%s\" considered as option.\n", longOptions[optind].name );
+            auto pIt = _longOptions.find( longOptions[optind].name );
+            if( _longOptions.end() == pIt ) {  // impossibru!
+                emraise( badState, "Option \"%s\" not found in caches.", longOptions[optind].name );
+            }
+            iAbstractParameter & parameter = *(pIt->second);
+            try {
+                dynamic_cast<Parameter<bool>&>(parameter).set_option(true);
+                log_extraction( "    ...\"%s\" has been set (=True).\n", longOptions[optind].name );
+            } catch( std::bad_cast & e ) {
+                emraise( badCast, "Option '%c' can not be considered as option and requires an argument.",
+                         c );
+            }
         } else if( 2 == c ) {
             // Indicates this is a long parameter (with arg)
-            log_extraction( "Got parameter \"%s=%s\".\n", longOptions[optind].name, optarg );
-            // TODO
+            log_extraction( "\"%s=%s\" considered as a parameter.\n", longOptions[optind].name, optarg );
+            auto pIt = _longOptions.find( longOptions[optind].name );
+            if( _longOptions.end() == pIt ) {  // impossibru!
+                emraise( badState, "Option \"%s\" not found in caches.", longOptions[optind].name );
+            }
+            iAbstractParameter & parameter = *(pIt->second);
+            _set_argument_parameter( parameter, optarg, verbose );
         } else if( '?' == c ) {
             emraise( badParameter, "Option '%c' (0%o) unrecognized.", optopt, (int) optopt );
         } else if( ':' == c ) {

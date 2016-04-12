@@ -88,6 +88,11 @@ protected:
                 const std::string & nameprefix,
                 Configuration * conf
             ) const final;
+
+    /// Sets argument depending on multiplicity.
+    static void _set_argument_parameter( iAbstractParameter &,
+                                         const char *,
+                                         std::ostream * );
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
