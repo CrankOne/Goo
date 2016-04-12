@@ -67,7 +67,7 @@ Dictionary::_insert_long_option( const std::string & nameprefix,
         NULL,
         (p.has_shortcut() ? p.shortcut() : 
             (p.has_value() ? 2 : 1) ) };
-    q.push( malloc(sizeof(struct ::option)) );
+    q.push( malloc(sizeof(struct ::option)) );   // TODO: cleanup
     memcpy( q.back(), &o, sizeof(o) );
 }
 
@@ -112,41 +112,32 @@ Dictionary::_append_options( const std::string & nameprefix,
     }
 }
 
-// iAbstractParameter interface implementation
-//////////////////////////////////////////////
-
-# if 0
-const void *
-Configuration::_form_long_options() const {
-    # if 0
-    // ...
-    return _cache_longOptionsPtr;
-    # else
-    struct ::option * lOpts = new struct ::option [7];
-    lOpts[0] = {"add",     required_argument, 0,  0 };
-    lOpts[1] = {"append",  no_argument,       0,  0 };
-    lOpts[2] = {"delete",  required_argument, 0,  0 };
-    lOpts[3] = {"verbose", no_argument,       0,  0 };
-    lOpts[4] = {"create",  required_argument, 0, 'c'};
-    lOpts[5] = {"file",    required_argument, 0,  0 };
-    lOpts[6] = {0,         0,                 0,  0 };
-    return _cache_longOptionsPtr = lOpts;
-    # endif
+void
+Dictionary::_append_configuration_caches(
+                const std::string & nameprefix,
+                Configuration * conf
+            ) const {
+    // Note, that nameprefix already contains this section name.
+    for( auto it  = _byShortcutIndexed.cbegin();
+              it != _byShortcutIndexed.cend(); ++it ) {
+        conf->_cache_parameter_by_shortcut( it->second );
+    }
+    for( auto it  = _parameters.cbegin();
+              it != _parameters.cend(); ++it ) {
+        conf->_cache_parameter_by_full_name( nameprefix + "." + it->first, it->second );
+    }
+    for( auto it  = _dictionaries.cbegin();
+              it != _dictionaries.cend(); ++it ) {
+        it->second->_append_configuration_caches(
+                nameprefix + "." + it->first, conf
+            );
+    }
 }
 
-const char *
-Configuration::_create_short_opt_string() const {
-    # if 0
-    // ...
-    return _cache_shortOptionsPtr;
-    # else
-    const char src[] = "-:abc:d:012";
-    char * sOpts = new char [ strlen(src) + 1 ];
-    strcpy( sOpts, src );
-    return _cache_shortOptionsPtr = sOpts;
-    # endif
-}
-# endif
+
+
+// Configuration
+///////////////
 
 void
 Configuration::_recache_getopt_arguments() const {
@@ -175,10 +166,14 @@ Configuration::_recache_getopt_arguments() const {
 
     {  // Form long options structures array:
         longOptionsPtr_t[lOptsQ.size()] = {NULL, 0, 0, 0};  // sentinel
+        struct ::option * queuedInstancePtr;
         for( struct ::option * c = longOptionsPtr_t;
              !lOptsQ.empty();
              ++c, lOptsQ.pop() ) {
-            memcpy(c, lOptsQ.front(), sizeof(struct ::option));
+            memcpy(c,
+                   queuedInstancePtr = reinterpret_cast<struct ::option *>(lOptsQ.front()),
+                   sizeof(struct ::option) );
+            free( queuedInstancePtr );
         }
     }
 
@@ -270,6 +265,12 @@ Configuration::Configuration( const char * name_,
 void
 Configuration::_free_caches_if_need() const {
     if( _cache_longOptionsPtr ) {
+        for( struct ::option * c = reinterpret_cast<struct ::option *>(_cache_longOptionsPtr);
+             c->name || c->has_arg || c->flag || c->val; ++c ) {
+            if( c->name ) {
+                free( const_cast<char*>(c->name) );
+            }
+        }
         delete [] reinterpret_cast<::option *>(_cache_longOptionsPtr);
     }
     if( _cache_shortOptionsPtr ) {
@@ -327,29 +328,60 @@ Configuration::insert_parameter( iAbstractParameter * p_ ) {
     _getoptCachesValid = false;
     Dictionary::insert_parameter( p_ );
     if( p_->has_shortcut() ) {
-        auto it = _shortcuts.find( p_->shortcut() );
-        if( it != _shortcuts.end() ) {
-            emraise( nonUniq, "Configuration \"%s\":%p already has shortened option '-%c'.",
-                    this->name(), this,
-                    p_->shortcut() );
-        }
-        _shortcuts.emplace( p_->shortcut(), p_ );
+        _cache_parameter_by_shortcut( p_ );
+    } else if( p_->name()  ) {
+        _cache_parameter_by_full_name( p_->name(), p_ );
+    } else {
+        emraise( malformedArguments,
+                 "Parameter option %p has not full name, nor shortcut char.",
+                 p_ );
     }
-    // TODO: _longOptions
 }
 
 void
 Configuration::insert_section( Dictionary * sect ) {
     _getoptCachesValid = false;
     Dictionary::insert_section( sect );
+    _append_configuration_caches( "", this );
 }
 
 void
-Configuration::_insert_shortened_parameter( iAbstractParameter * ) {
+Configuration::_append_configuration_caches(
+                const std::string & nameprefix,
+                Configuration * conf
+            ) const {
+    for( auto it  = _dictionaries.cbegin();
+              it != _dictionaries.cend(); ++it ) {
+        it->second->_append_configuration_caches(
+                it->first, conf
+            );
+    }
 }
 
 void
-Configuration::_insert_fully_qualified_parameter( const std::string &, iAbstractParameter * ) {
+Configuration::_cache_parameter_by_shortcut( iAbstractParameter * p_ ) {
+    assert( p_->has_shortcut() );
+    auto it = _shortcuts.find( p_->shortcut() );
+    if( it != _shortcuts.end() ) {
+        emraise( nonUniq, "Configuration \"%s\":%p already has shortened option '-%c'.",
+                this->name(), this,
+                p_->shortcut() );
+    }
+    _shortcuts.emplace( p_->shortcut(), p_ );
+}
+
+void
+Configuration::_cache_parameter_by_full_name( const std::string & fullName,
+                                              iAbstractParameter * p_ ) {
+    assert( !p_->has_shortcut() );
+    assert( p_->name() );
+    auto it = _longOptions.find( fullName );
+    if( it != _longOptions.end() ) {
+        emraise( nonUniq, "Configuration \"%s\":%p already has option '--%s'.",
+                this->name(), this,
+                fullName.c_str() );
+    }
+    _longOptions.emplace( fullName.c_str(), p_ );
 }
 
 }  // namespace dict

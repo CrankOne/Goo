@@ -13,6 +13,7 @@ namespace goo {
 namespace dict {
 
 class InsertionProxy;
+class Configuration;
 
 class Dictionary : public iAbstractParameter {
 protected:
@@ -42,6 +43,12 @@ protected:
                                   ShortOptString &,
                                   LongOptionEntries & ) const;
 
+    /// Internal procedure --- appends access caches.
+    virtual void _append_configuration_caches(
+                const std::string & nameprefix,
+                Configuration * conf
+            ) const;
+
     friend class InsertionProxy;
     friend class Configuration;
 };  // class Dictionary
@@ -54,8 +61,10 @@ private:
     mutable char * _cache_shortOptionsPtr;
     mutable bool _getoptCachesValid;
 
-    std::unordered_map<char, iAbstractParameter *>          _shortcuts;
-    std::unordered_map<std::string, iAbstractParameter *>   _longOptions;
+    /// Access cache for short options.
+    mutable std::unordered_map<char, iAbstractParameter *>          _shortcuts;
+    /// Access cache for long options.
+    mutable std::unordered_map<std::string, iAbstractParameter *>   _longOptions;
 
     void _free_caches_if_need() const;
 protected:
@@ -69,10 +78,16 @@ protected:
     virtual void insert_section( Dictionary * ) override;
 
     /// Inserts shortcut inside hashing container for quick access.
-    virtual void _insert_shortened_parameter( iAbstractParameter * );
+    virtual void _cache_parameter_by_shortcut( iAbstractParameter * );
 
     /// Inserts fully-qualified name inside hashing container for quick access.
-    virtual void _insert_fully_qualified_parameter( const std::string &, iAbstractParameter * );
+    virtual void _cache_parameter_by_full_name( const std::string &, iAbstractParameter * );
+
+    /// Internal procedure that composes access caches.
+    virtual void _append_configuration_caches(
+                const std::string & nameprefix,
+                Configuration * conf
+            ) const final;
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
@@ -97,6 +112,8 @@ public:
 
     /// Cleaner for tokenized string
     static void free_tokens( size_t argcTokens, char ** argvTokens );
+
+    friend class Dictionary;
 };  // class Configuration
 
 }  // namespace dicts
