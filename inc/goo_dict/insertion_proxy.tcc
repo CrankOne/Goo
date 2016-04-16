@@ -27,6 +27,10 @@ public:
     /// Closes most recent section and switches to its previous (or finalizes last).
     InsertionProxy & end_sect( const char * = nullptr );
 
+    //
+    // Parameter inserter
+    //
+
     template<typename ParameterT, class ... Types> InsertionProxy &
     p( Types ... args ) {
         _stack.top()->insert_parameter(
@@ -35,18 +39,65 @@ public:
         return *this;
     }
 
-    template<typename ParameterT, class ... Types> InsertionProxy &
-    list( const std::initializer_list<ParameterT> & dft, Types ... args ) {
+    //
+    // List inserters
+    //
+
+    template<typename ParameterT> InsertionProxy &
+    list( char shortcut,
+          const char * name,
+          const char * description,
+          const std::initializer_list<ParameterT> & dfts ) {
         _stack.top()->insert_parameter(
-                new Parameter<std::list<ParameterT> >( dft, args ... )
+                new Parameter<std::list<ParameterT> >( dfts, shortcut, name, description )
             );
         return *this;
     }
 
-    template<typename ParameterT, class ... Types> InsertionProxy &
-    list( Types ... args ) {
+    template<typename ParameterT> InsertionProxy &
+    list( const char * name,
+          const char * description,
+          const std::initializer_list<ParameterT> & dfts ) {
         _stack.top()->insert_parameter(
-                new Parameter<std::list<ParameterT> >( args ... )
+                new Parameter<std::list<ParameterT> >( dfts, name, description )
+            );
+        return *this;
+    }
+
+    template<typename ParameterT> InsertionProxy &
+    list( char shortcut,
+          const char * description,
+          const std::initializer_list<ParameterT> & dfts ) {
+        _stack.top()->insert_parameter(
+                new Parameter<std::list<ParameterT> >( dfts, shortcut, description )
+            );
+        return *this;
+    }
+
+    template<typename ParameterT> InsertionProxy &
+    list( char shortcut,
+          const char * name,
+          const char * description ) {
+        _stack.top()->insert_parameter(
+                new Parameter<std::list<ParameterT> >( shortcut, name, description )
+            );
+        return *this;
+    }
+
+    template<typename ParameterT> InsertionProxy &
+    list( const char * name,
+          const char * description ) {
+        _stack.top()->insert_parameter(
+                new Parameter<std::list<ParameterT> >( name, description )
+            );
+        return *this;
+    }
+
+    template<typename ParameterT> InsertionProxy &
+    list( char shortcut,
+          const char * description ) {
+        _stack.top()->insert_parameter(
+                new Parameter<std::list<ParameterT> >( shortcut, description )
             );
         return *this;
     }

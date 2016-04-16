@@ -234,7 +234,7 @@ class Parameter {};  // Defailt implementation is empty.
  * TODO: track `default' values overriding.
  */
 template<typename ValueT>
-class Parameter<std::list<ValueT>> : protected Parameter<ValueT> {
+class Parameter<std::list<ValueT> > : protected Parameter<ValueT> {
 private:
     std::list<ValueT> _values;
 protected:
@@ -242,26 +242,21 @@ protected:
         _values.push_back( v ); }
 
     virtual void _V_parse_argument( const char * strval ) override {
-        Parameter<ValueT>::_V_parse_argument;
+        Parameter<ValueT>::_V_parse_argument( strval );
         _V_push_value( Parameter<ValueT>::value() ); }
 public:
     const std::list<ValueT> & values() const { return _values; }
 
-    Parameter( const std::initializer_list<ValueT> &,
-               const char * name,
-               const char * description,
-               char shortcut_ = '\0' );
+    template<class ... Types>
+    Parameter( const std::initializer_list<ValueT> & il, Types ... args ) :
+        Parameter<ValueT>( args ... , il[0] )
+    { /* TODO: push back all the default values,
+         TODO: unset singular flag */ }
 
-    Parameter( const std::initializer_list<ValueT> &,
-               const char * description,
-               char shortcut_ );
-
-    Parameter( const char * name,
-               const char * description,
-               char shortcut_ = '\0' );
-
-    Parameter( const char * description,
-               char shortcut_ );
+    template<class ... Types>
+    Parameter( Types ... args ) :
+        Parameter<ValueT>( args ... )
+    { /* TODO: unset singular flag */ }
 
     ~Parameter() {}
 
