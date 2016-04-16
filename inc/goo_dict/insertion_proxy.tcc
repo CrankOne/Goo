@@ -35,6 +35,22 @@ public:
         return *this;
     }
 
+    template<typename ParameterT, class ... Types> InsertionProxy &
+    list( const std::initializer_list<ParameterT> & dft, Types ... args ) {
+        _stack.top()->insert_parameter(
+                new Parameter<std::list<ParameterT> >( dft, args ... )
+            );
+        return *this;
+    }
+
+    template<typename ParameterT, class ... Types> InsertionProxy &
+    list( Types ... args ) {
+        _stack.top()->insert_parameter(
+                new Parameter<std::list<ParameterT> >( args ... )
+            );
+        return *this;
+    }
+
     friend class Configuration;
 };  // class InsertionProxy
 

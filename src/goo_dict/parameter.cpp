@@ -174,12 +174,17 @@ Parameter<bool>::Parameter( char shortcut_,
                             ) {}
 
 void
-Parameter<bool>::parse_argument( const char * argStr ) {
+Parameter<bool>::set_option( bool a ) {
+    _set_value( true );
+}
+
+bool
+Parameter<bool>::_V_parse( const char * argStr ) const {
     // _static_logicalTermRegex_True
     if( std::regex_match( argStr, _static_logicalTermRegex_True ) ) {
-        _set_value( true );
+        return true;
     } else if( std::regex_match( argStr, _static_logicalTermRegex_False) ) {
-        _set_value( false );
+        return false;
     } else {
         emraise( badParameter,
                  "Expression \"%s\" can not be parsed as logical option.",
@@ -187,14 +192,9 @@ Parameter<bool>::parse_argument( const char * argStr ) {
     }
 }
 
-void
-Parameter<bool>::set_option( bool a ) {
-    _set_value( true );
-}
-
 std::string
-Parameter<bool>::to_string() const {
-    if( value() ) {
+Parameter<bool>::_V_stringify_value( const bool & val ) const {
+    if( val ) {
         return "True";
     } else {
         return "False";

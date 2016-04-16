@@ -26,6 +26,10 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .p<bool>( 'Q', "quet2", "Be quiet", true )
             //.p<bool>( 12, "one", "two", "three" )  // should be failed at linkage
             //.p<bool>( "one", "two", "three" )  // should be failed at linkage
+            .list<bool>( {true, true, false, false}, "binary", "options array", 'b' )
+            .list<bool>( {false, true}, "options array", 'B' )
+            .list<bool>( "binary", "options array", 'b' )
+            .list<bool>( "options array", 'b' )
             ;
         // Check default is set correctly:
 

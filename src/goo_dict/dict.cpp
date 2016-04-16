@@ -62,12 +62,12 @@ Dictionary::_insert_long_option( const std::string & nameprefix,
                                  const iAbstractParameter & p ) {
     assert( p.name() );
     struct ::option o = {
-        strdup((nameprefix + p.name()).c_str()),  // TODO: cleanup
+        strdup((nameprefix + p.name()).c_str()),
         (p.has_value() ? required_argument : no_argument),
         NULL,
         (p.has_shortcut() ? p.shortcut() : 
             (p.has_value() ? 2 : 1) ) };
-    q.push( malloc(sizeof(struct ::option)) );   // TODO: cleanup
+    q.push( malloc(sizeof(struct ::option)) );
     memcpy( q.back(), &o, sizeof(o) );
 }
 
@@ -75,8 +75,6 @@ void
 Dictionary::_append_options( const std::string & nameprefix,
                              ShortOptString & shrtOpts,
                              LongOptionEntries & longOpts ) const {
-    //std::cout << "XXX: " << _byShortcutIndexed.size() << ", "  // XXX
-    //                     << _parameters.size() << std::endl;   // XXX
     // Form short options string (without any prefixes here):
     for( auto it  = _byShortcutIndexed.cbegin();
               it != _byShortcutIndexed.cend(); ++it ) {
@@ -225,18 +223,18 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
             // indicates this is an option with shortcut (or a shortcut-only option)
             auto pIt = _shortcuts.find( c );
             if( _shortcuts.end() == pIt ) {  // impossibru!
-                emraise( badState, "Shortcut option '%c' (0%o) unknown.", c, c );
+                emraise( badState, "Shortcut option '%c' (0x%02x) unknown.", c, c );
             }
             iAbstractParameter & parameter = *(pIt->second);
             if( parameter.has_value() ) {
-                log_extraction( "c=%c (0%o) considered as a parameter with argument \"%s\".\n",
+                log_extraction( "c=%c (0x%02x) considered as a parameter with argument \"%s\".\n",
                                 c, c, optarg );
                 _set_argument_parameter( parameter, optarg, verbose );
             } else {
-                log_extraction( "c=%c (0%o) considered as an option.\n", c, c );
+                log_extraction( "c=%c (0x%02x) considered as an option.\n", c, c );
                 try {
                     dynamic_cast<Parameter<bool>&>(parameter).set_option(true);
-                    log_extraction( "    ...c=%c (0%o) has been set (=True).\n", c, c );
+                    log_extraction( "    ...c=%c (0x%02x) has been set (=True).\n", c, c );
                 } catch( std::bad_cast & e ) {
                     emraise( badCast, "Option '%c' can not be considered as option and requires an argument.",
                              c );
@@ -267,7 +265,7 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
             iAbstractParameter & parameter = *(pIt->second);
             _set_argument_parameter( parameter, optarg, verbose );
         } else if( '?' == c ) {
-            emraise( badParameter, "Option '%c' (0%o) unrecognized.", optopt, (int) optopt );
+            emraise( badParameter, "Option '%c' (0x%02x) unrecognized.", optopt, (int) optopt );
         } else if( ':' == c ) {
             // todo: any additional info?
             emraise( argumentExpected, "Parametered option expects an argument." );
@@ -276,7 +274,7 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
             log_extraction( "\"%s\" considered as a positional argument.\n", ::optarg );
             // TODO ...
         } else {
-            emraise( badValue, "getopt() returned character code 0%o.", c );
+            emraise( badValue, "getopt() returned character code 0x%02x.", c );
         }
     }
     // TODO: further processing of positional arguments.

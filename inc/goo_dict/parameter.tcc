@@ -3,6 +3,8 @@
 
 # include "goo_types.h"
 # include "goo_exception.hpp"
+# include <list>
+# include <cassert>
 
 namespace goo {
 namespace dict {
@@ -108,22 +110,37 @@ public:
         }
 };  /*}}}*/ // class iAbstractParameter
 
-class iSingularParameter : public iAbstractParameter {
+
+
+
+/* @class iSingularParameter
+ * @brief Generic command-line parameter features interface.
+ *
+ * At this level of inheritance the less-generic definition of
+ * parameter dictionary entries is defined.
+ */
+class iSingularParameter : public iAbstractParameter /*{{{*/ {
+protected:
+    virtual void _V_parse_argument( const char * ) = 0;
+    virtual std::string _V_to_string() const = 0;
 public:
     /// Returns single-char shortcut for this parameter.
     char shortcut() const { return _shortcut; }
 
     /// Parses argument from string representation.
-    virtual void parse_argument( const char * ) = 0;
+    void parse_argument( const char * strval ) {  _V_parse_argument( strval ); }
 
     /// Forms a human-readable string to be displayed at logs.
-    virtual std::string to_string() const = 0;
+    std::string to_string() const { return _V_to_string(); }
 
     iSingularParameter( const char * name,
-                        const char * description,
-                        ParameterEntryFlag flags,
-                        char shortcut = '\0' );
-};
+                           const char * description,
+                           ParameterEntryFlag flags,
+                           char shortcut = '\0' );
+};  // }}} class iSingularParameter
+
+
+
 
 /**@class iParameter
  * @brief A valued intermediate class representing dictionary entry with
@@ -139,6 +156,14 @@ private:
     Value _value;
 protected:
     void _set_value( const ValueT & );
+    virtual void _V_parse_argument( const char * strval ) override {
+        _set_value( _V_parse( strval ) ); }
+    virtual std::string _V_to_string( ) const override {
+        assert( is_set() );
+        return _V_stringify_value( value() ); }
+
+    virtual Value _V_parse( const char * ) const = 0;
+    virtual std::string _V_stringify_value( const Value & ) const = 0;
 public:
     iParameter( const char * name,
                 const char * description,
@@ -155,7 +180,6 @@ public:
 
     const ValueT & value() const;
 };  // class iParameter
-
 
 template<typename ValueT>
 iParameter<ValueT>::iParameter( const char * name,
@@ -190,6 +214,8 @@ iParameter<ValueT>::_set_value( const ValueT & val ) {
 }
 
 
+
+
 /**@class Parameter
  * @brief User-side implementation class. Extension point for user parameters type.
  *
@@ -199,6 +225,53 @@ iParameter<ValueT>::_set_value( const ValueT & val ) {
 template<typename ValueT>
 class Parameter {};  // Defailt implementation is empty.
 
+
+
+
+/**@brief
+ * 
+ * Ctrs are heavily restricted here.
+ * TODO: track `default' values overriding.
+ */
+template<typename ValueT>
+class Parameter<std::list<ValueT>> : protected Parameter<ValueT> {
+private:
+    std::list<ValueT> _values;
+protected:
+    virtual void _V_push_value( const ValueT & v ) {
+        _values.push_back( v ); }
+
+    virtual void _V_parse_argument( const char * strval ) override {
+        Parameter<ValueT>::_V_parse_argument;
+        _V_push_value( Parameter<ValueT>::value() ); }
+public:
+    const std::list<ValueT> & values() const { return _values; }
+
+    Parameter( const std::initializer_list<ValueT> &,
+               const char * name,
+               const char * description,
+               char shortcut_ = '\0' );
+
+    Parameter( const std::initializer_list<ValueT> &,
+               const char * description,
+               char shortcut_ );
+
+    Parameter( const char * name,
+               const char * description,
+               char shortcut_ = '\0' );
+
+    Parameter( const char * description,
+               char shortcut_ );
+
+    ~Parameter() {}
+
+    friend class InsertionProxy;
+
+    using iAbstractParameter::name;
+    using iAbstractParameter::description;
+    using iAbstractParameter::shortcut;
+    // ... whatever?
+};
 
 //
 // Specializations
@@ -267,17 +340,18 @@ public:
                const char *,
                const char * );
 
+    /// This method is used mostly by Configuration class.
+    virtual void set_option( bool );
+
+protected:
     /// Sets parameter value from string. Following strings are acceptable
     /// with appropriate meaning (case insensitive):
     /// (true|enable|on|yes|1)    logically corresponds to `true';
     /// (false|disable|off|no|0)  logically corresponds to `false'.
-    virtual void parse_argument( const char * ) override;
-
-    /// This method is used mostly by Configuration class.
-    virtual void set_option( bool );
+    virtual Value _V_parse( const char * ) const override;
 
     /// Returns 'True' or 'False' depending on current value.
-    virtual std::string to_string() const override;
+    virtual std::string _V_stringify_value( const Value & ) const override;
 };
 
 }  // namespace dict
