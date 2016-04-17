@@ -45,7 +45,10 @@ protected:
     char _shortcut;
 protected:
     /// Sets the «set» flag translating instance to initialized state.
-    void set_set_flag();
+    void _set_set_flag();
+
+    /// This method is to be used by lists only.
+    void _unset_singular();
 
     /// Single ctr can be only invoked by descendants.
     iAbstractParameter( const char * name,
@@ -210,6 +213,7 @@ iParameter<ValueT>::value() const {
 
 template<typename ValueT> void
 iParameter<ValueT>::_set_value( const ValueT & val ) {
+    _set_set_flag();
     _value = val;
 }
 
@@ -249,14 +253,14 @@ public:
 
     template<class ... Types>
     Parameter( const std::initializer_list<ValueT> & il, Types ... args ) :
-        Parameter<ValueT>( args ... , il[0] )
-    { /* TODO: push back all the default values,
-         TODO: unset singular flag */ }
+        Parameter<ValueT>( args ... , *il.begin() )
+    { /* TODO: push back all the default values */
+        this->_unset_singular(); }
 
     template<class ... Types>
     Parameter( Types ... args ) :
         Parameter<ValueT>( args ... )
-    { /* TODO: unset singular flag */ }
+    { this->_unset_singular(); }
 
     ~Parameter() {}
 

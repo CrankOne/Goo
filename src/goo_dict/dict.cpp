@@ -189,11 +189,11 @@ Configuration::_set_argument_parameter( iAbstractParameter & p,
             *verbose << strfmt( "    ...set to \"%s\".", sp.to_string().c_str() ) << std::endl;
         }
     } else {
-        _TODO_ ;
-        // TODO auth_cast<iListParameter&>(p).append_argument( strval );
-        //if( verbose ) {
-        //   *verbose << strfmt( "    ...appended with \"%s\".", sp.to_string().c_str() ) << std::endl;
-        //}
+        iSingularParameter & mp = auth_cast<iSingularParameter&>(p);
+        mp.parse_argument( strval );
+        if( verbose ) {
+           *verbose << strfmt( "    ...appended with \"%s\".", mp.to_string().c_str() ) << std::endl;
+        }
         // or whatever ...
     }
 }

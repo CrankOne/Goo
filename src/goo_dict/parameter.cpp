@@ -84,6 +84,16 @@ iAbstractParameter::description() const {
     return _description;
 }
 
+void
+iAbstractParameter::_set_set_flag() {
+    _flags |= set;
+}
+
+void
+iAbstractParameter::_unset_singular() {
+    _flags &= ~singular;
+}
+
 //
 // Singular parameter
 ////////////////////
