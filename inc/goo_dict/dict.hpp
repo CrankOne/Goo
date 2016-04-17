@@ -49,8 +49,24 @@ protected:
                 Configuration * conf
             ) const;
 
+    /// Get parameter instance by its full name.
+    /// Note, that path delimeter here is dot symbol '.'.
+    virtual const iSingularParameter & _get_parameter( char [] ) const;
+
     friend class InsertionProxy;
     friend class Configuration;
+public:
+
+    /// This routine performs regex-based token extraction from option path.
+    /// For example, the following string:
+    ///     "one.three-four.five"
+    /// must be splitted in following manner:
+    ///     current = "one"
+    ///     tail = "three-four.five".
+    /// In case when only one token is provided, it will be written
+    /// in `current', and the tail will be empty.
+    static int pull_opt_path_token( char *& path,
+                                    char *& current );
 };  // class Dictionary
 
 
@@ -117,6 +133,9 @@ public:
 
     /// Cleaner for tokenized string
     static void free_tokens( size_t argcTokens, char ** argvTokens );
+
+    /// Operator shortcut for get_parameter.
+    virtual const iSingularParameter & operator[]( const char [] ) const;
 
     friend class Dictionary;
 };  // class Configuration

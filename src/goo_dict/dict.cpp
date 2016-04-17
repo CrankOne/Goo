@@ -132,6 +132,69 @@ Dictionary::_append_configuration_caches(
     }
 }
 
+int
+Dictionary::pull_opt_path_token( char *& path,
+                                 char *& current ) {
+    current = path;
+    for( ; *path != '\0'; ++path ) {
+        if( '.' == *path ) {
+            *path = '\0';
+            ++path;
+            break;
+        }
+        if( !isalnum(*path) && '-' != *path ) {
+            emraise( badParameter,
+                     "Path specification contains unallowed character 0x%x.",
+                     *path );
+        }
+    }
+    if( '\0' == *path ) {
+        return 0;  // no more tokens
+    }
+    return 1;  // tail is not empty
+}
+
+const iSingularParameter &
+Dictionary::_get_parameter( char path[] ) const {
+    char * current;
+    int rc = pull_opt_path_token( path, current );
+    if( 0 == rc ) {
+        // terminal case --- consider the `current' indexes
+        // an option and acquire the value.
+        if( path - current > 1 ) {
+            // option parameter indexed by long name
+            auto it = _parameters.find( current );
+            if( it == _parameters.end() ) {
+                emraise( notFound,
+                     "Option \"%s\" not found in section \"%s\"",
+                     current, name() ? name() : "<root>" );
+            }
+            return dynamic_cast<const iSingularParameter &>(*(it->second));
+        } else if( path - current == 0 ) {
+            emraise( badState, "Unexpected state of option path parser --- null option length."
+                               "See sources for details." );
+        } else {
+            // option parameter indexed by shortcut
+            auto it = _byShortcutIndexed.find( *current );
+            if( it == _byShortcutIndexed.end() ) {
+                emraise( notFound,
+                     "Option \"%s\" not found in section \"%s\"",
+                     current, name() ? name() : "<root>" );
+            }
+            return dynamic_cast<const iSingularParameter &>(*(it->second));
+        }
+    } else {
+        // proceed recursively within section -- `current' contains
+        // section name and the `path' leads to an option.
+        auto it = _dictionaries.find( current );
+        if( it == _dictionaries.end() ) {
+            emraise( notFound,
+                     "Section \"%s\" not found in section \"%s\"",
+                     current, name() ? name() : "<root>" );
+        }
+        return it->second->_get_parameter( path );
+    }
+}
 
 
 // Configuration
@@ -418,6 +481,15 @@ Configuration::_cache_parameter_by_full_name( const std::string & fullName,
                 fullName.c_str() );
     }
     _longOptions.emplace( fullName.c_str(), p_ );
+}
+
+const iSingularParameter &
+Configuration::operator[]( const char path[] ) const {
+    assert( path );
+    char * path2extract = strdup( path );
+    const iSingularParameter & result = _get_parameter( path2extract );
+    free( path2extract );
+    return result;
 }
 
 }  // namespace dict

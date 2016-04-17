@@ -9,6 +9,9 @@
 namespace goo {
 namespace dict {
 
+template<typename ValueT>
+class iParameter;
+
 /**@class iAbstractParameter
  * @brief An abstract parameter is a base class for most entity in
  * Goo's dictionaries
@@ -140,6 +143,20 @@ public:
                         const char * description,
                         ParameterEntryFlag flags,
                         char shortcut = '\0' );
+
+    /// Getter method.
+    template<typename T> const T &
+    as() const {
+        auto ptr = dynamic_cast<iParameter<T> const *>(this);
+        if( !ptr ) {
+            if( this->name() ) {
+                emraise(badCast, "Couldn't cast parameter \"%s\" to specified type.", name() );
+            } else {
+                emraise(badCast, "Couldn't cast parameter '%c' to specified type.", shortcut() );
+            }
+        }
+        return ptr->value();
+    }
 };  // }}} class iSingularParameter
 
 
