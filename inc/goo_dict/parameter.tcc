@@ -137,9 +137,9 @@ public:
     std::string to_string() const { return _V_to_string(); }
 
     iSingularParameter( const char * name,
-                           const char * description,
-                           ParameterEntryFlag flags,
-                           char shortcut = '\0' );
+                        const char * description,
+                        ParameterEntryFlag flags,
+                        char shortcut = '\0' );
 };  // }}} class iSingularParameter
 
 
@@ -255,12 +255,16 @@ public:
     Parameter( const std::initializer_list<ValueT> & il, Types ... args ) :
         Parameter<ValueT>( args ... , *il.begin() )
     { /* TODO: push back all the default values */
-        this->_unset_singular(); }
+        this->_unset_singular();
+        assert( !(this->name() == nullptr && !this->has_shortcut()) );
+        assert( this->description() ); }
 
     template<class ... Types>
     Parameter( Types ... args ) :
         Parameter<ValueT>( args ... )
-    { this->_unset_singular(); }
+    {   this->_unset_singular();
+        assert( !(this->name() == nullptr && !this->has_shortcut()) );
+        assert( this->description() ); }
 
     ~Parameter() {}
 

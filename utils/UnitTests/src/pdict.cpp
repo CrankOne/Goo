@@ -12,7 +12,7 @@
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     // os << "**** **** ****" << std::endl;
     // const char * const argv_[] = {};
-
+    # if 1
     {
         os << "Basic tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication", "Testing parameter set." );
@@ -28,6 +28,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             //.p<bool>( 12, "one", "two", "three" )  // should be failed at linkage
             //.p<bool>( "one", "two", "three" )  // should be failed at linkage
             ;
+
         // Check default is set correctly:
         const char ex1[] = "./foo -1vqfalse --quiet=true --verbose -V --quet2 false";
         char ** argv;
@@ -42,6 +43,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         // TODO : check options are really set to expected values
         os << "} Basic tests done." << std::endl;
     }
+    # endif
     // TODO : expected for pasing errors check
     # if 1
     {
@@ -51,13 +53,14 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         conf.insertion_proxy()
             .p<bool>( '1', "parameter-one",  "First parameter" )
             .list<bool>( 'b', "binary", "options array", {true, true, false, false} )
-            .list<bool>( 'B', "options array", {false, true} )
+            .list<bool>( 'B', "options array", {false} )
             .list<bool>( "binary2", "options array" )
             .list<bool>( 'a', "options array" )
             .p<bool>( 'v', "Enables verbose output" )
             ;
         // Check default is set correctly:
-        const char ex1[] = "./foo -1v -b true -b Off -b On --binary2 OFF --binary ON";
+        const char ex1[] = "./foo -1v -b true -b Off -b On --binary2 OFF --binary ON"
+                           "-Bon -Bfalse -BOFF";
         char ** argv;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
         for( int n = 0; n < argc; ++n ) {

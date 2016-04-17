@@ -211,9 +211,12 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
         log_extraction( "== Short options string:\n\"%s\"\n"
                         "Long options:\n",
                         _cache_shortOptionsPtr );
-        for( const struct ::option * it = longOptions; it->name; ++it ) {
-            *verbose << "    -- " << it->name << (required_argument == it->has_arg ? '!' :
-                                                 (optional_argument == it->has_arg ? '?' : ' '))
+        size_t n = 0;
+        for( const struct ::option * it = longOptions; it->name; ++it, ++n ) {
+            *verbose << "    -- [" << n << "]"
+                     << it->name << (required_argument == it->has_arg ? '!' :
+                                    (optional_argument == it->has_arg ? '?' : ' ') )
+                     << " 0x" << std::hex << it->val
                      << std::endl;
         }
     }
@@ -234,7 +237,7 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
                 log_extraction( "c=%c (0x%02x) considered as an option.\n", c, c );
                 try {
                     dynamic_cast<Parameter<bool>&>(parameter).set_option(true);
-                    log_extraction( "    ...c=%c (0x%02x) has been set (=True).\n", c, c );
+                    log_extraction( "    ...c=%c (0x%02x) has been set/appended with (=True).\n", c, c );
                 } catch( std::bad_cast & e ) {
                     emraise( badCast, "Option '%c' can not be considered as option and requires an argument.",
                              c );
@@ -242,25 +245,27 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
             }
         } else if( 1 == c ) {
             // Indicates this is a kind of long option (without arg)
-            log_extraction( "\"%s\" considered as option.\n", longOptions[optind].name );
-            auto pIt = _longOptions.find( longOptions[optind].name );
+            assert( longOptions[optIndex].name );
+            log_extraction( "\"%s\" considered as option.\n", longOptions[optIndex].name );
+            auto pIt = _longOptions.find( longOptions[optIndex].name );
             if( _longOptions.end() == pIt ) {  // impossibru!
-                emraise( badState, "Option \"%s\" not found in caches.", longOptions[optind].name );
+                emraise( badState, "Option \"%s\" not found in caches.", longOptions[optIndex].name );
             }
             iAbstractParameter & parameter = *(pIt->second);
             try {
                 dynamic_cast<Parameter<bool>&>(parameter).set_option(true);
-                log_extraction( "    ...\"%s\" has been set (=True).\n", longOptions[optind].name );
+                log_extraction( "    ...\"%s\" has been set/appended with (=True).\n", longOptions[optIndex].name );
             } catch( std::bad_cast & e ) {
                 emraise( badCast, "Option '%c' can not be considered as option and requires an argument.",
                          c );
             }
         } else if( 2 == c ) {
             // Indicates this is a long parameter (with arg)
-            log_extraction( "\"%s=%s\" considered as a parameter.\n", longOptions[optind].name, optarg );
-            auto pIt = _longOptions.find( longOptions[optind].name );
+            assert( longOptions[optIndex].name );
+            log_extraction( "\"%s=%s\" considered as a parameter.\n", longOptions[optIndex].name, optarg );
+            auto pIt = _longOptions.find( longOptions[optIndex].name );
             if( _longOptions.end() == pIt ) {  // impossibru!
-                emraise( badState, "Option \"%s\" not found in caches.", longOptions[optind].name );
+                emraise( badState, "Option \"%s\" not found in caches.", longOptions[optIndex].name );
             }
             iAbstractParameter & parameter = *(pIt->second);
             _set_argument_parameter( parameter, optarg, verbose );
