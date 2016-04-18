@@ -20,17 +20,17 @@ protected:
     typedef std::queue<char>    ShortOptString;
     typedef std::queue<void*>   LongOptionEntries;  // ptrs are malloc()'d
 private:
-    std::map<std::string, iAbstractParameter *> _parameters;
-    std::map<char, iAbstractParameter *>        _byShortcutIndexed;
+    std::map<std::string, iSingularParameter *> _parameters;
+    std::map<char, iSingularParameter *>        _byShortcutIndexed;
     std::map<std::string, Dictionary *>         _dictionaries;
 
     /// Aux insertion method for long options (reentrant routine).
     static void _insert_long_option( const std::string &,
                                      Dictionary::LongOptionEntries &,
-                                     const iAbstractParameter & );
+                                     const iSingularParameter & );
 protected:
     /// Inserts parameter instance created by insertion proxy.
-    virtual void insert_parameter( iAbstractParameter * );
+    virtual void insert_parameter( iSingularParameter * );
 
     /// Inserts dictionary instance created by insertion proxy.
     virtual void insert_section( Dictionary * );
@@ -67,6 +67,10 @@ public:
     /// in `current', and the tail will be empty.
     static int pull_opt_path_token( char *& path,
                                     char *& current );
+
+    /// Performs consistency check (only has sense, if extract() was performed before).
+    virtual bool is_consistant( std::map<std::string, const iSingularParameter *> &,
+                                const std::string & prefix ) const;
 };  // class Dictionary
 
 
@@ -78,9 +82,9 @@ private:
     mutable bool _getoptCachesValid;
 
     /// Access cache for short options.
-    mutable std::unordered_map<char, iAbstractParameter *>          _shortcuts;
+    mutable std::unordered_map<char, iSingularParameter *>          _shortcuts;
     /// Access cache for long options.
-    mutable std::unordered_map<std::string, iAbstractParameter *>   _longOptions;
+    mutable std::unordered_map<std::string, iSingularParameter *>   _longOptions;
 
     void _free_caches_if_need() const;
 protected:
@@ -88,16 +92,16 @@ protected:
     void _recache_getopt_arguments() const;
 
     /// Inserts parameter instance created by insertion proxy with caches invalidation.
-    virtual void insert_parameter( iAbstractParameter * ) override;
+    virtual void insert_parameter( iSingularParameter * ) override;
 
     /// Inserts dictionary instance created by insertion proxy with caches invalidation.
     virtual void insert_section( Dictionary * ) override;
 
     /// Inserts shortcut inside hashing container for quick access.
-    virtual void _cache_parameter_by_shortcut( iAbstractParameter * );
+    virtual void _cache_parameter_by_shortcut( iSingularParameter * );
 
     /// Inserts fully-qualified name inside hashing container for quick access.
-    virtual void _cache_parameter_by_full_name( const std::string &, iAbstractParameter * );
+    virtual void _cache_parameter_by_full_name( const std::string &, iSingularParameter * );
 
     /// Internal procedure that composes access caches.
     virtual void _append_configuration_caches(
@@ -106,7 +110,7 @@ protected:
             ) const final;
 
     /// Sets argument depending on multiplicity.
-    static void _set_argument_parameter( iAbstractParameter &,
+    static void _set_argument_parameter( iSingularParameter &,
                                          const char *,
                                          std::ostream * );
 public:
@@ -117,10 +121,13 @@ public:
     ~Configuration();
 
     /// Parses command-line arguments.
-    void extract( int argc, char * const argv[], std::ostream * verbose=nullptr );
+    void extract( int argc,
+                  char * const argv[],
+                  bool doConsistencyCheck=true,
+                  std::ostream * verbose=nullptr );
 
     /// Returns certain paramater by its name or full path.
-    const iAbstractParameter & get_parameter( const std::string & ) const;
+    const iSingularParameter & get_parameter( const std::string & ) const;
 
     /// Constructs a bound insertion proxy instance object.
     InsertionProxy insertion_proxy();

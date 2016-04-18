@@ -38,7 +38,7 @@ Dictionary::~Dictionary() {
 }
 
 void
-Dictionary::insert_parameter( iAbstractParameter * instPtr ) {
+Dictionary::insert_parameter( iSingularParameter * instPtr ) {
     if( instPtr->has_shortcut() ) {
         _byShortcutIndexed.emplace( instPtr->shortcut(),
                                     instPtr );
@@ -59,7 +59,7 @@ Dictionary::insert_section( Dictionary * instPtr ) {
 void
 Dictionary::_insert_long_option( const std::string & nameprefix,
                                  Dictionary::LongOptionEntries & q,
-                                 const iAbstractParameter & p ) {
+                                 const iSingularParameter & p ) {
     assert( p.name() );
     struct ::option o = {
         strdup((nameprefix + p.name()).c_str()),
@@ -78,7 +78,7 @@ Dictionary::_append_options( const std::string & nameprefix,
     // Form short options string (without any prefixes here):
     for( auto it  = _byShortcutIndexed.cbegin();
               it != _byShortcutIndexed.cend(); ++it ) {
-        iAbstractParameter & pRef = *(it->second);
+        iSingularParameter & pRef = *(it->second);
         // It is mandatory for options in this container to
         // have shortcut. It is useful to check that.
         assert( pRef.shortcut() == it->first );
@@ -94,7 +94,7 @@ Dictionary::_append_options( const std::string & nameprefix,
     // Form long options struct:
     for( auto it  = _parameters.cbegin();
               it != _parameters.cend(); ++it ) {
-        iAbstractParameter & pRef = *(it->second);
+        iSingularParameter & pRef = *(it->second);
         // Options at this container must not have
         // shortcuts as they are stored at _byShortcutIndexed
         assert( pRef.name() == it->first );
@@ -169,7 +169,7 @@ Dictionary::_get_parameter( char path[] ) const {
                      "Option \"%s\" not found in section \"%s\"",
                      current, name() ? name() : "<root>" );
             }
-            return dynamic_cast<const iSingularParameter &>(*(it->second));
+            return *(it->second);
         } else if( path - current == 0 ) {
             emraise( badState, "Unexpected state of option path parser --- null option length."
                                "See sources for details." );
@@ -181,7 +181,7 @@ Dictionary::_get_parameter( char path[] ) const {
                      "Option \"%s\" not found in section \"%s\"",
                      current, name() ? name() : "<root>" );
             }
-            return dynamic_cast<const iSingularParameter &>(*(it->second));
+            return *(it->second);
         }
     } else {
         // proceed recursively within section -- `current' contains
@@ -196,6 +196,41 @@ Dictionary::_get_parameter( char path[] ) const {
     }
 }
 
+bool
+Dictionary::is_consistant( std::map<std::string, const iSingularParameter *> & badParameters,
+                           const std::string & prefix ) const {
+    for( auto it  = _parameters.cbegin();
+              it != _parameters.cbegin(); ++it ) {
+        if( it->second->is_mandatory() && !it->second->is_set() ) {
+            badParameters.emplace(
+                    prefix + it->second->name(),
+                    it->second
+                );
+        }
+    }
+    for( auto it  = _byShortcutIndexed.cbegin();
+              it != _byShortcutIndexed.cbegin(); ++it ) {
+        if( it->second->is_mandatory() && !it->second->is_set() ) {
+            if( it->second->name() ) {
+                badParameters.emplace(
+                        prefix + it->second->name(),
+                        it->second
+                    );
+            } else {
+                char bf[2] = {it->first, '\0'};
+                badParameters.emplace(
+                    bf,
+                    it->second
+                );
+            }
+        }
+    }
+    for( auto it  = _dictionaries.cbegin();
+              it != _dictionaries.cbegin(); ++it ) {
+        it->second->is_consistant( badParameters, prefix + it->first );
+    }
+    return badParameters.empty();
+}
 
 // Configuration
 ///////////////
@@ -242,7 +277,7 @@ Configuration::_recache_getopt_arguments() const {
 }
 
 void
-Configuration::_set_argument_parameter( iAbstractParameter & p,
+Configuration::_set_argument_parameter( iSingularParameter & p,
                                         const char * strval,
                                         std::ostream * verbose ) {
     if( p.is_singular() ) {
@@ -262,7 +297,10 @@ Configuration::_set_argument_parameter( iAbstractParameter & p,
 }
 
 void
-Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) {
+Configuration::extract( int argc,
+                        char * const argv[],
+                        bool doConsistencyCheck,
+                        std::ostream * verbose ) {
     # define log_extraction( ... ) if( verbose ) { *verbose << strfmt( __VA_ARGS__ ); }
     ::opterr = 0;  // prevent default `app_name : invalid option -- '%c'' message
     ::optind = 0;  // forses rescan with each parameters vector
@@ -291,7 +329,7 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
             if( _shortcuts.end() == pIt ) {  // impossibru!
                 emraise( badState, "Shortcut option '%c' (0x%02x) unknown.", c, c );
             }
-            iAbstractParameter & parameter = *(pIt->second);
+            iSingularParameter & parameter = *(pIt->second);
             if( parameter.has_value() ) {
                 log_extraction( "c=%c (0x%02x) considered as a parameter with argument \"%s\".\n",
                                 c, c, optarg );
@@ -314,7 +352,7 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
             if( _longOptions.end() == pIt ) {  // impossibru!
                 emraise( badState, "Option \"%s\" not found in caches.", longOptions[optIndex].name );
             }
-            iAbstractParameter & parameter = *(pIt->second);
+            iSingularParameter & parameter = *(pIt->second);
             try {
                 dynamic_cast<Parameter<bool>&>(parameter).set_option(true);
                 log_extraction( "    ...\"%s\" has been set/appended with (=True).\n", longOptions[optIndex].name );
@@ -330,7 +368,7 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
             if( _longOptions.end() == pIt ) {  // impossibru!
                 emraise( badState, "Option \"%s\" not found in caches.", longOptions[optIndex].name );
             }
-            iAbstractParameter & parameter = *(pIt->second);
+            iSingularParameter & parameter = *(pIt->second);
             _set_argument_parameter( parameter, optarg, verbose );
         } else if( '?' == c ) {
             emraise( badParameter, "Option '%c' (0x%02x) unrecognized.", optopt, (int) optopt );
@@ -346,6 +384,12 @@ Configuration::extract( int argc, char * const argv[], std::ostream * verbose ) 
         }
     }
     // TODO: further processing of positional arguments.
+    {
+        std::map<std::string, const iSingularParameter *> badParameters;
+        if( doConsistencyCheck && !this->is_consistant( badParameters, "" ) ) {
+            emraise( badParameter, "Some required arguments aren't set." );
+        }
+    }
     # undef log_extraction
 }
 
@@ -423,7 +467,7 @@ Configuration::free_tokens( size_t argcTokens, char ** argvTokens ) {
 }
 
 void
-Configuration::insert_parameter( iAbstractParameter * p_ ) {
+Configuration::insert_parameter( iSingularParameter * p_ ) {
     _getoptCachesValid = false;
     Dictionary::insert_parameter( p_ );
     if( p_->has_shortcut() ) {
@@ -458,7 +502,7 @@ Configuration::_append_configuration_caches(
 }
 
 void
-Configuration::_cache_parameter_by_shortcut( iAbstractParameter * p_ ) {
+Configuration::_cache_parameter_by_shortcut( iSingularParameter * p_ ) {
     assert( p_->has_shortcut() );
     auto it = _shortcuts.find( p_->shortcut() );
     if( it != _shortcuts.end() ) {
@@ -471,7 +515,7 @@ Configuration::_cache_parameter_by_shortcut( iAbstractParameter * p_ ) {
 
 void
 Configuration::_cache_parameter_by_full_name( const std::string & fullName,
-                                              iAbstractParameter * p_ ) {
+                                              iSingularParameter * p_ ) {
     assert( !p_->has_shortcut() );
     assert( p_->name() );
     auto it = _longOptions.find( fullName );
