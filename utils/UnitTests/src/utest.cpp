@@ -220,6 +220,9 @@ UTApp::_V_configure_application( const Config * c ) {
     if( c->operation < Config::runAll ) {
         return;
     }
+    if( !_modulesGraphPtr ) {
+        emraise( badState, "No modules graph structured yet. Couldn't continue." );
+    }
     // If it is common run, just obtain the correct sequence:
     if( Config::runAll == c->operation ) {
         _modulesGraphPtr->dfs( c->units );
@@ -229,8 +232,6 @@ UTApp::_V_configure_application( const Config * c ) {
         // For all units pointed out:
         for( auto it = c->namesToEvaluate.begin(); c->namesToEvaluate.end() != it; ++it ) {
             if( !c->ignoreDeps ) {
-                // if full-depth evaluation is not prohibited, obtain deps chain:
-                // TODO: _modulesGraphPtr = 0 causes segfault when module is not found.
                 _modulesGraphPtr->chain_for_node_by_label( *it, c->units );
             } else {
                 // utherwise, just obtain the module pointer:

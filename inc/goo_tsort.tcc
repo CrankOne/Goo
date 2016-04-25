@@ -287,7 +287,11 @@ public:
 
     /// Obtain chain for node pointed out by particular label.
     virtual void chain_for_node_by_label( const std::string & label, Order & order ) {
-        Parent::chain_for_node( _byLabels[label]->data_ptr(), order );
+        auto nodeIt = _byLabels.find(label);
+        if( _byLabels.end() == nodeIt ) {
+            emraise( notFound, "Has no node labeled as \"%s\".", label.c_str() );
+        }
+        Parent::chain_for_node( nodeIt->second->data_ptr(), order );
     }
 
     /// Returns list of all nodes.
