@@ -27,12 +27,23 @@ public:
     /// Closes most recent section and switches to its previous (or finalizes last).
     InsertionProxy & end_sect( const char * = nullptr );
 
+    /// Marks the last inserted parameter as mandatory one.
+    InsertionProxy & required();
+
     //
     // Parameter inserter
     //
 
     template<typename ParameterT, class ... Types> InsertionProxy &
     p( Types ... args ) {
+        _stack.top()->insert_parameter(
+                new Parameter<ParameterT>( args ... )
+            );
+        return *this;
+    }
+
+    template<typename ParameterT, class ... Types> InsertionProxy &
+    rq( Types ... args ) {
         _stack.top()->insert_parameter(
                 new Parameter<ParameterT>( args ... )
             );

@@ -50,6 +50,9 @@ protected:
     /// Sets the «set» flag translating instance to initialized state.
     void _set_set_flag();
 
+    /// Sets the «required» flag marking a mandatory parameter.
+    void _set_required_flag();
+
     /// This method is to be used by lists only.
     void _unset_singular();
 

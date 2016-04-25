@@ -90,6 +90,11 @@ iAbstractParameter::_set_set_flag() {
 }
 
 void
+iAbstractParameter::_set_required_flag() {
+    _flags |= required;
+}
+
+void
 iAbstractParameter::_unset_singular() {
     _flags &= ~singular;
 }
@@ -197,7 +202,7 @@ Parameter<bool>::_V_parse( const char * argStr ) const {
         return false;
     } else {
         emraise( badParameter,
-                 "Expression \"%s\" can not be parsed as logical option.",
+                 "Could not interpret \"%s\" as a logical option.",
                  argStr );
     }
 }

@@ -6,6 +6,13 @@
 namespace goo {
 namespace dict {
 
+InsertionProxy &
+InsertionProxy::required() {
+    assert( !_stack.empty() );
+    _stack.top()->_set_required_flag();
+    return *this;
+}
+
 InsertionProxy::InsertionProxy( Dictionary * root ) {
     _stack.push(root);
 }
