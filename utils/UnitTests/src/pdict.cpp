@@ -10,8 +10,7 @@
  * */
 
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
-    // os << "**** **** ****" << std::endl;
-    // const char * const argv_[] = {};
+    # if 1
     {
         os << "Path splitting regex : {" << std::endl;
         int rc;
@@ -52,10 +51,11 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         os << "} Path splitting regex done." << std::endl;
     }
+    # endif
     # if 1
     {
         os << "Basic tests : {" << std::endl;
-        goo::dict::Configuration conf( "theApplication", "Testing parameter set." );
+        goo::dict::Configuration conf( "theApplication1", "Testing parameter set #1." );
 
         conf.insertion_proxy()
             .p<bool>( '1', "parameter-one",  "First parameter" )
@@ -69,13 +69,14 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             //.p<bool>( "one", "two", "three" )  // should be failed at linkage
             ;
 
-        // Check default is set correctly:
         const char ex1[] = "./foo -1vqfalse --quiet=true -V --quet2 false";
         char ** argv;
+        os << "For given source string: " << ex1 << ":" << std::endl;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
         for( int n = 0; n < argc; ++n ) {
-            os << argv[n] << std::endl;
+            os << argv[n] << "|";
         }
+        os << std::endl;
 
         conf.extract( argc, argv, false, &os );
 
@@ -96,7 +97,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # if 1
     {
         os << "List parameters tests : {" << std::endl;
-        goo::dict::Configuration conf( "theApplication", "Testing parameter set." );
+        goo::dict::Configuration conf( "theApplication2", "Testing parameter set #2." );
 
         conf.insertion_proxy()
             .p<bool>( '1', "parameter-one",  "First parameter" )
@@ -106,19 +107,60 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .list<bool>( 'a', "options array" )
             .p<bool>( 'v', "Enables verbose output" )
             ;
-        // Check default is set correctly:
+
         const char ex1[] = "./foo -1v -b true -b Off -b On --binary2 OFF --binary ON"
                            " -Bon -Bfalse -BOFF";
         char ** argv;
+        os << "For given source string: " << ex1 << ":" << std::endl;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
         for( int n = 0; n < argc; ++n ) {
-            os << argv[n] << std::endl;
+            os << argv[n] << "|";
         }
+        os << std::endl;
 
         conf.extract( argc, argv, true, &os );
 
         goo::dict::Configuration::free_tokens( argc, argv );
         os << "} List parameters done." << std::endl;
+    }
+    # endif
+    # if 1
+    {
+        os << "Consistency tests : {" << std::endl;
+        goo::dict::Configuration conf( "theApplication3", "Testing parameter set #3." );
+
+        conf.insertion_proxy()
+            .p<int>( 'f', "first",      "First parameter, optional one." )
+            .p<int>( 's', "second",     "Second parameter, required." ).required()
+            .list<float>( 't', "third",   "Third parameter, optional list." )
+            .list<double>( '4', "fourth",  "Fourth parameter, required list." ).required()
+            ;
+
+        const char ex1[] = "-f 12",         // `second' unset
+                   ex2[] = "--second=32",   // `fourth' empty
+                   ex3[] = "--second=42 -4 1.23 -4 3e+2"  // ok
+                ;
+        char ** argv;
+        {
+            // Shall throw exception as both required parameters is not set.
+            int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
+            conf.copy().extract( argc, argv, true, &os );
+            goo::dict::Configuration::free_tokens( argc, argv );
+        }
+        {
+            // Shall throw exception as `fourth' required parameter is not set.
+            int argc = goo::dict::Configuration::tokenize_string( ex2, argv );
+            conf.copy().extract( argc, argv, true, &os );
+            goo::dict::Configuration::free_tokens( argc, argv );
+        }
+        {
+            // Everything is ok.
+            int argc = goo::dict::Configuration::tokenize_string( ex3, argv );
+            conf.extract( argc, argv, true, &os );
+            goo::dict::Configuration::free_tokens( argc, argv );
+        }
+
+        os << "} Consistency tests done." << std::endl;
     }
     # endif
 

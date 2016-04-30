@@ -247,7 +247,9 @@ iParameter<ValueT>::_set_value( const ValueT & val ) {
  * are implemented in Goo library.
  */
 template<typename ValueT>
-class Parameter {};  // Defailt implementation is empty.
+class Parameter {
+    //std::static_assert<false>( "dft" );
+};  // Defailt implementation is empty.
 
 
 
@@ -310,7 +312,7 @@ public:
  * Besides of true/false values, the following synonims are accepted:
  *      true : True, TRUE, yes, Yes, YES, enable, Enable, ENABLE, on, On, ON
  *      false: False, FALSE, no, No, NO, disable, Disable, DISABLE, off, Off, OFF
- * Note, that this kind of argument can not be required, nor repeated.
+ * Note, that this kind of argument can not be required.
  * Possible construction variants:
  *      .p<bool>( 'v', "Enables verbose output" )
  *      .p<bool>( 'q', "Be quiet", true )

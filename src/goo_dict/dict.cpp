@@ -528,12 +528,17 @@ Configuration::_cache_parameter_by_full_name( const std::string & fullName,
 }
 
 const iSingularParameter &
-Configuration::operator[]( const char path[] ) const {
+Configuration::get_parameter( const char path[] ) const {
     assert( path );
     char * path2extract = strdup( path );
     const iSingularParameter & result = _get_parameter( path2extract );
     free( path2extract );
     return result;
+}
+
+const iSingularParameter &
+Configuration::operator[]( const char path[] ) const {
+    return get_parameter(path);
 }
 
 }  // namespace dict

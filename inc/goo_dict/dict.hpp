@@ -36,6 +36,9 @@ protected:
     virtual void insert_section( Dictionary * );
 
     Dictionary( const char *, const char * );
+
+    Dictionary( const Dictionary & );
+
     ~Dictionary();
 
     /// Internal procedure --- composes short & long options data structures.
@@ -120,6 +123,12 @@ public:
 
     ~Configuration();
 
+    /// Copy ctr.
+    Configuration( const Configuration & );
+
+    /// Explicit copy creation.
+    Configuration copy() const { return *this; }
+
     /// Parses command-line arguments.
     void extract( int argc,
                   char * const argv[],
@@ -127,7 +136,7 @@ public:
                   std::ostream * verbose=nullptr );
 
     /// Returns certain paramater by its name or full path.
-    const iSingularParameter & get_parameter( const std::string & ) const;
+    const iSingularParameter & get_parameter( const char [] ) const;
 
     /// Constructs a bound insertion proxy instance object.
     InsertionProxy insertion_proxy();
