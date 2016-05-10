@@ -379,6 +379,42 @@ protected:
     virtual std::string _V_stringify_value( const Value & ) const override;
 };
 
+
+template<>
+class Parameter<int> : public iParameter<int> {
+public:
+    /// Only long option ctr.
+    Parameter( const char * name_,
+               const char * description_ );
+    /// Long option with shortcut.
+    Parameter( char shortcut_,
+               const char * name_,
+               const char * description_ );
+    /// Only short option.
+    Parameter( char shortcut_,
+               const char * description_ );
+    /// Only long option ctr.
+    Parameter( const char * name_,
+               const char * description_,
+               int default_ );
+    /// Long option with shortcut.
+    Parameter( char shortcut_,
+               const char * name_,
+               const char * description_,
+               int default_ );
+    /// Only short option.
+    Parameter( char shortcut_,
+               const char * description_,
+               int default_ );
+
+protected:
+    /// Internally uses strtol() from standard library.
+    virtual Value _V_parse( const char * ) const override;
+
+    /// Returns 'True' or 'False' depending on current value.
+    virtual std::string _V_stringify_value( const Value & ) const override;
+};
+
 }  // namespace dict
 }  // namespace goo
 
