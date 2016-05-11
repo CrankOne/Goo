@@ -53,6 +53,7 @@ find_package( BZip2 )
 find_package( Git   )
 if( EM_STACK_UNWINDING )
     find_package( BFD REQUIRED )
+    find_package( LibIberty REQUIRED )
 endif( EM_STACK_UNWINDING )
 if( GIT_FOUND )
     # obtain current commit hash
