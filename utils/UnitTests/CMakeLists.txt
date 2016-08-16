@@ -37,6 +37,8 @@ set(CMAKE_SKIP_BUILD_RPATH FALSE)
 # (but later on when installing)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
 
+find_package( GSL REQUIRED )
+
 # the RPATH to be used when installing, but only if it's not a system directory
 list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
 if("${isSystemDir}" STREQUAL "-1")
@@ -45,4 +47,6 @@ if("${isSystemDir}" STREQUAL "-1")
     set_target_properties(GooTests PROPERTIES 
                       INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
 endif("${isSystemDir}" STREQUAL "-1")
+
+target_link_libraries( GooTests ${GSL_LIBRARIES} )
 

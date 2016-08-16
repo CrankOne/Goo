@@ -76,23 +76,25 @@ protected:
     } _ranges;
 
     /// Sets lower limit to provided value.
-    virtual void _V_set_lower_limit_to( NumType nv )
-        { _ranges.byName.lower = nv; }
+    /// Returns true, if limit set (useful for applications).
+    virtual bool _V_set_lower_limit_to( NumType nv )
+        { _ranges.byName.lower = nv; return true; }
 
     /// Sets upper limit to provided value.
-    virtual void _V_set_upper_limit_to( NumType nv )
-        { _ranges.byName.upper = nv; }
+    /// Returns true, if limit set (useful for applications).
+    virtual bool _V_set_upper_limit_to( NumType nv )
+        { _ranges.byName.upper = nv; return true; }
 
     /// Returns whether lower limit is uninitialized.
-    virtual bool _V_min_uninitialized( const NumType & ) const = 0;
+    virtual bool _V_min_uninitialized( const NumType ) const = 0;
 
     /// Returns whether upper limit is uninitialized.
-    virtual bool _V_max_uninitialized( const NumType & ) const = 0;
+    virtual bool _V_max_uninitialized( const NumType ) const = 0;
 private:
     iRange() = delete;
 protected:
     /// Ctr for subclasses.
-    iRange( const NumType lower_, const NumType upper_ ) : _ranges{ lower_, upper_ } { }
+    iRange( const NumType lower_, const NumType upper_ ) : _ranges{{lower_, upper_}} { }
 public:
 
     /// Copy ctr. Wraps memcpy().
@@ -103,30 +105,28 @@ public:
 
     /// Getter for minimal value.
     const NumType lower() const {
-        assert( !_V_min_uninitialized( _ranges.byName.lower ) );
         return _ranges.byName.lower;
     }
 
     /// Setter for minimal value.
-    void lower( NumType nv )
-        { _V_set_lower_limit_to( nv ); }
+    bool lower( NumType nv )
+        { return _V_set_lower_limit_to( nv ); }
 
     /// Getter for maximal value.
     const NumType upper() const {
-        assert( !_V_max_uninitialized( _ranges.byName.upper ) );
         return _ranges.byName.upper;
     }
 
     /// Setter for maximal value.
-    void upper( NumType nv )
-        { _V_set_upper_limit_to( nv ); }
+    bool upper( NumType nv )
+        { return _V_set_upper_limit_to( nv ); }
 
     /// Directly returns const ptr to ranges data.
     /// No check performed.
     const NumType * ranges_data_ptr() const { return _ranges.byIndex; }
 
     /// Returns whether range(s) is (are) uninitialized.
-    bool is_uninitialized( LimitIndex li ) const {
+    bool is_uninitialized( LimitIndex li=LimitIndex::both ) const {
         if( !((uint8_t) li) ) {
             return _V_min_uninitialized( _ranges.byName.lower )
                 || _V_max_uninitialized( _ranges.byName.upper );
@@ -138,8 +138,8 @@ public:
     }
 
     /// Returns whether range(s) is (are) initialized.
-    bool is_initialized( LimitIndex li ) const {
-        return !is_uninitialized( LimitIndex::both );
+    bool is_initialized( LimitIndex li=LimitIndex::both ) const {
+        return !is_uninitialized( li );
     }
 
     /// Immediately sets upper limit to argument value if argument
@@ -148,11 +148,10 @@ public:
     /// \returns true, if upper limit was updated.
     /// \note If upper limit was uninitialized, updating will
     /// be also performed and true will be returned.
-    virtual bool extend_if_above( const NumType & val ) {
+    virtual bool extend_if_above( const NumType val ) {
         if( val > _ranges.byName.upper
             || _V_max_uninitialized( _ranges.byName.upper ) ) {
-            _ranges.byName.upper = val;
-            return true;
+            return upper( val );
         }
         return false;
     }
@@ -163,11 +162,10 @@ public:
     /// \returns true, if lower limit was updated.
     /// \note If lower limit was uninitialized, updating will
     /// be also performed and true will be returned.
-    virtual bool extend_if_below( const NumType & val ) {
+    virtual bool extend_if_below( const NumType val ) {
         if( val < _ranges.byName.lower
             || _V_min_uninitialized( _ranges.byName.lower ) ) {
-            _ranges.byName.lower = val;
-            return true;
+            return lower( val );
         }
         return false;
     }
@@ -179,7 +177,7 @@ public:
     /// value.
     /// \arg val value to be considered.
     /// \returns whether limit(s) was (were) updated.
-    virtual bool extend_to( const NumType & val ) {
+    virtual bool extend_to( const NumType val ) {
         if( is_uninitialized( LimitIndex::both ) ) {
             bool wasUpdated  = extend_if_above( val );
                  wasUpdated |= extend_if_below( val );
@@ -190,8 +188,16 @@ public:
 
     /// Returns true, if both ranges are set.
     virtual bool limits_valid() const {
-        return !(_V_min_uninitialized( _ranges.byName.lower )
-              || _V_max_uninitialized( _ranges.byName.upper ));
+        return !( _V_min_uninitialized( _ranges.byName.lower )
+               || _V_max_uninitialized( _ranges.byName.upper )
+               || _ranges.byName.lower == _ranges.byName.upper );
+    }
+
+    virtual bool is_in( const NumType val ) const {
+        if( is_uninitialized() ) return false;
+        return _ranges.byName.lower <= val
+            && _ranges.byName.upper >= val
+            ;
     }
 };  // class Range
 
@@ -204,6 +210,7 @@ class WidthCachedRange : public iRange<NumTypeT> {
 public:
     typedef iRange<NumTypeT> Parent;
     typedef typename Parent::NumType NumType;
+    using typename iRange<NumTypeT>::LimitIndex;
 private:
     /// Width cache.
     mutable NumType _width;
@@ -212,22 +219,36 @@ private:
     WidthCachedRange() = delete;
 protected:
     /// Performs re-computation of range width.
-    virtual void _recache_width() const
-        { assert( this->limits_valid() );
-          _width = Parent::upper() - Parent::lower();
-          _isWidthValid = true; }
+    virtual void _recache_width() const {
+        if( ! this->limits_valid() ) {
+            emraise(badState, "Recaching width invoked for invalid limits [%e, %e].",
+                    this->lower(), this->upper());
+        }
+        _width = Parent::upper() - Parent::lower();
+        _isWidthValid = true;
+    }
     /// Invalidates width cache.
     virtual void _invalidate_width_cache()
         { _isWidthValid = false; }
-    WidthCachedRange( NumType min, NumType max ) : _isWidthValid(false) {}
+    WidthCachedRange( NumType min_, NumType max_ ) : iRange<NumTypeT>(min_, max_), _isWidthValid(false) {}
 
     /// Invalidate cache and set value according to parent method.
-    virtual void _V_set_lower_limit_to( NumType nv ) override
-        { _invalidate_width_cache(); _V_set_lower_limit_to(nv); }
+    virtual bool _V_set_lower_limit_to( NumType nv ) override {
+        if( Parent::_V_set_lower_limit_to(nv) ) {
+            _invalidate_width_cache();
+            return true;
+        }
+        return false;
+    }
 
     /// Invalidate cache and set value according to parent method.
-    virtual void _V_set_upper_limit_to( NumType nv ) override
-        { _invalidate_width_cache(); _V_set_upper_limit_to(nv); }
+    virtual bool _V_set_upper_limit_to( NumType nv ) override {
+        if( Parent::_V_set_upper_limit_to(nv) ) {
+            _invalidate_width_cache();
+            return true;
+        }
+        return false;
+    }
 
     bool is_width_valid() const { return _isWidthValid; }  
 public:
@@ -261,9 +282,9 @@ public:
 private:
     mutable FloatT _scale;
 protected:
-    virtual bool _V_min_uninitialized( const Float & val ) const override
+    virtual bool _V_min_uninitialized( const Float val ) const override
             { return std::isnan( val ); }
-    virtual bool _V_max_uninitialized( const Float & val ) const override
+    virtual bool _V_max_uninitialized( const Float val ) const override
             { return std::isnan( val ); }
     /// Recalculates scale value = 1/width.
     virtual void _recache_width() const override
@@ -273,14 +294,17 @@ public:
     FloatT scale() const { if( !Parent::is_width_valid() ) { _recache_width(); } return _scale; }
 
     /// Defautl ctr.
-    Range() : Parent() {}
+    Range() : Parent(
+            std::numeric_limits<FloatT>::quiet_NaN(),
+            std::numeric_limits<FloatT>::quiet_NaN()
+        ) {}
 
     /// Ctr with ranges. Does not perform immediate re-calculation for given ranges.
     Range( FloatT min, FloatT max ) : Parent( min, max ) {}
 
     /// Performs normalization of provided value to [0:1].
     FloatT norm( FloatT unnormed ) const {
-        if( this->limits_valid() ) {
+        if( !this->limits_valid() ) {
             emraise( badState,
                      "Limits are invalid/unset for range %p : [%e, %e].",
                      this, this->lower(), this->upper() );
@@ -290,8 +314,8 @@ public:
 
     /// Perform de-normalization of provided value from [0:1].
     FloatT denorm( FloatT normed ) const {
-        assert( normed >= 0. && normed <= 1. );
-        if( this->limits_valid() ) {
+        //assert( normed >= 0. && normed <= 1. );
+        if( !this->limits_valid() ) {
             emraise( badState,
                      "Limits are invalid/unset for range %p : [%e, %e].",
                      this, this->lower(), this->upper());
@@ -336,15 +360,19 @@ protected:
  * ranges that consequently adjusted to fit the point. (De)normalization
  * coefficients are computed by demand.
  * */
-template<typename FloatT, uint8_t DT>
+template<typename RangeT,
+         uint8_t DT>
 class NormedMultivariateRange {
 public:
     static_assert( DT > 0, "NormedMultivariateRange can not be declared for 0 demensions." );
     constexpr static uint8_t D = DT;
-    typedef FloatT Float;
+    typedef RangeT RangeType;
+    typedef typename RangeT::Float Float;
     typedef NormedMultivariateRange<Float, D> Self;
+    static_assert( std::is_base_of<Range<Float>, RangeT>::value,
+        "Range base type have to be inherited from Range<FloatT>." );
 protected:
-    std::array<Range<Float> *, D> _rangesPtrs;
+    std::array<RangeType *, D> _rangesPtrs;
     virtual bool _V_extend_to( const Float * x ) {
         const Float * cx = x;
         bool updated = false;
@@ -355,6 +383,12 @@ protected:
         return updated;
     }
 public:
+    NormedMultivariateRange() {
+        for( auto & rangePtr : _rangesPtrs ) {
+            rangePtr = nullptr;
+        }
+    }
+
     /// Considers given vector as representative one for adjusting norming regions.
     bool extend_to( const Float * x ) {
         return _V_extend_to(x);
@@ -365,6 +399,7 @@ public:
     bool extend_to( const std::array<
         typename std::enable_if<std::is_floating_point<T>::value, T>::type
         , D> & vars ) {
+        assert( !_rangesPtrs.empty() );
         std::array<Float, D> arrCopy;
         std::copy(std::begin(vars), std::end(vars), std::begin(arrCopy));
         return update_ranges( arrCopy.data() );
@@ -376,7 +411,7 @@ public:
     }
 
     /// Sets all ranges at once.
-    virtual void set_ranges( const Float * xMins, const Float * xMaxs ) {
+    virtual void set_limits( const Float * xMins, const Float * xMaxs ) {
         uint8_t d = 0;
         for( auto rangePtr : _rangesPtrs ) {
             if( !(std::isfinite(xMins[d]) && std::isfinite(xMaxs[d]))
@@ -384,6 +419,11 @@ public:
                 emraise( badValue, "XForm ranges for dimension #%d couldn't be set to [%e, %e] as "
                          "min >= max or one of bounds is not finite.",
                          (int) d, xMins[d], xMaxs[d] );
+            }
+            if( !rangePtr ) {
+                emraise( badState,
+                         "Range instance #%d isn't set for NormedMultivariateRange %p.",
+                         (int) d, this );
             }
             rangePtr->lower( xMins[d] );
             rangePtr->upper( xMaxs[d] );
@@ -393,16 +433,25 @@ public:
 
     /// Returns true, when ranges are were set.
     bool ranges_set() const {
-        bool allValid = true;
         for( auto & rangePtr : _rangesPtrs ) {
-            allValid &= rangePtr->limits_valid();
+            if( !(rangePtr && rangePtr->limits_valid()) ) {
+                return false;
+            }
         }
-        return allValid;
+        return true;
     }
 
     /// Const getter for range:
     const Range<Float> & range( uint8_t d ) const {
         assert( d < D );
+        assert( _rangesPtrs[d] );
+        return *(_rangesPtrs[d]);
+    }
+
+    /// Mutable getter for range:
+    Range<Float> & range( uint8_t d ) {
+        assert( d < D );
+        assert( _rangesPtrs[d] );
         return *(_rangesPtrs[d]);
     }
 
@@ -428,8 +477,7 @@ public:
     virtual bool match( Float * x ) const {
         uint8_t d = 0;
         for( auto & rangePtr : _rangesPtrs ) {
-            if( rangePtr[d].lower() > x[d]
-             || rangePtr[d].upper() < x[d] ) {
+            if( !rangePtr[d].is_in(x[d]) ) {
                 return false;
             }
             ++d;
@@ -444,7 +492,110 @@ public:
             _rangesPtrs[d]->extend_to( o.range(d).upper() );
         }
     }
+
+    void set_range_instance( uint8_t nd, RangeType & rangeRef ) {
+        assert( nd < D );
+        _rangesPtrs[nd] = &rangeRef;
+    }
 };  // class NRange
+
+
+/**@brief Dynamic range gracifylly extending itself accordingly to
+ * numerical data provided to it.
+ *
+ * This class implements lazy adjustment algorithm when values that
+ * are much greater than averaged value won't be taken into
+ * consideration.
+ *
+ * The adjustement is defined by a rigidness parameter
+ * which is a rejection threshold. The value provided to extend_to()
+ * method will be:
+ *  - in case of upper limit extending, related to mean value and
+ *    have to lie below the threshold ($A_{mean} / A_{new} < V_{thr}$)
+ *    to be considered as new upper limit.
+ *  - in case of lower limit extending, will be divided by mean value
+ *    and to lie below the threshold ($A_{new}/A_{mean} < V_{thr}$)
+ *    to be considered as new lower limit.
+ *
+ * The algorithm above can be re-formulated in more clear way: to
+ * be set as new limit, the considered value should not be related
+ * to mean more (or less to) than $N$ times. The threshold value is
+ * given by $V_{thr} = N$, thus e.g. to restrict value-to-mean fraction
+ * for upper limit one need set the threshold to $1/10 = 10^{-1}$.
+ *
+ * For convinience, rigidness setter/getter is aliased with weakness()
+ * method corresponding to $N$ value above.
+ */
+template<typename FloatT>
+class RigidRange : public Range<FloatT> {
+public:
+    typedef Range<FloatT> Parent;
+    typedef typename Parent::NumType Float;
+    using typename Parent::LimitIndex;
+    using Parent::range_width;
+private:
+    Float _sumVal,         ///< Sum value.
+          _meanVal   ///< Average value = sum/nEntries.
+          ;
+    size_t _nEntries;   ///< Number of considered entries.
+    double _rigidness;  ///< A number defining rejection threshold in range (0:1).
+protected:
+    /// Recalculates average value, increments sum and counter returning new sum.
+    Float _recalculate_mean( Float nv ) {
+        _sumVal += nv;
+        _nEntries++;
+        return _meanVal = _sumVal/_nEntries;
+    }
+
+    /// Sets lower limit to provided value only if it is not too big
+    /// comparingly to given rigidness threshold.
+    virtual bool _V_set_lower_limit_to( Float nv ) override {
+        if( !Parent::limits_valid() || fabs(nv - mean())/range_width() < _rigidness ) {
+            Parent::_V_set_lower_limit_to( nv );
+            _recalculate_mean( nv );
+            return true;
+        }
+        return false;
+    }
+
+    /// Sets upper limit to provided value only if it is not too small
+    /// comparingly to given rigidness threshold.
+    virtual bool _V_set_upper_limit_to( Float nv ) override {
+        if( !Parent::limits_valid() || range_width()/fabs(nv - mean()) > _rigidness ) {
+            Parent::_V_set_upper_limit_to( nv );
+            _recalculate_mean( nv );
+            return true;
+        }
+        return false;
+    }
+public:
+    RigidRange( double rigidness_ ) :
+            _sumVal(0),     _meanVal(0),
+            _nEntries(0),   _rigidness(rigidness_)
+        {}
+
+    /// Rigidness value getter.
+    double rigidness() const { return _rigidness; }
+
+    /// Rigidness value setter.
+    void rigidness( double nrv ) { _rigidness = nrv; }
+
+    /// Returns sum of considered values.
+    Float sum() const { return _sumVal; }
+
+    /// Returns number of considered values.
+    size_t n_entries() const { return _nEntries; }
+
+    /// Returns averaged value.
+    Float mean() const { return _meanVal; }
+
+    /// $N = 1/V_{thr}$ setter.
+    void weakness( double w ) { _rigidness = 1/w; }
+
+    /// $N = 1/V_{thr}$ getter.
+    double weakness() const { return 1/_rigidness; }
+};
+
 
 }  // namespace aux
 }  // namespace goo
