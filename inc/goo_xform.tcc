@@ -499,6 +499,75 @@ public:
     }
 };  // class NRange
 
+template<typename FloatT,
+         typename ToleranceParametersT>
+class iRangeAccumulator {
+protected:
+    /// Returns true, if value was taken into consideration.
+    virtual bool _V_accumulate( FloatT val ) = 0;
+    /// Returns true, if value can be taken intro consideration.
+    virtual bool _V_fits( FloatT val, const ToleranceParametersT & tp ) const = 0;
+public:
+    bool accumulate( FloatT val ) { return _V_accumulate( val ); }
+    bool fits( FloatT val, const ToleranceParametersT & tp ) const
+        { return _V_fits(val, tp); }
+};  // class iRangeAccumulator
+
+
+template<typename FloatT,
+         typename ToleranceParametersT>
+class NormalAccumulator : public iRangeAccumulator<FloatT, ToleranceParametersT> {
+public:
+    struct Cache {
+        FloatT mean,
+               squaredMean,
+               rmsSquared,
+               rms,
+               variance,
+               unbiasedVariance
+               ;
+    };
+private:
+    size_t _nEntries;
+    FloatT _sum,
+           _sumOfSquares
+           ;
+
+    mutable bool _isCacheValid;
+    mutable Cache _cache;
+
+    void _invalidate_cache() { _isCacheValid = false; }
+
+    void _recache() const {
+        // TODO: if _nEntries < 2, set all to NaN
+        _cache.mean             = _sum/_nEntries;
+        _cache.squaredMean      = _cache.mean*_cache.mean;
+        _cache.rmsSquared       = _sumOfSquares/_nEntries;
+        _cache.rms              = sqrt(_sumOfSquares);
+
+        _cache.variance         = (_cache._sumOfSquares - _cache.squaredMean)/_nEntries;
+        _cache.unbiasedVariance = (_cache._sumOfSquares - _cache.squaredMean)/(_nEntries-1);
+        // Cache now valid:
+        _isCacheValid           = true;
+    }
+protected:
+    /// Returns true, if value was taken into consideration.
+    virtual bool _V_accumulate( FloatT val ) override {
+        _invalidate_cache();
+        _sum += val;
+        _sumOfSquares += val*val;
+        ++_nEntries;
+        return true;
+    }
+    /// Returns true, if value can be taken intro consideration.
+    virtual bool _V_fits( FloatT val, const ToleranceParametersT & tp ) const override {
+    }
+public:
+    /// Returns variance
+    double sigma() const {
+        if( !_isCacheValid ) { return _cache.sigma; }
+    }
+};  // class NormalAccumulator
 
 /**@brief Dynamic range gracifylly extending itself accordingly to
  * numerical data provided to it.
@@ -526,53 +595,50 @@ public:
  * For convinience, rigidness setter/getter is aliased with weakness()
  * method corresponding to $N$ value above.
  */
-template<typename FloatT>
+template<typename FloatT,
+         template<typename, typename> class AccumulatorT>
 class RigidRange : public Range<FloatT> {
 public:
     typedef Range<FloatT> Parent;
     typedef typename Parent::NumType Float;
+    typedef AccumulatorT<FloatT, double> Accumulator;
     using typename Parent::LimitIndex;
     using Parent::range_width;
 private:
-    Float _sumVal,         ///< Sum value.
-          _meanVal   ///< Average value = sum/nEntries.
-          ;
-    size_t _nEntries;   ///< Number of considered entries.
+    /// An entity accumulating values.
+    Accumulator _accumulator;
     double _rigidness;  ///< A number defining rejection threshold in range (0:1).
+    bool _averageAll;   ///< Whether do average all (even far beyond) values.
 protected:
-    /// Recalculates average value, increments sum and counter returning new sum.
-    Float _recalculate_mean( Float nv ) {
-        _sumVal += nv;
-        _nEntries++;
-        return _meanVal = _sumVal/_nEntries;
-    }
-
-    /// Sets lower limit to provided value only if it is not too big
-    /// comparingly to given rigidness threshold.
+    /// Sets lower limit to provided value only if it fits.
     virtual bool _V_set_lower_limit_to( Float nv ) override {
-        if( !Parent::limits_valid() || fabs(nv - mean())/range_width() < _rigidness ) {
-            Parent::_V_set_lower_limit_to( nv );
-            _recalculate_mean( nv );
-            return true;
+        bool wasCorrected = false;
+        if( !Parent::limits_valid() || _accumulator.fits(nv) ) {
+            wasCorrected = true;
         }
-        return false;
+        if( _averageAll || wasCorrected ) {
+            _accumulator.accumulate( nv );
+        }
+        return wasCorrected;
     }
 
     /// Sets upper limit to provided value only if it is not too small
     /// comparingly to given rigidness threshold.
     virtual bool _V_set_upper_limit_to( Float nv ) override {
-        if( !Parent::limits_valid() || range_width()/fabs(nv - mean()) > _rigidness ) {
+        bool wasCorrected = false;
+        if( !Parent::limits_valid() || _accumulator.fits( nv, _rigidness ) ) {
             Parent::_V_set_upper_limit_to( nv );
-            _recalculate_mean( nv );
-            return true;
+            wasCorrected = true;
+        }
+        if( _averageAll || wasCorrected ) {
+            _accumulator.accumulate( nv );
         }
         return false;
     }
 public:
-    RigidRange( double rigidness_ ) :
-            _sumVal(0),     _meanVal(0),
-            _nEntries(0),   _rigidness(rigidness_)
-        {}
+    RigidRange( double rigidness_, bool averageAll=true ) :
+            _rigidness(rigidness_),
+            _averageAll( averageAll ) {}
 
     /// Rigidness value getter.
     double rigidness() const { return _rigidness; }
@@ -580,20 +646,23 @@ public:
     /// Rigidness value setter.
     void rigidness( double nrv ) { _rigidness = nrv; }
 
-    /// Returns sum of considered values.
-    Float sum() const { return _sumVal; }
-
-    /// Returns number of considered values.
-    size_t n_entries() const { return _nEntries; }
-
-    /// Returns averaged value.
-    Float mean() const { return _meanVal; }
-
     /// $N = 1/V_{thr}$ setter.
     void weakness( double w ) { _rigidness = 1/w; }
 
     /// $N = 1/V_{thr}$ getter.
     double weakness() const { return 1/_rigidness; }
+
+    /// Do average all even far beyon values? getter.
+    bool do_average_all() const { return _averageAll; }
+
+    /// Do average all even far beyon values? setter.
+    virtual void do_average_all( bool v ) { _averageAll = v; }
+
+    /// Accumulator getter (const).
+    const Accumulator & accumulator() const { return _accumulator; }
+
+    /// Accumulator getter (mutable).
+    Accumulator & accumulator() { return _accumulator; }
 };
 
 
