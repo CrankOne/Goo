@@ -40,6 +40,8 @@
  * one of the dimension causes immediate scaling along all the others
  * keeping the ratio between all the sides (thus, keeping also the angle
  * between diagonals --- here the "X" in its name comes from).
+ *
+ * @ingroup numRanges
  */
 
 namespace goo {
@@ -61,6 +63,8 @@ struct AbstractRange {
  * two limits --- upper and lower (minimum, maximum).
  * The point is to provide interfacing functions for
  * further classes like aux::XForm.
+ *
+ * @ingroup numRanges
  */
 template<typename NumTypeT>
 class iRange : public AbstractRange {
@@ -204,6 +208,7 @@ public:
 
 /**@class WidthCachedRange
  * @brief An iRange implementation caching its width.
+ * @ingroup numRanges
  * */
 template<typename NumTypeT>
 class WidthCachedRange : public iRange<NumTypeT> {
@@ -225,6 +230,10 @@ protected:
                     this->lower(), this->upper());
         }
         _width = Parent::upper() - Parent::lower();
+        if( _width < 0 ) {
+            emraise( badState, "Negative width: %e < 0 according to limits [%e, %e].",
+                    _width, this->lower(), this->upper() );
+        }
         _isWidthValid = true;
     }
     /// Invalidates width cache.
@@ -269,6 +278,8 @@ public:
  * range (this called "mapping"). De-normalization, when argument
  * that lies inside numerical range [0:1] is projected back is
  * called here reverse mapping.
+ *
+ * @ingroup numRanges
  */
 template<class FloatT, class Enable=void>
 class Range; // default undefined
@@ -359,6 +370,8 @@ protected:
  * N-ary points (being extended to them). Aggregates N numerical
  * ranges that consequently adjusted to fit the point. (De)normalization
  * coefficients are computed by demand.
+ *
+ * @ingroup numRanges
  * */
 template<typename RangeT,
          uint8_t DT>
@@ -499,21 +512,55 @@ public:
     }
 };  // class NRange
 
+
+/**@class iRangeAccumulator
+ * @brief Interface for a set of dynamically re-computed numerical parameters.
+ * @ingroup numRanges
+ * */
 template<typename FloatT,
          typename ToleranceParametersT>
 class iRangeAccumulator {
 protected:
-    /// Returns true, if value was taken into consideration.
+    /// (iface) Returns true, if value was taken into consideration.
     virtual bool _V_accumulate( FloatT val ) = 0;
-    /// Returns true, if value can be taken intro consideration.
-    virtual bool _V_fits( FloatT val, const ToleranceParametersT & tp ) const = 0;
+    /// (iface) Returns lower boundary for current state and provided tolerance parameters.
+    virtual FloatT _V_boundary_lower( const ToleranceParametersT & ) const = 0;
+    /// (iface) Returns upper boundary for current state and provided tolerance parameters.
+    virtual FloatT _V_boundary_upper( const ToleranceParametersT & ) const = 0;
 public:
     bool accumulate( FloatT val ) { return _V_accumulate( val ); }
-    bool fits( FloatT val, const ToleranceParametersT & tp ) const
-        { return _V_fits(val, tp); }
+    /// Returns lower boundary for current state and provided tolerance parameters.
+    FloatT boundary_lower( const ToleranceParametersT & tp ) const
+        { return _V_boundary_lower(tp); }
+    /// Returns upper boundary for current state and provided tolerance parameters.
+    FloatT boundary_upper( const ToleranceParametersT & tp ) const
+        { return _V_boundary_upper(tp); }
+    /// Returns true, if value lies inside of allowed numerical boundaries.
+    virtual bool fits( FloatT val, const ToleranceParametersT & tp ) const
+        { return val < boundary_upper(tp)
+              && val > boundary_lower(tp); }
 };  // class iRangeAccumulator
 
+template<typename FloatT, typename ToleranceParametersT> class NormalAccumulator;
 
+template<typename FloatT, typename ToleranceParametersT> std::ostream &
+operator<<( std::ostream & os, const NormalAccumulator<FloatT, ToleranceParametersT> & acc );
+
+/**@class NormalAccumulator
+ * @brief Incremental algorithm for calculating unweighted real numbers
+ * distribution parameters.
+ *
+ * This accumulator is designed for application where normal (Gaussian)
+ * distribution is supposed for unweighted samples sets. Despite of that
+ * it can yield a significant numerical error (due to rounding error) on
+ * large sets, it still can be used in some applications where precision
+ * is not a point of interest.
+ *
+ * Particular useful as a template parameter in classes like RigidRange
+ * which provides adaptive numerical adjustements for online data.
+ *
+ * @ingroup numRanges
+ * */
 template<typename FloatT,
          typename ToleranceParametersT>
 class NormalAccumulator : public iRangeAccumulator<FloatT, ToleranceParametersT> {
@@ -524,8 +571,14 @@ public:
                rmsSquared,
                rms,
                variance,
-               unbiasedVariance
+               unbiasedVariance,
+               sigma
                ;
+        Cache() {
+            mean = squaredMean = rmsSquared = rms =
+                   variance = unbiasedVariance = sigma =
+                   std::numeric_limits<FloatT>::quiet_NaN();
+        }
     };
 private:
     size_t _nEntries;
@@ -536,38 +589,77 @@ private:
     mutable bool _isCacheValid;
     mutable Cache _cache;
 
-    void _invalidate_cache() { _isCacheValid = false; }
-
     void _recache() const {
-        // TODO: if _nEntries < 2, set all to NaN
+        if( !_nEntries ) {
+            // TODO: if _nEntries < 2, set all to NaN? set caches to false?
+            return;
+        }
         _cache.mean             = _sum/_nEntries;
         _cache.squaredMean      = _cache.mean*_cache.mean;
         _cache.rmsSquared       = _sumOfSquares/_nEntries;
         _cache.rms              = sqrt(_sumOfSquares);
-
-        _cache.variance         = (_cache._sumOfSquares - _cache.squaredMean)/_nEntries;
-        _cache.unbiasedVariance = (_cache._sumOfSquares - _cache.squaredMean)/(_nEntries-1);
+        const double commonVal = (_sumOfSquares - (_sum*_sum)/_nEntries);
+        _cache.variance         = commonVal/_nEntries;
+        _cache.unbiasedVariance = commonVal/(_nEntries-1);
+        _cache.sigma            = sqrt( _cache.unbiasedVariance );
         // Cache now valid:
         _isCacheValid           = true;
     }
 protected:
     /// Returns true, if value was taken into consideration.
     virtual bool _V_accumulate( FloatT val ) override {
-        _invalidate_cache();
+        invalidate_cache();
         _sum += val;
         _sumOfSquares += val*val;
         ++_nEntries;
         return true;
     }
-    /// Returns true, if value can be taken intro consideration.
-    virtual bool _V_fits( FloatT val, const ToleranceParametersT & tp ) const override {
+    /// Returns lower boundary for current state and provided tolerance parameters.
+    virtual FloatT _V_boundary_lower( const ToleranceParametersT & tp ) const override {
+        return cache().mean - 3*cache().sigma*tp;
+    }
+    /// Returns upper boundary for current state and provided tolerance parameters.
+    virtual FloatT _V_boundary_upper( const ToleranceParametersT & tp ) const override {
+        return cache().mean + 3*cache().sigma*tp;
     }
 public:
-    /// Returns variance
-    double sigma() const {
-        if( !_isCacheValid ) { return _cache.sigma; }
+    NormalAccumulator() : _nEntries(0),
+                          _sum(0.),
+                          _sumOfSquares(0.),
+                          _isCacheValid(false) {}
+
+    void invalidate_cache() { _isCacheValid = false; }
+
+    /// Returns reference on cache instance. If number of considered entries is <2,
+    /// the cache instance will contain only NaNs.
+    const Cache cache() const {
+        if( !_isCacheValid ) {
+            _recache();
+        }
+        return _cache;
     }
+
+    /// Returns true, if value can be taken intro consideration.
+    virtual bool fits( FloatT val, const ToleranceParametersT & tp ) const override {
+        if( _nEntries < 2 ) {
+            // Too few samples considered --- fits all.
+            return true;
+        }
+        return iRangeAccumulator<FloatT, ToleranceParametersT>::fits( val, tp );
+    }
+
+    // friend ostream operator?
 };  // class NormalAccumulator
+
+template<typename FloatT, typename ToleranceParametersT> std::ostream &
+operator<<( std::ostream & os, const NormalAccumulator<FloatT, ToleranceParametersT> & acc ) {
+    os << "{"
+       << "mean : " << acc.cache().mean << ", "
+       << "rms : " << acc.cache().rms << ", "
+       << "sigma : " << acc.cache().sigma
+       << "}";
+    return os;
+}
 
 /**@brief Dynamic range gracifylly extending itself accordingly to
  * numerical data provided to it.
@@ -596,7 +688,7 @@ public:
  * method corresponding to $N$ value above.
  */
 template<typename FloatT,
-         template<typename, typename> class AccumulatorT>
+         template<typename, typename> class AccumulatorT=NormalAccumulator>
 class RigidRange : public Range<FloatT> {
 public:
     typedef Range<FloatT> Parent;
@@ -608,37 +700,42 @@ private:
     /// An entity accumulating values.
     Accumulator _accumulator;
     double _rigidness;  ///< A number defining rejection threshold in range (0:1).
-    bool _averageAll;   ///< Whether do average all (even far beyond) values.
+    bool _considerAll;  ///< Whether do consider all (even far beyond) values.
 protected:
     /// Sets lower limit to provided value only if it fits.
     virtual bool _V_set_lower_limit_to( Float nv ) override {
-        bool wasCorrected = false;
-        if( !Parent::limits_valid() || _accumulator.fits(nv) ) {
-            wasCorrected = true;
-        }
-        if( _averageAll || wasCorrected ) {
+        if( do_consider_all() ) {
             _accumulator.accumulate( nv );
         }
-        return wasCorrected;
+        if( !Parent::limits_valid() || _accumulator.fits(nv, weakness() ) ) {
+            Parent::_V_set_lower_limit_to( _accumulator.boundary_lower( weakness() ) );
+            if( !do_consider_all() ) {
+                _accumulator.accumulate( nv );
+            }
+            return true;
+        }
+        return false;
     }
 
     /// Sets upper limit to provided value only if it is not too small
     /// comparingly to given rigidness threshold.
     virtual bool _V_set_upper_limit_to( Float nv ) override {
-        bool wasCorrected = false;
-        if( !Parent::limits_valid() || _accumulator.fits( nv, _rigidness ) ) {
-            Parent::_V_set_upper_limit_to( nv );
-            wasCorrected = true;
-        }
-        if( _averageAll || wasCorrected ) {
+        if( do_consider_all() ) {
             _accumulator.accumulate( nv );
+        }
+        if( !Parent::limits_valid() || _accumulator.fits( nv, weakness() ) ) {
+            Parent::_V_set_upper_limit_to( _accumulator.boundary_upper( weakness() ) );
+            if( !do_consider_all() ) {
+                _accumulator.accumulate( nv );
+            }
+            return true;
         }
         return false;
     }
 public:
-    RigidRange( double rigidness_, bool averageAll=true ) :
-            _rigidness(rigidness_),
-            _averageAll( averageAll ) {}
+    RigidRange( double rigidness_, bool considerAll=false ) :
+            _rigidness( rigidness_ ),
+            _considerAll( considerAll ) {}
 
     /// Rigidness value getter.
     double rigidness() const { return _rigidness; }
@@ -652,17 +749,27 @@ public:
     /// $N = 1/V_{thr}$ getter.
     double weakness() const { return 1/_rigidness; }
 
-    /// Do average all even far beyon values? getter.
-    bool do_average_all() const { return _averageAll; }
+    /// Do consider all even far beyon values? getter.
+    bool do_consider_all() const { return _considerAll; }
 
-    /// Do average all even far beyon values? setter.
-    virtual void do_average_all( bool v ) { _averageAll = v; }
+    /// Do consider all even far beyon values? setter.
+    virtual void do_consider_all( bool v ) { _considerAll = v; }
 
     /// Accumulator getter (const).
     const Accumulator & accumulator() const { return _accumulator; }
 
     /// Accumulator getter (mutable).
     Accumulator & accumulator() { return _accumulator; }
+
+    virtual bool extend_to( const FloatT val ) override {
+        if( !Parent::extend_to(val) ) {
+            if( do_consider_all() ) {
+                _accumulator.accumulate( val );
+            }
+            return false;
+        }
+        return true;
+    }
 };
 
 

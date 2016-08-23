@@ -114,17 +114,19 @@ GOO_UT_BGN( NumRanges, "Scalable numeric ranges" ) {  // ranges
 {   // Check rigid range algorithm
     //
 
-    aux::RigidRange<double> rRange(0.1);
+    aux::RigidRange<double> rRange(1e-1, false);
     {
         const size_t toGenerate = 1000;
-        const double gaussianSigma = 15.;
+        const double gaussianSigma = 15.,
+                     gaussianMean = 100
+                     ;
         gsl_rng * rng = gsl_rng_alloc( gsl_rng_default );
 
         os << "Generated gaussian values (" << toGenerate << "):" << std::endl;
         for( UShort i = 0; i < toGenerate; ++i) {
-            double val = 100 + gsl_ran_gaussian( rng, gaussianSigma );
+            double val = gaussianMean + gsl_ran_gaussian( rng, gaussianSigma );
             # if 1
-            if( i > 10 && rand() > 2.*RAND_MAX/3. ) {
+            if( rand() < .1*RAND_MAX/10. ) {
                 val *= 10;
             }
             # endif
@@ -153,9 +155,14 @@ GOO_UT_BGN( NumRanges, "Scalable numeric ranges" ) {  // ranges
                               << ", " << rRange.upper()
                               << "]"
                               << ", width: " << rRange.range_width()
-                              << ", mean: " << rRange.mean()
+                              << ", mean: " << rRange.accumulator().cache().mean
                               << std::endl
                               ;
+        os << "Accumulator state : " << rRange.accumulator() << std::endl
+           << " real distribution parameters : mean = " << gaussianMean << ", "
+                                             "sigma = " << gaussianSigma
+           << std::endl;
+
 
         gsl_rng_free( rng );
     }
