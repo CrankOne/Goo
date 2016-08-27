@@ -31,8 +31,7 @@ class iParameter;
  *
  * @ingroup appParameters
  */
-class iAbstractParameter : public mixins::iDuplicable<iAbstractParameter,
-                                                      iAbstractParameter>/* {{{ */ {
+class iAbstractParameter : public mixins::iDuplicable<iAbstractParameter>/* {{{ */ {
 public:
     typedef UByte ParameterEntryFlag;
     static const ParameterEntryFlag
@@ -183,9 +182,7 @@ public:
  * Defines common value-operation routines.
  * */
 template<typename ValueT>
-class iParameter : /*public virtual iSingularParameter,*/
-                   public mixins::iDuplicable<iSingularParameter,
-                                              iParameter<ValueT> > /*{{{*/ {
+class iParameter : public iSingularParameter /*{{{*/ {
 public:
     //typedef iAbstractParameter::ParameterEntryFlag ParameterEntryFlag;
     typedef ValueT Value;
@@ -276,7 +273,12 @@ class Parameter {
  * TODO: track `default' values overriding.
  */
 template<typename ValueT>
-class Parameter<std::list<ValueT> > : protected Parameter<ValueT> {
+class Parameter<std::list<ValueT> > : public mixins::iDuplicable<iAbstractParameter,
+                                        Parameter<std::list<ValueT> >,
+                                        /*protected?*/ Parameter<ValueT> > {
+public:
+    typedef mixins::iDuplicable<iAbstractParameter, Parameter<std::list<ValueT> >,
+                                                    Parameter<ValueT> > DuplicableParent;
 private:
     std::list<ValueT> _values;
 protected:
@@ -291,7 +293,7 @@ public:
 
     template<class ... Types>
     Parameter( const std::initializer_list<ValueT> & il, Types ... args ) :
-        Parameter<ValueT>( args ... , *il.begin() )
+        DuplicableParent( args ... , *il.begin() )
     { /* TODO: push back all the default values */
         this->_unset_singular();
         assert( !(this->name() == nullptr && !this->has_shortcut()) );
@@ -299,7 +301,7 @@ public:
 
     template<class ... Types>
     Parameter( Types ... args ) :
-        Parameter<ValueT>( args ... )
+        DuplicableParent( args ... )
     {   this->_unset_singular();
         assert( !(this->name() == nullptr && !this->has_shortcut()) );
         assert( this->description() ); }
@@ -345,8 +347,12 @@ public:
  * This aspect affects generated help message.
  * */
 template<>
-class Parameter<bool> : public iParameter<bool> {
+class Parameter<bool> : public mixins::iDuplicable< iAbstractParameter, Parameter<bool>, iParameter<bool> > {
 public:
+    typedef typename DuplicableParent::Parent::Value Value;
+public:
+    //using Parameter<bool>::Value;
+
     /// Only long option ctr.
     Parameter( const char * name_,
                const char * description_ );
@@ -381,6 +387,8 @@ public:
                const char *,
                const char * );
 
+    Parameter( const Parameter<bool> & o ) : DuplicableParent( o ) {}
+
     /// This method is used mostly by Configuration class.
     virtual void set_option( bool );
 
@@ -397,7 +405,7 @@ protected:
 
 
 template<>
-class Parameter<int> : public iParameter<int> {
+class Parameter<int> : public mixins::iDuplicable< iAbstractParameter, Parameter<int>, iParameter<int> > {
 public:
     /// Only long option ctr.
     Parameter( const char * name_,
@@ -422,6 +430,8 @@ public:
     Parameter( char shortcut_,
                const char * description_,
                int default_ );
+
+    Parameter( const Parameter<int> & o ) : DuplicableParent( o ) {}
 
 protected:
     /// Internally uses strtol() from standard library.

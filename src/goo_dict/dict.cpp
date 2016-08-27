@@ -17,36 +17,35 @@ namespace dict {
 
 Dictionary::Dictionary( const char * name_,
                         const char * description_ ) :
-            iAbstractParameter(name_,
-                               description_,
-                               0 ) {
+            DuplicableParent(name_,
+                             description_,
+                             0 ) {
 }
 
-Dictionary::Dictionary( const Dictionary & orig ) : iAbstractParameter( orig ) {
-    // TODO: duplicate seconds!!!
+Dictionary::Dictionary( const Dictionary & orig ) : DuplicableParent( orig ) {
     for( auto it = _parameters.begin();
          it != _parameters.end(); ++it ) {
-        it->second->copy();
+        //it->second->copy();
         _parameters.insert(
-                DECLTYPE(_parameters)::value_type( it->first,
-                                                   it->second
-                                                     ->copy_as<iSingularParameter>() )
+                DECLTYPE(_parameters)::value_type(
+                            it->first,
+                            clone_as<iAbstractParameter, iSingularParameter>( it->second ) )
             );
     }
     for( auto it = _byShortcutIndexed.begin();
              it != _byShortcutIndexed.end(); ++it ) {
         _byShortcutIndexed.insert(
-                DECLTYPE(_byShortcutIndexed)::value_type( it->first,
-                                                          it->second
-                                                            ->copy_as<iSingularParameter>() )
+                DECLTYPE(_byShortcutIndexed)::value_type(
+                            it->first,
+                            clone_as<iAbstractParameter, iSingularParameter>( it->second ) )
             );
     }
     for( auto it = _dictionaries.begin();
          it != _dictionaries.end(); ++it ) {
         _dictionaries.insert(
-                DECLTYPE(_dictionaries)::value_type( it->first,
-                                                     it->second
-                                                       ->copy_as<Dictionary>() )
+                DECLTYPE(_dictionaries)::value_type(
+                            it->first,
+                            clone_as<iAbstractParameter, Dictionary>( it->second ) )
             );
     }
 }

@@ -30,10 +30,7 @@
 namespace goo {
 
 // fwd
-template<typename BaseTypeT> BaseTypeT * clone( const BaseTypeT * );
-
 namespace mixins {
-
 /**@class iDuplicable
  * @brief Provides virtual copy ctr interface.
  *
@@ -48,68 +45,101 @@ namespace mixins {
  * @ingroup utils
  */
 template<typename BaseTypeT,
-         typename SelfTypeT,
-         bool isAbstract=std::is_abstract<SelfTypeT>::value,
+         typename SelfTypeT=BaseTypeT,
+         typename ParentT=BaseTypeT,
          bool isSame=std::is_same<BaseTypeT, SelfTypeT>::value>
 class iDuplicable;
+}  // namespace mixins
 
+//template<typename BaseTypeT> BaseTypeT * clone( const BaseTypeT * );
+template<typename BaseTypeT> mixins::iDuplicable<BaseTypeT> * clone( const mixins::iDuplicable<BaseTypeT> * );
 
+namespace mixins {
+
+//
+// An iDuplicable implementation for abstract base class
+// (copy ctr is not provided). Designed to be used in base
+// classes.
 template<typename BaseTypeT,
-         typename SelfTypeT >
-class iDuplicable<BaseTypeT, SelfTypeT, true, true> {
+         typename SelfTypeT,
+         typename ParentT>
+class iDuplicable<BaseTypeT, SelfTypeT, ParentT, true> {
+public:
+    typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, true> DuplicableParent;
 protected:
+    /// Pure-virtual cloning method.
     virtual BaseTypeT * _V_clone() const = 0;
-    virtual const std::type_info & _V_cloning_type_id() const = 0;
-};  // class iDuplicable
 
-
-template<typename BaseTypeT,
-         typename SelfTypeT>
-class iDuplicable<BaseTypeT, SelfTypeT, true, false> : public BaseTypeT {
-    //static_assert(std::is_copy_constructible<SelfTypeT>::value,
-    //              "Outermost descendant type is not copy constructible.");
-protected:
-    virtual BaseTypeT * _V_clone() const override {
-        return new SelfTypeT( *static_cast<const SelfTypeT *>(this) );
-    }
-
-    virtual const std::type_info & _V_cloning_type_id() const override {
-        return typeid(*this);
-    }
-
-    friend BaseTypeT * ::goo::clone<>( const BaseTypeT * );
-};  // class iDuplicable
-
-template<typename BaseTypeT,
-         typename SelfTypeT>
-class iDuplicable<BaseTypeT, SelfTypeT, false, false> : public BaseTypeT {
-    //static_assert(std::is_copy_constructible<SelfTypeT>::value,
-    //              "Outermost descendant type is not copy constructible.");
-protected:
-    virtual BaseTypeT * _V_clone() const {
-        return new SelfTypeT( *static_cast<const SelfTypeT *>(this) );
-    }
-
+    /// Returns standard C++ RTTI struct descibing this instance class
+    /// (outermost descendant).
     virtual const std::type_info & _V_cloning_type_id() const {
         return typeid(*this);
     }
+    friend iDuplicable<BaseTypeT> * ::goo::clone<>( const iDuplicable<BaseTypeT> * );
+};  // class iDuplicable
 
-    friend BaseTypeT * ::goo::clone<>( const BaseTypeT * );
+//
+// An iDuplicable implementation for outern descendant with
+// abstract base class (copy ctr is provided).
+template<typename BaseTypeT,
+         typename SelfTypeT,
+         typename ParentT>
+class iDuplicable<BaseTypeT, SelfTypeT, ParentT, false> : public ParentT {
+public:
+    typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, false> DuplicableParent;
+    typedef iDuplicable<BaseTypeT, BaseTypeT> DuplicableBase;
+    typedef ParentT Parent;
+protected:
+    template<typename ... CtrArgsT>
+    iDuplicable( CtrArgsT ... args ) : ParentT( args ... ) {}
+
+    /// Forces downcast to avoid stack overflow araised due to
+    /// default behaviour (bug?).
+    iDuplicable( const SelfTypeT & self ) : Parent( self ) {}
+
+    // Performs invokation of copy constructor.
+    virtual BaseTypeT * _V_clone() const {
+        # if 0
+        static_assert( std::is_base_of<DuplicableBase, Parent>::value,
+                        "Outermost descendant has no abstract duplicable base." );
+        // Copy ctr have to be defined as cloning procedure uses it.
+        static_assert(std::is_copy_constructible<SelfTypeT>::value,
+                        "Outermost descendant type has no copy construcor (see SelfTypeT).");
+        // Outermost class have to be instantiable as we're going to create
+        // copies.
+        static_assert(!std::is_abstract<SelfTypeT>::value,
+                        "Outermost type is abstract.");
+        # endif
+        return new SelfTypeT( *static_cast<const SelfTypeT *>(this) );
+    }
+    friend iDuplicable<BaseTypeT> * ::goo::clone<>( const iDuplicable<BaseTypeT> * );
 };  // class iDuplicable
 
 }  // namespace mixins
 
 template<typename BaseTypeT>
-BaseTypeT * clone( const BaseTypeT * origPtr ) {
+mixins::iDuplicable<BaseTypeT> * clone( const mixins::iDuplicable<BaseTypeT> * origPtr ) {
     # ifndef NDEBUG
     if( origPtr->_V_cloning_type_id() != typeid(*origPtr) ) {
         emraise(dbgBadArchitect,
                 "Instance %p of class \"%s\" manifests mismatching _V_cloning_type_id() "
                 "(of class \"%s\") indicating Goo's coding style violation. Please, "
-                "refer to \"#cloning\" section of Goo standard.");
+                "refer to \"#cloning\" section of Goo standard.",
+                origPtr, typeid(*origPtr).name(),
+                origPtr->_V_cloning_type_id().name() );
     }
     # endif
     return origPtr->_V_clone();
+}
+
+template<typename BaseTypeT,
+         typename DesiredT,
+         typename ProvidedT>
+DesiredT * clone_as( const ProvidedT * origProvidedPtr ) {
+    return static_cast<DesiredT *>(clone<BaseTypeT>(
+           static_cast<const mixins::iDuplicable<BaseTypeT> *>(origProvidedPtr) 
+                                                   )
+                                  );
 }
 
 }  // namespace goo

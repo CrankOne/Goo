@@ -127,7 +127,7 @@ iSingularParameter::iSingularParameter( const char * name_,
 
 Parameter<bool>::Parameter( const char * name_,
                             const char * description_ ) :
-            iParameter<bool>( name_,
+            DuplicableParent( name_,
                               description_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
@@ -139,7 +139,7 @@ Parameter<bool>::Parameter( const char * name_,
 Parameter<bool>::Parameter( char shortcut_,
                             const char * name_,
                             const char * description_ ) :
-            iParameter<bool>( name_,
+            DuplicableParent( name_,
                               description_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
@@ -151,7 +151,7 @@ Parameter<bool>::Parameter( char shortcut_,
 
 Parameter<bool>::Parameter( char shortcut_,
                             const char * description_ ) :
-            iParameter<bool>( nullptr,
+            DuplicableParent( nullptr,
                               description_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
@@ -165,7 +165,7 @@ Parameter<bool>::Parameter( char shortcut_,
 Parameter<bool>::Parameter( const char * name_,
                             const char * description_,
                             bool default_ )  :
-            iParameter<bool>( name_,
+            DuplicableParent( name_,
                               description_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
@@ -179,7 +179,7 @@ Parameter<bool>::Parameter( char shortcut_,
                             const char * name_,
                             const char * description_,
                             bool default_ ) :
-            iParameter<bool>( name_,
+            DuplicableParent( name_,
                               description_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
@@ -192,7 +192,7 @@ Parameter<bool>::Parameter( char shortcut_,
 Parameter<bool>::Parameter( char shortcut_,
                             const char * description_,
                             bool default_ ) :
-            iParameter<bool>( nullptr,
+            DuplicableParent( nullptr,
                               description_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
@@ -237,7 +237,7 @@ Parameter<bool>::_V_stringify_value( const bool & val ) const {
 
 Parameter<int>::Parameter( const char * name_,
                            const char * description_ ) :
-             iParameter<int>( name_,
+            DuplicableParent( name_,
                               description_,
                               iAbstractParameter::atomic
                                 | iAbstractParameter::singular
@@ -246,7 +246,7 @@ Parameter<int>::Parameter( const char * name_,
 Parameter<int>::Parameter( char shortcut_,
                       const char * name_,
                       const char * description_ ) :
-             iParameter<int>( name_,
+            DuplicableParent( name_,
                               description_,
                               iAbstractParameter::atomic
                                 | iAbstractParameter::singular
@@ -256,7 +256,7 @@ Parameter<int>::Parameter( char shortcut_,
 
 Parameter<int>::Parameter( char shortcut_,
                            const char * description_ ) :
-             iParameter<int>( nullptr,
+            DuplicableParent( nullptr,
                               description_,
                               iAbstractParameter::atomic
                                 | iAbstractParameter::singular,
@@ -266,7 +266,7 @@ Parameter<int>::Parameter( char shortcut_,
 Parameter<int>::Parameter( const char * name_,
                            const char * description_,
                            int default_ ) :
-             iParameter<int>( name_,
+            DuplicableParent( name_,
                               description_,
                               iAbstractParameter::atomic
                                 | iAbstractParameter::singular
@@ -280,7 +280,7 @@ Parameter<int>::Parameter( char shortcut_,
                            const char * name_,
                            const char * description_,
                            int default_ ) :
-             iParameter<int>( name_,
+            DuplicableParent( name_,
                               description_,
                               iAbstractParameter::atomic
                                 | iAbstractParameter::singular
@@ -292,7 +292,7 @@ Parameter<int>::Parameter( char shortcut_,
 Parameter<int>::Parameter( char shortcut_,
                            const char * description_,
                            int default_ ) :
-             iParameter<int>( nullptr,
+            DuplicableParent( nullptr,
                               description_,
                               iAbstractParameter::atomic
                                 | iAbstractParameter::singular

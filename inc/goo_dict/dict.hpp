@@ -15,7 +15,7 @@ namespace dict {
 class InsertionProxy;
 class Configuration;
 
-class Dictionary : public iAbstractParameter {
+class Dictionary : public mixins::iDuplicable< iAbstractParameter, Dictionary, iAbstractParameter> {
 protected:
     typedef std::queue<char>    ShortOptString;
     typedef std::queue<void*>   LongOptionEntries;  // ptrs are malloc()'d
@@ -37,8 +37,6 @@ protected:
 
     Dictionary( const char *, const char * );
 
-    Dictionary( const Dictionary & );
-
     ~Dictionary();
 
     /// Internal procedure --- composes short & long options data structures.
@@ -59,6 +57,8 @@ protected:
     friend class InsertionProxy;
     friend class Configuration;
 public:
+    /// Public copy ctr for virtual copy ctr.
+    Dictionary( const Dictionary & );
 
     /// This routine performs regex-based token extraction from option path.
     /// For example, the following string:

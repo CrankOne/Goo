@@ -144,19 +144,22 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         {
             // Shall throw exception as both required parameters is not set.
             int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
-            conf.copy().extract( argc, argv, true, &os );
+            goo::dict::Configuration confCopy( conf );
+            confCopy.extract( argc, argv, true, &os );
             goo::dict::Configuration::free_tokens( argc, argv );
         }
         {
             // Shall throw exception as `fourth' required parameter is not set.
             int argc = goo::dict::Configuration::tokenize_string( ex2, argv );
-            conf.copy().extract( argc, argv, true, &os );
+            goo::dict::Configuration confCopy( conf );
+            confCopy.extract( argc, argv, true, &os );
             goo::dict::Configuration::free_tokens( argc, argv );
         }
         {
             // Everything is ok.
             int argc = goo::dict::Configuration::tokenize_string( ex3, argv );
-            conf.extract( argc, argv, true, &os );
+            goo::dict::Configuration confCopy( conf );
+            confCopy.extract( argc, argv, true, &os );
             goo::dict::Configuration::free_tokens( argc, argv );
         }
 
