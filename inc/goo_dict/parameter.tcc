@@ -3,6 +3,9 @@
 
 # include "goo_types.h"
 # include "goo_exception.hpp"
+# include "goo_mixins.tcc"
+# include "goo_vcopy.tcc"
+
 # include <list>
 # include <cassert>
 
@@ -25,13 +28,16 @@ class iParameter;
  *  - long options                                      (flags or with values)
  *  - unnamed positional arguments
  *  - sections (dictionaries itself)
+ *
+ * @ingroup appParameters
  */
-class iAbstractParameter /* {{{ */ {
+class iAbstractParameter : public mixins::iDuplicable<iAbstractParameter,
+                                                      iAbstractParameter>/* {{{ */ {
 public:
     typedef UByte ParameterEntryFlag;
     static const ParameterEntryFlag
             set,
-            option,
+            argOpt,
             positional,
             atomic,
             singular,
@@ -61,6 +67,9 @@ protected:
                         const char * description,
                         ParameterEntryFlag flags,
                         char shortcut = '\0');
+
+    /// Copy ctr.
+    iAbstractParameter( const iAbstractParameter & );
 public:
     virtual ~iAbstractParameter();
 
@@ -77,12 +86,12 @@ public:
     bool is_set() const {
             return _flags & set;
         }
-    /// Returns true, if parameter means logical flags (e.g. is option).
+    /// Returns true, if parameter means logical flags (e.g. can behave like an option).
     bool is_option() const {
-            return _flags & option;
+            return _flags & argOpt;
         }
     /// Returns true, if parameter expects a value (or already contain a default one).
-    bool has_value() const {
+    bool requires_value() const {
             return !is_option();
         }
     /// Returns true, if parameter has no name (at all --- even one-letter shortcut).
@@ -127,6 +136,8 @@ public:
  *
  * At this level of inheritance the less-generic definition of
  * parameter dictionary entries is defined.
+ *
+ * @ingroup appParameters
  */
 class iSingularParameter : public iAbstractParameter /*{{{*/ {
 protected:
@@ -172,9 +183,14 @@ public:
  * Defines common value-operation routines.
  * */
 template<typename ValueT>
-class iParameter : public iSingularParameter /*{{{*/ {
+class iParameter : /*public virtual iSingularParameter,*/
+                   public mixins::iDuplicable<iSingularParameter,
+                                              iParameter<ValueT> > /*{{{*/ {
 public:
+    //typedef iAbstractParameter::ParameterEntryFlag ParameterEntryFlag;
     typedef ValueT Value;
+    //using iSingularParameter::ParameterEntryFlag;
+    typedef iSingularParameter::ParameterEntryFlag ParameterEntryFlag;
 private:
     Value _value;
 protected:
@@ -182,7 +198,7 @@ protected:
     virtual void _V_parse_argument( const char * strval ) override {
         _set_value( _V_parse( strval ) ); }
     virtual std::string _V_to_string( ) const override {
-        assert( is_set() );
+        assert( this->is_set() );
         return _V_stringify_value( value() ); }
 
     virtual Value _V_parse( const char * ) const = 0;
@@ -195,9 +211,9 @@ public:
 
     iParameter( const char * name,
                 const char * description,
-                const ValueT & defaultValue,
                 ParameterEntryFlag,
-                char shortcut_ = '\0' );
+                char shortcut_ /*= '\0' allowed */,
+                const ValueT & defaultValue );
 
     ~iParameter() {}
 
@@ -217,9 +233,9 @@ iParameter<ValueT>::iParameter( const char * name,
 template<typename ValueT>
 iParameter<ValueT>::iParameter( const char * name,
                                 const char * description,
-                                const ValueT & defaultValue,
                                 ParameterEntryFlag flags,
-                                char shortcut_ ) :
+                                char shortcut_,
+                                const ValueT & defaultValue ) :
         iSingularParameter( name, description, flags, shortcut_ ),
         _value(defaultValue) {
     // Checks for consistency:
@@ -233,11 +249,11 @@ iParameter<ValueT>::value() const {
 
 template<typename ValueT> void
 iParameter<ValueT>::_set_value( const ValueT & val ) {
-    _set_set_flag();
+    this->_set_set_flag();
     _value = val;
 }
 
-
+/*}}}*/  // class iParameter implementation
 
 
 /**@class Parameter

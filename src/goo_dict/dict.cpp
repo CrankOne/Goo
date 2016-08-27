@@ -22,6 +22,35 @@ Dictionary::Dictionary( const char * name_,
                                0 ) {
 }
 
+Dictionary::Dictionary( const Dictionary & orig ) : iAbstractParameter( orig ) {
+    // TODO: duplicate seconds!!!
+    for( auto it = _parameters.begin();
+         it != _parameters.end(); ++it ) {
+        it->second->copy();
+        _parameters.insert(
+                DECLTYPE(_parameters)::value_type( it->first,
+                                                   it->second
+                                                     ->copy_as<iSingularParameter>() )
+            );
+    }
+    for( auto it = _byShortcutIndexed.begin();
+             it != _byShortcutIndexed.end(); ++it ) {
+        _byShortcutIndexed.insert(
+                DECLTYPE(_byShortcutIndexed)::value_type( it->first,
+                                                          it->second
+                                                            ->copy_as<iSingularParameter>() )
+            );
+    }
+    for( auto it = _dictionaries.begin();
+         it != _dictionaries.end(); ++it ) {
+        _dictionaries.insert(
+                DECLTYPE(_dictionaries)::value_type( it->first,
+                                                     it->second
+                                                       ->copy_as<Dictionary>() )
+            );
+    }
+}
+
 Dictionary::~Dictionary() {
     for( auto it = _parameters.begin();
          it != _parameters.end(); ++it ) {
@@ -63,10 +92,11 @@ Dictionary::_insert_long_option( const std::string & nameprefix,
     assert( p.name() );
     struct ::option o = {
         strdup((nameprefix + p.name()).c_str()),
-        (p.has_value() ? required_argument : no_argument),
+        (p.requires_value() ? required_argument : ( dynamic_cast<const Parameter<bool>*>(&p) ?
+                                                        optional_argument : no_argument ) ),
         NULL,
         (p.has_shortcut() ? p.shortcut() : 
-            (p.has_value() ? 2 : 1) ) };
+            (p.requires_value() ? 2 : 1) ) };
     q.push( malloc(sizeof(struct ::option)) );
     memcpy( q.back(), &o, sizeof(o) );
 }
@@ -84,7 +114,7 @@ Dictionary::_append_options( const std::string & nameprefix,
         assert( pRef.shortcut() == it->first );
         assert( pRef.has_shortcut() );
         shrtOpts.push( pRef.shortcut() );
-        if( pRef.has_value() ) {
+        if( pRef.requires_value() ) {
             shrtOpts.push( ':' );
         }
         if( pRef.name() ) {
@@ -330,7 +360,7 @@ Configuration::extract( int argc,
                 emraise( badState, "Shortcut option '%c' (0x%02x) unknown.", c, c );
             }
             iSingularParameter & parameter = *(pIt->second);
-            if( parameter.has_value() ) {
+            if( parameter.requires_value() ) {
                 log_extraction( "c=%c (0x%02x) considered as a parameter with argument \"%s\".\n",
                                 c, c, optarg );
                 _set_argument_parameter( parameter, optarg, verbose );
@@ -403,6 +433,10 @@ Configuration::Configuration( const char * name_,
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
                                                       _getoptCachesValid( false ) {
+}
+
+Configuration::Configuration( const Configuration & orig ) : Dictionary( orig ) {
+    _TODO_  // TODO
 }
 
 void

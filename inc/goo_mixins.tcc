@@ -49,6 +49,9 @@ inline std::ostream & operator<<(std::ostream& os, const ToOStreamOp & t) {
 # define _vPub virtual public
 
 /** @brief identity operator `==` mixin (uses `!=`)
+ *
+ * Curiously recurring template pattern implementing «is-equal» operator when
+ * «is‐non‐equal» defined.
  */ decl_mixin_struct
 IdentityOp {
 private:
@@ -63,6 +66,9 @@ public:
 };
 
 /** @brief lesser or equals operator `<=` (uses `>`)
+ *
+ * Curiously recurring template pattern implementing «lesser-or-equals»
+ * operator when «is-greater-than» defined.
  */ decl_mixin_struct
 LesserEqOp {
 private:
@@ -77,6 +83,8 @@ public:
 };
 
 /** @brief greater or equals operator `>=` mixin (uses `<`)
+ *
+ * Curiously recurring template pattern.
  */ decl_mixin_struct
 GreaterEqOp {
 private:
@@ -92,7 +100,8 @@ public:
 
 /** @brief full set of comparison operators
  *
- * Uses (superposition):  `!=`, `>`  op-rs
+ * Curiously recurring template pattern,
+ * uses (superposition):  `!=`, `>`  op-rs
  */ decl_mixin_struct
 FullComparableOp : _vPub IdentityOp<SelfT>,
                    _vPub GreaterEqOp<SelfT>,
@@ -110,6 +119,8 @@ public:
 };
 
 /** @brief implements postfix single increment op-r (uses prefix)
+ *
+ * Curiously recurring template pattern.
  */ decl_mixin_struct
 PostfixIncOp {
 private:
@@ -124,6 +135,8 @@ public:
 };
 
 /** @brief implements postfix single decrement op-r (uses prefix)
+ *
+ * Curiously recurring template pattern.
  */decl_mixin_struct
 PostfixDecOp {
 private:
@@ -256,10 +269,6 @@ public:
     }
 };
 
-# undef decl_mixin_struct
-# undef vinl
-# undef _vPub
-
 //
 // Silly Numeric Wrapper
 //
@@ -336,7 +345,6 @@ struct NumericWrapper {
         return number-o;
     }
 };
-# undef vinl
 
 //
 // Subscriber mixin
@@ -414,9 +422,12 @@ public:
     virtual ~IssuerMixin(){}
 };
 
-
 }  // namespace mixins
 }  // namespace goo
+
+# undef decl_mixin_struct
+# undef vinl
+# undef _vPub
 
 # endif  // H_GOO_MIXINS_H
 

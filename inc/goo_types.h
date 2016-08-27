@@ -178,6 +178,7 @@
     m(106,      objNotConstructed,  "requested object was not constructed", ## __VA_ARGS__  ) \
     m(107,      singletonRepCtr,    "singleton repeated construction", ## __VA_ARGS__  ) \
     m(108,      badArchitect,       "architectural incompleteness or undefined state", ## __VA_ARGS__  ) \
+    m(254,      dbgBadArchitect,    "code style violation / bad architecture / debug warning", ## __VA_ARGS__) \
     m(255,      thirdParty,         "thirt-party code error", ## __VA_ARGS__ ) \
     /* ... */
 

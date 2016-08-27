@@ -127,7 +127,7 @@ public:
     Configuration( const Configuration & );
 
     /// Explicit copy creation.
-    Configuration copy() const { return *this; }
+    //Configuration copy() const { return *this; }
 
     /// Parses command-line arguments.
     void extract( int argc,

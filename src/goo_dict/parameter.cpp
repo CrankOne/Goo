@@ -13,7 +13,7 @@ static const std::regex
 
 const iAbstractParameter::ParameterEntryFlag
     iAbstractParameter::set         = 0x1,      // otherwise --- uninitialized still
-    iAbstractParameter::option      = 0x2,      // otherwise --- has value
+    iAbstractParameter::argOpt      = 0x2,      // otherwise --- value can not be omitted (?)
     iAbstractParameter::positional  = 0x4,      // otherwise --- has name or shortcut
     iAbstractParameter::atomic      = 0x8,      // otherwise --- it is a dictionary
     iAbstractParameter::singular    = 0x10,     // otherwise --- can be repeated multiple times
@@ -69,6 +69,18 @@ iAbstractParameter::iAbstractParameter( const char * name_,
     strncpy( _description, description_, dLen + 1 );
 }
 
+iAbstractParameter::iAbstractParameter( const iAbstractParameter & o ) {
+    memcpy( this, &o, sizeof(o) );
+    const size_t nLen = o._name ? strlen( o._name ) + 1 : 0,
+                 dLen = strlen( o._description ) + 1
+                 ;
+    _name = new char [nLen];
+    if( nLen ) { memcpy( _name, o._name, nLen ); }
+
+    _description = new char [dLen];
+    memcpy( _description, o._description, dLen );
+}
+
 iAbstractParameter::~iAbstractParameter() {
     delete [] _name;
     delete [] _description;
@@ -120,7 +132,7 @@ Parameter<bool>::Parameter( const char * name_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
                               iAbstractParameter::singular |
-                              iAbstractParameter::option
+                              iAbstractParameter::argOpt
                             ) {}
 
 
@@ -132,7 +144,7 @@ Parameter<bool>::Parameter( char shortcut_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
                               iAbstractParameter::singular |
-                              iAbstractParameter::option |
+                              iAbstractParameter::argOpt |
                               iAbstractParameter::shortened,
                               shortcut_
                             ) {}
@@ -144,7 +156,7 @@ Parameter<bool>::Parameter( char shortcut_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
                               iAbstractParameter::singular |
-                              iAbstractParameter::option |
+                              iAbstractParameter::argOpt |
                               iAbstractParameter::shortened,
                               shortcut_
                             ) {}
@@ -157,7 +169,9 @@ Parameter<bool>::Parameter( const char * name_,
                               description_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
-                              iAbstractParameter::singular
+                              iAbstractParameter::singular,
+                              '\0',
+                              default_
                             ) {}
 
 
@@ -167,12 +181,12 @@ Parameter<bool>::Parameter( char shortcut_,
                             bool default_ ) :
             iParameter<bool>( name_,
                               description_,
-                              default_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
                               iAbstractParameter::singular |
                               iAbstractParameter::shortened,
-                              shortcut_
+                              shortcut_,
+                              default_
                             ) {}
 
 Parameter<bool>::Parameter( char shortcut_,
@@ -180,12 +194,12 @@ Parameter<bool>::Parameter( char shortcut_,
                             bool default_ ) :
             iParameter<bool>( nullptr,
                               description_,
-                              default_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
                               iAbstractParameter::singular |
                               iAbstractParameter::shortened,
-                              shortcut_
+                              shortcut_,
+                              default_
                             ) {}
 
 void
@@ -214,6 +228,87 @@ Parameter<bool>::_V_stringify_value( const bool & val ) const {
     } else {
         return "False";
     }
+}
+
+
+//
+// Integer values (option)
+/////////////////////////
+
+Parameter<int>::Parameter( const char * name_,
+                           const char * description_ ) :
+             iParameter<int>( name_,
+                              description_,
+                              iAbstractParameter::atomic
+                                | iAbstractParameter::singular
+                            ) {}
+
+Parameter<int>::Parameter( char shortcut_,
+                      const char * name_,
+                      const char * description_ ) :
+             iParameter<int>( name_,
+                              description_,
+                              iAbstractParameter::atomic
+                                | iAbstractParameter::singular
+                                | iAbstractParameter::shortened,
+                              shortcut_
+                            ) {}
+
+Parameter<int>::Parameter( char shortcut_,
+                           const char * description_ ) :
+             iParameter<int>( nullptr,
+                              description_,
+                              iAbstractParameter::atomic
+                                | iAbstractParameter::singular,
+                              shortcut_
+                            ) {}
+
+Parameter<int>::Parameter( const char * name_,
+                           const char * description_,
+                           int default_ ) :
+             iParameter<int>( name_,
+                              description_,
+                              iAbstractParameter::atomic
+                                | iAbstractParameter::singular
+                                | iAbstractParameter::set,
+                              '\0',
+                              default_
+                            ) {
+}
+
+Parameter<int>::Parameter( char shortcut_,
+                           const char * name_,
+                           const char * description_,
+                           int default_ ) :
+             iParameter<int>( name_,
+                              description_,
+                              iAbstractParameter::atomic
+                                | iAbstractParameter::singular
+                                | iAbstractParameter::set,
+                              shortcut_,
+                              default_
+                            ) {}
+
+Parameter<int>::Parameter( char shortcut_,
+                           const char * description_,
+                           int default_ ) :
+             iParameter<int>( nullptr,
+                              description_,
+                              iAbstractParameter::atomic
+                                | iAbstractParameter::singular
+                                | iAbstractParameter::set,
+                              shortcut_,
+                              default_
+                            ) {}
+
+int
+Parameter<int>::_V_parse( const char * ) const {
+    _TODO_ // TODO
+}
+
+std::string
+Parameter<int>::_V_stringify_value( const Value & ) const {
+    _TODO_ // TODO
 }
 
 }  // namespace dict

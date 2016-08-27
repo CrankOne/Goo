@@ -132,8 +132,8 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         conf.insertion_proxy()
             .p<int>( 'f', "first",      "First parameter, optional one." )
             .p<int>( 's', "second",     "Second parameter, required." ).required()
-            .list<float>( 't', "third",   "Third parameter, optional list." )
-            .list<double>( '4', "fourth",  "Fourth parameter, required list." ).required()
+            //.list<float>( 't', "third",   "Third parameter, optional list." )
+            //.list<double>( '4', "fourth",  "Fourth parameter, required list." ).required()
             ;
 
         const char ex1[] = "-f 12",         // `second' unset
