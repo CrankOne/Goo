@@ -169,5 +169,5 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
     //conf.usage_text( os );
 
-} GOO_UT_END( PDICT )
+} GOO_UT_END( PDICT, "VCtr" )
 
