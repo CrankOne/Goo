@@ -142,12 +142,17 @@ iAbstractParameter::description() const {
 }
 
 void
-iAbstractParameter::_set_set_flag() {
+iAbstractParameter::_set_is_set_flag() {
     _flags |= set;
 }
 
 void
-iAbstractParameter::_set_required_flag() {
+iAbstractParameter::_set_is_flag_flag() {
+    _flags |= flag;
+}
+
+void
+iAbstractParameter::_set_is_argument_required_flag() {
     _flags |= required;
 }
 

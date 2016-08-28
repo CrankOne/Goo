@@ -28,7 +28,10 @@ public:
     InsertionProxy & end_sect( const char * = nullptr );
 
     /// Marks the last inserted parameter as mandatory one.
-    InsertionProxy & required();
+    InsertionProxy & required_argument();
+
+    // Marks the last inserted logical argument as mandatory one.
+    //InsertionProxy & as_flag();
 
     //
     // Parameter inserter
@@ -42,13 +45,23 @@ public:
         return *this;
     }
 
-    template<typename ParameterT, class ... Types> InsertionProxy &
-    rq( Types ... args ) {  // TODO?
+    template<class ... Types> InsertionProxy &
+    flag( Types ... args ) {
+        //Parameter * newParameterPtr = new Parameter<bool>( args ... );
+        //newParameterPtr->_check_initial_validity();
         _stack.top()->insert_parameter(
-                new Parameter<ParameterT>( args ... )
+                new Parameter<bool>( args ... )  // TODO: mark it as a flag!
             );
         return *this;
     }
+
+    //template<typename ParameterT, class ... Types> InsertionProxy &
+    //rq( Types ... args ) {  // TODO?
+    //    _stack.top()->insert_parameter(
+    //            new Parameter<ParameterT>( args ... )
+    //        );
+    //    return *this;
+    //}
 
     //
     // List inserters

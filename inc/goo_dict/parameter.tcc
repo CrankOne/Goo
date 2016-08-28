@@ -60,11 +60,14 @@ protected:
     /// Used only when shortened flag is set.
     char _shortcut;
 protected:
-    /// Sets the «set» flag translating instance to initialized state.
-    void _set_set_flag();
+    /// Sets the "set" flag translating instance to initialized state.
+    void _set_is_set_flag();
 
-    /// Sets the «required» flag marking a mandatory parameter.
-    void _set_required_flag();
+    /// Sets the "is flag" flag.
+    void _set_is_flag_flag();
+
+    /// Sets the "required" flag marking a mandatory parameter.
+    void _set_is_argument_required_flag();
 
     /// This method is to be used by lists only.
     void _unset_singular();
@@ -133,6 +136,11 @@ public:
     bool has_shortcut() const {
             return _flags & shortened;
         }
+
+    // TODO?
+    // Raises malformedArguments if parameter is in a bad state.
+    // To be invoked by auxilliary routines after insertion is done.
+
 };  /*}}}*/ // class iAbstractParameter
 
 
@@ -264,7 +272,7 @@ iParameter<ValueT>::value() const {
 
 template<typename ValueT> void
 iParameter<ValueT>::_set_value( const ValueT & val ) {
-    this->_set_set_flag();
+    this->_set_is_set_flag();
     _value = val;
 }
 

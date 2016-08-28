@@ -59,11 +59,11 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         conf.insertion_proxy()
             .p<bool>( '1', "parameter-one",  "First parameter" )
-            .p<bool>( 'v', "Enables verbose output" )
+            .flag(    'v', "Enables verbose output" )
             .p<bool>( 'q', "Be quiet", true )
             .p<bool>( "quiet", "Be quiet", true )
             .p<bool>( "verbose", "Enables verbose output" )
-            .p<bool>( 'V', "verbose2", "Enables verbose output" )
+            .flag(    'V', "verbose2", "Enables verbose output" )
             .p<bool>( 'Q', "quet2", "Be quiet", true )
             //.p<bool>( 12, "one", "two", "three" )  // should cause failure on linkage
             //.p<bool>( "one", "two", "three" )  // should cause failure on linkage
@@ -94,7 +94,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     }
     # endif
     // TODO : expected for pasing errors check
-    # if 1
+    # if 0
     {
         os << "List parameters tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication2", "Testing parameter set #2." );
@@ -124,7 +124,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} List parameters done." << std::endl;
     }
     # endif
-    # if 1
+    # if 0
     {
         os << "Consistency tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication3", "Testing parameter set #3." );

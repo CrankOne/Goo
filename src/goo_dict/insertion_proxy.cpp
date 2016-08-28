@@ -7,11 +7,18 @@ namespace goo {
 namespace dict {
 
 InsertionProxy &
-InsertionProxy::required() {
+InsertionProxy::required_argument() {
     assert( !_stack.empty() );
-    _stack.top()->_set_required_flag();
+    _stack.top()->_set_is_argument_required_flag();
     return *this;
 }
+
+//InsertionProxy &
+//InsertionProxy::as_flag() {
+//    assert( !_stack.empty() );
+//    _stack.top()->_set_is_flag_flag();
+//    return *this;
+//}
 
 InsertionProxy::InsertionProxy( Dictionary * root ) {
     _stack.push(root);
