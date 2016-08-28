@@ -13,17 +13,12 @@ static const std::regex
 
 const iAbstractParameter::ParameterEntryFlag
     iAbstractParameter::set         = 0x1,      // otherwise --- uninitialized still
-    iAbstractParameter::argOpt      = 0x2,      // otherwise --- value can not be omitted (?)
+    iAbstractParameter::flag        = 0x2,      // otherwise --- requires an argument
     iAbstractParameter::positional  = 0x4,      // otherwise --- has name or shortcut
     iAbstractParameter::atomic      = 0x8,      // otherwise --- it is a dictionary
     iAbstractParameter::singular    = 0x10,     // otherwise --- can be repeated multiple times
     iAbstractParameter::required    = 0x20,     // otherwise --- is optional
     iAbstractParameter::shortened   = 0x40;     // otherwise --- has not one-char shortcut
-
-// XXX
-//const iAbstractParameter::ParameterEntryFlag
-//    iAbstractParameter::option_baseFlags = 0x0 |
-//        iAbstractParameter::atomic
 
 iAbstractParameter::iAbstractParameter( const char * name_,
                                         const char * description_,
@@ -31,11 +26,19 @@ iAbstractParameter::iAbstractParameter( const char * name_,
                                         char shortcut_ ) :
                                         _flags( flags ),
                                         _shortcut( shortcut_ ) {
+    // TODO: some check are needed after parameter set is composed as
+    // insertion proxy can modify instances after this ctr is called.
     const size_t nLen = name_ ? strlen(name_) : 0;
     // Checks for consistency:
     if( '\0' != shortcut_ && !isalnum(shortcut_) ) {
         emraise( malformedArguments,
-                 "Won't create entry with shortcut of code %d.", (int) shortcut_ );
+                 "Won't create entry with shortcut of code %d (non-alnum).",
+                 (int) shortcut_ );
+    }
+    if( '\0' != shortcut_ && 'W' == shortcut_ ) {
+        // See Guideline 3 of POSIX convention; 12.2 "Utility Syntax Guidelines".
+        emraise( malformedArguments,
+                 "The -W (capital-W) option is reserved for vendor options." );
     }
     if( '\0' == shortcut_ && !name_ && is_atomic() ) {
         emraise( malformedArguments,
@@ -44,6 +47,17 @@ iAbstractParameter::iAbstractParameter( const char * name_,
     if( name_ && !nLen ) {
         emraise( malformedArguments,
                  "Won't create entry without name (if you want to omit long name, use NULL)." );
+    }
+    if( name_ ) {
+        unsigned char n = 0;
+        for( const char * c = name_; '\0' != *c; ++c, ++n ) {
+            if( !isdigit(*c) ) break;
+            if( n > 1 ) {
+                // See Guideline 3 of POSIX convention; 12.2 "Utility Syntax Guidelines".
+                emraise( malformedArguments,
+                     "Multi-digit options are prohibited." );
+            }
+        }
     }
     if( !description_ ) {
         emraise( malformedArguments,
@@ -56,6 +70,32 @@ iAbstractParameter::iAbstractParameter( const char * name_,
     if( is_set() && is_mandatory() ) {
         emraise( malformedArguments,
                  "Wrong entry description: is mandatory and has default value." );
+    }
+    // =
+    // positional && !atomic    ...
+    // positional && shortened  shortcuts for positional argument is nonsense
+    // positional && name()     name for positional argument is nonsense
+    if( is_positional() && (name_ || has_shortcut()) ) {
+        emraise( badState,  // design error
+                 "Name or shortcut is provided for positional argument." );
+    }
+    // other prohibited cases:
+    // =
+    // flag && !set             flag are always set to false by default
+    // flag && required         flag can not be required
+    // flag && positional       flag never can be positional argument (satisfied above)
+    // flag && !atomic          flag is always a two-state object
+    if( is_flag() && (!is_set()
+                    || is_mandatory()
+                    || is_dictionary() ) ) {
+        emraise( malformedArguments,
+                 "Tristate flags are not supported." )
+    }
+    // =
+    // set && required          (only on initial state) can not require having a default value
+    if( is_set() && is_mandatory() ) {
+        emraise( malformedArguments,
+                 "Default value can not be set for required parameter.");
     }
     /* ... */
     const size_t dLen = strlen(description_);
@@ -71,12 +111,17 @@ iAbstractParameter::iAbstractParameter( const char * name_,
 
 iAbstractParameter::iAbstractParameter( const iAbstractParameter & o ) {
     memcpy( this, &o, sizeof(o) );
-    const size_t nLen = o._name ? strlen( o._name ) + 1 : 0,
+    const size_t nLen = (o._name ? strlen( o._name ) + 1 : 0),
                  dLen = strlen( o._description ) + 1
                  ;
-    _name = new char [nLen];
-    if( nLen ) { memcpy( _name, o._name, nLen ); }
+    if(nLen) {
+        _name = new char [nLen];
+        memcpy( _name, o._name, nLen );
+    } else {
+        _name = nullptr;
+    }
 
+    assert( dLen );
     _description = new char [dLen];
     memcpy( _description, o._description, dLen );
 }
@@ -131,8 +176,7 @@ Parameter<bool>::Parameter( const char * name_,
                               description_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
-                              iAbstractParameter::singular |
-                              iAbstractParameter::argOpt
+                              iAbstractParameter::singular
                             ) {}
 
 
@@ -144,7 +188,6 @@ Parameter<bool>::Parameter( char shortcut_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
                               iAbstractParameter::singular |
-                              iAbstractParameter::argOpt |
                               iAbstractParameter::shortened,
                               shortcut_
                             ) {}
@@ -156,7 +199,6 @@ Parameter<bool>::Parameter( char shortcut_,
                               iAbstractParameter::set |
                               iAbstractParameter::atomic |
                               iAbstractParameter::singular |
-                              iAbstractParameter::argOpt |
                               iAbstractParameter::shortened,
                               shortcut_
                             ) {}

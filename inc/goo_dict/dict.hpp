@@ -17,6 +17,7 @@ class Configuration;
 
 class Dictionary : public mixins::iDuplicable< iAbstractParameter, Dictionary, iAbstractParameter> {
 protected:
+    // TODO: queue -> list!
     typedef std::queue<char>    ShortOptString;
     typedef std::queue<void*>   LongOptionEntries;  // ptrs are malloc()'d
 private:
@@ -74,6 +75,8 @@ public:
     /// Performs consistency check (only has sense, if extract() was performed before).
     virtual bool is_consistant( std::map<std::string, const iSingularParameter *> &,
                                 const std::string & prefix ) const;
+
+    virtual void print_ASCII_tree( std::list<std::string> & ) const;
 };  // class Dictionary
 
 
@@ -152,6 +155,10 @@ public:
 
     /// Operator shortcut for get_parameter.
     virtual const iSingularParameter & operator[]( const char [] ) const;
+
+    virtual void print_ASCII_tree( std::ostream & ) const;
+
+    virtual void print_ASCII_tree( std::list<std::string> & ) const override;
 
     friend class Dictionary;
 };  // class Configuration

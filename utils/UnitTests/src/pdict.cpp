@@ -65,8 +65,8 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .p<bool>( "verbose", "Enables verbose output" )
             .p<bool>( 'V', "verbose2", "Enables verbose output" )
             .p<bool>( 'Q', "quet2", "Be quiet", true )
-            //.p<bool>( 12, "one", "two", "three" )  // should be failed at linkage
-            //.p<bool>( "one", "two", "three" )  // should be failed at linkage
+            //.p<bool>( 12, "one", "two", "three" )  // should cause failure on linkage
+            //.p<bool>( "one", "two", "three" )  // should cause failure on linkage
             ;
 
         const char ex1[] = "./foo -1vqfalse --quiet=true -V --quet2 false";
@@ -130,21 +130,31 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         goo::dict::Configuration conf( "theApplication3", "Testing parameter set #3." );
 
         conf.insertion_proxy()
-            .p<int>( 'f', "first",      "First parameter, optional one." )
-            .p<int>( 's', "second",     "Second parameter, required." ).required()
+            .p<bool>( 'f', "first",      "First parameter, optional one." )
+            .p<bool>( 's', "second",     "Second parameter, required." )//.required()
             //.list<float>( 't', "third",   "Third parameter, optional list." )
             //.list<double>( '4', "fourth",  "Fourth parameter, required list." ).required()
             ;
 
+        os << "Original config object:" << std::endl;
+        conf.print_ASCII_tree( os );
+
+        char ** argv;
+        # if 1
+        int argc = goo::dict::Configuration::tokenize_string( "-f ON", argv );
+        conf.extract( argc, argv, true, &os );
+        goo::dict::Configuration::free_tokens( argc, argv );
+        # else
         const char ex1[] = "-f 12",         // `second' unset
                    ex2[] = "--second=32",   // `fourth' empty
                    ex3[] = "--second=42 -4 1.23 -4 3e+2"  // ok
                 ;
-        char ** argv;
         {
             // Shall throw exception as both required parameters is not set.
             int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
             goo::dict::Configuration confCopy( conf );
+            os << "Copy of config object:" << std::endl;
+            confCopy.print_ASCII_tree( os );
             confCopy.extract( argc, argv, true, &os );
             goo::dict::Configuration::free_tokens( argc, argv );
         }
@@ -152,6 +162,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             // Shall throw exception as `fourth' required parameter is not set.
             int argc = goo::dict::Configuration::tokenize_string( ex2, argv );
             goo::dict::Configuration confCopy( conf );
+            confCopy.print_ASCII_tree( os );
             confCopy.extract( argc, argv, true, &os );
             goo::dict::Configuration::free_tokens( argc, argv );
         }
@@ -159,9 +170,11 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             // Everything is ok.
             int argc = goo::dict::Configuration::tokenize_string( ex3, argv );
             goo::dict::Configuration confCopy( conf );
+            confCopy.print_ASCII_tree( os );
             confCopy.extract( argc, argv, true, &os );
             goo::dict::Configuration::free_tokens( argc, argv );
         }
+        # endif
 
         os << "} Consistency tests done." << std::endl;
     }

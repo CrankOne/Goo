@@ -16,12 +16,20 @@ template<typename ValueT>
 class iParameter;
 
 /**@class iAbstractParameter
- * @brief An abstract parameter is a base class for most entity in
- * Goo's dictionaries
+ * @brief An abstract parameter is a base class for Goo's
+ * dictionary entires.
  *
- * We're following here to POSIX convention, so option-arguments are
- * never optional:
+ * We're tending to follow here to POSIX convention:
  * http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html#tag_12_02
+ * extended with long name options, so option-arguments are never optional
+ * (see Guideline 7 of 12.2). That means one can not, for example, declare
+ * an option `-c` with optional argument. Even if the `-c` option is a
+ * logical flag the option-argument should either be necessarily presented,
+ * or prohibited by declaration. In first case this option have to be
+ * provided either as `-c true` or `-c false` (or in any equivalent
+ * appropriate way for options of logic type). In the second case this option
+ * can not receive an option-argument (and should be provided as `-c` or
+ * omitted).
  *
  * The following subclasses are expected:
  *  - single-char keys (here referred as `shortcuts')   (flags or with values, multiple time)
@@ -36,7 +44,7 @@ public:
     typedef UByte ParameterEntryFlag;
     static const ParameterEntryFlag
             set,
-            argOpt,
+            flag,
             positional,
             atomic,
             singular,
@@ -85,13 +93,13 @@ public:
     bool is_set() const {
             return _flags & set;
         }
-    /// Returns true, if parameter means logical flags (e.g. can behave like an option).
-    bool is_option() const {
-            return _flags & argOpt;
+    /// Returns true, if parameter means logical flag.
+    bool is_flag() const {
+            return _flags & flag;
         }
     /// Returns true, if parameter expects a value (or already contain a default one).
     bool requires_value() const {
-            return !is_option();
+            return !is_flag();
         }
     /// Returns true, if parameter has no name (at all --- even one-letter shortcut).
     bool is_positional() const {
@@ -212,6 +220,8 @@ public:
                 char shortcut_ /*= '\0' allowed */,
                 const ValueT & defaultValue );
 
+    iParameter( const iParameter<ValueT> & );
+
     ~iParameter() {}
 
     const ValueT & value() const;
@@ -235,6 +245,14 @@ iParameter<ValueT>::iParameter( const char * name,
                                 const ValueT & defaultValue ) :
         iSingularParameter( name, description, flags, shortcut_ ),
         _value(defaultValue) {
+    // Checks for consistency:
+    /* ... */
+}
+
+template<typename ValueT>
+iParameter<ValueT>::iParameter( const iParameter<ValueT> & o ) :
+        iSingularParameter(o),
+        _value(o._value) {
     // Checks for consistency:
     /* ... */
 }
@@ -305,6 +323,10 @@ public:
     {   this->_unset_singular();
         assert( !(this->name() == nullptr && !this->has_shortcut()) );
         assert( this->description() ); }
+
+    Parameter( const Parameter<std::list<ValueT> > & orig ) :
+        DuplicableParent( orig )
+    { _TODO_ /* TODO: clone the _values list */ }
 
     ~Parameter() {}
 

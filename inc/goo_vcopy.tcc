@@ -123,6 +123,8 @@ public:
 protected:
     template<typename ... CtrArgsT>
     iDuplicable( CtrArgsT ... args ) : ParentT( args ... ) {}
+
+    template<typename T=typename std::is_default_constructible<ParentT>::type>
     iDuplicable() : ParentT() {}
 
     /// Returns standard C++ RTTI struct descibing this instance class

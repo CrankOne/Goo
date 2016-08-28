@@ -9,6 +9,7 @@
 # include <wordexp.h>
 # include <list>
 # include <cassert>
+# include <sstream>
 
 # if 1
 
@@ -23,30 +24,32 @@ Dictionary::Dictionary( const char * name_,
 }
 
 Dictionary::Dictionary( const Dictionary & orig ) : DuplicableParent( orig ) {
-    for( auto it = _parameters.begin();
-         it != _parameters.end(); ++it ) {
-        //it->second->copy();
-        _parameters.insert(
-                DECLTYPE(_parameters)::value_type(
-                            it->first,
-                            clone_as<iAbstractParameter, iSingularParameter>( it->second ) )
-            );
+    for( auto it  = orig._parameters.begin();
+              it != orig._parameters.end(); ++it ) {
+        //_parameters.insert(
+        //        DECLTYPE(_parameters)::value_type(
+        //                    it->first,
+        //                    clone_as<iAbstractParameter, iSingularParameter>( it->second ) )
+        //    );
+        insert_parameter( clone_as<iAbstractParameter, iSingularParameter>( it->second ) );
     }
-    for( auto it = _byShortcutIndexed.begin();
-             it != _byShortcutIndexed.end(); ++it ) {
-        _byShortcutIndexed.insert(
-                DECLTYPE(_byShortcutIndexed)::value_type(
-                            it->first,
-                            clone_as<iAbstractParameter, iSingularParameter>( it->second ) )
-            );
+    for( auto it = orig._byShortcutIndexed.begin();
+             it != orig._byShortcutIndexed.end(); ++it ) {
+        //_byShortcutIndexed.insert(
+        //        DECLTYPE(_byShortcutIndexed)::value_type(
+        //                    it->first,
+        //                    clone_as<iAbstractParameter, iSingularParameter>( it->second ) )
+        //    );
+        insert_parameter( clone_as<iAbstractParameter, iSingularParameter>( it->second ) );
     }
-    for( auto it = _dictionaries.begin();
-         it != _dictionaries.end(); ++it ) {
-        _dictionaries.insert(
-                DECLTYPE(_dictionaries)::value_type(
-                            it->first,
-                            clone_as<iAbstractParameter, Dictionary>( it->second ) )
-            );
+    for( auto it  = orig._dictionaries.begin();
+              it != orig._dictionaries.end(); ++it ) {
+        //_dictionaries.insert(
+        //        DECLTYPE(_dictionaries)::value_type(
+        //                    it->first,
+        //                    clone_as<iAbstractParameter, Dictionary>( it->second ) )
+        //    );
+        insert_section( clone_as<iAbstractParameter, Dictionary>( it->second ) );
     }
 }
 
@@ -261,6 +264,60 @@ Dictionary::is_consistant( std::map<std::string, const iSingularParameter *> & b
     return badParameters.empty();
 }
 
+void
+Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
+    std::stringstream ss;
+    size_t n = _parameters.size();
+    bool hasShortcuts = _byShortcutIndexed.size();
+    for( auto lp : _parameters ) {
+        n--;
+        ss << (n || hasShortcuts ? "╟─" : "╙─") << " ";
+        if( lp.second->name() ) {
+            ss << "--" << lp.second->name();
+            if( lp.second->has_shortcut() ) {
+                ss << ",";
+            }
+        }
+        if( lp.second->has_shortcut() ) {
+            ss << "-" << lp.second->shortcut();
+        }
+        // TODO: other properties
+        ss << std::endl;
+    }
+    n = _byShortcutIndexed.size();
+    for( auto lp : _byShortcutIndexed ) {
+        n--;
+        ss << (n ? "╟─" : "╙─") << " ";
+        if( lp.second->name() ) {
+            ss << "--" << lp.second->name();
+            if( lp.second->has_shortcut() ) {
+                ss << ",";
+            }
+        }
+        if( lp.second->has_shortcut() ) {
+            ss << "-" << lp.second->shortcut();
+        }
+        // TODO: other properties
+        ss << std::endl;
+    }
+    n = _dictionaries.size();
+    for( auto dctPair : _dictionaries ) {
+        n--;
+        std::list<std::string> sub;
+        dctPair.second->print_ASCII_tree( sub );
+        ss << " " << (n ? "╠═" : "╚═") << " < " ESC_CLRGREEN << dctPair.first << ESC_CLRCLEAR " > " << std::endl;
+        for( auto line : sub ) {
+            ss << (n ? "║ " : "  ") << line;
+        }
+    }
+
+    std::string line;
+    while( std::getline(ss, line) ) {
+        output.push_back( line );
+    }
+}
+
+
 // Configuration
 ///////////////
 
@@ -336,6 +393,7 @@ Configuration::extract( int argc,
     if( !_getoptCachesValid ) {
         _recache_getopt_arguments();
     }
+    assert( _cache_longOptionsPtr );
     const struct ::option * longOptions = reinterpret_cast<const ::option *>( _cache_longOptionsPtr );
     if( verbose ) {
         log_extraction( "== Short options string:\n\"%s\"\n"
@@ -350,6 +408,8 @@ Configuration::extract( int argc,
                      << std::endl;
         }
     }
+    // TODO: check whether getopt_long arguments (composed caches) are empty.
+    // If they are, RAISE EXCEPTION.
     int optIndex = 0, c;
     while( -1 != (c = getopt_long( argc, argv, _cache_shortOptionsPtr, longOptions, &optIndex )) ) {
         if( isalnum(c) ) {
@@ -376,10 +436,17 @@ Configuration::extract( int argc,
         } else if( 1 == c ) {
             // Indicates this is a kind of long option (without arg)
             assert( longOptions[optIndex].name );
-            log_extraction( "\"%s\" considered as option.\n", longOptions[optIndex].name );
+            log_extraction( "\"%s\" considered as an option.\n", longOptions[optIndex].name );
             auto pIt = _longOptions.find( longOptions[optIndex].name );
             if( _longOptions.end() == pIt ) {  // impossibru!
-                emraise( badState, "Option \"%s\" not found in caches.", longOptions[optIndex].name );
+                log_extraction( "Available options in long options cache:\n" );
+                if( _longOptions.empty() ) {
+                    log_extraction( "  <no long options in cache>\n" );
+                }
+                for( auto p : _longOptions ) {
+                    log_extraction( "  --%s\n", p.first.c_str() );
+                }
+                emraise( badState, "Option \"%s\" not found in caches!", longOptions[optIndex].name );
             }
             iSingularParameter & parameter = *(pIt->second);
             try {
@@ -434,8 +501,26 @@ Configuration::Configuration( const char * name_,
                                                       _getoptCachesValid( false ) {
 }
 
-Configuration::Configuration( const Configuration & orig ) : Dictionary( orig ) {
-    _TODO_  // TODO
+Configuration::Configuration( const Configuration & orig ) : Dictionary( orig ),
+                                                      _cache_longOptionsPtr( nullptr ),
+                                                      _cache_shortOptionsPtr( nullptr ),
+                                                      _getoptCachesValid( false ) {
+    _getoptCachesValid = false;
+    # if 0
+    for( auto shrtPair : orig._shortcuts ) {
+        char pathSpec[] = { shrtPair.first };
+        const iSingularParameter & myParRef = orig._get_parameter( pathSpec );
+        _shortcuts.emplace( shrtPair.first, &const_cast<iSingularParameter &>(myParRef) );
+        //std::cout << "XXX: copying shrtct " << shrtPair.first << std::endl;  // XXX
+    }
+    for( auto shrtPair : orig._longOptions ) {
+        char * pathSpec = strdup( shrtPair.first.c_str() );
+        const iSingularParameter & myParRef = orig._get_parameter( pathSpec );
+        _longOptions.emplace( shrtPair.first, &const_cast<iSingularParameter &>(myParRef) );
+        //std::cout << "XXX: copying long opt " << pathSpec << std::endl;  // XXX
+        free( pathSpec );
+    }
+    # endif
 }
 
 void
@@ -448,10 +533,13 @@ Configuration::_free_caches_if_need() const {
             }
         }
         delete [] reinterpret_cast<::option *>(_cache_longOptionsPtr);
+        _cache_longOptionsPtr = nullptr;
     }
     if( _cache_shortOptionsPtr ) {
         delete [] _cache_shortOptionsPtr;
+        _cache_shortOptionsPtr = nullptr;
     }
+    _getoptCachesValid = false;
 }
 
 Configuration::~Configuration() {
@@ -572,6 +660,24 @@ Configuration::get_parameter( const char path[] ) const {
 const iSingularParameter &
 Configuration::operator[]( const char path[] ) const {
     return get_parameter(path);
+}
+
+void
+Configuration::print_ASCII_tree( std::ostream & ss ) const {
+    std::list<std::string> fullOutput;
+    print_ASCII_tree( fullOutput );
+    for( auto line : fullOutput ) {
+        ss << line << std::endl;
+    }
+}
+
+void
+Configuration::print_ASCII_tree( std::list<std::string> & output ) const {
+    Dictionary::print_ASCII_tree( output );
+    if( output.empty() ) {
+        output.push_back( std::string("╚═ " ESC_BLDRED "<!empty!>" ESC_CLRCLEAR) );
+    }
+    output.push_front( std::string("╔═ << " ESC_BLDGREEN) + name() + ESC_CLRCLEAR " >>" );
 }
 
 }  // namespace dict
