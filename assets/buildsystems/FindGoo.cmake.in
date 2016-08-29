@@ -4,6 +4,7 @@ cmake_minimum_required( VERSION 3.1 )
 # Following variables should be defined once done:
 #  Goo_INCLUDE_DIRS     - include directories for Goo library
 #  Goo_LIBRARIES        - Goo libraries to link against
+#  Goo_LIBRARY_DIR      - Where Goo libraries is to be placed
 #  Goo_CC               - Goo C compiler
 #  Goo_C_CFLAGS         - Goo C compiler flags
 #  Goo_CXX              - Goo C++ compiler
@@ -66,6 +67,7 @@ set( Goo_CC             "@CMAKE_C_COMPILER@" )
 set( Goo_C_CFLAGS       "@CMAKE_C_FLAGS@"   )
 set( Goo_CXX            "@CMAKE_CXX_COMPILER@" )
 set( Goo_CXX_CFLAGS     "@CMAKE_CXX_FLAGS@" )
+set( Goo_LIBRARY_DIR    @CMAKE_INSTALL_PREFIX@/lib/goo )
 set( Goo_INSTALL_PREFIX @CMAKE_INSTALL_PREFIX@ )
 
 message( STATUS "Found goo library configuration:" )

@@ -22,6 +22,7 @@
 # - It defines the following variables
 #  Goo_INCLUDE_DIRS     - include directories for Goo library
 #  Goo_LIBRARIES        - Goo libraries to link against
+#  Goo_LIBRARY_DIR      - Where Goo libraries is to be placed
 #  Goo_CC               - Goo C compiler
 #  Goo_C_CFLAGS         - Goo C compiler flags
 #  Goo_CXX              - Goo C++ compiler
@@ -33,6 +34,7 @@
 
 set( Goo_INCLUDE_DIRS   "@CMAKE_INSTALL_PREFIX@/include/goo" )
 set( Goo_LIBRARIES      @Goo_LIBRARY@ )
+set( Goo_LIBRARY_DIR    @CMAKE_INSTALL_PREFIX@/lib/goo )
 set( Goo_INSTALL_PREFIX @CMAKE_INSTALL_PREFIX@ )
 
 set( Goo_CC             "@CMAKE_C_COMPILER@" )
