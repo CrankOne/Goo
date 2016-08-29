@@ -21,8 +21,22 @@
 cmake_minimum_required( VERSION 2.6 )
 project( Goo )
 
-set( GOO_VERSION_MAJOR 0 )
-set( GOO_VERSION_MINOR 1 )
+# Goo versioning:
+#   - The major (digit) indexes the Goo's revision number and may imply
+#   a massive changes of API.
+#   - The minor (digit) indexes the releases and pre-releasing versions.
+#   Setting it to odd numbers (1, 3, 5, etc.) implies that current version
+#   is a development one and different patches may not follow a fixed API.
+#   In contrast, setting minor number to even numbers (0, 2, 4, etc.)
+#   implies that this is a release version where API have not be changed
+#   without crusial need.
+#   - The patch postfix : alphanumerical identifier used to indicate latest
+#   patch applied for release version. For development minor numbers its
+#   form is arbitrary.
+set( Goo_VERSION_MAJOR 0  )
+set( Goo_VERSION_MINOR 1  )
+set( Goo_VERSION_PATCH dev )
+set( Goo_VERSION ${Goo_VERSION_MAJOR}.${Goo_VERSION_MINOR}.${Goo_VERSION_PATCH} )
 
 # This script builds Goo library with all dependent
 # utilities. The out-of-source build is mandatory way. Some code
@@ -55,13 +69,6 @@ option( ENABLE_DATASTREAMS      "Goo's serialization template classes."         
 option( ENABLE_PTREE            "Goo's getopt()-like mechanism."                    OFF)
 #\option
 option( HASKELL_MODULE          "Haskell extensions."                               OFF)
-# Install options:
-#\option
-option( GOO_INSTALL_HEADERS     "Install library headers at prefix path."           ON )
-#\option
-option( GENERATE_PKGCFG_MODULE  "Generates pkg-config module."                      ON )
-#\option
-option( GENERATE_CMAKE_MODULE   "Generates library's FindGoo.cmake module."         ON )
 
 #
 # Find third-party packages
@@ -97,11 +104,19 @@ if( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
     set(CMAKE_INSTALL_PREFIX "/usr/local" CACHE PATH "default install path" FORCE )
     message( STATUS "NOTE: Install prefix is set to \""
         ${CMAKE_INSTALL_PREFIX} "\" as it was set to default. "
+        "The -rpath won't be specified as it appears to be a "
+        "system path."
         "To override this specification, use -DCMAKE_INSTALL_PREFIX=<path> "
         "option." )
 else( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
     message( STATUS "NOTE: Install prefix is manually set to \""
         ${CMAKE_INSTALL_PREFIX} "\"." )
+    # ...
+    SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/goo")
+    SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    # the RPATH to be used when installing, but only if it's not a system directory
+    LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
 endif( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
 
 #
@@ -185,23 +200,35 @@ if( buildDir STREQUAL "debug" )
     message( STATUS "NOTE: debug build" )
     #\buildconf
     set( CMAKE_BUILD_TYPE "Debug" )
+    set( Goo_BUILD_POSTFIX "-dbg" )
 elseif( buildDir STREQUAL "release" )
     message( STATUS "NOTE: release build" )
     #\buildconf
     set( CMAKE_BUILD_TYPE "Release" )
+    set( Goo_BUILD_POSTFIX "" )
 elseif( buildDir STREQUAL "minsizerel" )
     message( STATUS "NOTE: minimized size build" )
     #\buildconf
     set( CMAKE_BUILD_TYPE "MinSizeRel" )
+    set( Goo_BUILD_POSTFIX "-msr" )
 elseif( buildDir STREQUAL "relwdebinfo" )
     message( STATUS "NOTE: release build with debugging info" )
     #\buildconf
     set( CMAKE_BUILD_TYPE "RelWithDebInfo" )
+    set( Goo_BUILD_POSTFIX "-rdbg" )
 else()
     message( STATUS "NOTE: custom build" )
     set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -DNDEBUG -O3" )
     set( CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -DNDEBUG -O3" )
+    set( Goo_BUILD_POSTFIX "" )
 endif()
+set( Goo_LIBRARY goo${Goo_BUILD_POSTFIX} )
+#set(VAR 
+#    $<$<CONFIG:Debug>:definition_for_debug>
+#    $<$<CONFIG:RelWithDebInfo>:definition_for_rel_with_debug>
+#    $<$<CONFIG:Release>:definition_for_release> 
+#    $<$<CONFIG:MinSizeRel>:definition_for_tight_release>
+#    )
 
 include_directories(
         ${GOO_LIB_INCLUDE_DIR}
@@ -215,25 +242,13 @@ configure_file (
     "${GOO_LIB_INCLUDE_DIR}/goo_config.h"
 )
 
-if( GENERATE_PKGCFG_MODULE )
-    configure_file (
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc.in"
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc"
-        @ONLY
-    )
-    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc"
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/share/pkgconfig )
-endif( GENERATE_PKGCFG_MODULE )
-
-if( GENERATE_CMAKE_MODULE )
-    configure_file (
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake.in"
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake"
-        @ONLY
-    )
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake"
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules )
-endif( GENERATE_CMAKE_MODULE )
+configure_file (
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc"
+    @ONLY
+)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc"
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/pkgconfig )
 
 # XXX :
 #if( GIT_FOUND )
@@ -246,36 +261,36 @@ endif( GENERATE_CMAKE_MODULE )
 
 #
 # Build Goo library
-add_library( goo SHARED
+add_library( ${Goo_LIBRARY} SHARED
         ${GOO_LIB_SOURCES}
         ${BISON_GDSParser_OUTPUTS}
         ${FLEX_GDSLexer_OUTPUTS}
     )
+set_target_properties(${Goo_LIBRARY} PROPERTIES VERSION ${Goo_VERSION}
+                                                     SOVERSION ${Goo_VERSION_MAJOR} )
 
-install( TARGETS goo LIBRARY DESTINATION lib )
-if( GOO_INSTALL_HEADERS )
-    install( DIRECTORY inc/ DESTINATION include/goo FILES_MATCHING PATTERN
-        "*.h" PATTERN "*.hpp" PATTERN "*.tcc" PATTERN "*.itcc" )
-endif( GOO_INSTALL_HEADERS )
+install( TARGETS ${Goo_LIBRARY} LIBRARY DESTINATION lib/goo )
+install( DIRECTORY inc/ DESTINATION include/goo FILES_MATCHING PATTERN
+    "*.h" PATTERN "*.hpp" PATTERN "*.tcc" PATTERN "*.itcc" )
 
 #
 # Misc third-party libraries
 if( ZLIB_FOUND )
-    target_link_libraries( goo ${ZLIB_LIBRARIES} )
+    target_link_libraries( ${Goo_LIBRARY} ${ZLIB_LIBRARIES} )
 endif( ZLIB_FOUND )
 if( LZO_FOUND )
-    target_link_libraries( goo ${LZO_LIB} )
+    target_link_libraries( ${Goo_LIBRARY} ${LZO_LIB} )
 endif( LZO_FOUND )
 if( BZIP2_FOUND )
-    target_link_libraries( goo ${BZIP2_LIBRARIES} )
+    target_link_libraries( ${Goo_LIBRARY} ${BZIP2_LIBRARIES} )
 endif( BZIP2_FOUND )
 
 if( EM_STACK_UNWINDING )
     if( BFD_FOUND )
-        target_link_libraries( goo ${BFD_LIBRARY} )
+        target_link_libraries( ${Goo_LIBRARY} ${BFD_LIBRARY} )
     endif( BFD_FOUND )
     if( HASKELL_MODULE )
-        target_link_libraries( goo HSrts-ghc${CMAKE_Haskell_NUMERIC_VERSION} )
+        target_link_libraries( ${Goo_LIBRARY} HSrts-ghc${CMAKE_Haskell_NUMERIC_VERSION} )
     endif( HASKELL_MODULE )
     # ... other backtrace libs here
 endif( EM_STACK_UNWINDING )
@@ -285,4 +300,27 @@ endif( EM_STACK_UNWINDING )
 # for build_<util> options see CMakeLists.txt in utils/
 #\project-subdir
 add_subdirectory(utils)
+
+#
+# CMake module/config outputs:
+if( build_unit_tests )
+    set( Goo_UT_EXECUTABLE  ${CMAKE_INSTALL_PREFIX}/bin/${Goo_UT_UTIL} )
+else( build_unit_tests )
+    set( Goo_UT_EXECUTABLE  Goo_UT_EXECUTABLE-NOTFOUND )
+endif( build_unit_tests )
+
+configure_file (
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake"
+    @ONLY
+)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake"
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules )
+configure_file (
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/GooConfig.cmake.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/GooConfig.cmake"
+    @ONLY
+)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/GooConfig.cmake"
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/goo )
 

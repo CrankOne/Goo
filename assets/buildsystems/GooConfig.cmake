@@ -18,21 +18,28 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-cmake_minimum_required( VERSION 2.6 )
-project(GooTests)
+# CMake config file for Goo library package
+# - It defines the following variables
+#  Goo_INCLUDE_DIRS     - include directories for Goo library
+#  Goo_LIBRARIES        - Goo libraries to link against
+#  Goo_CC               - Goo C compiler
+#  Goo_C_CFLAGS         - Goo C compiler flags
+#  Goo_CXX              - Goo C++ compiler
+#  Goo_CXX_CFLAGS       - Goo C++ compiler flags
+#  Goo_INSTALL_PREFIX   - Goo basic installation path
+# - If the unit test utility is enabled to build the following variables are
+# to be defined:
+#  Goo_UT_EXECUTABLE    - the Goo unit tests executable
 
-include_directories( "${PROJECT_SOURCE_DIR}/inc/"
-                     "${PROJECT_SOURCE_DIR}/../../inc/" )
-file(GLOB_RECURSE GooTests_SRCS src/*.c*)
+set( Goo_INCLUDE_DIRS   "/home/crank/Projects/goo.install/include/goo" )
+set( Goo_LIBRARIES      goo-dbg )
+set( Goo_INSTALL_PREFIX /home/crank/Projects/goo.install )
 
-set( Goo_UT_UTIL GooTests${Goo_BUILD_POSTFIX} CACHE STRING "Unit test util name" )
+set( Goo_CC             "/usr/bin/cc" )
+set( Goo_C_CFLAGS       "   -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99 -rdynamic"   )
 
-add_executable( ${Goo_UT_UTIL} ${GooTests_SRCS} )
-target_link_libraries( ${Goo_UT_UTIL} ${Goo_LIBRARY} )
+set( Goo_CXX            "/usr/bin/c++" )
+set( Goo_CXX_CFLAGS     " -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++11 -rdynamic" )
 
-install( TARGETS ${Goo_UT_UTIL} RUNTIME DESTINATION bin )
-
-find_package( GSL REQUIRED )
-
-target_link_libraries( GooTests${Goo_BUILD_POSTFIX} ${GSL_LIBRARIES} )
+set( Goo_UT_EXECUTABLE  /home/crank/Projects/goo.install/bin/GooTests-dbg )
 
