@@ -31,7 +31,9 @@ Dictionary::Dictionary( const Dictionary & orig ) : DuplicableParent( orig ) {
         //                    it->first,
         //                    clone_as<iAbstractParameter, iSingularParameter>( it->second ) )
         //    );
-        insert_parameter( clone_as<iAbstractParameter, iSingularParameter>( it->second ) );
+        if( it->second.second ) {
+            insert_parameter( clone_as<iAbstractParameter, iSingularParameter>( it->second.first ) );
+        }
     }
     for( auto it = orig._byShortcutIndexed.begin();
              it != orig._byShortcutIndexed.end(); ++it ) {
@@ -56,7 +58,9 @@ Dictionary::Dictionary( const Dictionary & orig ) : DuplicableParent( orig ) {
 Dictionary::~Dictionary() {
     for( auto it = _parameters.begin();
          it != _parameters.end(); ++it ) {
-        delete it->second;
+        if( it->second.second ) {
+            delete it->second.first;
+        }
     }
     for( auto it = _byShortcutIndexed.begin();
              it != _byShortcutIndexed.end(); ++it ) {
@@ -73,9 +77,13 @@ Dictionary::insert_parameter( iSingularParameter * instPtr ) {
     if( instPtr->has_shortcut() ) {
         _byShortcutIndexed.emplace( instPtr->shortcut(),
                                     instPtr );
+        if( instPtr->name() ) {
+            _parameters.insert( DECLTYPE(_parameters)::value_type( instPtr->name(),
+                                 std::pair<iSingularParameter *, bool>(instPtr, false) ) );
+        }
     } else if( instPtr->name() ) {
-        _parameters.emplace( instPtr->name(),
-                             instPtr );
+        _parameters.insert( DECLTYPE(_parameters)::value_type( instPtr->name(),
+                             std::pair<iSingularParameter *, bool>(instPtr, true ) ) );
     } else {
         emraise( badArchitect, "Got parameter without name and shortcut." );
     }
@@ -126,7 +134,7 @@ Dictionary::_append_options( const std::string & nameprefix,
     // Form long options struct:
     for( auto it  = _parameters.cbegin();
               it != _parameters.cend(); ++it ) {
-        iSingularParameter & pRef = *(it->second);
+        iSingularParameter & pRef = *(it->second.first);
         // Options at this container must not have
         // shortcuts as they are stored at _byShortcutIndexed
         assert( pRef.name() == it->first );
@@ -154,7 +162,7 @@ Dictionary::_append_configuration_caches(
     }
     for( auto it  = _parameters.cbegin();
               it != _parameters.cend(); ++it ) {
-        conf->_cache_parameter_by_full_name( nameprefix + "." + it->first, it->second );
+        conf->_cache_parameter_by_full_name( nameprefix + "." + it->first, it->second.first );
     }
     for( auto it  = _dictionaries.cbegin();
               it != _dictionaries.cend(); ++it ) {
@@ -198,10 +206,10 @@ Dictionary::_get_parameter( char path[] ) const {
             auto it = _parameters.find( current );
             if( it == _parameters.end() ) {
                 emraise( notFound,
-                     "Option \"%s\" not found in section \"%s\"",
+                     "Option \"%s\" (long name considered) not found in section \"%s\"",
                      current, name() ? name() : "<root>" );
             }
-            return *(it->second);
+            return *(it->second.first);
         } else if( path - current == 0 ) {
             emraise( badState, "Unexpected state of option path parser --- null option length."
                                "See sources for details." );
@@ -210,7 +218,7 @@ Dictionary::_get_parameter( char path[] ) const {
             auto it = _byShortcutIndexed.find( *current );
             if( it == _byShortcutIndexed.end() ) {
                 emraise( notFound,
-                     "Option \"%s\" not found in section \"%s\"",
+                     "Option \"%s\" (shortcut considered) not found in section \"%s\"",
                      current, name() ? name() : "<root>" );
             }
             return *(it->second);
@@ -233,10 +241,10 @@ Dictionary::is_consistant( std::map<std::string, const iSingularParameter *> & b
                            const std::string & prefix ) const {
     for( auto it  = _parameters.cbegin();
               it != _parameters.cbegin(); ++it ) {
-        if( it->second->is_mandatory() && !it->second->is_set() ) {
+        if( it->second.first->is_mandatory() && !it->second.first->is_set() ) {
             badParameters.emplace(
-                    prefix + it->second->name(),
-                    it->second
+                    prefix + it->second.first->name(),
+                    it->second.first
                 );
         }
     }
@@ -272,14 +280,14 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
     for( auto lp : _parameters ) {
         n--;
         ss << (n || hasShortcuts ? "╟─" : "╙─") << " ";
-        if( lp.second->name() ) {
-            ss << "--" << lp.second->name();
-            if( lp.second->has_shortcut() ) {
+        if( lp.second.first->name() ) {
+            ss << "--" << lp.second.first->name();
+            if( lp.second.first->has_shortcut() ) {
                 ss << ",";
             }
         }
-        if( lp.second->has_shortcut() ) {
-            ss << "-" << lp.second->shortcut();
+        if( lp.second.first->has_shortcut() ) {
+            ss << "-" << lp.second.first->shortcut();
         }
         // TODO: other properties
         ss << std::endl;

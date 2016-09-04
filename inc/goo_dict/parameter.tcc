@@ -12,6 +12,8 @@
 namespace goo {
 namespace dict {
 
+class InsertionProxy;
+
 template<typename ValueT>
 class iParameter;
 
@@ -21,7 +23,10 @@ class iParameter;
  *
  * We're tending to follow here to POSIX convention:
  * http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html#tag_12_02
- * extended with long name options, so option-arguments are never optional
+ * extended with GNU long options:
+ * https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html ,
+ *
+ * so the option-arguments are never optional
  * (see Guideline 7 of 12.2). That means one can not, for example, declare
  * an option `-c` with optional argument. Even if the `-c` option is a
  * logical flag the option-argument should either be necessarily presented,
@@ -37,19 +42,23 @@ class iParameter;
  *  - unnamed positional arguments
  *  - sections (dictionaries itself)
  *
+ * Flag can not be required (required=false)
+ *
+ * Required can not be set (set=false)
+ *
  * @ingroup appParameters
  */
 class iAbstractParameter : public mixins::iDuplicable<iAbstractParameter>/* {{{ */ {
 public:
     typedef UByte ParameterEntryFlag;
     static const ParameterEntryFlag
-            set,
-            flag,
-            positional,
-            atomic,
-            singular,
-            required,
-            shortened
+            set,            ///< Value is set (=false on init for required/flag/dict).
+            flag,           ///< Two-state logical parameter without an argument.
+            positional,     ///< Positional argument (=false for flag/dict).
+            atomic,         ///< Indicates true parameter (otherwise, it's a dictionary).
+            singular,       ///< Can be provided only once (=false for dict).
+            required,       ///< A mandatory parameter entry (=false for flag/dict).
+            shortened       ///< Has a shortcut (single-letter option, =false for positional).
         ;
 private:
     char * _name,           ///< Name of the option. Can be set to nullptr.
@@ -80,6 +89,10 @@ protected:
 
     /// Copy ctr.
     iAbstractParameter( const iAbstractParameter & );
+
+    /// Raises an exception if contradictory states are set for parameter
+    /// on initial stage.
+    void _check_initial_validity();
 public:
     virtual ~iAbstractParameter();
 
@@ -114,7 +127,7 @@ public:
         }
     /// Returns true, if parameter is a dictionary.
     bool is_dictionary() const {
-            return is_atomic();
+            return !is_atomic();
         }
     /// Returns true, if parameter has only one value.
     bool is_singular() const {
@@ -137,10 +150,7 @@ public:
             return _flags & shortened;
         }
 
-    // TODO?
-    // Raises malformedArguments if parameter is in a bad state.
-    // To be invoked by auxilliary routines after insertion is done.
-
+    friend class ::goo::dict::InsertionProxy;
 };  /*}}}*/ // class iAbstractParameter
 
 
@@ -267,6 +277,11 @@ iParameter<ValueT>::iParameter( const iParameter<ValueT> & o ) :
 
 template<typename ValueT> const ValueT &
 iParameter<ValueT>::value() const {
+    if( !is_set() ) {
+        emraise( uninitialized,
+            "Option %s has not been set while its value required.",
+            name());
+    }
     return _value;
 }
 
@@ -360,7 +375,8 @@ public:
  * Besides of true/false values, the following synonims are accepted:
  *      true : True, TRUE, yes, Yes, YES, enable, Enable, ENABLE, on, On, ON
  *      false: False, FALSE, no, No, NO, disable, Disable, DISABLE, off, Off, OFF
- * Note, that this kind of argument can not be required.
+ * 
+ * Note, that flag-option can not be required.
  * Possible construction variants:
  *      .p<bool>( 'v', "Enables verbose output" )
  *      .p<bool>( 'q', "Be quiet", true )
@@ -380,6 +396,13 @@ template<>
 class Parameter<bool> : public mixins::iDuplicable< iAbstractParameter, Parameter<bool>, iParameter<bool> > {
 public:
     typedef typename DuplicableParent::Parent::Value Value;
+protected:
+    /// Insertion proxy has access to protected members and can invoke this
+    /// method to make the parameter a flag;
+    void reset_flag() {
+        _set_is_flag_flag();
+        _set_value(false);
+    }
 public:
     //using Parameter<bool>::Value;
 
@@ -421,6 +444,8 @@ public:
 
     /// This method is used mostly by Configuration class.
     virtual void set_option( bool );
+
+    friend class ::goo::dict::InsertionProxy;
 
 protected:
     /// Sets parameter value from string. Following strings are acceptable

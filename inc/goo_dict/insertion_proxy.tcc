@@ -39,19 +39,18 @@ public:
 
     template<typename ParameterT, class ... Types> InsertionProxy &
     p( Types ... args ) {
-        _stack.top()->insert_parameter(
-                new Parameter<ParameterT>( args ... )
-            );
+        auto * p = new Parameter<ParameterT>( args ... );
+        p->_check_initial_validity();
+        _stack.top()->insert_parameter( p );
         return *this;
     }
 
     template<class ... Types> InsertionProxy &
     flag( Types ... args ) {
-        //Parameter * newParameterPtr = new Parameter<bool>( args ... );
-        //newParameterPtr->_check_initial_validity();
-        _stack.top()->insert_parameter(
-                new Parameter<bool>( args ... )  // TODO: mark it as a flag!
-            );
+        Parameter<bool> * newParameterPtr = new Parameter<bool>( args ... );
+        newParameterPtr->reset_flag();
+        newParameterPtr->_check_initial_validity();
+        _stack.top()->insert_parameter( newParameterPtr );
         return *this;
     }
 

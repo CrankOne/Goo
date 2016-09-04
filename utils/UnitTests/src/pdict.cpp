@@ -58,7 +58,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         goo::dict::Configuration conf( "theApplication1", "Testing parameter set #1." );
 
         conf.insertion_proxy()
-            .p<bool>( '1', "parameter-one",  "First parameter" )
+            .flag(    '1', "parameter-one",  "First parameter" )
             .flag(    'v', "Enables verbose output" )
             .p<bool>( 'q', "Be quiet", true )
             .p<bool>( "quiet", "Be quiet", true )
@@ -86,26 +86,33 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         _ASSERT(  conf["v"].as<bool>(),         "Option -v set wrong." );
         _ASSERT( !conf["q"].as<bool>(),         "Option -q set wrong." );
         _ASSERT(  conf["quiet"].as<bool>(),     "Option --quiet set wrong." );
-        //_ASSERT( !conf["verbose"].as<bool>(),   "Option --verbose set wrong." );  // TODO: expected `unset' exception
-        //_ASSERT( !conf["verbose2"].as<bool>(),  "Option --verbose2 set wrong or unavailable by its full name." );  // TODO
-        //_ASSERT( !conf["quiet2"].as<bool>(),    "Option --quiet2 set wrong or unavailable by its full name." );  // TODO
+
+        try {
+            conf["verbose"].as<bool>();
+        } catch( goo::Exception & e ) {
+            if( goo::Exception::uninitialized != e.code() ) { throw; }
+            // ok, this exception expected.
+        }
+
+        _ASSERT(  conf["verbose2"].as<bool>(),  "Option --verbose2 set to wrong value." );
+        _ASSERT(  !conf["quiet2"].as<bool>(),   "Option --quiet2 set wrong to wrong value." );
         // ...
         os << "} Basic tests done." << std::endl;
     }
     # endif
     // TODO : expected for pasing errors check
-    # if 0
+    # if 1
     {
         os << "List parameters tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication2", "Testing parameter set #2." );
 
         conf.insertion_proxy()
-            .p<bool>( '1', "parameter-one",  "First parameter" )
+            .flag( '1', "parameter-one",  "First parameter" )
             .list<bool>( 'b', "binary", "options array", {true, true, false, false} )
             .list<bool>( 'B', "options array", {false} )
             .list<bool>( "binary2", "options array" )
             .list<bool>( 'a', "options array" )
-            .p<bool>( 'v', "Enables verbose output" )
+            .flag( 'v', "Enables verbose output" )
             ;
 
         const char ex1[] = "./foo -1v -b true -b Off -b On --binary2 OFF --binary ON"
