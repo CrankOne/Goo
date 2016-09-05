@@ -29,6 +29,10 @@ cmake_minimum_required( VERSION 3.1 )
 
 list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "@CMAKE_INSTALL_PREFIX@/lib" isSystemDir)
 
+#unset(Goo_LIBRARIES)
+#unset(pc_goo_LIBDIR)
+#unset(pc_goo_LIBRARY_DIRS)
+
 # find pkg config
 find_package(PkgConfig)
 
@@ -41,14 +45,12 @@ if( ${PKGCONFIG_FOUND} )
     endif("${isSystemDir}" STREQUAL "-1")
     pkg_check_modules(pc_goo QUIET goo)  # use prefix wc_goo...
     if("${pc_goo_FOUND}" STREQUAL "1")
-        #message(STATUS "Goo includedirs:  " ${pc_goo_INCLUDE_DIRS} ", " ${pc_goo_INCLUDEDIR} )
-        #message(STATUS "Goo library dirs: " ${pc_goo_LIBDIR} ", " ${pc_goo_LIBRARY_DIRS} )
         # Locate headers by goo_config.h header:
         find_path( Goo_INCLUDE_DIRS goo_config.h
             HINTS ${pc_goo_INCLUDE_DIRS} ${pc_goo_INCLUDEDIR}
-            PATH_SUFFIXES goo )
+            PATH_SUFFIXES )
         # locate library by libgoo:
-        find_library( Goo_LIBRARIES NAMES goo libgoo
+        find_library( Goo_LIBRARIES NAMES @Goo_LIBRARY@ lib@Goo_LIBRARY@
             HINTS ${pc_goo_LIBDIR} ${pc_goo_LIBRARY_DIRS} )
         # Now, forward execution REQUIRED/QUIET to find_package_handle_standard_args() func:
         include(FindPackageHandleStandardArgs)
@@ -72,6 +74,7 @@ set( Goo_INSTALL_PREFIX @CMAKE_INSTALL_PREFIX@ )
 
 message( STATUS "Found goo library configuration:" )
 message( STATUS "    built for: @buildDir@" )
+message( STATUS " library dirs: " ${Goo_LIBRARY_DIR} )
 message( STATUS "      library: " ${Goo_LIBRARIES} )
 message( STATUS "  include dir: " ${Goo_INCLUDE_DIRS} )
 

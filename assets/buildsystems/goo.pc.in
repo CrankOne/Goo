@@ -1,12 +1,12 @@
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=${prefix}
 includedir=${prefix}/include/goo
-libdir=${exec_prefix}/lib
+libdir=${exec_prefix}/lib/goo
 commitHash=@COMMIT_HASH@
 
 Name: goo
 Description: The goo library.
 URL: https://bitbucket.org/CrankOne/goo
 Version: @Goo_VERSION_MAJOR@.@Goo_VERSION_MINOR@.@Goo_VERSION_PATCH@
-Cflags: -I${includedir}/goo @BUILD_CXX_FLAGS@
-Libs: -L${libdir} -l${Goo_LIBRARY}
+Cflags: @BUILD_CXX_FLAGS@
+Libs: -L${libdir} -l@Goo_LIBRARY@
