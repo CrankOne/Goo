@@ -22,6 +22,7 @@
 
 # include <cerrno>
 # include <cstring>
+# include <regex>
 # include "goo_utility.h"
 # include "goo_app.hpp"
 
@@ -41,11 +42,11 @@ namespace goo {
  * One probably should never inherit this class directly.
  *
  * Provides some non-template UNIX-specific system routines
- * like signal handling.
+ * like signal handling or environment variables parsing.
  *
- * One can insert arbitrary number of signal handlers.
- * When signal accepted, handling functions should be
- * invoked in reverse order of addition (the oldest is last).
+ * One can insert a number of signal handlers.
+ * When signal received, handling functions will be
+ * invoked in reverse order of insertion (the oldest is last).
  *
  * Currently, only following signal can be handled (descriptions taken
  * from http://www.yolinux.com/TUTORIALS/C++Signals.html):
@@ -60,8 +61,9 @@ namespace goo {
  *                  floating-point exceptions.
  *  + SIGUSR1 (10)  -- User-defined signal 1
  *  + SIGUSR2 (12)  -- User-defined signal 2
- *  + SIGPIPE (13)  -- Broken pipe (POSIX) Error condition like trying
- *                  to write to a socket which is not connected.
+ *  + SIGPIPE (13)  -- Broken pipe (POSIX) Special error condition.
+ *                  E.g. attempt to write to a socket which is not
+ *                  connected.
  *  + SIGALARM (14) -- Alarm clock (POSIX) Indicates expiration of a
  *                  timer. Used by the alarm() function.
  *  + SIGTERM (15)  -- Termination (ANSI) This signal can be blocked,
@@ -78,29 +80,52 @@ namespace goo {
 
 iApp * iApp::_self = nullptr;
 
+DECLTYPE( iApp::_documentedEnvVars ) iApp::_documentedEnvVars = nullptr;
+DECLTYPE( iApp::_handlers ) iApp::_handlers = nullptr;
+
+/** Raises 'nwGeneric' exception on failure.
+ */
+std::string
+iApp::hostname() {
+    char bf[128];
+    if( -1 == gethostname( bf, 128 ) ) {
+        emraise( nwGeneric, "Failed to get hostname: (%d) %s",
+            errno, strerror(errno) );
+    }
+    return bf;
+}
+
+//
+// Signal handlers
+
 /** The suppressDefault parameter has only sense when currently adding
  * handler is first. Whein suppressDefault=true, the default system
  * handler will be ignored.
  * @param code UNIX signal ID.
  * @param f callback instance
  * @param suppressDefault do default handler suppression.
- */ void
+ */
+void
 iApp::add_handler( SignalCode code,
                    SignalHandler f,
                    const std::string description,
                    bool suppressDefault ) {
-    // try to find and append appropriate handlers stack
-    auto _it = _handlers.find( code );
-    if( _it != _handlers.end() ) {
-        _it->second.push_back(
+    if( !_handlers ) {
+        _handlers = new std::remove_pointer<DECLTYPE(_handlers)>::type ();
+    }
+    // try to find and append appropriate handlers list
+    auto handlersStackIt = _handlers->find( code );
+    if( handlersStackIt != _handlers->end() ) {
+        // Append list:
+        handlersStackIt->second.push_back(
                 std::pair<SignalHandler, std::string>(
                         f, description
                     )
             );
-        if( suppressDefault ) {
-            wprintf( "default system \
-handler suppression has no effect when adding \
-handler is not first in stack." );
+        if( suppressDefault && 1 != handlersStackIt->second.size() ) {
+            wprintf( "default system "
+                     "handler suppression has no effect when adding "
+                     "handler is not first in stack." );
         }
         return;  // appending done, exit
     }
@@ -113,16 +138,17 @@ handler is not first in stack." );
     act.sa_sigaction = &(iApp::_signal_handler_dispatcher);
     act.sa_flags = SA_SIGINFO;
     if( sigaction(SIGINT, &act, &oldAct) < 0 ) {
-        emraise(common,"sigaction() error\n" );
+        emraise(thirdParty, "sigaction() returned an error: %s.\n",
+                            strerror(errno) );
     }
     // signal bound to dispatcher, now append the handlers stack
-    std::vector< std::pair<SignalHandler, std::string> > vec;
+    std::list< std::pair<SignalHandler, std::string> > lst;
     if( oldAct.sa_handler != SIG_DFL && !suppressDefault ) {
-        vec.push_back( std::pair<SignalHandler, std::string>(
+        lst.push_back( std::pair<SignalHandler, std::string>(
                 oldAct.sa_sigaction, "default handler") );
     }
-    vec.push_back( std::pair<SignalHandler, std::string>(f, description) );
-    _handlers[code] = vec;
+    lst.push_back( std::pair<SignalHandler, std::string>(f, description) );
+    _handlers->emplace(code, lst);
 };
 
 /** Uses STL's stream instance to dump registered handlers
@@ -130,11 +156,16 @@ handler is not first in stack." );
  *  Signal: <signal ID>
  *      <callback pointer address> <user's callback description>
  *      ...
+ * or prints "<default handlers>" if there is no one registered.
  *
  * @param os STL's ostream to print in.
  */ void
-iApp::dump_handlers( std::ostream & os ) const {
-    for( auto it = _handlers.cbegin(); it != _handlers.cend(); ++it ) {
+iApp::dump_handlers( std::ostream & os ) {
+    if( !_handlers || _handlers->empty() ) {
+        os << "<default handlers>" << std::endl;
+        return;
+    }
+    for( auto it = _handlers->cbegin(); it != _handlers->cend(); ++it ) {
         os << "Signal: " << it->first << std::endl;
         for(auto iit = it->second.cbegin(); iit != it->second.cend(); ++iit){
             os << "\t" << iit->first << " " << iit->second << std::endl;
@@ -146,34 +177,105 @@ void
 iApp::_signal_handler_dispatcher( int signum,
                                   siginfo_t *info,
                                   void * context ) {
-    auto entry = iApp::self()._handlers.find( (SignalCode) signum);
+    assert( _handlers );
+    auto entry = iApp::self()._handlers->find( (SignalCode) signum);
     for( auto it  = entry->second.crbegin();
               it != entry->second.crend(); ++it){
         (it->first)( signum, info, context );
     }
 }
 
-/** Raises 'common' exception on failure.
- */ std::string
-iApp::hostname() const {
-    char bf[128];
-    if( -1 == gethostname( bf, 128 ) ) {
-        emraise( common, "Failed to get hostname: (%d) %s",
-            errno, strerror(errno) );
+//
+// Environment variables
+
+void
+iApp::add_environment_variable(
+                const std::string & name,
+                const std::string & description ) {
+    if( !_documentedEnvVars ) {
+        _documentedEnvVars = new std::remove_pointer<DECLTYPE(_documentedEnvVars)>::type ();
     }
-    return bf;
+    auto insertionResult = _documentedEnvVars->emplace( name, description );
+    if( !insertionResult.second ) {
+        wprintf( "Environment variable \"%s\" description is already known "
+                 "and wasn't overriden.\n", name.c_str() );
+    }
 }
 
-/** Raises noSuchKey on failure.
+/**Second parameter specifies the value to be returned if
+ * there is no such environment variable or it is empty. If
+ * default value is nullptr, raises noSuchKey.
  *
- * @param nm name of environmental variable (e.g. PATH)
+ * @param nm        name of environment variable (e.g. PATH)
+ * @param default_  string value to be returned if no such envvar.
  */ std::string
-iApp::envvar( const std::string & nm ) const {
-    char * var = getenv(nm.c_str());
-    if(!var) {
-        emraise(noSuchKey, "No such envvar in current context: %s", nm.c_str());
+iApp::envvar( const std::string & nm, const char * default_ ) {
+    # ifndef NDEBUG
+    if( !_documentedEnvVars
+      || _documentedEnvVars->end() == _documentedEnvVars->find(nm) ) {
+        wprintf( "(dev) Environment variable %s is not documented.\n",
+                 nm.c_str() );
+    }
+    # endif
+    char * var = ::std::getenv(nm.c_str());
+    if(!var || '\0' == *var ) {
+        if(!default_) {
+            emraise(noSuchKey, "Environment variable %s is not defined.", nm.c_str());
+        } else {
+            return default_;
+        }
     }
     return var;
+}
+
+
+bool
+iApp::envvar_as_logical( const std::string & envVarName ) {
+    # ifndef NDEBUG
+    if( !_documentedEnvVars
+      || _documentedEnvVars->end() == _documentedEnvVars->find(envVarName) ) {
+        wprintf( "(dev) Environment variable %s is not documented.\n",
+                 envVarName.c_str() );
+    }
+    # endif
+    char * var = ::std::getenv(envVarName.c_str());
+    if( !var ) {
+        return false;
+    }
+    // use regex to parse
+    static const std::regex trueRx(  "(enable|yes|true|on|1)",   std::regex::ECMAScript | std::regex::icase ),
+                            falseRx( "(disable|no|false|off|0)", std::regex::ECMAScript | std::regex::icase )
+                            ;
+    std::cmatch cm;
+    if( std::regex_match( var, cm, trueRx ) ) {
+        return true;
+    } else if( std::regex_match( var, cm, falseRx ) ) {
+        return false;
+    } else {
+        wprintf( "Couldn't interpret environment variable value %s:\"%s\" "
+                 "as a logical literal. \"False\" value returned.\n",
+                 envVarName.c_str(), var );
+        return false;
+    }
+}
+
+/** Uses STL's stream instance to dump registered environment vars
+ * line-by-line in form:
+ *  Envvar: <signal ID> #<execNum>
+ *      <description>
+ *      ...
+ * or prints "<No envvars look-up>" if there is no one known.
+ *
+ * @param os STL's ostream to print in.
+ */ void
+iApp::dump_envvars( std::ostream & os ) {
+    if( !_documentedEnvVars || _documentedEnvVars->empty() ) {
+        os << "<No envvars look-up>" << std::endl;
+        return;
+    }
+    for( auto p : *_documentedEnvVars ) {
+        
+    }
 }
 
 }  // namespace goo::aux

@@ -28,6 +28,8 @@
 # include <signal.h>
 # include <string>
 # include <map>
+# include <unordered_map>
+# include <list>
 # include <utility>
 # include <vector>
 # include <typeinfo>
@@ -60,9 +62,12 @@ public:
     };
 protected:
     /// Registered handlers. Should be invoked in order of addition.
-    std::map<SignalCode,
-                std::vector<
-                    std::pair<SignalHandler, std::string> > > _handlers;
+    static std::map<SignalCode,
+                std::list<
+                    std::pair<SignalHandler, std::string> > > * _handlers;
+
+    /// Stores documentation for environment variables.
+    static std::unordered_map<std::string, std::string> * _documentedEnvVars;
 
     /// Private method that dispatches system signals to app.
     static void _signal_handler_dispatcher(int signum, siginfo_t *info, void * context);
@@ -80,23 +85,45 @@ public:
     /// Returns application instance.
     static iApp & self() { assert(_self); return *_self; }
 
-    /// Adds new handler to handlers stack.
-    void add_handler( SignalCode, SignalHandler, const std::string, bool suppressDefault=false );
-
-    /// Prints bound hadlers to stream.
-    void dump_handlers( std::ostream & ) const;
-
-    /// Alias to standard UNIX getpid() function.
-    inline pid_t PID() const { return getpid(); }
+    /// Returns true, if instance was created.
+    static bool exists() { return !!_self; }
 
     /// C++ alias to standart UNIX hethostname() function.
-    std::string hostname() const;
+    static std::string hostname();
 
-    /// Goo's alias to acquire environmental variable (std::getenv())
-    std::string envvar( const std::string & ) const;
+    //
+    // Work with signal handlers
 
-    /// Returns true, if instance was created.
-    static bool exists() { return _self; }
+    /// Adds new handler to handlers stack.
+    static void add_handler( SignalCode, SignalHandler, const std::string, bool suppressDefault=false );
+
+    /// Prints bound hadlers to stream.
+    static void dump_handlers( std::ostream & );
+
+    /// Alias to standard UNIX getpid() function.
+    static pid_t PID() { return getpid(); }
+
+    //
+    // Work with environment variables
+
+    /// Goo's alias to acquire environment variable (std::getenv())
+    static std::string envvar( const std::string &, const char * default_=nullptr );
+
+    /// Parses environment variable as logical one.
+    /// Receptive to "1", "true", "yes" or "0", "false", "no".
+    /// Note, that in contrary to envvar() absence of
+    /// the variable will cause returning false (not the noSuchKey
+    /// exception).
+    static bool envvar_as_logical( const std::string & );
+
+    /// Adds envvar description that is printed in help message.
+    static void add_environment_variable(
+                const std::string & name,
+                const std::string & description );
+
+    /// Prints formatted message describing documented environment
+    /// variables.
+    static void dump_envvars( std::ostream & );
 
     template<typename ConfigObjectT,
              typename LogStreamT> friend class goo::App;
