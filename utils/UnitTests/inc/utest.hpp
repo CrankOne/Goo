@@ -1,6 +1,3 @@
-# ifndef H_GOO_UTEST_H
-# define H_GOO_UTEST_H
-
 /*
  * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
  * Author: Renat R. Dusaev <crank@qcrypt.org>
@@ -22,6 +19,9 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
+# ifndef H_GOO_UTEST_H
+# define H_GOO_UTEST_H
 
 # include <string>
 # include <map>
@@ -79,6 +79,7 @@ private:
     static std::unordered_set<TestingUnit*> _modules;
     std::string _appName;
 protected:
+
     /// Creates instance of type ConfigObjectT according to command-line arguments
     virtual Config * _V_construct_config_object( int argc, char * const argv[] ) const override;
     /// Configures application according to recently constructed config object.
@@ -87,6 +88,7 @@ protected:
     virtual std::ostream * _V_acquire_stream() override;
     /// Run configured application.
     virtual int _V_run() override;
+
     /// Sets up all dependencies enlisted in units descriptions.
     void _incorporate_dependencies();
     /// Run module wrapper routine. Result < 0 indicates an error.
