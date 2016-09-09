@@ -19,18 +19,16 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 cmake_minimum_required( VERSION 2.6 )
-project(gooUtils)
+project(GooSystemTests)
 
-#\option
-option(build_unit_tests     "build unit testing util"   ON)
-#\option
-option(build_system_tests   "build system testing util" ON)
+include_directories( "${PROJECT_SOURCE_DIR}/inc/"
+                     "${PROJECT_SOURCE_DIR}/../../inc/" )
+file(GLOB_RECURSE GooSysTests_SRCS src/*.c*)
 
-if( build_unit_tests )
-    add_subdirectory(UnitTests)
-endif()
+set( Goo_ST_UTIL GooSTests${Goo_BUILD_POSTFIX} CACHE STRING "System tests util name" )
 
-if( build_system_tests )
-    add_subdirectory(SystemTests)
-endif()
+add_executable( ${Goo_ST_UTIL} ${GooSysTests_SRCS} )
+target_link_libraries( ${Goo_ST_UTIL} ${Goo_LIBRARY} )
+
+install( TARGETS ${Goo_ST_UTIL} RUNTIME DESTINATION bin )
 
