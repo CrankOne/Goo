@@ -30,7 +30,7 @@
 # include <set>
 
 # include "goo_exception.hpp"
-# include "goo_iterable.tcc"
+# include "goo_mixins/iterable.tcc"
 
 namespace goo {
 

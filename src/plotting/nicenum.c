@@ -20,7 +20,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-# include "goo_nicenum.h"
+# include "goo_plotting/nicenum.h"
 
 # include <stdint.h>
 # include <math.h>

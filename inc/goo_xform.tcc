@@ -27,6 +27,7 @@
 # include "goo_exception.hpp"
 # include <list>
 # include <cassert>
+# include <ostream>
 
 /**@file xform.tcc
  * @brief An X-Form and automatically adjustable numerical ranges templates.

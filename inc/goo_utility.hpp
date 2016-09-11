@@ -23,6 +23,8 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+# include "goo_types.h"
+
 # include <string>
 # include <type_traits>
 # include <thread>
@@ -30,7 +32,7 @@
 # include <chrono>
 # include <map>
 # include <vector>
-# include "goo_mixins.tcc"
+# include <cmath>
 
 namespace std {
 template<bool B, typename T = void> using disable_if = enable_if<!B, T>;

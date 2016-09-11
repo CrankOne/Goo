@@ -25,4 +25,6 @@ It contains five files:
     ├── main.cpp                # entry point implementation file
     └── README.md               # this readme file
 
+which are complete example of minimal application. See comments in
+sources for details.
 

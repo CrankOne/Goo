@@ -25,7 +25,7 @@
 
 # include "goo_config.h"
 # include "goo_exception.hpp"
-# include "goo_mixins.tcc"
+# include "goo_mixins/basicOperators.tcc"
 # include <iterator>
 
 namespace goo {
