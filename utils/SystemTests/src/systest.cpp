@@ -28,6 +28,7 @@ namespace goo {
 namespace systest {
 
 struct Config {
+    int nSecsTimeout;
 };
 
 SysTestApp::SysTestApp() {}
@@ -38,7 +39,13 @@ Config *
 SysTestApp::_V_construct_config_object( int argc, char * const argv[] ) const {
     // default config object:
     Config * cfg = new Config;
-    // TODO: configure cfg according to argv[] ?
+
+    if( 2 == argc ) {
+        cfg->nSecsTimeout = atoi(argv[1]);
+    } else {
+        cfg->nSecsTimeout = 5;
+    }
+
     return cfg;
 }
 
@@ -55,7 +62,11 @@ SysTestApp::_V_acquire_stream() {
 
 int
 SysTestApp::_V_run() {
-    // TODO: do things
+    printf( "Sleeping for %d seconds...\n", co().nSecsTimeout );
+    sleep(co().nSecsTimeout);
+    printf( "Causing a segmentation failure to receive a termination signal...\n" );
+    int a = (3 + *((char *) 0));
+    ((void)a);
     return EXIT_SUCCESS;
 }
 

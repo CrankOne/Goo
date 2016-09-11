@@ -21,6 +21,13 @@
 cmake_minimum_required( VERSION 2.6 )
 project(GooSystemTests)
 
+if( NOT GDB_EXEC AND NOT GCORE_EXEC )
+    message( FATAL_ERROR "Couldn't find gdb nor gcore executable." )
+else()
+    message( STATUS "(4 systests) Found gdb ..... : ${GDB_EXEC}" )
+    message( STATUS "(4 systests) Found gcore ... : ${GCORE_EXEC}" )
+endif()
+
 include_directories( "${PROJECT_SOURCE_DIR}/inc/"
                      "${PROJECT_SOURCE_DIR}/../../inc/" )
 file(GLOB_RECURSE GooSysTests_SRCS src/*.c*)

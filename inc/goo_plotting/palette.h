@@ -23,48 +23,60 @@
 # ifndef H_HPH_PALETTE_H
 # define H_HPH_PALETTE_H
 
+/**@file palette.h
+ * @brief C-header declaring palette routines
+ *
+ * File containing declaration of types and routines performing mapping from real
+ * value to RGB(A)-color. The "standard" color functions for palette declared here
+ * as an array of callbacks are similar to ones that can be found in gnuplot.
+ */
+
 # include "goo_types.h"
-
-typedef double (*ColorFunction)( double );
-
-# ifndef PLOTTER_PARALLEL_TREATMENT_THR
-#   define PLOTTER_PARALLEL_TREATMENT_THR 40
-# endif
-
-# ifndef PLOTTER_PARALLEL_TREATMENT_MAX_NTHREADS
-#   define PLOTTER_PARALLEL_TREATMENT_MAX_NTHREADS 6
-# endif
 
 # ifdef __cplusplus
 extern "C" {
 # endif
 
-extern ColorFunction plottingPalettes[41];  // 33 13 10
-extern UByte nPlottingTicksDefault;
+/** A color function type performing match from real value
+ * to color ([0..1] -> [0..1]).*/
+typedef double (*ColorFunction)( double );
 
-typedef struct {
-    UByte R;
-    UByte G;
-    UByte B;
+/** Pre-defined ("standard") color functions array corresponding to "gnuplot". */
+extern ColorFunction plottingPalettes[41];  /* 33 13 10 */
+
+/** A basic Goo RGB color type. */
+typedef union {
+    struct { UByte r,g,b; } byChannel;
+    UByte byte[3];
 } goo_RGB;
 
-typedef struct {
-    UByte R;
-    UByte G;
-    UByte B;
-    UByte A;
+/** A basic Goo HSV color type. */
+typedef union {
+    struct { Float8 h,s,v; } byComponent;
+    Float8 byte[3];
+} goo_HSV;
+
+/** A basic goo RGBA color type (RGB with alpha-channel). */
+typedef union {
+    struct { UByte r,g,b,a; } byChannel;
+    UByte byte[4];
 } goo_RGBA;
 
+/** A basic RGBA palette structure containing pointers to color functions. */
 typedef struct {
-    UByte invert;
     ColorFunction RedF;
     ColorFunction GreenF;
     ColorFunction BlueF;
 } goo_Palette;
 
-goo_RGB dbl2rgb( double val,
-             double min, double max,
-             goo_Palette * pt );
+/**@brief Value-to-RGB color conversion function.
+ *
+ * Takes value with bounds, palette, and produces the RGB struct.
+ * */
+goo_RGB real_to_rgb( double val,
+                     double min,
+                     double max,
+                     goo_Palette * pt );
 
 # ifdef __cplusplus
 }

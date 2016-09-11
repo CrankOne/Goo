@@ -72,12 +72,16 @@ option( HASKELL_MODULE          "Haskell extensions."                           
 
 #
 # Find third-party packages
-# 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/contrib/cmake")
 find_package( ZLIB  )
 find_package( Lzo   )
 find_package( BZip2 )
 find_package( Git   )
+#unset( GDB_EXEC CACHE )  # XXX
+#unset( GCORE_EXEC CACHE )  # XXX
+find_program( GDB_EXEC      gdb     )
+find_program( GCORE_EXEC    gcore   )
+#find_program( KILL_EXEC     kill     )
 if( EM_STACK_UNWINDING )
     find_package( BFD REQUIRED )
     find_package( LibIberty REQUIRED )

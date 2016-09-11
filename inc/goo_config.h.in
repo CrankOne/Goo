@@ -114,5 +114,12 @@
 #   define GOO_STREAMS_DEFAULT_POSITION   GOO_SIZE_TYPE
 # endif
 
+/*
+ * Found system utils
+ */
+
+#cmakedefine GDB_EXEC       "@GDB_EXEC@"
+#cmakedefine GCORE_EXEC     "@GCORE_EXEC@"
+
 # endif /* H_GOO_CONFIG_H */
 

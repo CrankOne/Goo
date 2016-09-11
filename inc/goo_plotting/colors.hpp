@@ -24,6 +24,8 @@
 # ifndef H_GOO_COLORS_H
 # define H_GOO_COLORS_H
 
+# include "palette.h"
+
 namespace goo {
 
 #define MIN3(x,y,z)  ((y) <= (z) ? \

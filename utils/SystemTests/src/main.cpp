@@ -21,10 +21,47 @@
  */
 
 # include <cstdlib>
+# include <iostream>
 # include "systest.hpp"
+
+static void
+create_pidfile(int, siginfo_t *, void*) {
+    char buf[64]; 
+    snprintf( buf, sizeof(buf), "touch sigint-%d.tmp", getpid() );
+    system(buf);
+}
 
 int
 main(int argc, char * argv[]) {
+    namespace ga = goo::aux;
+
+    ga::iApp::add_handler(
+            ga::iApp::_SIGINT,
+            create_pidfile,
+            "Testing function --- creates a file in CWD with name sigint-<pid>.tmp",
+            false
+        );
+
+    # ifdef GDB_EXEC
+    ga::iApp::add_handler(
+            ga::iApp::_SIGSEGV,
+            ga::iApp::attach_gdb,
+            "Attaches gdb to a process after SIGTERM.",
+            false
+        );
+    # endif
+
+    # ifdef GCORE_EXEC
+    ga::iApp::add_handler(
+            ga::iApp::_SIGSEGV,
+            ga::iApp::dump_core,
+            "Creates a core.<pid> coredump file in CWD.",
+            false
+        );
+    # endif
+
+    ga::iApp::dump_signal_handlers( std::cout );
+
     return goo::systest::SysTestApp::init(
         argc, argv, new goo::systest::SysTestApp() )->run();
 }

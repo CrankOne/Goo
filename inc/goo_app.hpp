@@ -47,6 +47,9 @@ template<typename ConfigObjectT,
 
 namespace aux {
 
+
+
+
 /// Abstract application base class.
 class iApp {
 public:
@@ -55,11 +58,30 @@ public:
 
     /// System signal code.
     enum SignalCode {
-        _SIGHUP   = 1,          _SIGINT   = 2,          _SIGFPE   = 8,
-        _SIGUSR1  = 10,         _SIGUSR2  = 12,         _SIGPIPE  = 13,
-        _SIGALARM = 14,         _SIGTERM  = 15,         _SIGCHLD  = 17,
-        _SIGCONT  = 18,         _SIGSTP   = 20,
+        _SIGHUP   = SIGHUP,   ///< Hangup
+        _SIGINT   = SIGINT,   ///< Terminal interrupt signal.
+        _SIGFPE   = SIGFPE,   ///< Erroneous arithmetic operation.
+        _SIGUSR1  = SIGUSR1,  ///< User-defined signal 1.
+        _SIGSEGV  = SIGSEGV,  ///< Invalid memory reference.
+        _SIGUSR2  = SIGUSR2,  ///< User-defined signal 2.
+        _SIGPIPE  = SIGPIPE,  ///< Write on a pipe with no one to read it.
+        _SIGALRM  = SIGALRM,  ///< Alarm clock.
+        _SIGTERM  = SIGTERM,  ///< Termination signal.
+        _SIGCHLD  = SIGCHLD,  ///< Child process terminated, stopped, or continued.
+        _SIGCONT  = SIGCONT,  ///< Continue executing, if stopped.
+        _SIGTSTP  = SIGTSTP,  ///< Terminal stop signal.
     };
+
+    # ifdef GDB_EXEC
+    /// Attach gdb signal handler callback.
+    static void attach_gdb(int, siginfo_t *, void*);
+    # endif
+
+    # ifdef GCORE_EXEC
+    /// Core dumping signal handler callback.
+    static void dump_core(int, siginfo_t *, void*);
+    # endif
+
 protected:
     /// Registered handlers. Should be invoked in order of addition.
     static std::map<SignalCode,
@@ -98,7 +120,7 @@ public:
     static void add_handler( SignalCode, SignalHandler, const std::string, bool suppressDefault=false );
 
     /// Prints bound hadlers to stream.
-    static void dump_handlers( std::ostream & );
+    static void dump_signal_handlers( std::ostream & );
 
     /// Alias to standard UNIX getpid() function.
     static pid_t PID() { return getpid(); }

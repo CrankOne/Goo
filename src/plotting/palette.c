@@ -34,60 +34,46 @@
 # include <limits.h>
 # include <unistd.h>
 
-# ifdef PNG_FOUND
-# ifndef NDEBUG
-# define PNG_DEBUG 3
-# else
-# define PNG_DEBUG 0
-# endif
-# include <png.h>
-# endif
-
 # ifndef MAX
 #   define MAX(a, b) (a > b ? a : b)
 # endif
 
 # define expt(a, n) pow(a, (double)(n))
 
-UByte nPlottingTicksDefault = 10;
-
-typedef goo_Palette Palette;
-typedef goo_RGB RGB;
-
 /* /// palettes /// */
-double p00( double a ) { return 0; }
-double p01( double a ) { return 0.5; }
-double p02( double a ) { return 1.; }
-double p03( double a ) { return a; }
-double p04( double a ) { return a*a; }
-double p05( double a ) { return a*a*a; }
-double p06( double a ) { return pow(a, 4); }
-double p07( double a ) { return sqrt(a); }
-double p08( double a ) { return sqrt(sqrt(a)); }
-double p09( double a ) { return sin(M_PI*a/2); }
-double p10( double a ) { return cos(M_PI*a/2); }
-double p11( double a ) { return fabs(a-0.5); }
-double p12( double a ) { return pow( 2*a-1, 2 ); }
-double p13( double a ) { return sin( M_PI*a ); }
-double p14( double a ) { return fabs(cos( M_PI*a )); }
-double p15( double a ) { return sin( 2*M_PI*a ); }
-double p16( double a ) { return cos( 2*M_PI*a ); }
-double p17( double a ) { return fabs(sin( 2*M_PI*a )); }
-double p18( double a ) { return fabs(cos( 2*M_PI*a )); }
-double p19( double a ) { return fabs(sin( 4*M_PI*a )); }
-double p20( double a ) { return fabs(cos( 4*M_PI*a )); }
-double p21( double a ) { return 3*a; }
-double p22( double a ) { return 3*a-1; }
-double p23( double a ) { return 3*a-2; }
-double p24( double a ) { return fabs(3*a-1); }
-double p25( double a ) { return fabs(3*a-2); }
-double p26( double a ) { return (3*a-1)/2; }
-double p27( double a ) { return (3*a-2)/2; }
-double p28( double a ) { return fabs(3*a-1)/2; }
-double p29( double a ) { return fabs(3*a-2)/2; }
-double p30( double a ) { return a/0.32-0.78125; }
-double p31( double a ) { return 2*a-0.84; }
-double p32( double a ) {
+static double p00( double a ) { return 0; }
+static double p01( double a ) { return 0.5; }
+static double p02( double a ) { return 1.; }
+static double p03( double a ) { return a; }
+static double p04( double a ) { return a*a; }
+static double p05( double a ) { return a*a*a; }
+static double p06( double a ) { return pow(a, 4); }
+static double p07( double a ) { return sqrt(a); }
+static double p08( double a ) { return sqrt(sqrt(a)); }
+static double p09( double a ) { return sin(M_PI*a/2); }
+static double p10( double a ) { return cos(M_PI*a/2); }
+static double p11( double a ) { return fabs(a-0.5); }
+static double p12( double a ) { return pow( 2*a-1, 2 ); }
+static double p13( double a ) { return sin( M_PI*a ); }
+static double p14( double a ) { return fabs(cos( M_PI*a )); }
+static double p15( double a ) { return sin( 2*M_PI*a ); }
+static double p16( double a ) { return cos( 2*M_PI*a ); }
+static double p17( double a ) { return fabs(sin( 2*M_PI*a )); }
+static double p18( double a ) { return fabs(cos( 2*M_PI*a )); }
+static double p19( double a ) { return fabs(sin( 4*M_PI*a )); }
+static double p20( double a ) { return fabs(cos( 4*M_PI*a )); }
+static double p21( double a ) { return 3*a; }
+static double p22( double a ) { return 3*a-1; }
+static double p23( double a ) { return 3*a-2; }
+static double p24( double a ) { return fabs(3*a-1); }
+static double p25( double a ) { return fabs(3*a-2); }
+static double p26( double a ) { return (3*a-1)/2; }
+static double p27( double a ) { return (3*a-2)/2; }
+static double p28( double a ) { return fabs(3*a-1)/2; }
+static double p29( double a ) { return fabs(3*a-2)/2; }
+static double p30( double a ) { return a/0.32-0.78125; }
+static double p31( double a ) { return 2*a-0.84; }
+static double p32( double a ) {
     if( a < 0.25 ) {
         return 4*a;
     } else if( a < 0.42 ) {
@@ -98,10 +84,10 @@ double p32( double a ) {
         return a/0.08-11.5;
     }
 }
-double p33( double a ) { return fabs( 2*a-0.5 ); }
-double p34( double a ) { return 2*a; }
-double p35( double a ) { return 2*a-0.5; }
-double p36( double a ) { return 2*a-1; }
+static double p33( double a ) { return fabs( 2*a-0.5 ); }
+static double p34( double a ) { return 2*a; }
+static double p35( double a ) { return 2*a-0.5; }
+static double p36( double a ) { return 2*a-1; }
 
 ColorFunction plottingPalettes[] = {
     p00, p01, p02, p03, p04, p05, p06, p07,
@@ -111,10 +97,11 @@ ColorFunction plottingPalettes[] = {
     p32, p33, p34, p35, p36
 };
 
-RGB
-dbl2rgb( double val,
-         double min, double max,
-         Palette * pt ) {
+goo_RGB
+real_to_rgb( double val,
+             double min,
+             double max,
+             goo_Palette * pt ) {
     double proto = (val-min)/(max-min);
     double clcd[3] = {
             (pt->RedF(   proto )),
@@ -127,15 +114,45 @@ dbl2rgb( double val,
         } else if ( clcd[i] < 0 ) {
             clcd[i] = 0.;
         }
-        if( pt->invert & (int) pow( 0x2, i ) ) {
-            clcd[i] = 1 - clcd[i];
-        }
     }
-    RGB res = {
+    goo_RGB res = { {
             UCHAR_MAX*clcd[0],
             UCHAR_MAX*clcd[1],
             UCHAR_MAX*clcd[2],
-        };
+        } };
     return res;
+}
+
+void
+rgb_to_hsv(goo_RGB rgb, goo_HSV * outHsv) {
+    float r = rgb.byte[0] / ((float)UCHAR_MAX),
+          g = rgb.byte[1] / ((float)UCHAR_MAX),
+          b = rgb.byte[2] / ((float)UCHAR_MAX)
+          ;
+    float max = fmaxf(fmaxf(r, g), b),
+          min = fminf(fminf(r, g), b),
+          delta = max - min
+          ;
+    if( !!delta ) {
+        float hue;
+        if (r == max) {
+            hue = (g - b) / delta;
+        } else {
+            if (g == max) {
+                hue = 2 + (b - r) / delta;
+            } else {
+                hue = 4 + (r - g) / delta;
+            }
+        }
+        hue *= 60;
+        if (hue < 0) {
+            hue += 360;
+        }
+        outHsv->byComponent.h = hue;
+    } else {
+        outHsv->byComponent.h = 0;
+    }
+    outHsv->byComponent.s = max == 0 ? 0 : (max - min) / max;
+    outHsv->byComponent.v = max;
 }
 
