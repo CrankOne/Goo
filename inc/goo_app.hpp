@@ -53,14 +53,28 @@ namespace aux {
 /// Abstract application base class.
 class iApp {
 public:
-    /// System signal handler callback type.
-    typedef void(*SignalHandler)(int, siginfo_t *, void*);
+    /// System signal handler callback type; only difference from std UNIX
+    /// handler type is bool returning value indicating whether default
+    /// action must be avoided. To avoid default behaviour after all hanlers
+    /// were triggered, at least one of them should return true.
+    typedef void(*SystemSignalHandler)(int, siginfo_t *, void*);
 
-    /// System signal code.
+    enum HandlerResult : UByte {
+        stopHandling = 0x1,
+        omitDefaultAction = 0x2,
+    };
+
+    /// Returns flags composed with HandlerResult entries.
+    typedef UByte(*SignalHandler)(int, siginfo_t *, void*);
+
+    /// System signal code (only POSIX).
     enum SignalCode {
         _SIGHUP   = SIGHUP,   ///< Hangup
         _SIGINT   = SIGINT,   ///< Terminal interrupt signal.
+        _SIGQUIT  = SIGQUIT,  ///< Quit from keyboard.
+        _SIGILL   = SIGILL,   ///< Illegal instruction.
         _SIGFPE   = SIGFPE,   ///< Erroneous arithmetic operation.
+        _SIGABRT  = SIGABRT,  ///< Abort signal from abort() (see $ man 3 abort).
         _SIGUSR1  = SIGUSR1,  ///< User-defined signal 1.
         _SIGSEGV  = SIGSEGV,  ///< Invalid memory reference.
         _SIGUSR2  = SIGUSR2,  ///< User-defined signal 2.
@@ -70,23 +84,33 @@ public:
         _SIGCHLD  = SIGCHLD,  ///< Child process terminated, stopped, or continued.
         _SIGCONT  = SIGCONT,  ///< Continue executing, if stopped.
         _SIGTSTP  = SIGTSTP,  ///< Terminal stop signal.
+        _SIGTTIN  = SIGTTIN,  ///< Terminal input for background process.
+        _SIGTTOU  = SIGTTOU,  ///< Terminal output for background process.
+
+    };
+
+    struct HandlerEntry {
+        bool typeIsSystem;
+        union {
+            SystemSignalHandler _system;
+            SignalHandler _custom;
+        };
+        std::string description;
     };
 
     # ifdef GDB_EXEC
     /// Attach gdb signal handler callback.
-    static void attach_gdb(int, siginfo_t *, void*);
+    static UByte attach_gdb(int, siginfo_t *, void*);
     # endif
 
     # ifdef GCORE_EXEC
     /// Core dumping signal handler callback.
-    static void dump_core(int, siginfo_t *, void*);
+    static UByte dump_core(int, siginfo_t *, void*);
     # endif
 
 protected:
     /// Registered handlers. Should be invoked in order of addition.
-    static std::map<SignalCode,
-                std::list<
-                    std::pair<SignalHandler, std::string> > > * _handlers;
+    static std::map<SignalCode, std::list<HandlerEntry> > * _handlers;
 
     /// Stores documentation for environment variables.
     static std::unordered_map<std::string, std::string> * _documentedEnvVars;
@@ -117,7 +141,11 @@ public:
     // Work with signal handlers
 
     /// Adds new handler to handlers stack.
-    static void add_handler( SignalCode, SignalHandler, const std::string, bool suppressDefault=false );
+    static void add_handler(
+        SignalCode,
+        SignalHandler,
+        const std::string,
+        bool preservePrevious=true );
 
     /// Prints bound hadlers to stream.
     static void dump_signal_handlers( std::ostream & );

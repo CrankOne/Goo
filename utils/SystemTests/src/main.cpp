@@ -24,11 +24,12 @@
 # include <iostream>
 # include "systest.hpp"
 
-static void
+static UByte
 create_pidfile(int, siginfo_t *, void*) {
     char buf[64]; 
     snprintf( buf, sizeof(buf), "touch sigint-%d.tmp", getpid() );
     system(buf);
+    return 0x0;
 }
 
 int
@@ -38,16 +39,14 @@ main(int argc, char * argv[]) {
     ga::iApp::add_handler(
             ga::iApp::_SIGINT,
             create_pidfile,
-            "Testing function --- creates a file in CWD with name sigint-<pid>.tmp",
-            false
+            "Testing function --- creates a file in CWD with name sigint-<pid>.tmp"
         );
 
     # ifdef GDB_EXEC
     ga::iApp::add_handler(
             ga::iApp::_SIGSEGV,
             ga::iApp::attach_gdb,
-            "Attaches gdb to a process after SIGTERM.",
-            false
+            "Attaches gdb to a process after SIGTERM."
         );
     # endif
 

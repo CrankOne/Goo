@@ -48,7 +48,7 @@ namespace goo {
  * When signal received, handling functions will be
  * invoked in reverse order of insertion (the oldest is last).
  *
- * Currently, only following signal can be handled (descriptions taken
+ * For example following signal can be handled (explainations taken
  * from http://www.yolinux.com/TUTORIALS/C++Signals.html):
  *  + SIGHUP (1)    -- Hangup (POSIX) Report that user's terminal is
  *                  disconnected. Signal used to report the termination
@@ -80,7 +80,8 @@ namespace goo {
  *                  it continue.
  *  + SIGTSTP (20)  -- Keyboard stop (POSIX) Interactive stop signal.
  *                  This signal can be handled and ignored. (ctrl-z)
- * 
+ *
+ * Description of other supported signals can be obtained by `$ man 7 signal`.
  */
 
 iApp * iApp::_self = nullptr;
@@ -103,22 +104,25 @@ iApp::hostname() {
 //
 // Signal handlers
 
-/** The suppressDefault parameter has only sense when currently adding
- * handler is first. Whein suppressDefault=true, the default system
- * handler will be ignored.
+/** The preservePrevious parameter has only sense when currently adding
+ * handler is first. Whein preservePrevious=true, the previously assigned
+ * handler will be preserved and put to the end of handlers list for
+ * certain signal. It is useful wheen one need to keep signals set by
+ * some third-party frameworks (like Geant4, CERN ROOT, etc) but want
+ * to perform some custom operations first.
  *
  * @todo Elaborate this facility support extended functions provided by
  * `sa_flags` field of `struct sigaction` in `<unistd.h>`.
  *
  * @param code UNIX signal ID.
- * @param f callback instance
- * @param suppressDefault do default handler suppression.
+ * @param fun callback instance
+ * @param preservePrevious keep non-default handler previously set (if has).
  */
 void
 iApp::add_handler( SignalCode code,
                    SignalHandler f,
                    const std::string description,
-                   bool suppressDefault ) {
+                   bool preservePrevious ) {
     if( !_handlers ) {
         _handlers = new std::remove_pointer<DECLTYPE(_handlers)>::type ();
     }
@@ -127,15 +131,19 @@ iApp::add_handler( SignalCode code,
     if( handlersStackIt != _handlers->end() ) {
         // Append list:
         handlersStackIt->second.push_back(
-                std::pair<SignalHandler, std::string>(
-                        f, description
-                    )
+                HandlerEntry{
+                        false,
+                        {._custom = f},
+                        description
+                    }
             );
-        if( suppressDefault && 1 != handlersStackIt->second.size() ) {
-            wprintf( "default system "
+        # ifndef NDEBUG
+        if( preservePrevious && 1 != handlersStackIt->second.size() ) {
+            dprintf( "Default system "
                      "handler suppression has no effect when adding "
-                     "handler is not first in stack." );
+                     "handler is not first in stack.\n" );
         }
+        # endif
         return;  // appending done, exit
     }
 
@@ -152,13 +160,30 @@ iApp::add_handler( SignalCode code,
         emraise(thirdParty, "sigaction() returned an error: %s.\n",
                             strerror(errno) );
     }
-    // signal bound to dispatcher, now append the handlers stack
-    std::list< std::pair<SignalHandler, std::string> > lst;
-    if( oldAct.sa_handler != SIG_DFL && !suppressDefault ) {
-        lst.push_front( std::pair<SignalHandler, std::string>(
-                oldAct.sa_sigaction, "Default system handler.") );
+    // Signal bound to dispatcher, now append the handlers stack, if
+    // something was previously set.
+    std::remove_pointer<DECLTYPE(_handlers)>::type::mapped_type lst;
+    if( preservePrevious ) {
+        if( oldAct.sa_handler != SIG_DFL ) {
+            lst.push_front( HandlerEntry{
+                        true,
+                        {._system = oldAct.sa_sigaction},
+                        "Handler set by third-party code."
+                    } );
+        } else {
+            // We use here a warning message because it may be crucial sometimes
+            // to know that third-party software hadn't yet set their handler(s).
+            // This behaviour usually must be under strict control, so producing a
+            // warning message should be a good hint.
+            wprintf( "No third-party handler overrides a signal %s(%d) at moment.\n",
+                     strsignal(code), code );
+        }
     }
-    lst.push_back( std::pair<SignalHandler, std::string>(f, description) );
+    lst.push_back( HandlerEntry{
+                        false,
+                        {._custom = f},
+                        description
+                    } );
     _handlers->emplace(code, lst);
 };
 
@@ -177,9 +202,9 @@ iApp::dump_signal_handlers( std::ostream & os ) {
         return;
     }
     for( auto it = _handlers->cbegin(); it != _handlers->cend(); ++it ) {
-        os << "Signal: " << it->first << std::endl;
+        os << "Signal: " << strsignal(it->first) << " (" << it->first << ")" << std::endl;
         for(auto iit = it->second.cbegin(); iit != it->second.cend(); ++iit){
-            os << "\t" << iit->first << " " << iit->second << std::endl;
+            os << "  " << (void *) iit->_system << " " << iit->description << std::endl;
         }
     }
 }
@@ -189,32 +214,51 @@ iApp::_signal_handler_dispatcher( int signum,
                                   siginfo_t *info,
                                   void * context ) {
     assert( _handlers );
-    auto entry = iApp::self()._handlers->find( (SignalCode) signum);
+    auto entry = iApp::self()._handlers->find( (SignalCode) signum );
+    uint8_t interruptFlags = 0x0;
     for( auto it  = entry->second.crbegin();
               it != entry->second.crend(); ++it){
-        (it->first)( signum, info, context );
+        if( it->typeIsSystem ) {
+            (it->_system)( signum, info, context );
+        } else {
+            interruptFlags |= (it->_custom)( signum, info, context );
+            if( interruptFlags & stopHandling ) {
+                break;
+            }
+        }
     }
+    if( interruptFlags & omitDefaultAction ) {
+        return;
+    }
+
+    signal( signum, SIG_DFL );
 }
 
 # ifdef GDB_EXEC
-void
+UByte
 iApp::attach_gdb(int, siginfo_t *, void*) {
     char buf[128];
     snprintf( buf, sizeof(buf), "%s -p %d", GDB_EXEC, getpid() );
     // TODO: this system call should be delegated to safe wrapper.
+    // May some combination of fork() and then excl() do
+    // the trick?
     fprintf(stdout, "Invokation of: " ESC_CLRBOLD "$ %s" ESC_CLRCLEAR "\n", buf);
     system(buf);
+    return 0x0;
 }
 # endif
 
 # ifdef GCORE_EXEC
-void
+UByte
 iApp::dump_core(int, siginfo_t *, void*) {
     char buf[128]; 
     snprintf( buf, sizeof(buf), "%s %d", GCORE_EXEC, getpid() );
     // TODO: this system call should be delegated to safe wrapper.
+    // May some combination of fork() and then excl() do
+    // the trick?
     fprintf(stdout, "Invokation of: " ESC_CLRBOLD "$ %s" ESC_CLRCLEAR "\n", buf);
     system(buf);
+    return 0x0;
 }
 # endif
 
