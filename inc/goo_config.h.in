@@ -118,8 +118,11 @@
  * Found system utils
  */
 
-#cmakedefine GDB_EXEC       "@GDB_EXEC@"
-#cmakedefine GCORE_EXEC     "@GCORE_EXEC@"
+/// When defined, contains stringified path to gdb debugger exec.
+#cmakedefine GOO_GDB_EXEC       "@GOO_GDB_EXEC@"
+
+/// When defined, contains stringified path to gcore exec.
+#cmakedefine GOO_GCORE_EXEC     "@GOO_GCORE_EXEC@"
 
 # endif /* H_GOO_CONFIG_H */
 

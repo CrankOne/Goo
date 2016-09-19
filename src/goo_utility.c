@@ -26,6 +26,12 @@
 # include <string.h>
 # include <stdlib.h>
 # include <assert.h>
+
+# include <unistd.h>
+# include <sys/wait.h>
+
+# include <errno.h>
+
 # include "goo_utility.h"
 
 double
@@ -171,6 +177,127 @@ char *
 fancy_mem_size_stb( unsigned long toPrint ) {
     return fancy_mem_size( toPrint, __fancyMemSizeBf,
                            sizeof(__fancyMemSizeBf) );
+}
+
+int
+sysexec_lst( const char * utilName,
+             struct SysExecStatus * execStat,
+             struct SysExecArgument * argsLst,
+             struct SysExecEnvVar * envVarsLst,
+             char sync ) {
+    char ** argv_, ** itArgv_,
+         ** envp_, ** itEnvp_
+         ;
+    int argc_ = 0,
+        nenvp_ = 0
+        ;
+    uint16_t strL;
+    struct SysExecArgument * itExecArg;
+    struct SysExecEnvVar * itExecEnvVar;
+
+    /* Do fork now. */
+    pid_t waitResult, forkResult = fork();
+
+    assert( utilName && strlen(utilName) );
+
+    if( forkResult ) {
+        /* Execution now in parent process */
+        if( !sync ) {
+            if( execStat ) {
+                execStat->status = forkResult;
+            }
+            /* if not sync, return 0 immediately */
+            return 1;
+        } else {
+            assert( execStat ); /* sync != 0, execStat must be specified! */
+            /* if sync, then wait for child process to finish */
+            waitResult = waitpid(forkResult, &(execStat->status), execStat->execOpts );
+            if( forkResult == waitResult ) {
+                if( WIFEXITED( execStat->status ) ) {
+                    /* All ok. */
+                    return 0;
+                } else if( WIFSIGNALED( execStat->status ) ) {
+                    /* Got signal */
+                    return -1;
+                } else {
+                    /* How the child was terminated? */
+                    fprintf( stderr, "sysexec_lst() error: Child process was terminated abnormally.\n" );
+                    return -2;
+                }
+            } else {
+                fprintf( stderr, "sysexec_lst() error: waitpid(%d, &(->%d), 0) -> %d\n",
+                         forkResult, execStat->status, waitResult );
+                return -1;
+            }
+        }
+    } else {
+        /* Execution now in child process */
+        {   /* 1. Copy argv[] */
+            for( itExecArg = argsLst;
+                 itExecArg && itExecArg->nextArg;
+                 itExecArg = itExecArg->nextArg ) {
+                ++argc_;
+            }
+            itArgv_ = argv_ = malloc( (argc_ + 2)*sizeof(char *) );
+            *itArgv_ = strdup( utilName );
+            ++itArgv_;
+            for( itExecArg = argsLst;
+                 itExecArg && itExecArg->nextArg;
+                 itExecArg = itExecArg->nextArg, itArgv_++ ) {
+                *itArgv_ = strdup( itExecArg->argName );
+            }
+            *itArgv_ = NULL;
+        }
+        {   /* 2. Copy envvar */
+            for( itExecEnvVar = envVarsLst;
+                 itExecEnvVar && itExecEnvVar->nextVar;
+                 itExecEnvVar = itExecEnvVar->nextVar ) {
+                ++nenvp_;
+            }
+            itEnvp_ = envp_ = malloc( (nenvp_ + 1)*sizeof(char *) );
+            for( itExecEnvVar = envVarsLst;
+                 itExecEnvVar && itExecEnvVar->nextVar;
+                 itExecEnvVar = itExecEnvVar->nextVar, ++itEnvp_ ) {
+                *itEnvp_ = malloc( ( strL = ( strlen(itExecEnvVar->envVarName)
+                                     + 2
+                                     + strlen(itExecEnvVar->envVarValue) ) ) );
+                snprintf( *itEnvp_, strL, "%s=%s", itExecEnvVar->envVarName, itExecEnvVar->envVarValue );
+                //*itEnvp_ = strdup( itExecArg->argName );
+            }
+            *itEnvp_ = NULL;
+        }
+        // XXX / TODO: execvp
+        # if 0
+        {
+            if( nenvp_ ) {
+                printf( "execvpe() will be invoked with arguments:\n" );
+                printf( "Envvars:\n" );
+                for( c = envp_; *c; ++c ) {
+                    printf( "\t%s\n", *c );
+                }
+            } else {
+                printf( "execvp() will be invoked with arguments:\n" );
+            }
+            printf( "argv[]:\n" );
+            for( c = argv_; *c; ++c ) {
+                printf( "\t%s\n", *c );
+            }
+            return 0;
+        }
+        # endif
+        # if 1
+        int rc = execvpe( utilName, argv_, envp_ );
+        if( -1 == rc ) {
+            fprintf( stderr, "Got -1 from execvpe(). strerror()=\"%s\".\n",
+                     strerror(errno) );
+        } else {
+            /* execvpe() returns only if an error occured. */
+            fprintf( stderr, "Evaluation thread came to an unexpected place! "
+                    "execvpe() returned %d.\n", rc );
+        }
+        exit( EXIT_FAILURE );
+        # endif
+    }
 }
 
 

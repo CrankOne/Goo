@@ -98,12 +98,12 @@ public:
         std::string description;
     };
 
-    # ifdef GDB_EXEC
+    # ifdef GOO_GDB_EXEC
     /// Attach gdb signal handler callback.
     static UByte attach_gdb(int, siginfo_t *, void*);
     # endif
 
-    # ifdef GCORE_EXEC
+    # ifdef GOO_GCORE_EXEC
     /// Core dumping signal handler callback.
     static UByte dump_core(int, siginfo_t *, void*);
     # endif

@@ -234,11 +234,11 @@ iApp::_signal_handler_dispatcher( int signum,
     signal( signum, SIG_DFL );
 }
 
-# ifdef GDB_EXEC
+# ifdef GOO_GDB_EXEC
 UByte
 iApp::attach_gdb(int, siginfo_t *, void*) {
     char buf[128];
-    snprintf( buf, sizeof(buf), "%s -p %d", GDB_EXEC, getpid() );
+    snprintf( buf, sizeof(buf), "%s -p %d", GOO_GDB_EXEC, getpid() );
     // TODO: this system call should be delegated to safe wrapper.
     // May some combination of fork() and then excl() do
     // the trick?
@@ -248,11 +248,11 @@ iApp::attach_gdb(int, siginfo_t *, void*) {
 }
 # endif
 
-# ifdef GCORE_EXEC
+# ifdef GOO_GCORE_EXEC
 UByte
 iApp::dump_core(int, siginfo_t *, void*) {
     char buf[128]; 
-    snprintf( buf, sizeof(buf), "%s %d", GCORE_EXEC, getpid() );
+    snprintf( buf, sizeof(buf), "%s %d", GOO_GCORE_EXEC, getpid() );
     // TODO: this system call should be delegated to safe wrapper.
     // May some combination of fork() and then excl() do
     // the trick?
@@ -351,7 +351,7 @@ iApp::dump_envvars( std::ostream & os ) {
         return;
     }
     for( auto p : *_documentedEnvVars ) {
-        
+        os << p.first << " --- " << p.second << std::endl;
     }
 }
 

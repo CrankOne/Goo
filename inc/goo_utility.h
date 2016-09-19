@@ -69,6 +69,60 @@ char * rounded_mem_size_stb( unsigned long toPrint );
 /** A static buffer (uses own) version of fancy_mem_size(). */
 char * fancy_mem_size_stb( unsigned long toPrint );
 
+/** List structure for argv[] parameters of sysexec_lst() */
+struct SysExecArgument {
+    char * argName;
+    struct SysExecArgument * nextArg;
+};
+
+/** List structure for environment variable of sysexec_lst() */
+struct SysExecEnvVar {
+    char * envVarName,
+         * envVarValue
+         ;
+    struct SysExecEnvVar * nextVar;
+};
+
+/* TODO: IO handlers! */
+struct SysExecStatus {
+    /** A waitpid() exit status variable. See man 3p wait for
+     * explaination. */
+    int status;
+    /** The `options` variable of waitpid() invokation. */
+    int execOpts;
+};
+
+/** Safe wrapper for system() call. Uses fork()/execl() in combination.
+ * Can wait for child process to stop, if sync != 0. If no additional
+ * environment variables should be specified, NULL ptr is acceptable for
+ * fourth argument.
+ *
+ * If sync!=0, information about child can be obtained upon finishing
+ * from status field of provided SysExecStatus instance.
+ *
+ * If sync==0 and execStatus!=NULL, the child pid will be written to
+ * status field of execStatus instance.
+ *
+ * @param utilToExecute --- path to file to be executed (similar as in
+ *                          execvpe());
+ * @param execStatus    --- struct handling aux info of waitpid()
+ *                          (see type info). Can be NULL if sync=0.
+ * @param execArg       --- arguments to be executed as in `argv[]`.
+ * @param execEVars     --- environmental variables
+ * @param sync          --- whether do wait for child process to be
+ *                          terminated.
+ *
+ * @returns  1 --- if child was detached (sync=0).
+ * @returns  0 --- upon successfull invokation. execStatus will store exec res.
+ * @returns -1 --- if child was terminated by signal.
+ * @returns -2 --- upon internal logic error, printing error message to stderr.
+ * */
+int goo_sysexec_lst( const char *               utilToExecute,
+                     struct SysExecStatus *     execStatus,
+                     struct SysExecArgument *   execArg,
+                     struct SysExecEnvVar *     execEVars,
+                     char                       sync );
+
 # ifdef __cplusplus
 }
 # endif

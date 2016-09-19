@@ -42,7 +42,7 @@ main(int argc, char * argv[]) {
             "Testing function --- creates a file in CWD with name sigint-<pid>.tmp"
         );
 
-    # ifdef GDB_EXEC
+    # ifdef GOO_GDB_EXEC
     ga::iApp::add_handler(
             ga::iApp::_SIGSEGV,
             ga::iApp::attach_gdb,
@@ -50,7 +50,7 @@ main(int argc, char * argv[]) {
         );
     # endif
 
-    # ifdef GCORE_EXEC
+    # ifdef GOO_GCORE_EXEC
     ga::iApp::add_handler(
             ga::iApp::_SIGSEGV,
             ga::iApp::dump_core,

@@ -77,10 +77,10 @@ find_package( ZLIB  )
 find_package( Lzo   )
 find_package( BZip2 )
 find_package( Git   )
-#unset( GDB_EXEC CACHE )  # XXX
-#unset( GCORE_EXEC CACHE )  # XXX
-find_program( GDB_EXEC      gdb     )
-find_program( GCORE_EXEC    gcore   )
+#unset( GOO_GDB_EXEC CACHE )  # XXX
+#unset( GOO_GCORE_EXEC CACHE )  # XXX
+find_program( GOO_GDB_EXEC      gdb     )
+find_program( GOO_GCORE_EXEC    gcore   )
 #find_program( KILL_EXEC     kill     )
 if( EM_STACK_UNWINDING )
     find_package( BFD REQUIRED )
