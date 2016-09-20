@@ -179,125 +179,204 @@ fancy_mem_size_stb( unsigned long toPrint ) {
                            sizeof(__fancyMemSizeBf) );
 }
 
-int
-sysexec_lst( const char * utilName,
-             struct SysExecStatus * execStat,
-             struct SysExecArgument * argsLst,
-             struct SysExecEnvVar * envVarsLst,
-             char sync ) {
+
+/*
+ * Exec
+ */
+
+const uint8_t
+    gooExec_noSync              = 0x1,
+    gooExec_noStdOutHandle      = 0x2,
+    gooExec_noStdErrHandle      = 0x4,
+    gooExec_noStdInHandle       = 0x8,
+    gooExec_noStdStreamsHandle  = 0x2  /*gooExec_noStdOutHandle*/
+                                | 0x4  /*gooExec_noStdErrHandle*/
+                                | 0x8  /*gooExec_noStdInHandle*/
+                                ;
+
+const int8_t
+    gooExec_finished            =  0,
+    gooExec_detached            =  1,
+    gooExec_childGotSignal      = -1,
+    gooExec_error               = -2
+    ;
+
+void
+goo_sysexec_close_pipe_handlers( struct SysExecStatus * execStat ) {
+    int n;
+    
+    /* NULL allowed */
+    if( !execStat ) return;
+
+    for( n = 0; n < 3; ++n ) {
+        if( execStat->stdStreamDescs[n][0] ) {
+            close(execStat->stdStreamDescs[n][0]);
+            execStat->stdStreamDescs[n][0] = 0;
+        }
+        if( execStat->stdStreamDescs[n][1] ) {
+            close(execStat->stdStreamDescs[n][1]);
+            execStat->stdStreamDescs[n][1] = 0;
+        }
+    }
+}
+
+static void
+_static_goo_exec_child_noreturn( const char *,
+                                 const struct SysExecStatus *,
+                                 const struct SysExecArgument *,
+                                 const struct SysExecEnvVar *,
+                                 uint8_t flags ) __attribute__ ((noreturn));
+static void
+_static_goo_exec_child_noreturn( const char * utilName,
+                                 const struct SysExecStatus * execStat,
+                                 const struct SysExecArgument * argsLst,
+                                 const struct SysExecEnvVar * envVarsLst,
+                                 uint8_t flags ) {
     char ** argv_, ** itArgv_,
          ** envp_, ** itEnvp_
          ;
     int argc_ = 0,
-        nenvp_ = 0
+        nenvp_ = 0,
+        execResult
         ;
     uint16_t strL;
-    struct SysExecArgument * itExecArg;
-    struct SysExecEnvVar * itExecEnvVar;
+    const struct SysExecArgument * itExecArg;
+    const struct SysExecEnvVar * itExecEnvVar;
 
-    /* Do fork now. */
-    pid_t waitResult, forkResult = fork();
+    /* Execution now in child process */
+    {   /* 1. Copy argv[] */
+        for( itExecArg = argsLst;
+             itExecArg && itExecArg->nextArg;
+             itExecArg = itExecArg->nextArg ) {
+            ++argc_;
+        }
+        itArgv_ = argv_ = malloc( (argc_ + 2)*sizeof(char *) );
+        *itArgv_ = strdup( utilName );
+        ++itArgv_;
+        for( itExecArg = argsLst;
+             itExecArg && itExecArg->nextArg;
+             itExecArg = itExecArg->nextArg, itArgv_++ ) {
+            *itArgv_ = strdup( itExecArg->argName );
+        }
+        *itArgv_ = NULL;
+    }
+    {   /* 2. Copy envvar */
+        for( itExecEnvVar = envVarsLst;
+             itExecEnvVar && itExecEnvVar->nextVar;
+             itExecEnvVar = itExecEnvVar->nextVar ) {
+            ++nenvp_;
+        }
+        itEnvp_ = envp_ = malloc( (nenvp_ + 1)*sizeof(char *) );
+        for( itExecEnvVar = envVarsLst;
+             itExecEnvVar && itExecEnvVar->nextVar;
+             itExecEnvVar = itExecEnvVar->nextVar, ++itEnvp_ ) {
+            *itEnvp_ = malloc( ( strL = ( strlen(itExecEnvVar->envVarName)
+                                 + 2
+                                 + strlen(itExecEnvVar->envVarValue) ) ) );
+            snprintf( *itEnvp_, strL, "%s=%s", itExecEnvVar->envVarName, itExecEnvVar->envVarValue );
+            //*itEnvp_ = strdup( itExecArg->argName );
+        }
+        *itEnvp_ = NULL;
+    }
 
+    /* Pipelining. */
+    if( execStat->stdStreamDescs[0][0] ) {
+        while( (dup2(execStat->stdStreamDescs[0][1], fileno(stdout)) == -1)
+            && (errno == EINTR) ) {}
+        close(execStat->stdStreamDescs[0][1]);
+        close(execStat->stdStreamDescs[0][0]);
+    }
+    if( execStat->stdStreamDescs[1][0] ) {
+        while( (dup2(execStat->stdStreamDescs[1][1], fileno(stderr)) == -1)
+            && (errno == EINTR) ) {}
+        close(execStat->stdStreamDescs[1][1]);
+        close(execStat->stdStreamDescs[1][0]);
+    }
+
+    if( itExecEnvVar ) {
+        execResult = execvpe( utilName, argv_, envp_ );
+    } else {
+        execResult = execvp(  utilName, argv_ );
+    }
+
+    if( -1 == execResult ) {
+        perror( "execvpe() error: ");
+    }
+    abort();  /* << normally, should never get here. */
+}
+
+int
+goo_sysexec_lst( const char * utilName,
+                 struct SysExecStatus * execStat,
+                 const struct SysExecArgument * argsLst,
+                 const struct SysExecEnvVar * envVarsLst,
+                 uint8_t flags ) {
+    pid_t waitResult, forkResult;
+
+    assert( execStat );
     assert( utilName && strlen(utilName) );
 
-    if( forkResult ) {
-        /* Execution now in parent process */
-        if( !sync ) {
-            if( execStat ) {
-                execStat->status = forkResult;
-            }
-            /* if not sync, return 0 immediately */
-            return 1;
-        } else {
-            assert( execStat ); /* sync != 0, execStat must be specified! */
-            /* if sync, then wait for child process to finish */
-            waitResult = waitpid(forkResult, &(execStat->status), execStat->execOpts );
-            if( forkResult == waitResult ) {
-                if( WIFEXITED( execStat->status ) ) {
-                    /* All ok. */
-                    return 0;
-                } else if( WIFSIGNALED( execStat->status ) ) {
-                    /* Got signal */
-                    return -1;
-                } else {
-                    /* How the child was terminated? */
-                    fprintf( stderr, "sysexec_lst() error: Child process was terminated abnormally.\n" );
-                    return -2;
-                }
-            } else {
-                fprintf( stderr, "sysexec_lst() error: waitpid(%d, &(->%d), 0) -> %d\n",
-                         forkResult, execStat->status, waitResult );
-                return -1;
-            }
-        }
-    } else {
-        /* Execution now in child process */
-        {   /* 1. Copy argv[] */
-            for( itExecArg = argsLst;
-                 itExecArg && itExecArg->nextArg;
-                 itExecArg = itExecArg->nextArg ) {
-                ++argc_;
-            }
-            itArgv_ = argv_ = malloc( (argc_ + 2)*sizeof(char *) );
-            *itArgv_ = strdup( utilName );
-            ++itArgv_;
-            for( itExecArg = argsLst;
-                 itExecArg && itExecArg->nextArg;
-                 itExecArg = itExecArg->nextArg, itArgv_++ ) {
-                *itArgv_ = strdup( itExecArg->argName );
-            }
-            *itArgv_ = NULL;
-        }
-        {   /* 2. Copy envvar */
-            for( itExecEnvVar = envVarsLst;
-                 itExecEnvVar && itExecEnvVar->nextVar;
-                 itExecEnvVar = itExecEnvVar->nextVar ) {
-                ++nenvp_;
-            }
-            itEnvp_ = envp_ = malloc( (nenvp_ + 1)*sizeof(char *) );
-            for( itExecEnvVar = envVarsLst;
-                 itExecEnvVar && itExecEnvVar->nextVar;
-                 itExecEnvVar = itExecEnvVar->nextVar, ++itEnvp_ ) {
-                *itEnvp_ = malloc( ( strL = ( strlen(itExecEnvVar->envVarName)
-                                     + 2
-                                     + strlen(itExecEnvVar->envVarValue) ) ) );
-                snprintf( *itEnvp_, strL, "%s=%s", itExecEnvVar->envVarName, itExecEnvVar->envVarValue );
-                //*itEnvp_ = strdup( itExecArg->argName );
-            }
-            *itEnvp_ = NULL;
-        }
-        // XXX / TODO: execvp
-        # if 0
-        {
-            if( nenvp_ ) {
-                printf( "execvpe() will be invoked with arguments:\n" );
-                printf( "Envvars:\n" );
-                for( c = envp_; *c; ++c ) {
-                    printf( "\t%s\n", *c );
-                }
-            } else {
-                printf( "execvp() will be invoked with arguments:\n" );
-            }
-            printf( "argv[]:\n" );
-            for( c = argv_; *c; ++c ) {
-                printf( "\t%s\n", *c );
-            }
-            return 0;
-        }
-        # endif
-        # if 1
-        int rc = execvpe( utilName, argv_, envp_ );
-        if( -1 == rc ) {
-            fprintf( stderr, "Got -1 from execvpe(). strerror()=\"%s\".\n",
-                     strerror(errno) );
-        } else {
-            /* execvpe() returns only if an error occured. */
-            fprintf( stderr, "Evaluation thread came to an unexpected place! "
-                    "execvpe() returned %d.\n", rc );
-        }
-        exit( EXIT_FAILURE );
-        # endif
+    # define open_pipe_for( streamName, idx, verbosename )          \
+    if(!(flags & gooExec_no ## streamName ## Handle)) {             \
+        if( -1 == pipe( execStat->stdStreamDescs[ idx ] ) ) {       \
+            perror( "goo_sysexec_lst() : pipe() returned -1 for "   \
+                        verbosename ". " );                         \
+            bzero(  execStat->stdStreamDescs[ idx ],                \
+                    2*sizeof(execStat->stdStreamDescs[0][0]) );     \
+        }                                                           \
+    } else {                                                        \
+        bzero( execStat->stdStreamDescs[ idx ],                     \
+                    2*sizeof(execStat->stdStreamDescs[0][0]) );     \
     }
+    open_pipe_for( StdOut, 0, "standard output stream" );
+    open_pipe_for( StdErr, 1, "standard error stream" );
+    /*TODO: open_pipe_for( StdIn,  2 )*/
+    bzero( execStat->stdStreamDescs[2], 2*sizeof(execStat->stdStreamDescs[0][0]) );
+    # undef open_pipe_for
+
+    /* Do fork now. */
+    if( (forkResult = fork()) < 0 ) {
+        perror( "goo_sysexec_lst() was unable to fork process: " );
+        goo_sysexec_close_pipe_handlers( execStat );
+        return gooExec_error;
+    }
+
+    if( 0 == forkResult ) {
+        /* never returns */
+        _static_goo_exec_child_noreturn(
+                utilName,
+                execStat,
+                argsLst,
+                envVarsLst,
+                flags );
+        abort();  /* << should never get here. */
+    }
+
+    /* Execution now in parent process */
+    if( flags & gooExec_noSync ) {
+        if( execStat ) {
+            execStat->status = forkResult;  /*<< TODO: note this in docs !!111 */
+        }
+        /* if not sync, return 1 immediately */
+        return gooExec_detached;
+    }
+
+    /* wait for child process to finish */
+    waitResult = waitpid(forkResult, &(execStat->status), execStat->execOpts );
+
+    if( waitResult < 0 ) {
+        perror( "goo_sysexec_lst() was unable to wait for a child process: " );
+        goo_sysexec_close_pipe_handlers( execStat );
+        return gooExec_error;
+    }
+
+    if( WIFEXITED( execStat->status ) ) {
+        return gooExec_finished;
+    } else if( WIFSIGNALED( execStat->status ) ) {
+        return gooExec_childGotSignal;
+    }
+    perror( "goo_sysexec_lst() met unknown child process termination." );
+    return gooExec_error;
 }
 
 

@@ -90,38 +90,39 @@ struct SysExecStatus {
     int status;
     /** The `options` variable of waitpid() invokation. */
     int execOpts;
+    /** Stores descriptors for pipelines. */
+    int stdStreamDescs[3][2];
 };
+
+extern const uint8_t
+    gooExec_noSync,
+    gooExec_noStdOutHandle,
+    gooExec_noStdErrHandle,
+    gooExec_noStdInHandle,
+    gooExec_noStdStreamsHandle
+    ;
+
+extern const int8_t
+    gooExec_finished,
+    gooExec_detached,
+    gooExec_childGotSignal,
+    gooExec_error
+    ;
 
 /** Safe wrapper for system() call. Uses fork()/execl() in combination.
  * Can wait for child process to stop, if sync != 0. If no additional
  * environment variables should be specified, NULL ptr is acceptable for
  * fourth argument.
  *
- * If sync!=0, information about child can be obtained upon finishing
- * from status field of provided SysExecStatus instance.
- *
- * If sync==0 and execStatus!=NULL, the child pid will be written to
- * status field of execStatus instance.
- *
- * @param utilToExecute --- path to file to be executed (similar as in
- *                          execvpe());
- * @param execStatus    --- struct handling aux info of waitpid()
- *                          (see type info). Can be NULL if sync=0.
- * @param execArg       --- arguments to be executed as in `argv[]`.
- * @param execEVars     --- environmental variables
- * @param sync          --- whether do wait for child process to be
- *                          terminated.
- *
- * @returns  1 --- if child was detached (sync=0).
- * @returns  0 --- upon successfull invokation. execStatus will store exec res.
- * @returns -1 --- if child was terminated by signal.
- * @returns -2 --- upon internal logic error, printing error message to stderr.
+ * TODO: further doc
  * */
-int goo_sysexec_lst( const char *               utilToExecute,
-                     struct SysExecStatus *     execStatus,
-                     struct SysExecArgument *   execArg,
-                     struct SysExecEnvVar *     execEVars,
-                     char                       sync );
+int goo_sysexec_lst( const char * utilName,
+                     struct SysExecStatus * execStat,
+                     const struct SysExecArgument * argsLst,
+                     const struct SysExecEnvVar * envVarsLst,
+                     uint8_t flags );
+
+void goo_sysexec_close_pipe_handlers( struct SysExecStatus * execStat );
 
 # ifdef __cplusplus
 }
