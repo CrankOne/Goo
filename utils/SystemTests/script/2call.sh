@@ -18,6 +18,8 @@
 # If arguments or environmental variables will be set to unexpected values or,
 # either not set at all the -10 will be returned.
 
+sleep 2
+
 if [ $# -eq 0 ]; then
     echo "> No args given. Assuming case 1 or 3."
     if [ "$TEST_ENVVAR1" != "one" ]; then

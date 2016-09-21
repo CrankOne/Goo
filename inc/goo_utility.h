@@ -1,6 +1,3 @@
-# ifndef H_GOO_UTILITY_H
-# define H_GOO_UTILITY_H
-
 /*
  * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
  * Author: Renat R. Dusaev <crank@qcrypt.org>
@@ -22,6 +19,9 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
+# ifndef H_GOO_UTILITY_H
+# define H_GOO_UTILITY_H
 
 # include "goo_types.h"
 
@@ -68,61 +68,6 @@ char * rounded_mem_size_stb( unsigned long toPrint );
 
 /** A static buffer (uses own) version of fancy_mem_size(). */
 char * fancy_mem_size_stb( unsigned long toPrint );
-
-/** List structure for argv[] parameters of sysexec_lst() */
-struct SysExecArgument {
-    char * argName;
-    struct SysExecArgument * nextArg;
-};
-
-/** List structure for environment variable of sysexec_lst() */
-struct SysExecEnvVar {
-    char * envVarName,
-         * envVarValue
-         ;
-    struct SysExecEnvVar * nextVar;
-};
-
-/* TODO: IO handlers! */
-struct SysExecStatus {
-    /** A waitpid() exit status variable. See man 3p wait for
-     * explaination. */
-    int status;
-    /** The `options` variable of waitpid() invokation. */
-    int execOpts;
-    /** Stores descriptors for pipelines. */
-    int stdStreamDescs[3][2];
-};
-
-extern const uint8_t
-    gooExec_noSync,
-    gooExec_noStdOutHandle,
-    gooExec_noStdErrHandle,
-    gooExec_noStdInHandle,
-    gooExec_noStdStreamsHandle
-    ;
-
-extern const int8_t
-    gooExec_finished,
-    gooExec_detached,
-    gooExec_childGotSignal,
-    gooExec_error
-    ;
-
-/** Safe wrapper for system() call. Uses fork()/execl() in combination.
- * Can wait for child process to stop, if sync != 0. If no additional
- * environment variables should be specified, NULL ptr is acceptable for
- * fourth argument.
- *
- * TODO: further doc
- * */
-int goo_sysexec_lst( const char * utilName,
-                     struct SysExecStatus * execStat,
-                     const struct SysExecArgument * argsLst,
-                     const struct SysExecEnvVar * envVarsLst,
-                     uint8_t flags );
-
-void goo_sysexec_close_pipe_handlers( struct SysExecStatus * execStat );
 
 # ifdef __cplusplus
 }

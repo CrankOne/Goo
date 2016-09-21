@@ -1,7 +1,11 @@
-# include <goo_utility.h>
+# include <goo_sysexec.h>
+
+# include <unistd.h>
 # include <stdlib.h>
 # include <stdio.h>
 # include <string.h>
+# include <errno.h>
+# include <sys/wait.h>
 
 # if 0
 struct SysExecArgument args[] = {
@@ -25,12 +29,12 @@ invrun( struct SysExecArgument * args,
     struct SysExecArgument * itA;
     struct SysExecEnvVar * itV;
     struct SysExecStatus execStat;
-    uint8_t execFlags = 0;
-    # if 1
-    /*  ^^^ Disable this to pipeline child process standard streams
-     * into anonymous parent's. */
+    uint8_t execFlags = 0, i;
+
+    # ifdef NCHECK_PIPELINED
     execFlags |= gooExec_noStdStreamsHandle;
     # endif
+    execFlags |= gooExec_noSync;
 
     bzero(&(execStat), sizeof(struct SysExecStatus));
 
@@ -46,10 +50,40 @@ invrun( struct SysExecArgument * args,
                 &execStat,
                 args,
                 envVars,
-                execFlags )) != gooExec_finished ) {
+                execFlags )) != /*gooExec_finished*/ gooExec_detached ) {
         fprintf( stderr, "Got %d from goo_sysexec_lst() call. Terminating.\n", sysexecRC );
         abort();
     }
+
+    # ifndef NCHECK_PIPELINED
+    char buffer[4096];
+    for( i = 0; i < 2; ++i ) {
+        printf( "Reading pipeline of %s stream...\n", (0 == i ? "standard output" : "standard error") );
+        while (1) {
+            ssize_t count = read( execStat.stdStreamDescs[i][0], buffer, sizeof(buffer));
+            if (count == -1) {
+                if( errno == EINTR ) {
+                    continue;
+                } else {
+                    perror("read(): ");
+                    abort();
+                }
+            } else if( 0 == count ) {
+                break;
+            } else {
+                printf( "%s stream content (%zu bytes) \"\"\"\n",
+                        (0 == i ? "Standard output" : "Standard error"),
+                        count );
+                puts( buffer );
+                puts( "\"\"\"" );
+                //handle_child_process_output( buffer, count );
+            }
+        }
+        close( execStat.stdStreamDescs[i][0] );
+        wait(0);
+    }
+    # endif
+
     return WEXITSTATUS( execStat.status );
 }
 
