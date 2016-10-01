@@ -13,6 +13,7 @@ lib/*
 exec/*
 doc/*
 bin/*
+nbproject/*
 inc/goo_config.h
 tags
 .project
