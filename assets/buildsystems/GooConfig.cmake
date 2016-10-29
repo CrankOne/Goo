@@ -37,10 +37,10 @@ set( Goo_LIBRARIES      goo-dbg )
 set( Goo_LIBRARY_DIR    /home/crank/Projects/goo.install/lib/goo )
 set( Goo_INSTALL_PREFIX /home/crank/Projects/goo.install )
 
-set( Goo_CC             "/usr/bin/cc" )
+set( Goo_CC             "/usr/bin/gcc" )
 set( Goo_C_CFLAGS       "   -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99 -rdynamic"   )
 
-set( Goo_CXX            "/usr/bin/c++" )
+set( Goo_CXX            "/usr/bin/g++" )
 set( Goo_CXX_CFLAGS     " -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++11 -rdynamic" )
 
 set( Goo_UT_EXECUTABLE  /home/crank/Projects/goo.install/bin/GooTests-dbg )
