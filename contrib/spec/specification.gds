@@ -3,20 +3,22 @@
 # Basics: literals, variables
 #
 
-a1 = 1;                 # Named numerical constant declaration of Integral class.
+a1 = 1;                 # Named numerical constant declaration of Integral
+                        # class.
 
-T::Int8 b1 = 2;         # Named numerical constant declaration of explicitly
+T:Int8 b1 = 2;          # Named numerical constant declaration of explicitly
                         # specified integral type of 8bit length.
 
-T::Float8 c1 = 6/2;     # Arithmetics will be evaluated whenever it is possible.
+T:Float8 c1 = 6/2;      # Arithmetics will be evaluated whenever it is possible.
 
-\Lambda_1 = 1.23;       # You can use a backslash '\' at the beginning of literal
-                        # usually to denote a special meaning of name of a variable
-                        # or a function in order to keep it for polygraphic needs.
+\Lambda_1 = 1.23;       # You can use a backslash '\' at the beginning of
+                        # literal usually to denote a special meaning of name
+                        # of a variable or a function in order to keep it for
+                        # polygraphic needs.
                         # Some system-special names has a backslash also.
 
 d1, e1 = 1, 2;          # Kind of a parallel assignment is possible, but
-# f, g = 0x1, "two";    # this form of mixing types is forbidden.
+# f, g = 0x1, "two";    # <- this form of mixing types is forbidden.
 
 
 #
@@ -39,8 +41,8 @@ c2 = {  "one",
                         # Note, that a trailing comma do not causes an error or
                         # warning.
 
-a2[0];                  # lists can be seen as a positional uniform-indexed arrays
-                        # starting from 0.
+a2[0];                  # lists can be seen as a positional uniform-indexed
+                        # arrays starting from 0.
 
 #
 # Functions

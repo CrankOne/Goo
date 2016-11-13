@@ -1,9 +1,10 @@
-# The most fundamental category in GDS is called `scope' and has a type `Scope'.
+# The most fundamental category in GDS is called `scope' and has a type
+# `Scope'.
 # It is represented lexically as a set of expressions with lvalue and rvalue
 # separated with `=' or `<-' terminals inside the curly bracets `{}'. The `='
 # means immediate evaluation
-# to numerical (or third-party object) value and never can be a `Function'. The `<-'
-# defines a function or deferred evaluated symbol.
+# to numerical (or third-party object) value and never can be a `Function'.
+# The `<-' defines a function or deferred evaluated symbol.
 
 # The GDS type system implies a set of so-called atomic types, the classes and 
 # reducible polymorphic objects:
@@ -22,13 +23,13 @@
 #   Polymorphic             |  --
 # --------------------------+------------------------------------------
 
-{
+\={
 
 # The beginning `!' symbol is reserved for special directive that
 # has immediate side effect on parser. They are called `instructions'.
 # For example:
 !requires Geo3;
-# imports some external module named `Geo3' whom declarations are
+# imports some external module named `Geo3' whose declarations are
 # now available by symbol lookup resolutin `::', e.g. `Geo3::Vector'.
 
 
@@ -54,7 +55,7 @@ Basics = {
     a = 5;
 
     # Defining a simple value of strict type:
-    Sys:Numeric:Float8 b = 32.1;
+    Sys:Numeric:Float8 b = 32.1;  # Has a shortcut T:Float8
 
     # import statement allows to create a shortcut. Direct:
     !import Sys:Arithmetic:Numeric;
