@@ -302,7 +302,7 @@ extern "C" {
  * C-function with C++ linkage that throws Goo-exception.
  * Not defined for C++ code.
  */
-int C_error( ErrCode, const char * fmt, ... );
+int goo_C_error( ErrCode, const char * fmt, ... );
 
 # define declare_error_code_C_alias( code, name, descr ) \
 extern const ErrCode goo_e_ ## name;
