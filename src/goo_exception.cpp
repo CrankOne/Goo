@@ -314,6 +314,15 @@ Exception::Exception( const em::String & s ) : _code(0),
     # endif  // EM_STACK_UNWINDING
 }
 
+# ifdef EM_STACK_UNWINDING 
+
+void
+Exception::_get_trace() throw() {
+    em::obtain_stacktrace( _stacktrace );
+}
+
+# endif  // EM_STACK_UNWINDING 
+
 void
 Exception::dump(std::ostream & os) const throw() {
     os  << std::endl << ESC_BLDYELLOW
@@ -361,15 +370,6 @@ get_errcode_description( const ErrCode C ) {
 // Backtrace
 //
 
-namespace goo {
-
-# ifdef EM_STACK_UNWINDING
-
-void
-Exception::_get_trace() throw() {
-    em::obtain_stacktrace( _stacktrace );
-}
-
 extern "C" {
 
 //
@@ -382,7 +382,7 @@ for_all_statuscodes( define_error_code_C_alias )
 # undef define_error_code_C_alias
 
 int
-C_error( ErrCode code, const char * fmt, ... ) {
+goo_C_error( ErrCode code, const char * fmt, ... ) {
     char emBuf[GOO_EMERGENCY_BUFLEN];
     va_list argptr;
     va_start(argptr, fmt);
@@ -392,8 +392,4 @@ C_error( ErrCode code, const char * fmt, ... ) {
 }
 
 }  // extern "C"
-
-# endif  // EM_STACK_UNWINDING
-
-}  // namespace goo
 
