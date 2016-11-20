@@ -48,27 +48,47 @@ set( Goo_VERSION ${Goo_VERSION_MAJOR}.${Goo_VERSION_MINOR}.${Goo_VERSION_PATCH} 
 # disabled by -D<option_name>=<ON|OFF> option given to CMake.
 
 #\option
-option( TYPES_128BIT_LENGTH     "Enable 128-bit length types."                      OFF)
+option( TYPES_128BIT_LENGTH
+        "Enable 128-bit length types."
+        OFF)
 #\option
-option( SOURCE_POSITION_INFO    "Supplement printing lines with source file info."  OFF)
+option( SOURCE_POSITION_INFO
+        "Supplement printing lines with source file info."
+        OFF)
 #\option
-option( EM_STACK_UNWINDING      "C++ exception throw produce a stack unwinding."    ON )
+option( EM_STACK_UNWINDING
+        "C++ exception throw produce a stack unwinding."
+        ON )
 #\option
-option( ANSI_ESCSEQ_PRINT       "Terminal messages coloring."                       ON )
+option( ANSI_ESCSEQ_PRINT
+        "Terminal messages coloring."
+        ON )
 # The lines below is a development features, basically located at other
 # git branches:
 #\option
-option( ENABLE_GDS              "Goo Declarative Semantics."                        OFF)
+option( ENABLE_GDS
+        "Goo Declarative Semantics."
+        OFF )
 #\option
-option( ENABLE_ALLOCATORS       "Goo's own allocators subsystem."                   OFF)
+option( ENABLE_ALLOCATORS
+        "Goo's own allocators subsystem."
+        OFF )
 #\option
-option( ENABLE_TENSORS          "Tensorial algebra support template classes."       OFF)
+option( ENABLE_TENSORS
+        "Tensorial algebra support template classes."
+        OFF )
 #\option
-option( ENABLE_DATASTREAMS      "Goo's serialization template classes."             OFF)
+option( ENABLE_DATASTREAMS
+        "Goo's serialization template classes."
+        OFF )
 #\option
-option( ENABLE_PTREE            "Goo's getopt()-like mechanism."                    OFF)
+option( ENABLE_PTREE
+        "Goo's getopt()-like mechanism."
+        OFF )
 #\option
-option( HASKELL_MODULE          "Haskell extensions."                               OFF)
+option( HASKELL_MODULE
+        "Haskell extensions."
+        OFF )
 
 #
 # Find third-party packages
@@ -126,11 +146,11 @@ endif( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
 #
 # Add custom uninstall target (CMake by default does not provide it)
 CONFIGURE_FILE(
-  "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/cmake_uninstall.cmake.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/CMakeUninstall.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/CMakeUninstall.cmake"
   IMMEDIATE @ONLY)
 ADD_CUSTOM_TARGET(uninstall
-  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake") 
+  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/CMakeUninstall.cmake") 
 
 SITE_NAME( BUILDER_HOSTNAME )
 
@@ -327,4 +347,12 @@ configure_file (
 )
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/GooConfig.cmake"
     DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/goo )
+
+#
+# Copy even some contributed/vendor moduluses:
+install(FILES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OutOfSource.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/CMakeUninstall.cmake.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionDepend.cmake"
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/goo/contrib )
 
