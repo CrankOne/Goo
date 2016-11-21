@@ -147,8 +147,8 @@ endif( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
 # Add custom uninstall target (CMake by default does not provide it)
 CONFIGURE_FILE(
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/CMakeUninstall.cmake.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/CMakeUninstall.cmake"
-  IMMEDIATE @ONLY)
+    "${CMAKE_CURRENT_BINARY_DIR}/CMakeUninstall.cmake"
+    IMMEDIATE @ONLY)
 ADD_CUSTOM_TARGET(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/CMakeUninstall.cmake") 
 
@@ -160,9 +160,9 @@ AssureOutOfSourceBuilds()
 
 #
 # Obtain versioning parameters
-    EXECUTE_PROCESS(COMMAND date +"%x %x"
-                    OUTPUT_VARIABLE BUILD_TIMESTAMP
-                    OUTPUT_STRIP_TRAILING_WHITESPACE )
+EXECUTE_PROCESS(COMMAND date +"%x %x"
+                OUTPUT_VARIABLE BUILD_TIMESTAMP
+                OUTPUT_STRIP_TRAILING_WHITESPACE )
 
 
 
@@ -205,54 +205,19 @@ if( CMAKE_COMPILER_IS_GNUCXX )
 endif( CMAKE_COMPILER_IS_GNUCXX )
 set( CMAKE_Haskell_FLAGS "-fPIC -no-hs-main" )
 
-set( CMAKE_C_FLAGS_DEBUG        "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer" ) # -Wfatal-errors -fprofile-use? -fprofile-correction
-set( CMAKE_CXX_FLAGS_DEBUG      "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer" )
-set( CMAKE_C_FLAGS_RELEASE      "${CMAKE_C_FLAGS_RELEASE}" )
-set( CMAKE_CXX_FLAGS_RELEASE    "${CMAKE_CXX_FLAGS_RELEASE}" )
-set( CMAKE_C_FLAGS_MINSIZEREL   "${CMAKE_C_FLAGS_MINSIZEREL}" )
-set( CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL}" )
+set( CMAKE_C_FLAGS_DEBUG            "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer" ) # -Wfatal-errors -fprofile-use? -fprofile-correction
+set( CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer" )
+set( CMAKE_C_FLAGS_RELEASE          "${CMAKE_C_FLAGS_RELEASE}" )
+set( CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS_RELEASE}" )
+set( CMAKE_C_FLAGS_MINSIZEREL       "${CMAKE_C_FLAGS_MINSIZEREL}" )
+set( CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS_MINSIZEREL}" )
 set( CMAKE_C_FLAGS_RELWITHDEBINFO   "${CMAKE_C_FLAGS_RELWITHDEBINFO}" )
 set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}" )
 
 #
 # Attain configuration depending on current build dir.
-string(REPLACE "/" ";" SPLITTED_PATH ${CMAKE_BINARY_DIR})
-list(REVERSE SPLITTED_PATH)
-list(GET SPLITTED_PATH 0 buildDir)
-message( STATUS "Building in directory ${buildDir}" )
-if( buildDir STREQUAL "debug" )
-    message( STATUS "NOTE: debug build" )
-    #\buildconf
-    set( CMAKE_BUILD_TYPE "Debug" )
-    set( Goo_BUILD_POSTFIX "-dbg" )
-elseif( buildDir STREQUAL "release" )
-    message( STATUS "NOTE: release build" )
-    #\buildconf
-    set( CMAKE_BUILD_TYPE "Release" )
-    set( Goo_BUILD_POSTFIX "" )
-elseif( buildDir STREQUAL "minsizerel" )
-    message( STATUS "NOTE: minimized size build" )
-    #\buildconf
-    set( CMAKE_BUILD_TYPE "MinSizeRel" )
-    set( Goo_BUILD_POSTFIX "-msr" )
-elseif( buildDir STREQUAL "relwdebinfo" )
-    message( STATUS "NOTE: release build with debugging info" )
-    #\buildconf
-    set( CMAKE_BUILD_TYPE "RelWithDebInfo" )
-    set( Goo_BUILD_POSTFIX "-rdbg" )
-else()
-    message( STATUS "NOTE: custom build" )
-    set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -DNDEBUG -O3" )
-    set( CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -DNDEBUG -O3" )
-    set( Goo_BUILD_POSTFIX "" )
-endif()
+include(contrib/cmake/BuildConf.cmake)
 set( Goo_LIBRARY goo${Goo_BUILD_POSTFIX} )
-#set(VAR 
-#    $<$<CONFIG:Debug>:definition_for_debug>
-#    $<$<CONFIG:RelWithDebInfo>:definition_for_rel_with_debug>
-#    $<$<CONFIG:Release>:definition_for_release> 
-#    $<$<CONFIG:MinSizeRel>:definition_for_tight_release>
-#    )
 
 include_directories(
         ${GOO_LIB_INCLUDE_DIR}
@@ -349,10 +314,11 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/GooConfig.cmake"
     DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/goo )
 
 #
-# Copy even some contributed/vendor moduluses:
+# Copy some useful contributed/vendor modules:
 install(FILES 
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OutOfSource.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/CMakeUninstall.cmake.in"
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionDepend.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/BuildConf.cmake"
     DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/goo/contrib )
 
