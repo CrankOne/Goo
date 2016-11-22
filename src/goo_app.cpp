@@ -237,13 +237,14 @@ iApp::_signal_handler_dispatcher( int signum,
 # ifdef GOO_GDB_EXEC
 UByte
 iApp::attach_gdb(int, siginfo_t *, void*) {
-    char buf[128];
+    char buf[128]; int rc;
     snprintf( buf, sizeof(buf), "%s -p %d", GOO_GDB_EXEC, getpid() );
     // TODO: this system call should be delegated to safe wrapper.
     // May some combination of fork() and then excl() do
     // the trick?
     fprintf(stdout, "Invokation of: " ESC_CLRBOLD "$ %s" ESC_CLRCLEAR "\n", buf);
-    system(buf);
+    rc = system(buf);
+    (void)(rc);
     return 0x0;
 }
 # endif
@@ -251,13 +252,14 @@ iApp::attach_gdb(int, siginfo_t *, void*) {
 # ifdef GOO_GCORE_EXEC
 UByte
 iApp::dump_core(int, siginfo_t *, void*) {
-    char buf[128]; 
+    char buf[128]; int rc;
     snprintf( buf, sizeof(buf), "%s %d", GOO_GCORE_EXEC, getpid() );
     // TODO: this system call should be delegated to safe wrapper.
     // May some combination of fork() and then excl() do
     // the trick?
     fprintf(stdout, "Invokation of: " ESC_CLRBOLD "$ %s" ESC_CLRCLEAR "\n", buf);
-    system(buf);
+    rc = system(buf);
+    (void)(rc);
     return 0x0;
 }
 # endif

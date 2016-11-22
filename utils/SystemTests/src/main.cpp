@@ -26,9 +26,10 @@
 
 static UByte
 create_pidfile(int, siginfo_t *, void*) {
-    char buf[64]; 
+    char buf[64]; int rc;
     snprintf( buf, sizeof(buf), "touch sigint-%d.tmp", getpid() );
-    system(buf);
+    rc = system(buf);
+    (void) rc;
     return 0x0;
 }
 

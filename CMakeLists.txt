@@ -38,6 +38,8 @@ set( Goo_VERSION_MINOR 1  )
 set( Goo_VERSION_PATCH dev )
 set( Goo_VERSION ${Goo_VERSION_MAJOR}.${Goo_VERSION_MINOR}.${Goo_VERSION_PATCH} )
 
+include(contrib/cmake/OptionList.cmake)
+
 # This script builds Goo library with all dependent
 # utilities. The out-of-source build is mandatory way. Some code
 # features are determined by build directory name: 'debug'
@@ -48,45 +50,45 @@ set( Goo_VERSION ${Goo_VERSION_MAJOR}.${Goo_VERSION_MINOR}.${Goo_VERSION_PATCH} 
 # disabled by -D<option_name>=<ON|OFF> option given to CMake.
 
 #\option
-option( TYPES_128BIT_LENGTH
+push_option( TYPES_128BIT_LENGTH
         "Enable 128-bit length types."
         OFF)
 #\option
-option( SOURCE_POSITION_INFO
+push_option( SOURCE_POSITION_INFO
         "Supplement printing lines with source file info."
         OFF)
 #\option
-option( EM_STACK_UNWINDING
+push_option( EM_STACK_UNWINDING
         "C++ exception throw produce a stack unwinding."
         ON )
 #\option
-option( ANSI_ESCSEQ_PRINT
+push_option( ANSI_ESCSEQ_PRINT
         "Terminal messages coloring."
         ON )
 # The lines below is a development features, basically located at other
 # git branches:
 #\option
-option( ENABLE_GDS
+push_option( ENABLE_GDS
         "Goo Declarative Semantics."
         OFF )
 #\option
-option( ENABLE_ALLOCATORS
+push_option( ENABLE_ALLOCATORS
         "Goo's own allocators subsystem."
         OFF )
 #\option
-option( ENABLE_TENSORS
+push_option( ENABLE_TENSORS
         "Tensorial algebra support template classes."
         OFF )
 #\option
-option( ENABLE_DATASTREAMS
+push_option( ENABLE_DATASTREAMS
         "Goo's serialization template classes."
         OFF )
 #\option
-option( ENABLE_PTREE
+push_option( ENABLE_PTREE
         "Goo's getopt()-like mechanism."
         OFF )
 #\option
-option( HASKELL_MODULE
+push_option( HASKELL_MODULE
         "Haskell extensions."
         OFF )
 
@@ -305,6 +307,8 @@ configure_file (
 )
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake"
     DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules )
+
+options_list()
 configure_file (
     "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/GooConfig.cmake.in"
     "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/GooConfig.cmake"
@@ -320,5 +324,12 @@ install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/CMakeUninstall.cmake.in"
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionDepend.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/BuildConf.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionList.cmake"
     DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/goo/contrib )
+
+install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/dev/testbuild.pl"
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+)
 

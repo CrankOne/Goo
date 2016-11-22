@@ -18,6 +18,9 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# TODO: consider integration with native CMake functionality:
+# CMAKE_DEPENDENT_OPTION
+# https://cmake.org/cmake/help/v3.0/module/CMakeDependentOption.html
 
 function( option_depend pkgName )
     if( ${pkgName} )

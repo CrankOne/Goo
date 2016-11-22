@@ -18,32 +18,27 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# CMake config file for Goo library package
-# - It defines the following variables
-#  Goo_INCLUDE_DIRS     - include directories for Goo library
-#  Goo_LIBRARIES        - Goo libraries to link against
-#  Goo_LIBRARY_DIR      - Where Goo libraries is to be placed
-#  Goo_CC               - Goo C compiler
-#  Goo_C_CFLAGS         - Goo C compiler flags
-#  Goo_CXX              - Goo C++ compiler
-#  Goo_CXX_CFLAGS       - Goo C++ compiler flags
-#  Goo_INSTALL_PREFIX   - Goo basic installation path
-# - If the unit test utility is enabled to build the following variables are
-# to be defined:
-#  Goo_UT_EXECUTABLE    - the Goo unit tests executable
+# This macro must be used instead of native CMake option() command in order
+# to provide automated gathering of options.
+macro( push_option optName optDescr optDefault )
+    option( ${optName} ${optDescr} ${optDefault} )
+    list( APPEND ${CMAKE_PROJECT_NAME}_OPTIONS "${optName}" )
+endmacro( push_option )
 
-set( Goo_INCLUDE_DIRS   "@CMAKE_INSTALL_PREFIX@/include/goo" )
-set( Goo_LIBRARIES      @Goo_LIBRARY@ )
-set( Goo_LIBRARY_DIR    @CMAKE_INSTALL_PREFIX@/lib/goo )
-set( Goo_INSTALL_PREFIX @CMAKE_INSTALL_PREFIX@ )
-
-set( Goo_CC             "@CMAKE_C_COMPILER@" )
-set( Goo_C_CFLAGS       "@CMAKE_C_FLAGS@"   )
-
-set( Goo_CXX            "@CMAKE_CXX_COMPILER@" )
-set( Goo_CXX_CFLAGS     "@CMAKE_CXX_FLAGS@" )
-
-set( Goo_UT_EXECUTABLE  @Goo_UT_EXECUTABLE@ )
-
-@Goo_OPTIONS_STR@
+# Upon invokation this function creates a variable named
+# ${CMAKE_PROJECT_NAME}_OPTIONS_STR with string in form
+# set( <optName> <ON|OFF> ) denoting options set by the project
+# within macro above.
+function( options_list )
+    foreach( optionName IN ITEMS ${${CMAKE_PROJECT_NAME}_OPTIONS} )
+        #message(STATUS "* ${optionName}")  # XXX (dev)
+        string( CONCAT ${CMAKE_PROJECT_NAME}_OPTIONS_STR
+                     ${${CMAKE_PROJECT_NAME}_OPTIONS_STR}
+            "set( ${CMAKE_PROJECT_NAME}_${optionName} ${${optionName}} )\n" )
+    endforeach()
+    set( ${CMAKE_PROJECT_NAME}_OPTIONS_STR
+         "# ${CMAKE_PROJECT_NAME} options:\n${${CMAKE_PROJECT_NAME}_OPTIONS_STR}"
+         PARENT_SCOPE )
+    #message( STATUS ${${CMAKE_PROJECT_NAME}_OPTIONS_STR} )
+endfunction( options_list )
 
