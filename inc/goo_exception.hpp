@@ -293,22 +293,6 @@ String demangle_function( const String & name );
 
 # endif /* __cplusplus */
 
-# ifdef __cplusplus
-extern "C" {
-# endif
-
-/**@brief raises custom GOO-exception from c-code
- *
- * C-function with C++ linkage that throws Goo-exception.
- * Not defined for C++ code.
- */
-int goo_C_error( ErrCode, const char * fmt, ... ) __attribute__ ((noreturn));
-
-# ifdef __cplusplus
-} // extern "C"
-# endif
-
-
 # ifndef NDEBUG
 # ifdef __cplusplus /* C++ --- use exception */
 # define DBG_NULLPTR_CHECK( ptr, ... ) \
