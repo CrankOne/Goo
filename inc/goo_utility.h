@@ -25,8 +25,10 @@
 
 # include "goo_types.h"
 
+# ifndef STRINGIFY_MACRO_ARG
 # define STRINGIFY_MACRO_ARG(a) _STRINGIFY_MACRO_ARG(a)
 # define _STRINGIFY_MACRO_ARG(a) #a
+# endif  // STRINGIFY_MACRO_ARG
 
 # ifdef __cplusplus
 extern "C" {
