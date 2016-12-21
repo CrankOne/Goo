@@ -235,10 +235,10 @@ configure_file (
 
 configure_file (
     "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc.in"
-    "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc"
+    "${CMAKE_CURRENT_BINARY_DIR}/goo.pc"
     @ONLY
 )
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/goo.pc"
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/goo.pc"
         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/pkgconfig )
 
 # XXX :
@@ -302,20 +302,20 @@ endif( build_unit_tests )
 
 configure_file (
     "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake.in"
-    "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/FindGoo.cmake"
     @ONLY
 )
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/FindGoo.cmake"
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/FindGoo.cmake"
     DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules )
 
 options_list()
 configure_file (
     "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/GooConfig.cmake.in"
-    "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/GooConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/GooConfig.cmake"
     @ONLY
 )
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/GooConfig.cmake"
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/goo )
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/GooConfig.cmake"
+    DESTINATION lib/cmake/goo )
 
 #
 # Copy some useful contributed/vendor modules:
@@ -325,11 +325,11 @@ install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionDepend.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/BuildConf.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionList.cmake"
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/goo/contrib )
+    DESTINATION lib/cmake/goo )
 
 install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/assets/dev/testbuild.pl"
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+    DESTINATION bin
 )
 
