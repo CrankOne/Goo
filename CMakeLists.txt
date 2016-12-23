@@ -325,6 +325,8 @@ install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionDepend.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/BuildConf.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionList.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/PyExtensions.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/PyExtensions_init-template.in"
     DESTINATION lib/cmake/goo )
 
 install(FILES
