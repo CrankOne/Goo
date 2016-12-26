@@ -89,6 +89,15 @@ iApp * iApp::_self = nullptr;
 DECLTYPE( iApp::_documentedEnvVars ) iApp::_documentedEnvVars = nullptr;
 DECLTYPE( iApp::_handlers ) iApp::_handlers = nullptr;
 
+iApp &
+iApp::self() {
+    if( !_self ) {
+        emraise( badState, "None application iApp instantiated while its "
+                 "instance required." );
+    }
+    return *_self;
+}
+
 /** Raises 'nwGeneric' exception on failure.
  */
 std::string
