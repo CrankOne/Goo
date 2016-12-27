@@ -56,7 +56,7 @@ function( goo_py_extensions )
     find_package( PythonLibs REQUIRED )
 
     include( ${SWIG_USE_FILE} )
-    set( CMAKE_SWIG_FLAGS "-Wall" )
+    set( CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -Wall )
     include_directories( ${PYTHON_INCLUDE_DIRS} )
 
     #
