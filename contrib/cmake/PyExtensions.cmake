@@ -31,6 +31,7 @@ set( THIS_MODULE_DIR ${CMAKE_CURRENT_LIST_DIR} )
 # goo_py_extensions( INTERFACES <iface1> <iface2> ...
 #                    [PKG_NAME <package name>]
 #                    [LINK_LIBS <lib1> <lib2> ...]
+#                    [WRAPPER_SOUCES <lstvariable_name>] 
 #                    [NO_INIT_FILE] )
 # Please, note that one can specify Python_ADDITIONAL_VERSIONS to point out
 # desired versions of python to be used. Like that:
@@ -40,7 +41,7 @@ set( THIS_MODULE_DIR ${CMAKE_CURRENT_LIST_DIR} )
 function( goo_py_extensions )
     # Function signature:
     set( options NO_INIT_FILE )
-    set( oneValueArgs PKG_NAME )
+    set( oneValueArgs PKG_NAME WRAPPER_SOUCES )
     set( multiValueArgs INTERFACES LINK_LIBS )
     cmake_parse_arguments( py_extensions
             "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
@@ -96,10 +97,13 @@ function( goo_py_extensions )
         message( STATUS "Located extension module \"${IFACE}\" at ${IFACE_FILE}..." )
         ## ${SWIG_MODULE_${name}_REAL_NAME}.
         set_source_files_properties( ${IFACE_FILE} PROPERTIES CPLUSPLUS ON )
+        #set_source_files_properties( ${IFACE_FILE} PROPERTIES COMPILE_FLAGS -Dregister= )
         swig_add_module( ${IFACE} python ${IFACE_FILE} )
         swig_link_libraries( ${IFACE} ${PYTHON_LIBRARIES} ${py_extensions_LINK_LIBS})
         install(TARGETS ${SWIG_MODULE_${IFACE}_REAL_NAME}
                 DESTINATION ${PY_MODULES_INSTALL_DIR}/${PYPKGNM} )
+            #list( APPEND PY_EXT_MODULES_LIST ${SWIG_MODULE_${IFACE}_REAL_NAME} )  # TODO
+        list( APPEND PY_EXT_MODULES_LIST ${swig_generated_file_fullname} )  # TODO
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${IFACE}.py
                 DESTINATION ${PY_MODULES_INSTALL_DIR}/${PYPKGNM} )
         set( ${PYPKGNM}_PY_MODULES "${${PYPKGNM}_PY_MODULES}${IFACE} " )
@@ -117,6 +121,9 @@ function( goo_py_extensions )
 
     set( PY_MODULES_INSTALL_DIR ${PY_MODULES_INSTALL_DIR} PARENT_SCOPE )
     set( PYPKGNM ${PYPKGNM} PARENT_SCOPE )
+    if( py_extensions_WRAPPER_SOUCES )
+        set( ${py_extensions_WRAPPER_SOUCES} ${PY_EXT_MODULES_LIST} PARENT_SCOPE )
+    endif( py_extensions_WRAPPER_SOUCES )
 endfunction( goo_py_extensions )
 
 
