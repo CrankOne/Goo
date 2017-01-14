@@ -3,7 +3,7 @@
 
 BinOpKey
 gds_compose_binop_key( TypeCode leftT, TypeCode rightT, BinaryArithOpCode binOpCode) {
-    return leftT
+    return   ((BinOpKey) leftT)
          | ( ((BinOpKey) rightT) << 8*sizeof(TypeCode) )
          | ( ((BinOpKey) binOpCode) << 16*sizeof(TypeCode) )
          ;

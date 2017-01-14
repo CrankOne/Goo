@@ -8,7 +8,7 @@
  * integral and floating-point numbers. Like in many other languages
  * such expressions will be calculated in a way when, for binary operator,
  * the largest type from two operands will be choosen. In order to provide
- * finer control of math evaluation procedure (which can be desiravle in
+ * finer control of math evaluation procedure (which can be desirable in
  * some rare cases) we exposed internal routines included in this group.
  *  @{
  */
@@ -54,7 +54,7 @@ gds_free_binop_table( struct GDS_BinOpArithmetic * tableStruct ) {
  *
  * \param tableStruct a simple arithmetics evaluator function table.
  * \param binOpCode binary operator code according
- * to \ref for_each_common_binary_arithmetic_lexical_operator macro.
+ *        to \ref for_each_common_binary_arithmetic_lexical_operator macro.
  * \param leftT left operand type code
  * \param rightT right operand type code
  * \param resultT expected result type code
@@ -74,6 +74,8 @@ gds_add_binary_operator_table_entry(
         SimpleArithmeticBinaryOperator func,
         uint8_t doOverride ) {
     LCL_TABLE( tableStruct, table );
+    printf( " XXX insertion (%#x->#%x<-%#x at %p)\n",
+                leftT, binOpCode, rightT, table );  // XXX
     bool doRepeatInsertion = false,
          overriden = false;
     do {
@@ -147,6 +149,8 @@ gds_earn_binary_arithmetical_operator_result_type(
     LCL_TABLE( tableStruct, table );
     auto it = table->find( gds_compose_binop_key( leftT, rightT, binOpCode ) );
     if( table->end() == it ) {
+        printf( " XXX not found (%#x->#%x<-%#x at %p)\n",
+            leftT, binOpCode, rightT, table );  // XXX
         return 0x0;
     }
     return it->second.first;

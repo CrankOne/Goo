@@ -5,6 +5,7 @@
 # include <string.h>
 # include <stdlib.h>
 # include <assert.h>
+# include <stdio.h>  // XXX
 
 /* Note: implemented in C++ part */
 int binop_key_is_unique( BinOpKey );
@@ -117,16 +118,22 @@ goo_gds__check_simple_arithmetics_evaluation() {
     struct GDS_BinOpArithmetic * table = gds_alloc_binop_table();
 
     /* Imitates ready operator table */
-    assert( 0 == (insertionResult = gds_add_binary_operator_table_entry(
+    printf( " XXX UInt_T_code <- %#x\n", UInt_T_code );  // XXX
+    printf( " XXX Float4_T_code <- %#x\n", Float4_T_code );  // XXX
+    if( 0 != (insertionResult = gds_add_binary_operator_table_entry(
             table,
             GDS_e_binary_summation,
             UInt_T_code, Float4_T_code, Float4_T_code,
-            testing_function_summation1, 0 )));
-    assert( 0 == (insertionResult = gds_add_binary_operator_table_entry(
+            testing_function_summation1, 0 ))) {
+        return -1;
+    }
+    if( 0 != (insertionResult = gds_add_binary_operator_table_entry(
             table,
             GDS_e_binary_production,
             UByte_T_code, Float4_T_code, Float4_T_code,
-            testing_function_production3, 0 )));
+            testing_function_production3, 0 ))) {
+        return -2;
+    }
 
     /* Now test arithmetics evaluation:
      * 10.02 == 3*(1 + 2.34)
@@ -171,24 +178,28 @@ goo_gds__check_simple_arithmetics_evaluation() {
         ));
         /* CHECKS */
         /* Check type deduction from basic nodes */
-        if( 0 != gds_earn_binary_arithmetical_operator_result_type(
+        TypeCode foundType;
+        if( 0 != (foundType=gds_earn_binary_arithmetical_operator_result_type(
                     table, GDS_e_binary_production,
-                    UInt_T_code, Float4_T_code ) ) {
-            return -1;
-        }
-        if( Float4_T_code != gds_earn_binary_arithmetical_operator_result_type(
-                    table, GDS_e_binary_summation,
-                    UInt_T_code, Float4_T_code ) ) {
-            return -2;
-        }
-        if( Float4_T_code != gds_earn_binary_arithmetical_operator_result_type(
-                    table, GDS_e_binary_production,
-                    UByte_T_code, Float4_T_code ) ) {
+                    UInt_T_code, Float4_T_code )) ) {
+            /* False positive look-up result */
             return -3;
         }
+        if( Float4_T_code != (foundType=gds_earn_binary_arithmetical_operator_result_type(
+                    table, GDS_e_binary_summation,
+                    UInt_T_code, Float4_T_code )) ) {
+            /* False negative look-up result */
+            return -4;
+        }
+        if( Float4_T_code != (foundType=gds_earn_binary_arithmetical_operator_result_type(
+                    table, GDS_e_binary_production,
+                    UByte_T_code, Float4_T_code )) ) {
+            return -5;
+        }
         /* Check type deduction from simple arithmetic expression */
-        if( UInt_T_code != gds_deduce_arithmetical_expression_result_type(
-                    table, uint32Node ) ) {
+        TypeCode deducedType;
+        if( UInt_T_code != (deducedType = gds_deduce_arithmetical_expression_result_type(
+                    table, uint32Node )) ) {
             return -11;
         }
         if( Float4_T_code != gds_deduce_arithmetical_expression_result_type(
