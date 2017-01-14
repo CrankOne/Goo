@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 # include <iostream>
 # include <fstream>
@@ -293,6 +314,15 @@ Exception::Exception( const em::String & s ) : _code(0),
     # endif  // EM_STACK_UNWINDING
 }
 
+# ifdef EM_STACK_UNWINDING 
+
+void
+Exception::_get_trace() throw() {
+    em::obtain_stacktrace( _stacktrace );
+}
+
+# endif  // EM_STACK_UNWINDING 
+
 void
 Exception::dump(std::ostream & os) const throw() {
     os  << std::endl << ESC_BLDYELLOW
@@ -340,15 +370,6 @@ get_errcode_description( const ErrCode C ) {
 // Backtrace
 //
 
-namespace goo {
-
-# ifdef EM_STACK_UNWINDING
-
-void
-Exception::_get_trace() throw() {
-    em::obtain_stacktrace( _stacktrace );
-}
-
 extern "C" {
 
 //
@@ -371,8 +392,4 @@ goo_C_error( ErrCode code, const char * fmt, ... ) {
 }
 
 }  // extern "C"
-
-# endif  // EM_STACK_UNWINDING
-
-}  // namespace goo
 

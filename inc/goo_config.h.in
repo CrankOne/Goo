@@ -2,6 +2,28 @@
 # define H_GOO_CONFIG_H
 
 /*
+ * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/*
  * Features
  * (do not forget to append description and encoder macros at
  *  goo_versioning.c)
@@ -11,6 +33,7 @@
 #cmakedefine SOURCE_POSITION_INFO   1
 #cmakedefine EM_STACK_UNWINDING     2
 #cmakedefine ANSI_ESCSEQ_PRINT      3
+#cmakedefine ENABLE_GDS             4
 
 #cmakedefine ZLIB_FOUND             0
 #cmakedefine LZO_FOUND              1
@@ -32,8 +55,9 @@
  * Versioning
  */
 
-# define GOO_VERSION_MAJOR @GOO_VERSION_MAJOR@
-# define GOO_VERSION_MINOR @GOO_VERSION_MINOR@
+# define GOO_VERSION_MAJOR @Goo_VERSION_MAJOR@
+# define GOO_VERSION_MINOR @Goo_VERSION_MINOR@
+# define GOO_VERSION_PATCH @Goo_VERSION_PATCH@
 
 # define BUILD_TIMESTAMP @BUILD_TIMESTAMP@
 # ifdef GIT_FOUND
@@ -65,6 +89,18 @@
 #   define GOO_DEFAULT_ZLIB_COMPRESSION_LEVEL 9
 # endif
 
+# ifndef GDS_PARSER_EXPR_REPLICA_BUF_LENGTH
+#   define GDS_PARSER_EXPR_REPLICA_BUF_LENGTH 1024
+# endif
+
+# ifndef GDS_PARSER_NSCOPES
+#   define GDS_PARSER_NSCOPES 128
+# endif
+
+# ifndef GDS_PARSER_STRING_BUF_LEN
+#   define GDS_PARSER_STRING_BUF_LEN 1024*1024
+# endif
+
 # ifdef __cplusplus
 # include <stdexcept>
 # endif
@@ -77,6 +113,16 @@
 #   define GOO_STREAMS_DEFAULT_SIZE       GOO_SIZE_TYPE
 #   define GOO_STREAMS_DEFAULT_POSITION   GOO_SIZE_TYPE
 # endif
+
+/*
+ * Found system utils
+ */
+
+/// When defined, contains stringified path to gdb debugger exec.
+#cmakedefine GOO_GDB_EXEC       "@GOO_GDB_EXEC@"
+
+/// When defined, contains stringified path to gcore exec.
+#cmakedefine GOO_GCORE_EXEC     "@GOO_GCORE_EXEC@"
 
 # endif /* H_GOO_CONFIG_H */
 

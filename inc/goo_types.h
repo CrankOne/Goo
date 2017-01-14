@@ -1,5 +1,27 @@
-# ifndef HPH_TYPES_H
-# define HPH_TYPES_H
+# ifndef GOO_TYPES_H
+# define GOO_TYPES_H
+
+/*
+ * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 # include <stdint.h>
 # include "goo_config.h"
@@ -16,7 +38,7 @@
  */
 
 /*! \file goo_types.h
- * \brief Contains atomic Hph's types and definitions.
+ * \brief Contains atomic Goo's types and definitions.
  * 
  * Note the following types table:
  *  #   C-name b0000-0000  hex#
@@ -176,7 +198,7 @@
     m(106,      objNotConstructed,  "requested object was not constructed", ## __VA_ARGS__  ) \
     m(107,      singletonRepCtr,    "singleton repeated construction", ## __VA_ARGS__  ) \
     m(108,      badArchitect,       "architectural incompleteness or undefined state", ## __VA_ARGS__  ) \
-    m(255,      thirdParty,         "thirt-party code error", ## __VA_ARGS__ ) \
+    m(255,      thirdParty,         "third-party code error", ## __VA_ARGS__ ) \
     /* ... */
 
 /*!\def for_all_statuscodes
@@ -285,14 +307,6 @@ for_all_atomic_datatypes(declare_typeid_getter)
 # ifdef __cplusplus
 extern "C" {
 # endif
-
-/**@brief raises custom GOO-exception from c-code
- *
- * C-function with C++ linkage that throws Goo-exception.
- * Not defined for C++ code.
- * Note: for implementation, see goo_exception.cpp
- */
-int goo_C_error( ErrCode, const char * fmt, ... ) __attribute__ ((noreturn));
 
 # define declare_error_code_C_alias( code, name, descr ) \
 extern const ErrCode goo_e_ ## name;
