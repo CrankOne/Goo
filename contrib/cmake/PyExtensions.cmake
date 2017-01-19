@@ -124,7 +124,7 @@ function( goo_py_extensions )
 
     if( py_extensions_SETUP_TEMPLATE )
         message( STATUS "setup.py will be generated for ${PYPKGNM} from ${py_extensions_SETUP_TEMPLATE}" )
-        configure_file( ${py_extensions_SETUP_TEMPLATE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py )
+        configure_file( ${py_extensions_SETUP_TEMPLATE} ${CMAKE_CURRENT_BINARY_DIR}/../setup.py )
     endif( py_extensions_SETUP_TEMPLATE )
 
     set( PY_MODULES_INSTALL_DIR ${PY_MODULES_INSTALL_DIR} PARENT_SCOPE )
