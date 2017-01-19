@@ -31,7 +31,8 @@ set( THIS_MODULE_DIR ${CMAKE_CURRENT_LIST_DIR} )
 # goo_py_extensions( INTERFACES <iface1> <iface2> ...
 #                    [PKG_NAME <package name>]
 #                    [LINK_LIBS <lib1> <lib2> ...]
-#                    [WRAPPER_SOUCES <lstvariable_name>] 
+#                    [WRAPPER_SOUCES <lstvariable_name>]
+#                    [SETUP_TEMPLATE <setup.py.in-path>]
 #                    [NO_INIT_FILE] )
 # Please, note that one can specify Python_ADDITIONAL_VERSIONS to point out
 # desired versions of python to be used. Like that:
@@ -41,7 +42,7 @@ set( THIS_MODULE_DIR ${CMAKE_CURRENT_LIST_DIR} )
 function( goo_py_extensions )
     # Function signature:
     set( options NO_INIT_FILE )
-    set( oneValueArgs PKG_NAME WRAPPER_SOUCES )
+    set( oneValueArgs PKG_NAME WRAPPER_SOUCES SETUP_TEMPLATE )
     set( multiValueArgs INTERFACES LINK_LIBS )
     cmake_parse_arguments( py_extensions
             "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
@@ -100,12 +101,14 @@ function( goo_py_extensions )
         #set_source_files_properties( ${IFACE_FILE} PROPERTIES COMPILE_FLAGS -Dregister= )
         swig_add_module( ${IFACE} python ${IFACE_FILE} )
         swig_link_libraries( ${IFACE} ${PYTHON_LIBRARIES} ${py_extensions_LINK_LIBS})
-        install(TARGETS ${SWIG_MODULE_${IFACE}_REAL_NAME}
-                DESTINATION ${PY_MODULES_INSTALL_DIR}/${PYPKGNM} )
-            #list( APPEND PY_EXT_MODULES_LIST ${SWIG_MODULE_${IFACE}_REAL_NAME} )  # TODO
+
+        # TODO: use install.py
+        #install(TARGETS ${SWIG_MODULE_${IFACE}_REAL_NAME}
+        #        DESTINATION ${PY_MODULES_INSTALL_DIR}/${PYPKGNM} )
+        #list( APPEND PY_EXT_MODULES_LIST ${SWIG_MODULE_${IFACE}_REAL_NAME} )  # TODO
         list( APPEND PY_EXT_MODULES_LIST ${swig_generated_file_fullname} )  # TODO
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${IFACE}.py
-                DESTINATION ${PY_MODULES_INSTALL_DIR}/${PYPKGNM} )
+        #install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${IFACE}.py
+        #        DESTINATION ${PY_MODULES_INSTALL_DIR}/${PYPKGNM} )
         set( ${PYPKGNM}_PY_MODULES "${${PYPKGNM}_PY_MODULES}${IFACE} " )
     endforeach()
 
@@ -115,9 +118,14 @@ function( goo_py_extensions )
         message( STATUS "__init__.py will be generated for ${PYPKGNM}" )
         configure_file( ${THIS_MODULE_DIR}/PyExtensions_init-template.in
                         ${CMAKE_CURRENT_BINARY_DIR}/__init__.py )
-        install( FILES ${CMAKE_CURRENT_BINARY_DIR}/__init__.py
-                 DESTINATION ${PY_MODULES_INSTALL_DIR}/${PYPKGNM} )
+        #install( FILES ${CMAKE_CURRENT_BINARY_DIR}/__init__.py
+        #DESTINATION ${PY_MODULES_INSTALL_DIR}/${PYPKGNM} )
     endif( NOT py_extensions_NO_INIT_FILE )
+
+    if( py_extensions_SETUP_TEMPLATE )
+        message( STATUS "setup.py will be generated for ${PYPKGNM} from ${py_extensions_SETUP_TEMPLATE}" )
+        configure_file( ${py_extensions_SETUP_TEMPLATE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py )
+    endif( py_extensions_SETUP_TEMPLATE )
 
     set( PY_MODULES_INSTALL_DIR ${PY_MODULES_INSTALL_DIR} PARENT_SCOPE )
     set( PYPKGNM ${PYPKGNM} PARENT_SCOPE )
