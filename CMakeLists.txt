@@ -239,7 +239,7 @@ configure_file (
     @ONLY
 )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/goo.pc"
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/pkgconfig )
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/usr/share/pkgconfig )
 
 # XXX :
 #if( GIT_FOUND )
@@ -306,7 +306,7 @@ configure_file (
     @ONLY
 )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/FindGoo.cmake"
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules )
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/usr/share/cmake/Modules )
 
 options_list()
 configure_file (
