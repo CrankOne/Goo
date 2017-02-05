@@ -47,9 +47,6 @@ template<typename ConfigObjectT,
 
 namespace aux {
 
-
-
-
 /// Abstract application base class.
 class iApp {
 public:

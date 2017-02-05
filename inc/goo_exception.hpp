@@ -1,5 +1,5 @@
-# ifndef GOO_EXCEPTION_HPP
-# define GOO_EXCEPTION_HPP
+# ifndef H_GOO_EXCEPTION_H
+# define H_GOO_EXCEPTION_H
 
 /*
  * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
@@ -306,5 +306,5 @@ String demangle_function( const String & name );
 
 /*! @} */
 
-# endif  /* GOO_EXCEPTION_HPP */
+# endif  /* H_GOO_EXCEPTION_H */
 
