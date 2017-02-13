@@ -65,7 +65,8 @@ SysTestApp::_V_run() {
     printf( "Sleeping for %d seconds...\n", co().nSecsTimeout );
     sleep(co().nSecsTimeout);
     printf( "Causing a segmentation failure to receive a termination signal...\n" );
-    int a = (3 + *((char *) 0));
+    int * aPtr = nullptr;
+    int a = *aPtr;
     ((void)a);
     return EXIT_SUCCESS;
 }

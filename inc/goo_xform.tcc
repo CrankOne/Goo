@@ -336,7 +336,7 @@ public:
     }
 
     /// Returns true, if both ranges are set and finite.
-    virtual bool limits_valid() const {
+    virtual bool limits_valid() const override {
         return Parent::limits_valid()
             && std::isfinite(this->lower())
             && std::isfinite(this->upper());
