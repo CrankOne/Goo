@@ -196,6 +196,10 @@ public:
         }
         return ptr->value();
     }
+
+    /// Getter method for multiple parameters.
+    template<typename T> const std::list<T> &
+    as_list_of() const;
 };  // }}} class iSingularParameter
 
 
@@ -305,25 +309,33 @@ class Parameter {
     //std::static_assert<false>( "dft" );
 };  // Defailt implementation is empty.
 
-
-
-
-/**@brief
+/**@brief A parameter list class.
  * 
- * Ctrs are heavily restricted here.
- * TODO: track `default' values overriding.
+ * This template class implements a parameter list for any defined singular
+ * parameter type. The types have to be homogeneous in list (i.e. one can not
+ * specify a list consisting of, e.g. boolean and floating point number types).
+ *
+ * Prameter list may have default values defined as an C++11 initializer list
+ * upon construction. Default values will be deleted if at least one value
+ * will override the parameter.
  */
 template<typename ValueT>
-class Parameter<std::list<ValueT> > : public mixins::iDuplicable<iAbstractParameter,
-                                        Parameter<std::list<ValueT> >,
-                                        /*protected?*/ Parameter<ValueT> > {
+class Parameter<std::list<ValueT> > :
+            public mixins::iDuplicable< iAbstractParameter,
+                                        Parameter< std::list<ValueT> >,
+                                        /*protected?*/ Parameter< ValueT > > {
 public:
     typedef mixins::iDuplicable<iAbstractParameter, Parameter<std::list<ValueT> >,
                                                     Parameter<ValueT> > DuplicableParent;
 private:
+    bool _setToDefault;
     std::list<ValueT> _values;
 protected:
     virtual void _V_push_value( const ValueT & v ) {
+        if( _setToDefault ) {
+            _values.clear();
+            _setToDefault = false;
+        }
         _values.push_back( v ); }
 
     virtual void _V_parse_argument( const char * strval ) override {
@@ -334,9 +346,12 @@ public:
 
     template<class ... Types>
     Parameter( const std::initializer_list<ValueT> & il, Types ... args ) :
-        DuplicableParent( args ... , *il.begin() )
-    { /* TODO: push back all the default values */
+        DuplicableParent( args ... , *il.begin() ),
+        _setToDefault( true ),
+        _values( il )
+    {
         this->_unset_singular();
+        this->_set_is_set_flag();
         assert( !(this->name() == nullptr && !this->has_shortcut()) );
         assert( this->description() ); }
 
@@ -360,6 +375,21 @@ public:
     using iAbstractParameter::shortcut;
     // ... whatever?
 };
+
+template<typename T> const std::list<T> &
+iSingularParameter::as_list_of() const {
+    auto ptr = dynamic_cast<Parameter<std::list<T> > const *>(this);
+    if( !ptr ) {
+        if( this->name() ) {
+            emraise(badCast, "Couldn't cast parameter \"%s\" to "
+                    "requested list type.", name() );
+        } else {
+            emraise(badCast, "Couldn't cast parameter '%c' to requested "
+                    "list type.", shortcut() );
+        }
+    }
+    return ptr->values();
+}
 
 //
 // Specializations
@@ -393,7 +423,9 @@ public:
  * This aspect affects generated help message.
  * */
 template<>
-class Parameter<bool> : public mixins::iDuplicable< iAbstractParameter, Parameter<bool>, iParameter<bool> > {
+class Parameter<bool> : public mixins::iDuplicable< iAbstractParameter,
+                                                    Parameter<bool>,
+                                                    iParameter<bool> > {
 public:
     typedef typename DuplicableParent::Parent::Value Value;
 protected:

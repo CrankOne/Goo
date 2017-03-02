@@ -64,12 +64,12 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .p<bool>( "quiet", "Be quiet", true )
             .p<bool>( "verbose", "Enables verbose output" )
             .flag(    'V', "verbose2", "Enables verbose output" )
-            .p<bool>( 'Q', "quet2", "Be quiet", true )
+            .p<bool>( 'Q', "quiet2", "Be quiet", true )
             //.p<bool>( 12, "one", "two", "three" )  // should cause failure on linkage
             //.p<bool>( "one", "two", "three" )  // should cause failure on linkage
             ;
 
-        const char ex1[] = "./foo -1vqfalse --quiet=true -V --quet2 false";
+        const char ex1[] = "./foo -1vqfalse --quiet=true -V --quiet2 false";
         char ** argv;
         os << "For given source string: " << ex1 << ":" << std::endl;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
@@ -94,8 +94,10 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             // ok, this exception expected.
         }
 
-        _ASSERT(  conf["verbose2"].as<bool>(),  "Option --verbose2 set to wrong value." );
-        _ASSERT(  !conf["quiet2"].as<bool>(),   "Option --quiet2 set wrong to wrong value." );
+        _ASSERT(  conf["verbose2"].as<bool>(),
+                "Option --verbose2 set to wrong value." );
+        _ASSERT( !conf["quiet2"].as<bool>(),
+                "Option --quiet2 set wrong to wrong value." );
         // ...
         os << "} Basic tests done." << std::endl;
     }
@@ -108,15 +110,16 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         conf.insertion_proxy()
             .flag( '1', "parameter-one",  "First parameter" )
-            .list<bool>( 'b', "binary", "options array", {true, true, false, false} )
-            .list<bool>( 'B', "options array", {false} )
-            .list<bool>( "binary2", "options array" )
-            .list<bool>( 'a', "options array" )
+            .list<bool>( 'b', "binary", "options array #1",
+                                                {true, true, false, false} )
+            .list<bool>( 'B', "options array #2", {false, false, false, false} )
+            .list<bool>( "binary2", "options array #3" )
+            .list<bool>( 'a', "options array #4", {true, false, true} )
             .flag( 'v', "Enables verbose output" )
             ;
 
         const char ex1[] = "./foo -1v -b true -b Off -b On --binary2 OFF --binary ON"
-                           " -Bon -Bfalse -BOFF";
+                           " -Bon -Bfalse -BOFF -byes";
         char ** argv;
         os << "For given source string: " << ex1 << ":" << std::endl;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
@@ -126,6 +129,48 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << std::endl;
 
         conf.extract( argc, argv, true, &os );
+
+        _ASSERT( conf["1"].as<bool>(),
+                 "Opt -1 wasn't set." );
+        {  // -b/--binary list
+            auto binaryOne = conf["binary"].as_list_of<bool>();
+            bool tstSeq[] = { true, false, true, true, true };
+            bool * c = tstSeq;
+            _ASSERT( 5 == binaryOne.size(),
+                    "#1 Wrong number of parameters in list: "
+                    "%d != 4.", (int) binaryOne.size() );
+            for( auto it = binaryOne.begin(); binaryOne.end() != it; ++it, ++c ) {
+                _ASSERT( *it == *c,
+                         "#1 list: parameter #%d is set to unexpected value.",
+                         (int) (c - tstSeq) );
+            }
+        }
+        {  // -B
+            auto binaryOne = conf["B"].as_list_of<bool>();
+            bool tstSeq[] = { true, false, false };
+            bool * c = tstSeq;
+            _ASSERT( 3 == binaryOne.size(),
+                    "#2 Wrong number of parameters in list: "
+                    "%d != 3.", (int) binaryOne.size() );
+            for( auto it = binaryOne.begin(); binaryOne.end() != it; ++it, ++c ) {
+                _ASSERT( *it == *c,
+                         "#1 list: parameter #%d is set to unexpected value.",
+                         (int) (c - tstSeq) );
+            }
+        }
+        {  // -a (must be kept default)
+            auto binaryOne = conf["a"].as_list_of<bool>();
+            bool tstSeq[] = { true, false, true };
+            bool * c = tstSeq;
+            _ASSERT( 3 == binaryOne.size(),
+                    "#3 Wrong number of parameters in list: "
+                    "%d != 3.", (int) binaryOne.size() );
+            for( auto it = binaryOne.begin(); binaryOne.end() != it; ++it, ++c ) {
+                _ASSERT( *it == *c,
+                         "#1 list: parameter #%d is set to unexpected value.",
+                         (int) (c - tstSeq) );
+            }
+        }
 
         goo::dict::Configuration::free_tokens( argc, argv );
         os << "} List parameters done." << std::endl;

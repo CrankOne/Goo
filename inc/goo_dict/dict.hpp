@@ -95,7 +95,9 @@ namespace dict {
 class InsertionProxy;
 class Configuration;
 
-class Dictionary : public mixins::iDuplicable< iAbstractParameter, Dictionary, iAbstractParameter> {
+class Dictionary : public mixins::iDuplicable<  iAbstractParameter,
+                                                Dictionary,
+                                                iAbstractParameter> {
 protected:
     // TODO: queue -> list!
     typedef std::queue<char>    ShortOptString;

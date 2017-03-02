@@ -10,6 +10,7 @@
 # include <list>
 # include <cassert>
 # include <sstream>
+# include <climits>
 
 # if 1
 
@@ -28,30 +29,33 @@ Dictionary::Dictionary( const Dictionary & orig ) : DuplicableParent( orig ) {
               it != orig._parameters.end(); ++it ) {
         //_parameters.insert(
         //        DECLTYPE(_parameters)::value_type(
-        //                    it->first,
-        //                    clone_as<iAbstractParameter, iSingularParameter>( it->second ) )
+        //            it->first,
+        //            clone_as<iAbstractParameter, iSingularParameter>(it->second) )
         //    );
         if( it->second.second ) {
-            insert_parameter( clone_as<iAbstractParameter, iSingularParameter>( it->second.first ) );
+            insert_parameter( clone_as<iAbstractParameter,
+                              iSingularParameter>( it->second.first ) );
         }
     }
     for( auto it = orig._byShortcutIndexed.begin();
              it != orig._byShortcutIndexed.end(); ++it ) {
         //_byShortcutIndexed.insert(
         //        DECLTYPE(_byShortcutIndexed)::value_type(
-        //                    it->first,
-        //                    clone_as<iAbstractParameter, iSingularParameter>( it->second ) )
+        //            it->first,
+        //            clone_as<iAbstractParameter, iSingularParameter>( it->second ) )
         //    );
-        insert_parameter( clone_as<iAbstractParameter, iSingularParameter>( it->second ) );
+        insert_parameter( clone_as<iAbstractParameter,
+                          iSingularParameter>( it->second ) );
     }
     for( auto it  = orig._dictionaries.begin();
               it != orig._dictionaries.end(); ++it ) {
         //_dictionaries.insert(
         //        DECLTYPE(_dictionaries)::value_type(
-        //                    it->first,
-        //                    clone_as<iAbstractParameter, Dictionary>( it->second ) )
+        //            it->first,
+        //            clone_as<iAbstractParameter, Dictionary>( it->second ) )
         //    );
-        insert_section( clone_as<iAbstractParameter, Dictionary>( it->second ) );
+        insert_section( clone_as<iAbstractParameter,
+                        Dictionary>( it->second ) );
     }
 }
 
@@ -79,11 +83,11 @@ Dictionary::insert_parameter( iSingularParameter * instPtr ) {
                                     instPtr );
         if( instPtr->name() ) {
             _parameters.insert( DECLTYPE(_parameters)::value_type( instPtr->name(),
-                                 std::pair<iSingularParameter *, bool>(instPtr, false) ) );
+                    std::pair<iSingularParameter *, bool>(instPtr, false) ) );
         }
     } else if( instPtr->name() ) {
         _parameters.insert( DECLTYPE(_parameters)::value_type( instPtr->name(),
-                             std::pair<iSingularParameter *, bool>(instPtr, true ) ) );
+                    std::pair<iSingularParameter *, bool>(instPtr, true ) ) );
     } else {
         emraise( badArchitect, "Got parameter without name and shortcut." );
     }
@@ -102,8 +106,9 @@ Dictionary::_insert_long_option( const std::string & nameprefix,
     assert( p.name() );
     struct ::option o = {
         strdup((nameprefix + p.name()).c_str()),
-        (p.requires_value() ? required_argument : ( dynamic_cast<const Parameter<bool>*>(&p) ?
-                                                        optional_argument : no_argument ) ),
+        (p.requires_value() ? required_argument :
+                        ( dynamic_cast<const Parameter<bool>*>(&p) ?
+                                            optional_argument : no_argument ) ),
         NULL,
         (p.has_shortcut() ? p.shortcut() : 
             (p.requires_value() ? 2 : 1) ) };
@@ -162,7 +167,8 @@ Dictionary::_append_configuration_caches(
     }
     for( auto it  = _parameters.cbegin();
               it != _parameters.cend(); ++it ) {
-        conf->_cache_parameter_by_full_name( nameprefix + "." + it->first, it->second.first );
+        conf->_cache_parameter_by_full_name( nameprefix + "." + it->first,
+                                                            it->second.first );
     }
     for( auto it  = _dictionaries.cbegin();
               it != _dictionaries.cend(); ++it ) {
@@ -206,19 +212,22 @@ Dictionary::_get_parameter( char path[] ) const {
             auto it = _parameters.find( current );
             if( it == _parameters.end() ) {
                 emraise( notFound,
-                     "Option \"%s\" (long name considered) not found in section \"%s\"",
+                     "Option \"%s\" (long name considered) not found in "
+                     "section \"%s\"",
                      current, name() ? name() : "<root>" );
             }
             return *(it->second.first);
         } else if( path - current == 0 ) {
-            emraise( badState, "Unexpected state of option path parser --- null option length."
+            emraise( badState, "Unexpected state of option path parser --- "
+                               "null option length."
                                "See sources for details." );
         } else {
             // option parameter indexed by shortcut
             auto it = _byShortcutIndexed.find( *current );
             if( it == _byShortcutIndexed.end() ) {
                 emraise( notFound,
-                     "Option \"%s\" (shortcut considered) not found in section \"%s\"",
+                     "Option \"%s\" (shortcut considered) not found in "
+                     "section \"%s\"",
                      current, name() ? name() : "<root>" );
             }
             return *(it->second);
@@ -313,7 +322,8 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
         n--;
         std::list<std::string> sub;
         dctPair.second->print_ASCII_tree( sub );
-        ss << " " << (n ? "╠═" : "╚═") << " < " ESC_CLRGREEN << dctPair.first << ESC_CLRCLEAR " > " << std::endl;
+        ss << " " << (n ? "╠═" : "╚═") << " < " ESC_CLRGREEN << dctPair.first
+           << ESC_CLRCLEAR " > " << std::endl;
         for( auto line : sub ) {
             ss << (n ? "║ " : "  ") << line;
         }
@@ -378,13 +388,15 @@ Configuration::_set_argument_parameter( iSingularParameter & p,
         iSingularParameter & sp = auth_cast<iSingularParameter&>(p);
         sp.parse_argument( strval );
         if( verbose ) {
-            *verbose << strfmt( "    ...set to \"%s\".", sp.to_string().c_str() ) << std::endl;
+            *verbose << strfmt( "    ...set to \"%s\".", sp.to_string().c_str() )
+                     << std::endl;
         }
     } else {
         iSingularParameter & mp = auth_cast<iSingularParameter&>(p);
         mp.parse_argument( strval );
         if( verbose ) {
-           *verbose << strfmt( "    ...appended with \"%s\".", mp.to_string().c_str() ) << std::endl;
+           *verbose << strfmt( "    ...appended with \"%s\".", mp.to_string().c_str() )
+                    << std::endl;
         }
         // or whatever ...
     }
@@ -420,31 +432,46 @@ Configuration::extract( int argc,
     // If they are, RAISE EXCEPTION.
     int optIndex = 0, c;
     while( -1 != (c = getopt_long( argc, argv, _cache_shortOptionsPtr, longOptions, &optIndex )) ) {
+        //if ( optind == prevInd + 2 && *optarg == '-' ) {
+        //    c = ':';
+        //    -- optind;
+        //}
         if( isalnum(c) ) {
             // indicates this is an option with shortcut (or a shortcut-only option)
             auto pIt = _shortcuts.find( c );
             if( _shortcuts.end() == pIt ) {  // impossibru!
-                emraise( badState, "Shortcut option '%c' (0x%02x) unknown.", c, c );
+                emraise( badState, "Shortcut option '%c' (0x%02x) unknown.",
+                         c, c );
             }
             iSingularParameter & parameter = *(pIt->second);
             if( parameter.requires_value() ) {
-                log_extraction( "c=%c (0x%02x) considered as a parameter with argument \"%s\".\n",
-                                c, c, optarg );
+                log_extraction( "c=%c (0x%02x) considered as a (short) "
+                                "parameter with argument \"%s\".\n", c, c, optarg );
+                if( strnlen(optarg, USHRT_MAX) > 1 && '-' == optarg[0] ) {
+                    // This is, apparently, another option, not an argument. Note,
+                    // that dash symbol alone (as an argv token) is allowed as it
+                    // usually refers to stdout/stdin.
+                    emraise( badState, "Option \"%c\" requires an argument, but "
+                        "next command-line argument seems to be another "
+                        "option: \"%s\".", c, optarg);
+                }
                 _set_argument_parameter( parameter, optarg, verbose );
             } else {
                 log_extraction( "c=%c (0x%02x) considered as an option.\n", c, c );
                 try {
                     dynamic_cast<Parameter<bool>&>(parameter).set_option(true);
-                    log_extraction( "    ...c=%c (0x%02x) has been set/appended with (=True).\n", c, c );
+                    log_extraction( "    ...c=%c (0x%02x) has been "
+                                    "set/appended with (=True).\n", c, c );
                 } catch( std::bad_cast & e ) {
-                    emraise( badCast, "Option '%c' can not be considered as option and requires an argument.",
-                             c );
+                    emraise( badCast, "Option '%c' can not be considered as "
+                            "option and requires an argument.", c );
                 }
             }
         } else if( 1 == c ) {
             // Indicates this is a kind of long option (without arg)
             assert( longOptions[optIndex].name );
-            log_extraction( "\"%s\" considered as an option.\n", longOptions[optIndex].name );
+            log_extraction( "\"%s\" considered as an option.\n",
+                            longOptions[optIndex].name );
             auto pIt = _longOptions.find( longOptions[optIndex].name );
             if( _longOptions.end() == pIt ) {  // impossibru!
                 log_extraction( "Available options in long options cache:\n" );
@@ -454,28 +481,47 @@ Configuration::extract( int argc,
                 for( auto p : _longOptions ) {
                     log_extraction( "  --%s\n", p.first.c_str() );
                 }
-                emraise( badState, "Option \"%s\" not found in caches!", longOptions[optIndex].name );
+                emraise( badState, "Option \"%s\" not found in caches!",
+                         longOptions[optIndex].name );
             }
             iSingularParameter & parameter = *(pIt->second);
             try {
                 dynamic_cast<Parameter<bool>&>(parameter).set_option(true);
-                log_extraction( "    ...\"%s\" has been set/appended with (=True).\n", longOptions[optIndex].name );
+                log_extraction( "    ...\"%s\" has been set/appended with "
+                                "(=True).\n", longOptions[optIndex].name );
             } catch( std::bad_cast & e ) {
-                emraise( badCast, "Option '%c' can not be considered as option and requires an argument.",
-                         c );
+                emraise( badCast, "Option '%c' can not be considered as "
+                        "option and requires an argument.", c );
             }
         } else if( 2 == c ) {
             // Indicates this is a long parameter (with arg)
             assert( longOptions[optIndex].name );
-            log_extraction( "\"%s=%s\" considered as a parameter.\n", longOptions[optIndex].name, optarg );
+            log_extraction( "\"%s=%s\" considered as a (long) parameter.\n",
+                            longOptions[optIndex].name, optarg );
+            if( strnlen(optarg, USHRT_MAX) > 1 && '-' == optarg[0] ) {
+                // This is, apparently, another option, not an argument. Note,
+                // that dash symbol alone (as an argv token) is allowed as it
+                // usually refers to stdout/stdin.
+                emraise( badState, "Option \"%s\" requires an argument, but "
+                    "next command-line argument seems to be another option: "
+                    "\"%s\".", longOptions[optIndex].name, optarg);
+            }
             auto pIt = _longOptions.find( longOptions[optIndex].name );
             if( _longOptions.end() == pIt ) {  // impossibru!
-                emraise( badState, "Option \"%s\" not found in caches.", longOptions[optIndex].name );
+                emraise( badState, "Option \"%s\" not found in caches.",
+                         longOptions[optIndex].name );
             }
             iSingularParameter & parameter = *(pIt->second);
             _set_argument_parameter( parameter, optarg, verbose );
         } else if( '?' == c ) {
-            emraise( badParameter, "Option '%c' (0x%02x) unrecognized.", optopt, (int) optopt );
+            if( optopt ) {
+                emraise( badParameter, "Command-line argument is not "
+                    "recognized (charcode %#02x, '%c').", (int) optopt, optopt );
+            } else {
+                emraise( badParameter, "Command-line argument is not "
+                    "recognized (charcode %#02x). Suspicious token: \"%s\".",
+                    (int) optopt, argv[optind-1] );
+            }
         } else if( ':' == c ) {
             // todo: any additional info?
             emraise( argumentExpected, "Parametered option expects an argument." );
@@ -484,7 +530,7 @@ Configuration::extract( int argc,
             log_extraction( "\"%s\" considered as a positional argument.\n", ::optarg );
             // TODO ...
         } else {
-            emraise( badValue, "getopt() returned character code 0x%02x.", c );
+            emraise( badValue, "getopt() returned character code %#02x.", c );
         }
     }
     // TODO: further processing of positional arguments.
