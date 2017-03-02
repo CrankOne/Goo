@@ -176,6 +176,9 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} List parameters done." << std::endl;
     }
     # endif
+    // TODO:
+    // - need floating point parser to perform these tests as is;
+    // - has to implement throw/catch mechanics here for consistensy checks.
     # if 0
     {
         os << "Consistency tests : {" << std::endl;
@@ -184,15 +187,15 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         conf.insertion_proxy()
             .p<bool>( 'f', "first",      "First parameter, optional one." )
             .p<bool>( 's', "second",     "Second parameter, required." )//.required()
-            //.list<float>( 't', "third",   "Third parameter, optional list." )
-            //.list<double>( '4', "fourth",  "Fourth parameter, required list." ).required()
+            .list<float>( 't', "third",   "Third parameter, optional list." )
+            .list<double>( '4', "fourth",  "Fourth parameter, required list." ).required()
             ;
 
         os << "Original config object:" << std::endl;
         conf.print_ASCII_tree( os );
 
         char ** argv;
-        # if 1
+        # if 0
         int argc = goo::dict::Configuration::tokenize_string( "-f ON", argv );
         conf.extract( argc, argv, true, &os );
         goo::dict::Configuration::free_tokens( argc, argv );

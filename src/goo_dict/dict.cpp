@@ -560,7 +560,7 @@ Configuration::Configuration( const Configuration & orig ) : Dictionary( orig ),
                                                       _cache_shortOptionsPtr( nullptr ),
                                                       _getoptCachesValid( false ) {
     _getoptCachesValid = false;
-    # if 0
+    # if 1
     for( auto shrtPair : orig._shortcuts ) {
         char pathSpec[] = { shrtPair.first };
         const iSingularParameter & myParRef = orig._get_parameter( pathSpec );
@@ -643,13 +643,34 @@ Configuration::free_tokens( size_t argcTokens, char ** argvTokens ) {
 
 void
 Configuration::insert_parameter( iSingularParameter * p_ ) {
+    // NOTE (Crank, 03/03/017): I remember that by design the first
+    // implementation has to be used, however it looks like something have
+    // changed. I'm unable to remember details, but the second implementation
+    // here seems to have more sense.
+    //_getoptCachesValid = false;
+    //Dictionary::insert_parameter( p_ );
+    //if( p_->has_shortcut() ) {
+    //    _cache_parameter_by_shortcut( p_ );
+    //} else if( p_->name()  ) {
+    //    _cache_parameter_by_full_name( p_->name(), p_ );
+    //} else {
+    //    emraise( malformedArguments,
+    //             "Parameter option %p has not full name, nor shortcut char.",
+    //             p_ );
+    //}
+
+    bool set = false;
     _getoptCachesValid = false;
     Dictionary::insert_parameter( p_ );
     if( p_->has_shortcut() ) {
         _cache_parameter_by_shortcut( p_ );
-    } else if( p_->name()  ) {
+        set = true;
+    }
+    if( p_->name()  ) {
         _cache_parameter_by_full_name( p_->name(), p_ );
-    } else {
+        set = true;
+    }
+    if(!set) {
         emraise( malformedArguments,
                  "Parameter option %p has not full name, nor shortcut char.",
                  p_ );

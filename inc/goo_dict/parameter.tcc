@@ -357,7 +357,8 @@ public:
 
     template<class ... Types>
     Parameter( Types ... args ) :
-        DuplicableParent( args ... )
+        DuplicableParent( args ... ),
+        _setToDefault( false )
     {   this->_unset_singular();
         assert( !(this->name() == nullptr && !this->has_shortcut()) );
         assert( this->description() ); }
