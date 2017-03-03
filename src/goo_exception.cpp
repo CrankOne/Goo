@@ -163,7 +163,7 @@ int obtain_stacktrace( List & target ) {
     const size_t size = backtrace(
             stackPointers,
             GOO_EMERGENCY_STACK_DEPTH_NENTRIES );
-    for( Size i = 2; i < size; ++i ) {  // Note: hides own entries
+    for( Size i = 1; i < size; ++i ) {  // Note: hides own entries
         StackTraceInfoEntry entry {
                 # if 0 /* unsupported by GCC */
                 .addr       = (bfd_vma) stackPointers[i],

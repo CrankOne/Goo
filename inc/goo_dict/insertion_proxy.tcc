@@ -6,6 +6,9 @@
 # include "goo_exception.hpp"
 # include "goo_dict/parameter.tcc"
 # include "goo_dict/dict.hpp"
+# include "goo_dict/parameters/logic.hpp"
+# include "goo_dict/parameters/integral.tcc"
+# include "goo_dict/parameters/floating_point.tcc"
 
 namespace goo {
 namespace dict {
@@ -39,7 +42,7 @@ public:
 
     template<typename ParameterT, class ... Types> InsertionProxy &
     p( Types ... args ) {
-        auto * p = new Parameter<ParameterT>( args ... );
+        auto * p = new InsertableParameter<ParameterT>( args ... );
         p->_check_initial_validity();
         _stack.top()->insert_parameter( p );
         return *this;
@@ -72,7 +75,7 @@ public:
           const char * description,
           const std::initializer_list<ParameterT> & dfts ) {
         _stack.top()->insert_parameter(
-                new Parameter<std::list<ParameterT> >( dfts, shortcut, name, description )
+                new InsertableParameter<std::list<ParameterT> >( dfts, shortcut, name, description )
             );
         return *this;
     }
@@ -82,7 +85,7 @@ public:
           const char * description,
           const std::initializer_list<ParameterT> & dfts ) {
         _stack.top()->insert_parameter(
-                new Parameter<std::list<ParameterT> >( dfts, name, description )
+                new InsertableParameter<std::list<ParameterT> >( dfts, name, description )
             );
         return *this;
     }
@@ -92,7 +95,7 @@ public:
           const char * description,
           const std::initializer_list<ParameterT> & dfts ) {
         _stack.top()->insert_parameter(
-                new Parameter<std::list<ParameterT> >( dfts, shortcut, description )
+                new InsertableParameter<std::list<ParameterT> >( dfts, shortcut, description )
             );
         return *this;
     }
@@ -102,7 +105,7 @@ public:
           const char * name,
           const char * description ) {
         _stack.top()->insert_parameter(
-                new Parameter<std::list<ParameterT> >( shortcut, name, description )
+                new InsertableParameter<std::list<ParameterT> >( shortcut, name, description )
             );
         return *this;
     }
@@ -111,7 +114,7 @@ public:
     list( const char * name,
           const char * description ) {
         _stack.top()->insert_parameter(
-                new Parameter<std::list<ParameterT> >( name, description )
+                new InsertableParameter<std::list<ParameterT> >( name, description )
             );
         return *this;
     }
@@ -120,7 +123,7 @@ public:
     list( char shortcut,
           const char * description ) {
         _stack.top()->insert_parameter(
-                new Parameter<std::list<ParameterT> >( shortcut, description )
+                new InsertableParameter<std::list<ParameterT> >( shortcut, description )
             );
         return *this;
     }
