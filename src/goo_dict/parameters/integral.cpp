@@ -25,6 +25,46 @@
 namespace goo {
 namespace dict {
 
+template<> char
+integral_safe_parse<char>( const char * str, int base ) {
+    if( '\0' != str[0] && '\0' == str[1] ) {
+        return str[0];
+    }
+    char * end;
+    long int r = strtol( str, &end, base );
+    if( '\0' == *str ) {
+        emraise( badParameter, "Unable to parse empty string as integral number "
+            "with base %d.", base );
+    }
+    if( ERANGE == errno && LONG_MIN == r ) {
+        emraise( underflow, "Given string token \"%s\" represents an integer "
+            "number which is lesser than upper limit of signed long integer.",
+            str );
+    }
+    if( ERANGE == errno && LONG_MAX == r ) {
+        emraise( overflow, "Given string token \"%s\" represents an integer "
+            "number which is greater than upper limit of signed long integer.",
+            str );
+    }
+    if( *end != '\0' ) {
+        emraise( badParameter, "Unable to parse token %s as integral number "
+            "with base %d. Extra symbols on tail: %s.", str, base, end );
+    }
+    if( r < std::numeric_limits<char>::min() ) {
+        emraise( underflow, "Given string token \"%s\" represents an integer "
+            "number which is lesser than upper limit of%s integer type of "
+            "length %d.", str, (std::numeric_limits<char>::is_signed ?
+                            " signed" : "unsigned" ), (int) sizeof(char) );
+    }
+    if( r > std::numeric_limits<char>::max() ) {
+        emraise( overflow, "Given string token \"%s\" represents an integer "
+            "number which is greater than upper limit of%s integer type of "
+            "length %d.", str, (std::numeric_limits<char>::is_signed ?
+                            " signed" : "unsigned" ), (int) sizeof(char) );
+    }
+    return (char) r;
+}
+
 template<> unsigned long
 integral_safe_parse<unsigned long>( const char * str, int base ) {
     char * end;

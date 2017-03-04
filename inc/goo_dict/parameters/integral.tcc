@@ -31,9 +31,12 @@ namespace dict {
 
 template<typename T> T
 integral_safe_parse( const char * str, int base=0 ) {
-    /// This implementation is used for any type shorter than long int or for
-    /// signed long int. The unsigned long int and long long integral types
-    /// have to be parsed by specialized functions.
+    // This implementation is used for any type shorter than long int or for
+    // signed long int. The unsigned long int and long long integral types
+    // have to be parsed by specialized functions.
+    // The char type is also has a specialization allowing the parsing method
+    // to accept also a char symbol from ASCII table (like 'a' or '@' or
+    // whatever).
     char * end;
     long int r = strtol( str, &end, base );
     if( '\0' == *str ) {
@@ -57,17 +60,20 @@ integral_safe_parse( const char * str, int base=0 ) {
     if( r < std::numeric_limits<T>::min() ) {
         emraise( underflow, "Given string token \"%s\" represents an integer "
             "number which is lesser than upper limit of%s integer type of "
-            "length %d.", str, (std::numeric_limits<T>::is_signed() ?
+            "length %d.", str, (std::numeric_limits<T>::is_signed ?
                             " signed" : "unsigned" ), (int) sizeof(T) );
     }
     if( r > std::numeric_limits<T>::max() ) {
         emraise( overflow, "Given string token \"%s\" represents an integer "
             "number which is greater than upper limit of%s integer type of "
-            "length %d.", str, (std::numeric_limits<T>::is_signed() ?
+            "length %d.", str, (std::numeric_limits<T>::is_signed ?
                             " signed" : "unsigned" ), (int) sizeof(T) );
     }
-    return r;
+    return (T) r;
 }
+
+template<> char
+integral_safe_parse<char>( const char * str, int base );
 
 template<> unsigned long
 integral_safe_parse<unsigned long>( const char * str, int base );
@@ -201,12 +207,14 @@ IntegralParameter<T>::IntegralParameter( char shortcut_,
 
 template<typename T> T
 IntegralParameter<T>::_V_parse( const char * str ) const {
-    _TODO_ // TODO
+    return integral_safe_parse<T>(str);
 }
 
 template<typename T> std::string
-IntegralParameter<T>::_V_stringify_value( const Integral & ) const {
-    _TODO_ // TODO
+IntegralParameter<T>::_V_stringify_value( const Integral & v ) const {
+    std::stringstream ss;
+    ss << v;
+    return ss.str();
 }
 
 }  // namespace dict
