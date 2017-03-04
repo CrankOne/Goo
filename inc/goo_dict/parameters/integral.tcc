@@ -24,9 +24,62 @@
 # define H_GOO_PARAMETERS_DICTIONARY_PARAMETER_INTEGRAL_H
 
 # include "goo_dict/parameter.tcc"
+# include <climits>
 
 namespace goo {
 namespace dict {
+
+template<typename T> T
+integral_safe_parse( const char * str, int base=0 ) {
+    /// This implementation is used for any type shorter than long int or for
+    /// signed long int. The unsigned long int and long long integral types
+    /// have to be parsed by specialized functions.
+    char * end;
+    long int r = strtol( str, &end, base );
+    if( '\0' == *str ) {
+        emraise( badParameter, "Unable to parse empty string as integral number "
+            "with base %d.", base );
+    }
+    if( ERANGE == errno && LONG_MIN == r ) {
+        emraise( underflow, "Given string token \"%s\" represents an integer "
+            "number which is lesser than upper limit of signed long integer.",
+            str );
+    }
+    if( ERANGE == errno && LONG_MAX == r ) {
+        emraise( overflow, "Given string token \"%s\" represents an integer "
+            "number which is greater than upper limit of signed long integer.",
+            str );
+    }
+    if( *end != '\0' ) {
+        emraise( badParameter, "Unable to parse token %s as integral number "
+            "with base %d. Extra symbols on tail: %s.", str, base, end );
+    }
+    if( r < std::numeric_limits<T>::min() ) {
+        emraise( underflow, "Given string token \"%s\" represents an integer "
+            "number which is lesser than upper limit of%s integer type of "
+            "length %d.", str, (std::numeric_limits<T>::is_signed() ?
+                            " signed" : "unsigned" ), (int) sizeof(T) );
+    }
+    if( r > std::numeric_limits<T>::max() ) {
+        emraise( overflow, "Given string token \"%s\" represents an integer "
+            "number which is greater than upper limit of%s integer type of "
+            "length %d.", str, (std::numeric_limits<T>::is_signed() ?
+                            " signed" : "unsigned" ), (int) sizeof(T) );
+    }
+    return r;
+}
+
+template<> unsigned long
+integral_safe_parse<unsigned long>( const char * str, int base );
+
+# ifdef TYPES_128BIT_LENGTH
+template<> long long int
+integral_safe_parse<long long int>( const char * str, int base );
+
+template<> unsigned long long int
+integral_safe_parse<unsigned long long int>( const char * str, int base );
+# endif
+
 
 template<typename T>
 class IntegralParameter : public mixins::iDuplicable<
@@ -147,7 +200,7 @@ IntegralParameter<T>::IntegralParameter( char shortcut_,
                             ) {}
 
 template<typename T> T
-IntegralParameter<T>::_V_parse( const char * ) const {
+IntegralParameter<T>::_V_parse( const char * str ) const {
     _TODO_ // TODO
 }
 
