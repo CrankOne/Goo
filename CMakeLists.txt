@@ -33,9 +33,9 @@ project( Goo )
 #   - The patch postfix : alphanumerical identifier used to indicate latest
 #   patch applied for release version. For development minor numbers its
 #   form is arbitrary.
-set( Goo_VERSION_MAJOR 0  )
-set( Goo_VERSION_MINOR 1  )
-set( Goo_VERSION_PATCH dev )
+set( Goo_VERSION_MAJOR 1  )
+set( Goo_VERSION_MINOR 0  )
+set( Goo_VERSION_PATCH pure )
 set( Goo_VERSION ${Goo_VERSION_MAJOR}.${Goo_VERSION_MINOR}.${Goo_VERSION_PATCH} )
 
 include(contrib/cmake/OptionList.cmake)
@@ -99,11 +99,8 @@ find_package( ZLIB  )
 find_package( Lzo   )
 find_package( BZip2 )
 find_package( Git   )
-#unset( GOO_GDB_EXEC CACHE )  # XXX
-#unset( GOO_GCORE_EXEC CACHE )  # XXX
 find_program( GOO_GDB_EXEC      gdb     )
 find_program( GOO_GCORE_EXEC    gcore   )
-#find_program( KILL_EXEC     kill     )
 if( EM_STACK_UNWINDING )
     find_package( BFD REQUIRED )
     find_package( LibIberty REQUIRED )
@@ -207,7 +204,7 @@ if( CMAKE_COMPILER_IS_GNUCXX )
 endif( CMAKE_COMPILER_IS_GNUCXX )
 set( CMAKE_Haskell_FLAGS "-fPIC -no-hs-main" )
 
-set( CMAKE_C_FLAGS_DEBUG            "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer" ) # -Wfatal-errors -fprofile-use? -fprofile-correction
+set( CMAKE_C_FLAGS_DEBUG            "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer" )
 set( CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer" )
 set( CMAKE_C_FLAGS_RELEASE          "${CMAKE_C_FLAGS_RELEASE}" )
 set( CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS_RELEASE}" )
@@ -240,15 +237,6 @@ configure_file (
 )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/goo.pc"
         DESTINATION ${CMAKE_INSTALL_PREFIX}/usr/share/pkgconfig )
-
-# XXX :
-#if( GIT_FOUND )
-#    # This fake causes cmake to reconfigure itself when git versioning
-#    # information is changed.
-#    configure_file( ${CMAKE_SOURCE_DIR}/.git/COMMIT_EDITMSG
-#                    ${CMAKE_CURRENT_BINARY_DIR}/COMMIT_EDITMSG )
-#endif( GIT_FOUND )
-
 
 #
 # Build Goo library
