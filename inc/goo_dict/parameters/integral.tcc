@@ -54,8 +54,8 @@ integral_safe_parse( const char * str, int base=0 ) {
             str );
     }
     if( *end != '\0' ) {
-        emraise( badParameter, "Unable to parse token %s as integral number "
-            "with base %d. Extra symbols on tail: %s.", str, base, end );
+        emraise( badParameter, "Unable to parse token \"%s\" as integral number "
+            "with base %d. Extra symbols on tail: \"%s\".", str, base, end );
     }
     if( r < std::numeric_limits<T>::min() ) {
         emraise( underflow, "Given string token \"%s\" represents an integer "
