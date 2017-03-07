@@ -69,9 +69,12 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .p<bool>( 'Q', "quiet2", "Be quiet", true )
             //.p<bool>( 12, "one", "two", "three" )  // should cause failure on linkage
             //.p<bool>( "one", "two", "three" )  // should cause failure on linkage
+            .p<float>( "fp-num-i", "Some fp-number" )
+            .p<double>( "fp-num-ii", "Some fp-number (double)" )
             ;
 
-        const char ex1[] = "./foo -1vqfalse --quiet=true -V --quiet2 false --verbosity 23";
+        const char ex1[] = "./foo -1vqfalse --fp-num-ii 0x1.568515b1d78d4p-36 "
+            " --quiet=true -V --quiet2 false --verbosity 23 --fp-num-i 1.23";
         char ** argv;
         os << "For given source string: " << ex1 << ":" << std::endl;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
@@ -89,6 +92,12 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         _ASSERT( !conf["q"].as<bool>(),         "Option -q set wrong." );
         _ASSERT(  conf["quiet"].as<bool>(),     "Option --quiet set wrong." );
         _ASSERT(  23 == conf["verbosity"].as<short>(),  "Option --verbosity set wrong." );
+        _ASSERT(  std::fabs(1.23 - conf["fp-num-i"].as<float>()) < 1e-6,
+                  "Option fp-num-i set to wrong value (%e)",
+                  conf["fp-num-i"].as<float>() );  // TODO: fuzzy set
+        _ASSERT(  std::fabs(1.947e-11 - conf["fp-num-ii"].as<double>()) < 1e-24,
+                  "Option fp-num-ii set to wrong value (%e)",
+                  conf["fp-num-ii"].as<double>() );  // TODO: fuzzy set
 
         try {
             conf["verbose"].as<bool>();
@@ -120,10 +129,12 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .list<bool>( 'a', "options array #4", {true, false, true} )
             .flag( 'v', "Enables verbose output" )
             .list<short>( 'x', "List of short ints", { 112, 53, 1024 } )
+            .list<float>( "fl-num", "List of floating numbers" )
             ;
 
-        const char ex1[] = "./foo -1v -b true -b Off -b On --binary2 OFF --binary ON"
-                           " -Bon -Bfalse -BOFF -byes";
+        const char ex1[] = "./foo -1v --fl-num 1e-6 -b true -b Off -b On "
+                           "--binary2 OFF --binary ON -Bon -Bfalse -BOFF "
+                           "-byes";
         char ** argv;
         os << "For given source string: " << ex1 << ":" << std::endl;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
@@ -185,6 +196,19 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             for( auto it = ushortOne.begin(); ushortOne.end() != it; ++it, ++c ) {
                 _ASSERT( *it == *c,
                          "#4 list: parameter #%d is set to unexpected value.",
+                         (int) (c - tstSeq) );
+            }
+        }
+        {  // --fl-num (must have one element ~1e-6)
+            auto fltOne = conf["fl-num"].as_list_of<float>();
+            float tstSeq[] = { 1e-6f };
+            float * c = tstSeq;
+            _ASSERT( 1 == fltOne.size(),
+                    "#5 Wrong number of parameters in list: "
+                    "%d != 1.", (int) fltOne.size() );
+            for( auto it = fltOne.begin(); fltOne.end() != it; ++it, ++c ) {
+                _ASSERT( std::fabs(*it - *c) < 1e-7,
+                         "#5 list: parameter #%d is set to unexpected value.",
                          (int) (c - tstSeq) );
             }
         }

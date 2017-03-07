@@ -39,18 +39,18 @@ floating_point_safe_parse( const char * str ) {
             "point number." );
     }
     if( ERANGE == errno && 0 == r ) {
-        emraise( underflow, "Given string token \"%s\" represents a floating "
+        emraise( underflow, "Given string \"%s\" represents a floating "
             "point number which will cause underflow of requested floating "
             "point type.", str );
     }
-    if( ERANGE == errno && HUGE_VAL == r || -HUGE_VAL == r) {
-        emraise( overflow, "Given string token \"%s\" represents a floating "
+    if( ERANGE == errno && (HUGE_VAL == r || -HUGE_VAL == r) ) {
+        emraise( overflow, "Given string \"%s\" represents a floating "
             "point number which will cause overflow of requested floating "
             "point type.", str );
     }
     if( *end != '\0' ) {
-        emraise( badParameter, "Unable to parse token %s as floating point "
-            "number. Extra symbols on tail: \"%s\".", str, end );
+        emraise( badParameter, "Unable to parse expression %s as floating "
+            "point number. Extra symbols on tail: \"%s\".", str, end );
     }
     return r;
 }
