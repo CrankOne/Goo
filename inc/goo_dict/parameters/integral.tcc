@@ -155,8 +155,8 @@ IntegralParameter<T>::IntegralParameter(  char shortcut_,
                             ) {}
 
 template<typename T>
-IntegralParameter<T>::IntegralParameter(  char shortcut_,
-                                            const char * description_ ) :
+IntegralParameter<T>::IntegralParameter( char shortcut_,
+                                         const char * description_ ) :
             DuplicableParent( nullptr,
                               description_,
                               iAbstractParameter::atomic
@@ -166,8 +166,8 @@ IntegralParameter<T>::IntegralParameter(  char shortcut_,
 
 template<typename T>
 IntegralParameter<T>::IntegralParameter( const char * name_,
-                                           const char * description_,
-                                           Integral default_ ) :
+                                         const char * description_,
+                                         Integral default_ ) :
             DuplicableParent( name_,
                               description_,
                               iAbstractParameter::atomic
@@ -175,8 +175,7 @@ IntegralParameter<T>::IntegralParameter( const char * name_,
                                 | iAbstractParameter::set,
                               '\0',
                               default_
-                            ) {
-}
+                            ) {}
 
 template<typename T>
 IntegralParameter<T>::IntegralParameter( char shortcut_,
@@ -187,7 +186,8 @@ IntegralParameter<T>::IntegralParameter( char shortcut_,
                               description_,
                               iAbstractParameter::atomic
                                 | iAbstractParameter::singular
-                                | iAbstractParameter::set,
+                                | iAbstractParameter::set
+                                | iAbstractParameter::shortened,
                               shortcut_,
                               default_
                             ) {}
@@ -200,7 +200,8 @@ IntegralParameter<T>::IntegralParameter( char shortcut_,
                               description_,
                               iAbstractParameter::atomic
                                 | iAbstractParameter::singular
-                                | iAbstractParameter::set,
+                                | iAbstractParameter::set
+                                | iAbstractParameter::shortened,
                               shortcut_,
                               default_
                             ) {}

@@ -75,7 +75,7 @@ public:
           const char * description,
           const std::initializer_list<ParameterT> & dfts ) {
         _stack.top()->insert_parameter(
-                new InsertableParameter<std::list<ParameterT> >( dfts, shortcut, name, description )
+                new Parameter<std::list<ParameterT> >( dfts, shortcut, name, description )
             );
         return *this;
     }
@@ -85,7 +85,7 @@ public:
           const char * description,
           const std::initializer_list<ParameterT> & dfts ) {
         _stack.top()->insert_parameter(
-                new InsertableParameter<std::list<ParameterT> >( dfts, name, description )
+                new Parameter<std::list<ParameterT> >( dfts, name, description )
             );
         return *this;
     }
@@ -95,7 +95,7 @@ public:
           const char * description,
           const std::initializer_list<ParameterT> & dfts ) {
         _stack.top()->insert_parameter(
-                new InsertableParameter<std::list<ParameterT> >( dfts, shortcut, description )
+                new Parameter<std::list<ParameterT> >( dfts, shortcut, description )
             );
         return *this;
     }
@@ -105,7 +105,7 @@ public:
           const char * name,
           const char * description ) {
         _stack.top()->insert_parameter(
-                new InsertableParameter<std::list<ParameterT> >( shortcut, name, description )
+                new Parameter<std::list<ParameterT> >( shortcut, name, description )
             );
         return *this;
     }
@@ -114,7 +114,7 @@ public:
     list( const char * name,
           const char * description ) {
         _stack.top()->insert_parameter(
-                new InsertableParameter<std::list<ParameterT> >( name, description )
+                new Parameter<std::list<ParameterT> >( name, description )
             );
         return *this;
     }
@@ -123,7 +123,7 @@ public:
     list( char shortcut,
           const char * description ) {
         _stack.top()->insert_parameter(
-                new InsertableParameter<std::list<ParameterT> >( shortcut, description )
+                new Parameter<std::list<ParameterT> >( shortcut, description )
             );
         return *this;
     }

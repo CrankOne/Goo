@@ -119,7 +119,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .list<bool>( "binary2", "options array #3" )
             .list<bool>( 'a', "options array #4", {true, false, true} )
             .flag( 'v', "Enables verbose output" )
-            //.list<short>( 'x', "List of short inegers", { 112, 53, 1024 } )
+            .list<short>( 'x', "List of short ints", { 112, 53, 1024 } )
             ;
 
         const char ex1[] = "./foo -1v -b true -b Off -b On --binary2 OFF --binary ON"
@@ -175,19 +175,19 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                          (int) (c - tstSeq) );
             }
         }
-        //{  // -x (must be kept default)
-        //    auto ushortOne = conf["x"].as_list_of<unsigned short>();
-        //    unsigned short tstSeq[] = { 112, 53, 1024 };
-        //    unsigned short * c = tstSeq;
-        //    _ASSERT( 3 == ushortOne.size(),
-        //            "#4 Wrong number of parameters in list: "
-        //            "%d != 3.", (int) ushortOne.size() );
-        //    for( auto it = ushortOne.begin(); ushortOne.end() != it; ++it, ++c ) {
-        //        _ASSERT( *it == *c,
-        //                 "#4 list: parameter #%d is set to unexpected value.",
-        //                 (int) (c - tstSeq) );
-        //    }
-        //}
+        {  // -x (must be kept default)
+            auto ushortOne = conf["x"].as_list_of<short>();
+            unsigned short tstSeq[] = { 112, 53, 1024 };
+            unsigned short * c = tstSeq;
+            _ASSERT( 3 == ushortOne.size(),
+                    "#4 Wrong number of parameters in list: "
+                    "%d != 3.", (int) ushortOne.size() );
+            for( auto it = ushortOne.begin(); ushortOne.end() != it; ++it, ++c ) {
+                _ASSERT( *it == *c,
+                         "#4 list: parameter #%d is set to unexpected value.",
+                         (int) (c - tstSeq) );
+            }
+        }
 
         goo::dict::Configuration::free_tokens( argc, argv );
         os << "} List parameters done." << std::endl;
@@ -205,7 +205,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .p<bool>( 'f', "first",      "First parameter, optional one." )
             .p<bool>( 's', "second",     "Second parameter, required." )//.required()
             .list<float>( 't', "third",   "Third parameter, optional list." )
-            .list<double>( '4', "fourth",  "Fourth parameter, required list." ).required()
+            .list<double>( '4', "fourth",  "Fourth parameter, required list." ).required_argument()
             ;
 
         os << "Original config object:" << std::endl;

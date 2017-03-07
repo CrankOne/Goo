@@ -361,10 +361,11 @@ template<typename ValueT>
 class Parameter<std::list<ValueT> > :
             public mixins::iDuplicable< iAbstractParameter,
                                         Parameter< std::list<ValueT> >,
-                                        /*protected?*/ Parameter< ValueT > > {
+                                        /*protected?*/ InsertableParameter< ValueT > > {
 public:
-    typedef mixins::iDuplicable<iAbstractParameter, Parameter<std::list<ValueT> >,
-                                                    Parameter<ValueT> > DuplicableParent;
+    typedef mixins::iDuplicable<iAbstractParameter,
+                                Parameter< std::list<ValueT> >,
+                                InsertableParameter<ValueT> > DuplicableParent;
 private:
     bool _setToDefault;
     std::list<ValueT> _values;
@@ -377,8 +378,8 @@ protected:
         _values.push_back( v ); }
 
     virtual void _V_parse_argument( const char * strval ) override {
-        Parameter<ValueT>::_V_parse_argument( strval );
-        _V_push_value( Parameter<ValueT>::value() ); }
+        InsertableParameter<ValueT>::_V_parse_argument( strval );
+        _V_push_value( InsertableParameter<ValueT>::value() ); }
 public:
     const std::list<ValueT> & values() const { return _values; }
 

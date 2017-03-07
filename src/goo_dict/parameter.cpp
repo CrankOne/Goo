@@ -24,7 +24,7 @@ iAbstractParameter::iAbstractParameter( const char * name_,
     const size_t nLen = name_ ? strlen(name_) : 0;
     // Checks for consistency:
     if( !has_shortcut() && '\0' != _shortcut ) {
-        emraise( badState, "Internal ctr provided malformed flags: "
+        emraise( badState, "Wrong parameter flags set by child ctr: "
             "shortcut is provided but flag is not set.");
     }
     if( '\0' != shortcut_ && !isalnum(shortcut_) ) {
