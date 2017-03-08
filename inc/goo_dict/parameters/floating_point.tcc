@@ -35,7 +35,7 @@ floating_point_safe_parse( const char * str ) {
     char * end;
     T r = _floating_point_parse<T>( str, &end );
     if( '\0' == *str ) {
-        emraise( badParameter, "Unable to parse empty string as floating "
+        emraise( parserFailure, "Unable to parse empty string as floating "
             "point number." );
     }
     if( ERANGE == errno && 0 == r ) {
@@ -49,7 +49,7 @@ floating_point_safe_parse( const char * str ) {
             "point type.", str );
     }
     if( *end != '\0' ) {
-        emraise( badParameter, "Unable to parse expression %s as floating "
+        emraise( parserFailure, "Unable to parse expression %s as floating "
             "point number. Extra symbols on tail: \"%s\".", str, end );
     }
     return r;

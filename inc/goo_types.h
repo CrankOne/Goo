@@ -151,7 +151,7 @@
     m(2,        unimplemented,      "unimplemented routine reached", ## __VA_ARGS__) \
     m(3,        unsupported,        "feature is unsupported in current build configuration", ## __VA_ARGS__) \
     m(4,        uTestFailure,       "unit test failed", ## __VA_ARGS__ ) \
-    m(5,        interpreter,        "general interpreter error", ## __VA_ARGS__ ) \
+    m(5,        interpreter,        "generic GDS interpreter error", ## __VA_ARGS__ ) \
     m(6,        nullPtr,            "got null pointer", ## __VA_ARGS__ )\
     m(7,        unknownType,        "unknown type", ## __VA_ARGS__) \
     m(8,        badCast,            "incompatable types", ## __VA_ARGS__ ) \
@@ -178,6 +178,8 @@
     m(106,      objNotConstructed,  "requested object was not constructed", ## __VA_ARGS__  ) \
     m(107,      singletonRepCtr,    "singleton repeated construction", ## __VA_ARGS__  ) \
     m(108,      badArchitect,       "architectural incompleteness or undefined state", ## __VA_ARGS__  ) \
+    m(109,      parserFailure,      "failed to parse string expression or token", ## __VA_ARGS__  ) \
+    m(110,      inconsistentConfig, "inconsistent configuration or state", ## __VA_ARGS__ ) \
     m(254,      dbgBadArchitect,    "code style violation / bad architecture / debug warning", ## __VA_ARGS__) \
     m(255,      thirdParty,         "thirt-party code error", ## __VA_ARGS__ ) \
     /* ... */

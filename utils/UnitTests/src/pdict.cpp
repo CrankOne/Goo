@@ -1,14 +1,62 @@
 # include <cstring>
 # include <wordexp.h>
 # include "utest.hpp"
-# include "goo_dict/insertion_proxy.tcc"
-# include "goo_dict/parameters/integral.tcc"
+# include "goo_dict/configuration.hpp"
+//# include "goo_dict/parameters/integral.tcc"
 
 /**@file pdict.cpp
  * @brief Parameters dictionary test.
  *
  * TODO
  * */
+
+struct MalformedArgs {
+    const char cmdLine[128];
+    ErrCode expectedErrorCode;
+};
+
+static void expected_argv_parsing_error(
+            const char * str,
+            ErrCode ec,
+            goo::dict::Configuration conf,
+            std::ostream & mainOutStream ) {
+    char ** argv;
+    std::stringstream subStream;
+    try {
+        int argc = goo::dict::Configuration::tokenize_string( str, argv );
+        subStream << "Input arguments after tokenization:" << std::endl;
+        for( uint8_t i = 0; i < argc; ++i ) {
+            subStream << "  argv[" << (int) i << "]=\""
+                      << argv[i] << "\"" << std::endl;
+        }
+        conf.extract( argc, argv, true, &subStream );
+        // The code from here to catch() part has not be evaluated unless
+        // expected exception was not triggered:
+        goo::dict::Configuration::free_tokens( argc, argv );
+        mainOutStream << "Failed case extraction log dump {" << std::endl
+                      << subStream.str()
+                      << "} Failed case extraction log dump" << std::endl
+                      ;
+        emraise( uTestFailure, "Exception not triggered when expected. "
+            "Expected: %s on testing case \"%s\".",
+            get_errcode_description(ec), str );
+    } catch( goo::Exception & e ) {
+        if( e.code() != ec ) {
+            mainOutStream << "Failed case extraction log dump {" << std::endl
+                      << subStream.str() << std::endl;
+            mainOutStream << "Unexpected exception dump {" << std::endl;
+            e.dump(mainOutStream);
+            mainOutStream << "} Unexpected exception dump" << std::endl
+                          << "} Failed case extraction log dump" << std::endl
+                      ;
+            emraise( uTestFailure, "Wrong exception triggered on testing "
+                "case \"%s\". Expected: %s, thrown: %s.",
+                str,
+                get_errcode_description(ec),
+                get_errcode_description(e.code()) );
+        }
+    }
+}
 
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # if 1
@@ -114,11 +162,40 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Basic tests done." << std::endl;
     }
     # endif
-    // TODO : expected for pasing errors check
+    {
+        os << "Basic parsing errors checks: {" << std::endl;
+        goo::dict::Configuration conf( "theApplication2", "Testing parameter set #1." );
+
+        conf.insertion_proxy()
+            .flag(    '1',  "A logic flag that may be set." )
+            .p<bool>( 'a',  "A logic option that may be set.", true )
+            .p<char>( 'b',  "A <char> type parameter" )
+            .p<uint8_t>( 'B', "bee", "A <unsigned char> type parameter" )
+            .p<float>( "flt", "A <float> parameter" )
+            ;
+        MalformedArgs mlfrmdArgs[] = {
+            { "foo -1yes",              Exception::parserFailure },  // cmd-line arg isn't recognized
+            { "foo -a=stopme",          Exception::parserFailure },  // unable to parse
+            { "foo -b 15blah",          Exception::parserFailure },  // extra symbols on tail
+            { "foo -b 129",             Exception::overflow },
+            { "foo -B -1",              Exception::underflow },
+            { "foo -B=1",               Exception::parserFailure },  // unable to parse =1 as number
+            //{ "foo --flt=0x1.568515b1d78d4p-72", Exception::narrowConversion }, TODO: how to implement?
+            // ... more!
+            { "",                      Exception::common}
+        };
+
+        for( auto c = mlfrmdArgs; '\0' != c->cmdLine[0]; ++c ) {
+            expected_argv_parsing_error( c->cmdLine,
+                c->expectedErrorCode, conf, os );
+        }
+
+        os << "} Basic parsing errors checks." << std::endl;
+    }
     # if 1
     {
         os << "List parameters tests : {" << std::endl;
-        goo::dict::Configuration conf( "theApplication2", "Testing parameter set #2." );
+        goo::dict::Configuration conf( "theApplication3", "Testing parameter set #2." );
 
         conf.insertion_proxy()
             .flag( '1', "parameter-one",  "First parameter" )
@@ -218,18 +295,18 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     }
     # endif
     // TODO:
-    // - need floating point parser to perform these tests as is;
+    // ✔ need floating point parser to perform these tests as is;
     // - has to implement throw/catch mechanics here for consistensy checks.
-    # if 0
+    # if 1
     {
         os << "Consistency tests : {" << std::endl;
-        goo::dict::Configuration conf( "theApplication3", "Testing parameter set #3." );
+        goo::dict::Configuration conf( "theApplication4", "Testing parameter set #3." );
 
         conf.insertion_proxy()
-            .p<bool>( 'f', "first",      "First parameter, optional one." )
-            .p<bool>( 's', "second",     "Second parameter, required." )//.required()
-            .list<float>( 't', "third",   "Third parameter, optional list." )
-            .list<double>( '4', "fourth",  "Fourth parameter, required list." ).required_argument()
+            .p<int>( 'f', "first",          "First parameter, optional one." )
+            .p<bool>( 's', "second",        "Second parameter, required." ).required_argument()
+            .list<float>( 't', "third",     "Third parameter, optional list." )
+            .list<double>( '4', "fourth",   "Fourth parameter, required list." ).required_argument()
             ;
 
         os << "Original config object:" << std::endl;
@@ -237,30 +314,19 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         char ** argv;
         # if 0
-        int argc = goo::dict::Configuration::tokenize_string( "-f ON", argv );
+        int argc = goo::dict::Configuration::tokenize_string( "blah blah", argv );
         conf.extract( argc, argv, true, &os );
         goo::dict::Configuration::free_tokens( argc, argv );
         # else
-        const char ex1[] = "-f 12",         // `second' unset
-                   ex2[] = "--second=32",   // `fourth' empty
-                   ex3[] = "--second=42 -4 1.23 -4 3e+2"  // ok
-                ;
-        {
-            // Shall throw exception as both required parameters is not set.
-            int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
-            goo::dict::Configuration confCopy( conf );
-            os << "Copy of config object:" << std::endl;
-            confCopy.print_ASCII_tree( os );
-            confCopy.extract( argc, argv, true, &os );
-            goo::dict::Configuration::free_tokens( argc, argv );
-        }
-        {
-            // Shall throw exception as `fourth' required parameter is not set.
-            int argc = goo::dict::Configuration::tokenize_string( ex2, argv );
-            goo::dict::Configuration confCopy( conf );
-            confCopy.print_ASCII_tree( os );
-            confCopy.extract( argc, argv, true, &os );
-            goo::dict::Configuration::free_tokens( argc, argv );
+        const char ex3[] = "three --second=no -4 1.23 -4 3e+2";
+        MalformedArgs mlfrmdArgs[] = {
+            { "one -f 12",                          Exception::common },  // `second' unset
+            { "two --second=yes",                   Exception::common },  // `fourth' empty
+            //{ "three --second=no -4 1.23 -4 3e+2",  Exception::common }  // ok
+        };
+        for( auto c = mlfrmdArgs; '\0' != c->cmdLine[0]; ++c ) {
+            expected_argv_parsing_error( c->cmdLine,
+                c->expectedErrorCode, conf, os );
         }
         {
             // Everything is ok.

@@ -33,7 +33,7 @@ integral_safe_parse<char>( const char * str, int base ) {
     char * end;
     long int r = strtol( str, &end, base );
     if( '\0' == *str ) {
-        emraise( badParameter, "Unable to parse empty string as integral number "
+        emraise( parserFailure, "Unable to parse empty string as integral number "
             "with base %d.", base );
     }
     if( ERANGE == errno && LONG_MIN == r ) {
@@ -47,7 +47,7 @@ integral_safe_parse<char>( const char * str, int base ) {
             str );
     }
     if( *end != '\0' ) {
-        emraise( badParameter, "Unable to parse token %s as integral number "
+        emraise( parserFailure, "Unable to parse token %s as integral number "
             "with base %d. Extra symbols on tail: %s.", str, base, end );
     }
     if( r < std::numeric_limits<char>::min() ) {

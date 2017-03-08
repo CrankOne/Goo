@@ -403,8 +403,10 @@ public:
         assert( this->description() ); }
 
     Parameter( const Parameter<std::list<ValueT> > & orig ) :
-        DuplicableParent( orig )
-    { _TODO_ /* TODO: clone the _values list */ }
+        DuplicableParent( orig ),
+        _setToDefault( orig._setToDefault ),
+        _values( orig._values )
+    {}
 
     ~Parameter() {}
 

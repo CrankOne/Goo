@@ -28,7 +28,7 @@
 # include <vector>
 
 # include <iostream>
-# include <queue>
+# include <list>
 # include "goo_dict/parameter.tcc"
 
 namespace goo {
@@ -39,17 +39,17 @@ namespace goo {
  * declaring, parsing and merging a dictionary of parameters representing
  * a routine configuration. By mean "routine" here the applications
  * (utilities) should be implied, however the facility by itself allows
- * one to parameterize any object this way.
+ * one to parameterize any function or a complex object that way.
  *
  * We're tending to follow to the POSIX convention:
  * http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html#tag_12_02
  * extended with GNU long options:
  * https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html .
  * 
- * The Configuration class implements an wrapping object around the standard
- * UNIX getopt_long() function performing parsing procedure of command-line
- * arguments. This class instance also represents a root node in tree-like
- * data structure called "Dictionary".
+ * The Configuration class implements a wrapper around the standard
+ * UNIX getopt_long() function which performs actual parsing procedure of
+ * command-line arguments. The wrapper class instance represents a root node
+ * in tree-like data structure called "Configuration".
  *
  * In order to build an actual configuration user's code should operate with
  * Configuration instance by the media of InsertionProxy class which provides
@@ -62,7 +62,9 @@ namespace goo {
  *  - The parameter can also have a *shortcut*. Parameters with shortcut and
  *  without a name are allowed; in this case the shortcut should be
  *  considered as an unique identifier of parameter inside an owning
- *  dictionaries recursively.
+ *  configuration recursively. I.e. the short cut must be unique among all the
+ *  tree defined by single `Configuration` class instance.
+ *
  * Command-line arguments-specific definitions:
  *  - An *argument* is a token provided to utility by shell in form that is
  *  usually used in C++ applications (within argv[]).
@@ -95,22 +97,36 @@ namespace dict {
 class InsertionProxy;
 class Configuration;
 
+/**@brief Parameters container with basic querying support.
+ * @class Dictionary
+ *
+ * This class represents a node in a "Configuration" tree-like structure.
+ * Instances (usually named and owned by another Dictionary instance) store
+ * a set of named (or shortcut-referenced) parameters and other
+ * sub-dictionaries.
+ *
+ * It is implied that user code will utilize InsertionProxy methods to fill
+ * this container instances with particular parameters and sub-dictionaries.
+ * */
 class Dictionary : public mixins::iDuplicable<  iAbstractParameter,
                                                 Dictionary,
                                                 iAbstractParameter> {
 protected:
-    // TODO: queue -> list!
-    typedef std::queue<char>    ShortOptString;
-    typedef std::queue<void*>   LongOptionEntries;  // ptrs are malloc()'d
+    typedef std::list<char>    ShortOptString;
+    typedef std::list<void*>   LongOptionEntries;  // ptrs are malloc()'d
 private:
-    std::map<std::string, std::pair<iSingularParameter *, bool> > _parameters;
-    std::map<char, iSingularParameter *>        _byShortcutIndexed;
-    std::map<std::string, Dictionary *>         _dictionaries;
+    /// A parameters storage (composition).
+    std::list<iSingularParameter *> _parameters;
 
-    /// Aux insertion method for long options (reentrant routine).
-    static void _insert_long_option( const std::string &,
-                                     Dictionary::LongOptionEntries &,
-                                     const iSingularParameter & );
+    /// A sub-dictionaries composition index.
+    std::unordered_map<std::string, Dictionary *> _dictionaries;
+
+    /// Long-name parameters index (aggregation).
+    std::unordered_map<std::string, iSingularParameter *> 
+                                                    _parametersIndexByName;
+    /// Shortcut parameters index (aggregation).
+    std::unordered_map<char, iSingularParameter *> _parametersIndexByShortcut;
+
 protected:
     /// Inserts parameter instance created by insertion proxy.
     virtual void insert_parameter( iSingularParameter * );
@@ -122,16 +138,13 @@ protected:
 
     ~Dictionary();
 
-    /// Internal procedure --- composes short & long options data structures.
-    virtual void _append_options( const std::string & nameprefix,
-                                  ShortOptString &,
-                                  LongOptionEntries & ) const;
-
+    # if 0
     /// Internal procedure --- appends access caches.
     virtual void _append_configuration_caches(
                 const std::string & nameprefix,
                 Configuration * conf
             ) const;
+    # endif
 
     /// Get parameter instance by its full name.
     /// Note, that path delimeter here is dot symbol '.'.
@@ -154,98 +167,17 @@ public:
     static int pull_opt_path_token( char *& path,
                                     char *& current );
 
-    /// Performs consistency check (only has sense, if extract() was performed before).
+    /// Performs consistency check (only has sense, if extract() was performed
+    /// before).
     virtual bool is_consistant( std::map<std::string, const iSingularParameter *> &,
                                 const std::string & prefix ) const;
 
+    /// Prints an ASCII-drawn tree with names and brief comments for all
+    /// parameters and sub-sections.
     virtual void print_ASCII_tree( std::list<std::string> & ) const;
 };  // class Dictionary
 
-
-class Configuration : public Dictionary {
-private:
-    // getopt_long() aux caches:
-    mutable void * _cache_longOptionsPtr;
-    mutable char * _cache_shortOptionsPtr;
-    mutable bool _getoptCachesValid;
-
-    /// Access cache for short options.
-    mutable std::unordered_map<char, iSingularParameter *>          _shortcuts;
-    /// Access cache for long options.
-    mutable std::unordered_map<std::string, iSingularParameter *>   _longOptions;
-
-    void _free_caches_if_need() const;
-protected:
-    /// Recursively iterates through all the options and section producing getopt()-strings.
-    void _recache_getopt_arguments() const;
-
-    /// Inserts parameter instance created by insertion proxy with caches invalidation.
-    virtual void insert_parameter( iSingularParameter * ) override;
-
-    /// Inserts dictionary instance created by insertion proxy with caches invalidation.
-    virtual void insert_section( Dictionary * ) override;
-
-    /// Inserts shortcut inside hashing container for quick access.
-    virtual void _cache_parameter_by_shortcut( iSingularParameter * );
-
-    /// Inserts fully-qualified name inside hashing container for quick access.
-    virtual void _cache_parameter_by_full_name( const std::string &, iSingularParameter * );
-
-    /// Internal procedure that composes access caches.
-    virtual void _append_configuration_caches(
-                const std::string & nameprefix,
-                Configuration * conf
-            ) const final;
-
-    /// Sets argument depending on multiplicity.
-    static void _set_argument_parameter( iSingularParameter &,
-                                         const char *,
-                                         std::ostream * );
-public:
-    /// Ctr expects the `name' here to be an application name and `description'
-    /// to be an application description.
-    Configuration( const char * name, const char * description );
-
-    ~Configuration();
-
-    /// Copy ctr.
-    Configuration( const Configuration & );
-
-    /// Explicit copy creation.
-    //Configuration copy() const { return *this; }
-
-    /// Parses command-line arguments.
-    void extract( int argc,
-                  char * const argv[],
-                  bool doConsistencyCheck=true,
-                  std::ostream * verbose=nullptr );
-
-    /// Returns certain paramater by its name or full path.
-    const iSingularParameter & get_parameter( const char [] ) const;
-
-    /// Constructs a bound insertion proxy instance object.
-    InsertionProxy insertion_proxy();
-
-    /// Produces an `usage' instruction text to the stream provided by arg.
-    void usage_text( std::ostream &, bool enableASCIIColoring = false );
-
-    /// A wrapper to glibc's wordexp() function.
-    static Size tokenize_string( const std::string &, char **& argvTokens );
-
-    /// Cleaner for tokenized string
-    static void free_tokens( size_t argcTokens, char ** argvTokens );
-
-    /// Operator shortcut for get_parameter.
-    virtual const iSingularParameter & operator[]( const char [] ) const;
-
-    virtual void print_ASCII_tree( std::ostream & ) const;
-
-    virtual void print_ASCII_tree( std::list<std::string> & ) const override;
-
-    friend class Dictionary;
-};  // class Configuration
-
-}  // namespace dicts
+}  // namespace dict
 /** @} */  // end of appParameters group
 }  // namespace goo
 

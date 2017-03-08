@@ -118,7 +118,7 @@ Parameter<bool>::_V_parse( const char * argStr ) const {
     } else if( std::regex_match( argStr, _static_logicalTermRegex_False) ) {
         return false;
     } else {
-        emraise( badParameter,
+        emraise( parserFailure,
                  "Could not interpret \"%s\" as a logical option.",
                  argStr );
     }
