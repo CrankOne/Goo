@@ -91,6 +91,10 @@ push_option( ENABLE_PTREE
 push_option( HASKELL_MODULE
         "Haskell extensions."
         OFF )
+#\option
+push_option( BUILD_STATIC_LIBRARIES
+        "Enables build of static versions of libraries also"
+        OFF )
 
 #
 # Find third-party packages
@@ -217,6 +221,9 @@ set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}" )
 # Attain configuration depending on current build dir.
 include(contrib/cmake/BuildConf.cmake)
 set( Goo_LIBRARY goo${Goo_BUILD_POSTFIX} )
+if( BUILD_STATIC_LIBRARIES )
+    set( Goo_StaticLIBRARY goo${Goo_BUILD_POSTFIX}-static )
+endif( BUILD_STATIC_LIBRARIES )
 
 include_directories(
         ${GOO_LIB_INCLUDE_DIR}
@@ -246,9 +253,19 @@ add_library( ${Goo_LIBRARY} SHARED
         ${FLEX_GDSLexer_OUTPUTS}
     )
 set_target_properties(${Goo_LIBRARY} PROPERTIES VERSION ${Goo_VERSION}
-                                                     SOVERSION ${Goo_VERSION_MAJOR} )
+                                     SOVERSION ${Goo_VERSION_MAJOR} )
 
 install( TARGETS ${Goo_LIBRARY} LIBRARY DESTINATION lib/goo )
+
+if( BUILD_STATIC_LIBRARIES )
+    add_library( ${Goo_StaticLIBRARY} STATIC
+        ${GOO_LIB_SOURCES}
+        ${BISON_GDSParser_OUTPUTS}
+        ${FLEX_GDSLexer_OUTPUTS}
+    )
+install( TARGETS ${Goo_StaticLIBRARY} ARCHIVE DESTINATION lib/goo )
+endif( BUILD_STATIC_LIBRARIES )
+
 install( DIRECTORY inc/ DESTINATION include/goo FILES_MATCHING PATTERN
     "*.h" PATTERN "*.hpp" PATTERN "*.tcc" PATTERN "*.itcc" )
 
