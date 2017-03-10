@@ -35,7 +35,7 @@ InsertionProxy::bgn_sect( const char * name, const char * descr) {
 InsertionProxy &
 InsertionProxy::end_sect( const char * name ) {
     if( name ) {
-        if( !strcmp( name, _stack.top()->name() ) ) {
+        if( strcmp( name, _stack.top()->name() ) ) {
             emraise( assertFailed,
                     "Insertion proxy state check failed: current section is "
                     "named \"%s\" while \"%s\" expected.",

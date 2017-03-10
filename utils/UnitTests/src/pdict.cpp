@@ -294,9 +294,9 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} List parameters done." << std::endl;
     }
     # endif
-    // TODO:
+    // todo:
     // ✔ need floating point parser to perform these tests as is;
-    // - has to implement throw/catch mechanics here for consistensy checks.
+    // ✔ has to implement throw/catch mechanics here for consistensy checks.
     # if 1
     {
         os << "Consistency tests : {" << std::endl;
@@ -340,6 +340,41 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         # endif
 
         os << "} Consistency tests done." << std::endl;
+    }
+    # endif
+
+    # if 1
+    {
+        os << "Subsection parameter retrieving : {" << std::endl;
+        goo::dict::Configuration conf( "theApplication5", "Testing parameter set #3." );
+
+        conf.insertion_proxy()
+            .p<unsigned char>( 'v', "verbosity",    "Verbosity level." )
+            .flag( 'q', "quiet",                    "Be absolutely quiet." )
+            .bgn_sect( "subsect1", "Subsection #1" )
+                .p<float>( "sub-parameter-one", "Some scoped parameter #1" )
+                .p<bool>(  '2', "sub-parameter-two", "Another scoped parameter" )
+                .bgn_sect( "subsect2", "Subsection #2" )
+                    .p<uint32_t>( "sub-parameter-one", "Some scoped parameter #2" )
+                .end_sect( "subsect2" )
+            .end_sect( "subsect1" )
+            .bgn_sect( "subsect3", "Subsection #3" )
+                .p<uint16_t>( "sub-parameter-one", "Some scoped parameter #3" )
+            .end_sect( "subsect3" )
+            ;
+
+        conf.print_ASCII_tree( os );
+        const char ex[] = "foo -v3 -q --subsect1.subsect2.sub-parameter-one=5673356 "
+            "--subsect1.sub-parameter-one 1.23 --subsect3.sub-parameter-one -12";
+        char ** argv;
+        int argc = goo::dict::Configuration::tokenize_string( ex, argv );
+        os << "  ->";
+        for( int n = 0; n < argc; ++n ) {
+            os << argv[n] << "|";
+        } os << std::endl;
+
+        os << "} Subsection parameter retrieving." << std::endl;
+        conf.extract( argc, argv, true, &os );
     }
     # endif
 

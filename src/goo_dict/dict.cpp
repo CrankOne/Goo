@@ -263,13 +263,26 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
         n--;
         ss << (n || hasSubsections ? "╟─" : "╙─") << " ";
         if( p->name() ) {
-            ss << "--" << p->name();
+            ss << "--" << ESC_CLRUNDRLN << p->name() << ESC_CLRCLEAR;
             if( p->has_shortcut() ) {
-                ss << ",";
+                ss << "|";
             }
         }
         if( p->has_shortcut() ) {
-            ss << "-" << p->shortcut();
+            ss << "-" << ESC_CLRBOLD << p->shortcut() << ESC_CLRCLEAR;
+        }
+        ss << ", type=`" << p->target_type_info().name() << "'";
+        if( p->is_flag() ) {
+            ss << ", flag";
+        }
+        if( p->is_mandatory() ) {
+            ss << ", required";
+        }
+        if( p->has_multiple_values() ) {
+            ss << ", list";
+        }
+        if( p->is_set() ) {
+            ss << ", value set";
         }
         // TODO: somehow reflect other parameter properties
         ss << std::endl;
@@ -279,10 +292,12 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
         n--;
         std::list<std::string> sub;
         dctPair.second->print_ASCII_tree( sub );
-        ss << " " << (n ? "╠═" : "╚═") << " < " ESC_CLRGREEN << dctPair.first
-           << ESC_CLRCLEAR " > " << std::endl;
+        ss << (n ? "╠═" : "╚═")
+            << (sub.empty() ? "═" : "╦" )
+            << " < " ESC_CLRGREEN << dctPair.first
+            << ESC_CLRCLEAR " > " << std::endl;
         for( auto line : sub ) {
-            ss << (n ? "║ " : "  ") << line;
+            ss << (n ? "║ " : "  ") << line << std::endl;
         }
     }
     std::string line;

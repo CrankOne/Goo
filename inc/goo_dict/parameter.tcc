@@ -222,6 +222,8 @@ public:
     /// Getter method for multiple parameters.
     template<typename T> const std::list<T> &
     as_list_of() const;
+
+    virtual const std::type_info & target_type_info() const = 0;
 };  // }}} class iSingularParameter
 
 
@@ -269,6 +271,9 @@ public:
     ~iParameter() {}
 
     const ValueT & value() const;
+
+    virtual const std::type_info & target_type_info() const final {
+        return typeid(ValueT); }
 };  // class iParameter
 
 template<typename ValueT>

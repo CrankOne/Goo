@@ -50,23 +50,7 @@ Configuration::Configuration( const char * name_,
 Configuration::Configuration( const Configuration & orig ) : Dictionary( orig ),
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
-                                                      _getoptCachesValid( false ) {
-    # if 0
-    for( auto shrtPair : orig._shortcuts ) {
-        char pathSpec[] = { shrtPair.first };
-        const iSingularParameter & myParRef = orig._get_parameter( pathSpec );
-        _shortcuts.emplace( shrtPair.first, &const_cast<iSingularParameter &>(myParRef) );
-        //std::cout << "XXX: copying shrtct " << shrtPair.first << std::endl;  // XXX
-    }
-    for( auto shrtPair : orig._parametersIndexByName ) {
-        char * pathSpec = strdup( shrtPair.first.c_str() );
-        const iSingularParameter & myParRef = orig._get_parameter( pathSpec );
-        _parametersIndexByName.emplace( shrtPair.first, &const_cast<iSingularParameter &>(myParRef) );
-        //std::cout << "XXX: copying long opt " << pathSpec << std::endl;  // XXX
-        free( pathSpec );
-    }
-    # endif
-}
+                                                      _getoptCachesValid( false ) {}
 
 Configuration::~Configuration() {
     _free_caches_if_need();
@@ -177,7 +161,8 @@ Configuration::_cache_append_options( const Dictionary & self,
               it != self._parametersIndexByShortcut.cend(); ++it ) {
         iSingularParameter & pRef = *(it->second);
         // It is mandatory for parameters in this index to
-        // have shortcut. It is handy to check them here:
+        // have shortcut. It is handy to check their shortcuts here to catch
+        // any possible mistakes due to bad insertion procedures.
         assert( pRef.shortcut() == it->first );
         assert( pRef.has_shortcut() );
         // 
@@ -190,17 +175,14 @@ Configuration::_cache_append_options( const Dictionary & self,
     for( auto it  = self._parametersIndexByName.cbegin();
               it != self._parametersIndexByName.cend(); ++it ) {
         iSingularParameter & pRef = *(it->second);
-        // Parameter instances in this index must not have
-        // shortcuts as they are stored at _byShortcutIndexed. XXX?
         assert( pRef.name() == it->first );
-        //assert( ! pRef.has_shortcut() );  // XXX?
         _cache_insert_long_option( nameprefix, longOpts, pRef );
     }
     // Now, recursively traverse via all sub-dictionaries (subsections):
     for( auto it  = self._dictionaries.cbegin();
               it != self._dictionaries.cend(); ++it ) {
         assert( it->second->name() == it->first );
-        std::string sectPrefix = nameprefix + it->second->name();
+        std::string sectPrefix = nameprefix + it->second->name() + ".";
         _cache_append_options( *(it->second), sectPrefix, shrtOpts, longOpts );
     }
 }
@@ -246,6 +228,7 @@ Configuration::extract( int argc,
             // indicates this is an option with shortcut (or a shortcut-only option)
             auto pIt = _parametersIndexByShortcut.find( c );
             if( _parametersIndexByShortcut.end() == pIt ) {
+                _TODO_ // TODO: We have to recursively check options here.
                 emraise( badState, "Shortcut option '%c' (0x%02x) unknown.",
                          c, c );
             }
@@ -291,6 +274,7 @@ Configuration::extract( int argc,
                             longOptions[optIndex].name, optIndex );
             auto pIt = _parametersIndexByName.find( longOptions[optIndex].name );
             if( _parametersIndexByName.end() == pIt ) {
+                _TODO_ // TODO: We have to recursively check options here.
                 log_extraction( "Available options in long options cache:\n" );
                 if( _parametersIndexByName.empty() ) {
                     log_extraction( "  <no long options in cache>\n" );
@@ -342,9 +326,10 @@ Configuration::extract( int argc,
                     "\"%s\".", longOptions[optIndex].name, optarg);
             }
             auto pIt = _parametersIndexByName.find( longOptions[optIndex].name );
-            if( _parametersIndexByName.end() == pIt ) {  // impossibru!
-                emraise( badState, "Option \"%s\" not found in caches.",
-                         longOptions[optIndex].name );
+            if( _parametersIndexByName.end() == pIt ) {
+                _TODO_ // TODO: We have to recursively check options here.
+                emraise( badState, "Option \"%s\" not found in conf indexing "
+                            "cache.", longOptions[optIndex].name );
             }
             iSingularParameter & parameter = *(pIt->second);
             _set_argument_parameter( parameter, optarg, verbose );

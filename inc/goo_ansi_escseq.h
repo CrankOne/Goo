@@ -9,6 +9,7 @@
 
 # define ESC_CLRBOLD    "\033[0;1m"
 # define ESC_CLRITALIC  "\033[0;3m"
+# define ESC_CLRUNDRLN  "\033[0;4m"
 
 # define ESC_BLDRED     "\033[1;31m"
 # define ESC_BLDGREEN   "\033[1;32m"
@@ -40,6 +41,7 @@
 
 # define ESC_CLRBOLD    ""
 # define ESC_CLRITALIC  ""
+# define ESC_CLRUNDRLN  ""
 
 # define ESC_BLDRED     ""
 # define ESC_BLDGREEN   ""
