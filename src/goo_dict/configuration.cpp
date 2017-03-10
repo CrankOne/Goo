@@ -62,7 +62,7 @@ Configuration::_recache_getopt_arguments() const {
 
     Configuration::ShortOptString    sOptsQ;
     Configuration::LongOptionEntries lOptsQ;
-    _cache_append_options( *this, "", sOptsQ, lOptsQ );
+    _cache_append_options( *this, "", sOptsQ, _cache_shortcutPaths, lOptsQ );
     static const char _static_shortOptionsPrefix[] = "-:";  // todo: move to define
     const size_t sOptsStrLen = sizeof(_static_shortOptionsPrefix) + sOptsQ.size() - 1;
 
@@ -155,6 +155,7 @@ void
 Configuration::_cache_append_options( const Dictionary & self,
                                       const std::string & nameprefix,
                                       ShortOptString & shrtOpts,
+                                      std::unordered_map<char, std::string> & shrtPths,
                                       LongOptionEntries & longOpts ) {
     // Form short options string (without any prefixes here):
     for( auto it  = self._parametersIndexByShortcut.cbegin();
@@ -170,6 +171,15 @@ Configuration::_cache_append_options( const Dictionary & self,
         if( pRef.requires_value() ) {
             shrtOpts.push_back( ':' );
         }
+        auto ir = shrtPths.emplace( pRef.shortcut(), nameprefix );
+        if( !ir.second ) {
+            emraise( nonUniq, "Shortcut option '%c' had been already inserted "
+                "into Configuration instance within parameter entry "
+                "by path %s while insertion of parameter entry "
+                "by path %s requested with the same single-char "
+                "shortcut.",
+                pRef.shortcut(), ir.first->second.c_str(), nameprefix.c_str() );
+        }
     }
     // Form long-only options struct:
     for( auto it  = self._parametersIndexByName.cbegin();
@@ -183,7 +193,8 @@ Configuration::_cache_append_options( const Dictionary & self,
               it != self._dictionaries.cend(); ++it ) {
         assert( it->second->name() == it->first );
         std::string sectPrefix = nameprefix + it->second->name() + ".";
-        _cache_append_options( *(it->second), sectPrefix, shrtOpts, longOpts );
+        _cache_append_options( *(it->second), sectPrefix,
+                                                shrtOpts, shrtPths, longOpts );
     }
 }
 
@@ -228,9 +239,16 @@ Configuration::extract( int argc,
             // indicates this is an option with shortcut (or a shortcut-only option)
             auto pIt = _parametersIndexByShortcut.find( c );
             if( _parametersIndexByShortcut.end() == pIt ) {
-                _TODO_ // TODO: We have to recursively check options here.
-                emraise( badState, "Shortcut option '%c' (0x%02x) unknown.",
+                auto byPath = _cache_shortcutPaths.find( c );
+                if( _cache_shortcutPaths.end() == byPath ) {
+                    emraise( badState, "Shortcut option '%c' (0x%02x) unknown.",
                          c, c );
+                }
+                // The parameter is referred by shortcut and lies in
+                // one of the sub-sections referred by path:
+                Dictionary & subsection = this->subsection( byPath->second.c_str() );
+                pIt = subsection._parametersIndexByShortcut.find( c );
+                assert( subsection._parametersIndexByShortcut.end() != pIt );  // impossible by design
             }
             iSingularParameter & parameter = *(pIt->second);
             if( parameter.requires_value() ) {
@@ -274,19 +292,11 @@ Configuration::extract( int argc,
                             longOptions[optIndex].name, optIndex );
             auto pIt = _parametersIndexByName.find( longOptions[optIndex].name );
             if( _parametersIndexByName.end() == pIt ) {
-                _TODO_ // TODO: We have to recursively check options here.
-                log_extraction( "Available options in long options cache:\n" );
-                if( _parametersIndexByName.empty() ) {
-                    log_extraction( "  <no long options in cache>\n" );
-                }
-                for( auto p : _parametersIndexByName ) {
-                    log_extraction( "  --%s\n", p.first.c_str() );
-                }
-                emraise( badState, "Option \"%s\" not found in caches!",
-                         longOptions[optIndex].name );
+                
             }
-            iSingularParameter & parameter = *(pIt->second);
-            if( parameter.requires_value() ) {
+            iSingularParameter & p = Dictionary::parameter( 
+                                                longOptions[optIndex].name );
+            if( p.requires_value() ) {
                 // If went here, the getopt_long() returned a value indicating
                 // the long parameter without an argument, but obtained
                 // parameter instance does require an argument. It does indicate
@@ -296,7 +306,7 @@ Configuration::extract( int argc,
                         longOptions[optIndex].name );
             }
             try {
-                dynamic_cast<Parameter<bool>&>(parameter).set_option(true);
+                dynamic_cast<Parameter<bool>&>(p).set_option(true);
                 log_extraction( "    ...\"%s\" has been set/appended with "
                                 "(=True).\n", longOptions[optIndex].name );
             } catch( std::bad_cast & e ) {
@@ -325,14 +335,10 @@ Configuration::extract( int argc,
                     "next command-line argument seems to be another option: "
                     "\"%s\".", longOptions[optIndex].name, optarg);
             }
-            auto pIt = _parametersIndexByName.find( longOptions[optIndex].name );
-            if( _parametersIndexByName.end() == pIt ) {
-                _TODO_ // TODO: We have to recursively check options here.
-                emraise( badState, "Option \"%s\" not found in conf indexing "
-                            "cache.", longOptions[optIndex].name );
-            }
-            iSingularParameter & parameter = *(pIt->second);
-            _set_argument_parameter( parameter, optarg, verbose );
+            _set_argument_parameter(
+                    Dictionary::parameter(  longOptions[optIndex].name ),
+                                            optarg,
+                                            verbose );
         } else if( '?' == c ) {
             if( optopt ) {
                 emraise( parserFailure, "Command-line argument is not "
@@ -388,6 +394,7 @@ Configuration::_free_caches_if_need() const {
         delete [] _cache_shortOptionsPtr;
         _cache_shortOptionsPtr = nullptr;
     }
+    _cache_shortcutPaths.clear();
     _getoptCachesValid = false;
 }
 
@@ -485,20 +492,6 @@ Configuration::_cache_parameter_by_full_name( const std::string & fullName,
                 fullName.c_str() );
     }
     _parametersIndexByName.emplace( fullName.c_str(), p_ );
-}
-
-const iSingularParameter &
-Configuration::get_parameter( const char path[] ) const {
-    assert( path );
-    char * path2extract = strdup( path );
-    const iSingularParameter & result = _get_parameter( path2extract );
-    free( path2extract );
-    return result;
-}
-
-const iSingularParameter &
-Configuration::operator[]( const char path[] ) const {
-    return get_parameter(path);
 }
 
 void

@@ -37,6 +37,12 @@ namespace dict {
  * `getopt_long()` function will perform actual parsing in `extract()` method
  * providing GNU-extended POSIX compatibility of command-line arguments
  * syntax.
+ *
+ * Warning: subsections have no back-populate effect, so modifying them after
+ * they were added to Configuration instance will not cause chaches to be
+ * invalidated. Thus, it is mandatory to manually invalidate caches with
+ * `invalidate_getopt_caches()` just before `extract()` invokation if inserted
+ * sub-sections were modified.
  * */
 class Configuration : public Dictionary {
 protected:
@@ -49,6 +55,8 @@ private:
     mutable void * _cache_longOptionsPtr;
     /// `getopt_long()` aux cache for short options structure (just a string).
     mutable char * _cache_shortOptionsPtr;
+    /// Temporary cache storage for all shortcuts in config.
+    mutable std::unordered_map<char, std::string> _cache_shortcutPaths;
     /// Indicates whether `getopt_long()` caches are valid.
     mutable bool _getoptCachesValid;
 
@@ -92,6 +100,7 @@ protected:
                                     const Dictionary &,
                                     const std::string & nameprefix,
                                     ShortOptString &,
+                                    std::unordered_map<char, std::string> &,
                                     LongOptionEntries & );
 
     /// Aux insertion method for long options (reentrant routine).
@@ -118,9 +127,6 @@ public:
                   bool doConsistencyCheck=true,
                   std::ostream * verbose=nullptr );
 
-    /// Returns certain paramater by its name or full path.
-    const iSingularParameter & get_parameter( const char [] ) const;
-
     /// Constructs a bound insertion proxy instance object.
     InsertionProxy insertion_proxy();
 
@@ -133,8 +139,9 @@ public:
     /// Cleaner for tokenized string
     static void free_tokens( size_t argcTokens, char ** argvTokens );
 
-    /// Operator shortcut for get_parameter.
-    virtual const iSingularParameter & operator[]( const char [] ) const;
+    /// Operator shortcut for `parameter()`.
+    virtual const iSingularParameter & operator[]( const char p[] ) const {
+        return parameter(p); }
 
     /// Invalidates getopt's caches. Must be called if any containee topology
     /// has changed.

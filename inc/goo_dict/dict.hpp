@@ -146,12 +146,14 @@ protected:
             ) const;
     # endif
 
-    /// Get parameter instance by its full name.
-    /// Note, that path delimeter here is dot symbol '.'.
-    virtual const iSingularParameter & _get_parameter( char [] ) const;
-
     /// Marks last inserted parameter as required one.
     void _mark_last_inserted_as_required();
+
+    /// Internal function mutating given path str --- parameter entry getter.
+    virtual const iSingularParameter & _get_parameter( char [] ) const;
+
+    /// Internal function mutating given path str --- subsection getter.
+    virtual const Dictionary & _get_subsection( char [] ) const;
 
     friend class InsertionProxy;
     friend class Configuration;
@@ -159,7 +161,7 @@ public:
     /// Public copy ctr for virtual copy ctr.
     Dictionary( const Dictionary & );
 
-    /// This routine performs regex-based token extraction from option path.
+    /// This routine performs simple token extraction from option path.
     /// For example, the following string:
     ///     "one.three-four.five"
     /// must be splitted in following manner:
@@ -167,8 +169,32 @@ public:
     ///     tail = "three-four.five".
     /// In case when only one token is provided, it will be written
     /// in `current', and the tail will be empty.
+    /// @returns 0 if no token can be extracted
+    /// @returns 1 if there are something in path after extraction.
     static int pull_opt_path_token( char *& path,
                                     char *& current );
+
+    /// Get parameter instance by its full name.
+    /// Note, that path delimeter here is dot symbol '.' (const getter).
+    virtual const iSingularParameter & parameter( const char path [] ) const;
+
+    /// Get parameter instance by its full name.
+    /// Note, that path delimeter here is dot symbol '.'.
+    virtual iSingularParameter & parameter( const char path[] ) {
+        const Dictionary * constThis = this;
+        return const_cast<iSingularParameter &>(constThis->parameter( path ));
+    }
+
+    /// Get sub-dictionary instance by its full name.
+    /// Note, that path delimeter here is dot symbol '.' (const getter).
+    virtual const Dictionary & subsection( const char [] ) const;
+
+    /// Get sub-dictionary instance by its full name.
+    /// Note, that path delimeter here is dot symbol '.'.
+    virtual Dictionary & subsection( const char path[] ) {
+        const Dictionary * constThis = this;
+        return const_cast<Dictionary &>(constThis->subsection( path ));
+    }
 
     /// Performs consistency check (only has sense, if extract() was performed
     /// before).
@@ -178,6 +204,7 @@ public:
     /// Prints an ASCII-drawn tree with names and brief comments for all
     /// parameters and sub-sections.
     virtual void print_ASCII_tree( std::list<std::string> & ) const;
+    
 };  // class Dictionary
 
 }  // namespace dict

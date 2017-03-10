@@ -158,7 +158,9 @@ Dictionary::pull_opt_path_token( char *& path,
             ++path;
             break;
         }
-        if( !isalnum(*path) && '-' != *path ) {
+        if( !isalnum(*path)
+            && '-' != *path
+            && '_' != *path ) {
             emraise( badParameter,
                      "Path specification contains unallowed character 0x%x.",
                      *path );
@@ -183,8 +185,6 @@ Dictionary::_get_parameter( char path[] ) const {
             if( it != _parametersIndexByName.end() ) {
                 return *(it->second);
             }
-            // May indicate that parameter is stored by shortcut:
-            _TODO_  // TODO
             emraise( notFound,
                  "Option \"%s\" (long name considered) not found in "
                  "section \"%s\"",
@@ -215,6 +215,36 @@ Dictionary::_get_parameter( char path[] ) const {
         }
         return it->second->_get_parameter( path );
     }
+}
+
+const iSingularParameter &
+Dictionary::parameter( const char path [] ) const {
+    return _get_parameter( strdupa( path ) );
+}
+
+const Dictionary &
+Dictionary::_get_subsection( char path[] ) const {
+    char * current;
+    int rc = pull_opt_path_token( path, current );
+    auto it = _dictionaries.find( current );
+    if( _dictionaries.end() == it ) {
+        emraise( notFound, "Dictionary %p has no section named \"%s\".",
+                this, current );
+    }
+    if( 0 == rc ) {
+        // terminal case --- consider the `current' refers to one of
+        // own sections:
+        return *(it->second);
+    } else {
+        // proceed recursively within section -- `current' contains
+        // section name and the `path' leads to an option.
+        return it->second->subsection( path );
+    }
+}
+
+const Dictionary &
+Dictionary::subsection( const char path[] ) const {
+    return _get_subsection( strdupa(path) );
 }
 
 void

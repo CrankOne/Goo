@@ -359,13 +359,16 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                 .end_sect( "subsect2" )
             .end_sect( "subsect1" )
             .bgn_sect( "subsect3", "Subsection #3" )
-                .p<uint16_t>( "sub-parameter-one", "Some scoped parameter #3" )
+                .p<int16_t>( "sub-parameter-one", "Some scoped parameter #3" )
+                .flag( "imaflag", "A scoped flag" )
             .end_sect( "subsect3" )
             ;
 
         conf.print_ASCII_tree( os );
         const char ex[] = "foo -v3 -q --subsect1.subsect2.sub-parameter-one=5673356 "
-            "--subsect1.sub-parameter-one 1.23 --subsect3.sub-parameter-one -12";
+            "--subsect1.sub-parameter-one 1.23 --subsect3.sub-parameter-one -12 "
+            "--subsect3.imaflag"
+            ;
         char ** argv;
         int argc = goo::dict::Configuration::tokenize_string( ex, argv );
         os << "  ->";
@@ -375,6 +378,17 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         os << "} Subsection parameter retrieving." << std::endl;
         conf.extract( argc, argv, true, &os );
+
+        _ASSERT( conf["v"].as<uint8_t>() == 3, "'v' parameter set wrong" );
+        _ASSERT( conf["quiet"].as<bool>(), "\"quiet\" parameter set wrong" );
+        _ASSERT( 1e-6 > std::fabs(conf["subsect1.sub-parameter-one"].as<float>() - 1.23),
+                    "\"subsect1.sub-parameter-one\" set wrong.");
+        _ASSERT( conf["subsect1.subsect2.sub-parameter-one"].as<uint32_t>() == 5673356,
+                    "\"subsect1.subsect2.sub-parameter-one\" set wrong" )
+        _ASSERT( conf["subsect3.sub-parameter-one"].as<int16_t>() == -12,
+                    "\"subsect3.sub-parameter-one\" set wrong")
+        _ASSERT( conf["subsect3.imaflag"].as<bool>(),
+                    "\"subsect3.imaflag\" set wrong")
     }
     # endif
 
