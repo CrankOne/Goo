@@ -5,7 +5,8 @@
 const struct Goo_Versioning gooVersioning = {
     .buildTimestamp = BUILD_TIMESTAMP,
      .gitCommitHash = COMMIT_HASH,
-      .gitCommitStr = GIT_STRING,
+      .gitCommitStr = "", /* < TODO */
+      /*.gitCommitStr = GIT_STRING,*/
    .encodedFeatures = (0
 # ifdef TYPES_128BIT_LENGTH
     | (((uint32_t) 0x1) << TYPES_128BIT_LENGTH)

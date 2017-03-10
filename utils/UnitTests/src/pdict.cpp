@@ -38,7 +38,7 @@ static void expected_argv_parsing_error(
                       << "} Failed case extraction log dump" << std::endl
                       ;
         emraise( uTestFailure, "Exception not triggered when expected. "
-            "Expected: %s on testing case \"%s\".",
+            "Expected: \"%s\" on testing case \"%s\".",
             get_errcode_description(ec), str );
     } catch( goo::Exception & e ) {
         if( e.code() != ec ) {
@@ -50,7 +50,7 @@ static void expected_argv_parsing_error(
                           << "} Failed case extraction log dump" << std::endl
                       ;
             emraise( uTestFailure, "Wrong exception triggered on testing "
-                "case \"%s\". Expected: %s, thrown: %s.",
+                "case \"%s\". Expected: \"%s\", thrown: \"%s\".",
                 str,
                 get_errcode_description(ec),
                 get_errcode_description(e.code()) );
@@ -320,9 +320,10 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         # else
         const char ex3[] = "three --second=no -4 1.23 -4 3e+2";
         MalformedArgs mlfrmdArgs[] = {
-            { "one -f 12",                          Exception::common },  // `second' unset
-            { "two --second=yes",                   Exception::common },  // `fourth' empty
+            { "one --second=yes",                   Exception::inconsistentConfig },  // `fourth' empty
+            { "two -f 12",                          Exception::inconsistentConfig },  // `second' unset
             //{ "three --second=no -4 1.23 -4 3e+2",  Exception::common }  // ok
+            { "", Exception::common }
         };
         for( auto c = mlfrmdArgs; '\0' != c->cmdLine[0]; ++c ) {
             expected_argv_parsing_error( c->cmdLine,

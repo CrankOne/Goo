@@ -161,13 +161,13 @@ iAbstractParameter::_set_is_flag_flag() {
 }
 
 void
-iAbstractParameter::_set_is_argument_required_flag() {
-    _flags |= required;
+iAbstractParameter::_unset_singular() {
+    _flags &= ~singular;
 }
 
 void
-iAbstractParameter::_unset_singular() {
-    _flags &= ~singular;
+iAbstractParameter::set_is_argument_required_flag() {
+    _flags |= required;
 }
 
 //

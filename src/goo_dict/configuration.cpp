@@ -191,10 +191,9 @@ Configuration::_cache_append_options( const Dictionary & self,
               it != self._parametersIndexByName.cend(); ++it ) {
         iSingularParameter & pRef = *(it->second);
         // Parameter instances in this index must not have
-        // shortcuts as they are stored at _byShortcutIndexed.
+        // shortcuts as they are stored at _byShortcutIndexed. XXX?
         assert( pRef.name() == it->first );
-        assert( ! pRef.has_shortcut() );
-        //
+        //assert( ! pRef.has_shortcut() );  // XXX?
         _cache_insert_long_option( nameprefix, longOpts, pRef );
     }
     // Now, recursively traverse via all sub-dictionaries (subsections):
@@ -227,8 +226,8 @@ Configuration::extract( int argc,
         for( const struct ::option * it = longOptions; it->name; ++it, ++n ) {
             *verbose << std::string(8, ' ') << it->name << ":" << std::endl;
             *verbose << std::string(12, ' ') << "argument: \""
-                     << (required_argument == it->has_arg ? "required" :
-                        (optional_argument == it->has_arg ? "optional" : "none") )
+                     << (required_argument == it->val ? "required" :
+                        (optional_argument == it->val ? "optional" : "<none-or-shortcut>") )
                      << "\"" << std::endl
                      << std::string(12, ' ') << "getoptVal: "
                      << std::hex << std::showbase << it->val

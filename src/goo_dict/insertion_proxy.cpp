@@ -9,7 +9,7 @@ namespace dict {
 InsertionProxy &
 InsertionProxy::required_argument() {
     assert( !_stack.empty() );
-    _stack.top()->_set_is_argument_required_flag();
+    _stack.top()->_mark_last_inserted_as_required();
     return *this;
 }
 
@@ -37,9 +37,10 @@ InsertionProxy::end_sect( const char * name ) {
     if( name ) {
         if( !strcmp( name, _stack.top()->name() ) ) {
             emraise( assertFailed,
-                    "Insertion proxy state check failed: current section is named \"%s\" while \"%s\" expected.",
-                    _stack.top()->name(),
-                    name );
+                    "Insertion proxy state check failed: current section is "
+                    "named \"%s\" while \"%s\" expected.",
+                _stack.top()->name(),
+                name );
         }
     }
     _stack.pop();

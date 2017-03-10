@@ -97,9 +97,6 @@ protected:
     /// Sets the "is flag" flag.
     void _set_is_flag_flag();
 
-    /// Sets the "required" flag marking a mandatory parameter.
-    void _set_is_argument_required_flag();
-
     /// This method is to be used by lists only.
     void _unset_singular();
 
@@ -171,6 +168,9 @@ public:
     bool has_shortcut() const {
             return _flags & shortened;
         }
+
+    /// Sets the "required" flag marking a mandatory parameter.
+    void set_is_argument_required_flag();
 
     friend class ::goo::dict::InsertionProxy;
 };  /*}}}*/ // class iAbstractParameter

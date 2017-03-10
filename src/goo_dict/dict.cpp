@@ -217,37 +217,38 @@ Dictionary::_get_parameter( char path[] ) const {
     }
 }
 
+void
+Dictionary::_mark_last_inserted_as_required() {
+    if( _parameters.empty() ) {
+        emraise( badState,
+            "None parameters were set to dictionary, but marking last as "
+            "required was requested." );
+    }
+    _parameters.back()->set_is_argument_required_flag();
+}
+
 bool
 Dictionary::is_consistant( std::map<std::string, const iSingularParameter *> & badParameters,
                            const std::string & prefix ) const {
-    for( auto it  = _parametersIndexByName.cbegin();
-              it != _parametersIndexByName.cbegin(); ++it ) {
-        if( it->second->is_mandatory() && !it->second->is_set() ) {
-            badParameters.emplace(
-                    prefix + it->second->name(),
-                    it->second
-                );
-        }
-    }
-    for( auto it  = _parametersIndexByShortcut.cbegin();
-              it != _parametersIndexByShortcut.cbegin(); ++it ) {
-        if( it->second->is_mandatory() && !it->second->is_set() ) {
-            if( it->second->name() ) {
+    for( auto it  = _parameters.cbegin();
+              it != _parameters.cend(); ++it ) {
+        if( (*it)->is_mandatory() && !(*it)->is_set() ) {
+            if( (*it)->name() ) {
                 badParameters.emplace(
-                        prefix + it->second->name(),
-                        it->second
+                        prefix + (*it)->name(),
+                        *it
                     );
             } else {
-                char bf[2] = {it->first, '\0'};
+                char bf[2] = {(*it)->shortcut(), '\0'};
                 badParameters.emplace(
                     bf,
-                    it->second
+                    *it
                 );
             }
         }
     }
     for( auto it  = _dictionaries.cbegin();
-              it != _dictionaries.cbegin(); ++it ) {
+              it != _dictionaries.cend(); ++it ) {
         it->second->is_consistant( badParameters, prefix + it->first );
     }
     return badParameters.empty();

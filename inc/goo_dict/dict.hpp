@@ -150,6 +150,9 @@ protected:
     /// Note, that path delimeter here is dot symbol '.'.
     virtual const iSingularParameter & _get_parameter( char [] ) const;
 
+    /// Marks last inserted parameter as required one.
+    void _mark_last_inserted_as_required();
+
     friend class InsertionProxy;
     friend class Configuration;
 public:
