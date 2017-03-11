@@ -6,7 +6,7 @@ commitHash=@COMMIT_HASH@
 
 Name: goo
 Description: The goo library.
-URL: https://bitbucket.org/CrankOne/goo
+URL: https://github.com/CrankOne/Goo
 Version: @GOO_VERSION_MAJOR@.@GOO_VERSION_MINOR@
 Cflags: -I${includedir}/goo @BUILD_CXX_FLAGS@
 Libs: -L${libdir} -lgoo

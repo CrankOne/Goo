@@ -20,7 +20,7 @@ as a dependency since I often include it into other projects. If so, I would
 recomment to use this snippet for quick build and non-obtrusive installation:
 
     $ cd /tmp
-    $ git clone https://bitbucket.org/CrankOne/goo
+    $ git clone https://github.com/CrankOne/Goo.git
     $ mkdir -p goo.build/debug
     $ cd goo.build/debug
     $ cmake ../../goo
@@ -60,7 +60,7 @@ following things in parallel before thhe first release at
    5. `allocators` is a memory management subsystem, supplementing standard
       library allocators.
 
-One can not probably find all of them at my [bitbucket repo](https://bitbucket.org/CrankOne/goo/)
+One can not probably find all of them at my [github repo](https://github.com/CrankOne/Goo)
 whilst I'm working on those features mostly at my spare time on a whim.
 
 # License [[#](#license-info)]

@@ -2,12 +2,16 @@
 # include <wordexp.h>
 # include "utest.hpp"
 # include "goo_dict/configuration.hpp"
-//# include "goo_dict/parameters/integral.tcc"
 
 /**@file pdict.cpp
  * @brief Parameters dictionary test.
  *
- * TODO
+ * This unit test routines will perform testing of parameter dictionaries and
+ * command-line parameters extraction routines supplied with Goo library. Few
+ * sections test its functionality from basic to advanced usage levels.
+ *
+ * This module depends on virtual copy constructor routine, so VCtr has to be
+ * tested first (reflected at the dependencies graph).
  * */
 
 struct MalformedArgs {

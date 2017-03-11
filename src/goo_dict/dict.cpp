@@ -314,7 +314,7 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
         if( p->is_set() ) {
             ss << ", value set";
         }
-        // TODO: somehow reflect other parameter properties
+        // TODO: somehow reflect other parameter properties?
         ss << std::endl;
     }
     n = _dictionaries.size();

@@ -236,7 +236,8 @@ Configuration::extract( int argc,
         }
     }
     // TODO: check whether getopt_long arguments (composed caches) are empty.
-    // If they are, RAISE EXCEPTION.
+    // If they are --- shall we raise an exception? How about shortened-only
+    // case or even when only positional arguments are provided?
     int optIndex = -1, c;
     while( -1 != (c = getopt_long( argc, argv, _cache_shortOptionsPtr, longOptions, &optIndex )) ) {
         //if ( optind == prevInd + 2 && *optarg == '-' ) {
@@ -493,20 +494,22 @@ Configuration::_append_configuration_caches(
 void
 Configuration::_cache_parameter_by_shortcut( iSingularParameter * p_ ) {
     assert( p_->has_shortcut() );
-    // TODO: insert and check insertion result
-    auto it = _parametersIndexByShortcut.find( p_->shortcut() );
-    if( it != _parametersIndexByShortcut.end() ) {
-        emraise( nonUniq, "Configuration \"%s\":%p already has shortened option '-%c'.",
-                this->name(), this,
-                p_->shortcut() );
+    auto ir = _parametersIndexByShortcut.emplace( p_->shortcut(), p_ );
+    if( !ir.second ) {
+        emraise( nonUniq, "Configuration \"%s\":%p already has parameter "
+                          "referenced by '%c': %p \"%s\". "
+                          "Unable to insert %p \"%s\".",
+                this->name(), this, p_->shortcut(),
+                ir.first->second,
+                ir.first->second->name() ? ir.first->second->name() : "",
+                p_,
+                p_->name() ? p_->name() : "");
     }
-    _parametersIndexByShortcut.emplace( p_->shortcut(), p_ );
 }
 
 void
 Configuration::_cache_parameter_by_full_name( const std::string & fullName,
                                               iSingularParameter * p_ ) {
-    assert( !p_->has_shortcut() );
     assert( p_->name() );
     // TODO: insert and check insertion result
     auto it = _parametersIndexByName.find( fullName );
@@ -515,7 +518,15 @@ Configuration::_cache_parameter_by_full_name( const std::string & fullName,
                 this->name(), this,
                 fullName.c_str() );
     }
-    _parametersIndexByName.emplace( fullName.c_str(), p_ );
+    auto ir = _parametersIndexByName.emplace( fullName.c_str(), p_ );
+    if( !ir.second ) {
+        emraise( nonUniq, "Configuration \"%s\":%p already has parameter "
+                          "referenced by name \"%s\": %p. Unable to insert %p "
+                          "with the same name.",
+                this->name(), this,
+                ir.first->second->name(), ir.first->second,
+                p_ );
+    }
 }
 
 void

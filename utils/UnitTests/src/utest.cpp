@@ -82,7 +82,7 @@ Keys:\n\r\
                                 unit(s) run\n\r\
 Report bugs to crank@qcrypt.org.\n\r\
 Official repository page for this version:\n\r\
-    <https://bitbucket.org/CrankOne/goo>\n\r\
+    <https://github.com/CrankOne/Goo>\n\r\
 ", utilname);}
 
 static void

@@ -736,5 +736,5 @@ L<Renat (Crank) R. Dusaev|mailto:crank@qcrypt.org>
 
 =head1 SEE ALSO
 
-L<Goo library|https://bitbucket.org/CrankOne/goo>
+L<Goo library|https://github.com/CrankOne/Goo>
 
