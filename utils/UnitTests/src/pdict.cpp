@@ -203,6 +203,8 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "List parameters tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication3", "Testing parameter set #2." );
 
+        const char strLstDftCheck[][16] = { "one", "two", "three" };
+
         conf.insertion_proxy()
             .flag( '1', "parameter-one",  "First parameter" )
             .list<bool>( 'b', "binary", "options array #1",
@@ -213,11 +215,13 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .flag( 'v', "Enables verbose output" )
             .list<short>( 'x', "List of short ints", { 112, 53, 1024 } )
             .list<float>( "fl-num", "List of floating numbers" )
+            .list<std::string>( 's', "lstr-i", "String list one", {"a", "b", "c"} )
+            .list<std::string>( "lstr-ii", "String list one", { "one", "two", "three" } )
             ;
 
-        const char ex1[] = "./foo -1v --fl-num 1e-6 -b true -b Off -b On "
-                           "--binary2 OFF --binary ON -Bon -Bfalse -BOFF "
-                           "-byes";
+        const char ex1[] = "./foo -s one -1v --fl-num 1e-6 -b true -b Off -b On "
+                           "--binary2 OFF -stwo --binary ON -Bon -Bfalse -BOFF "
+                           "-byes -s three";
         char ** argv;
         os << "For given source string: " << ex1 << ":" << std::endl;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
@@ -293,6 +297,30 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                 _ASSERT( std::fabs(*it - *c) < 1e-7,
                          "#5 list: parameter #%d is set to unexpected value.",
                          (int) (c - tstSeq) );
+            }
+        }
+        {  // --lstr-i has to be list of strings:
+            auto strOne = conf["lstr-i"].as_list_of<std::string>();
+            const char (*c)[16] = strLstDftCheck;
+            _ASSERT( 3 == strOne.size(),
+                    "#6 Wrong number of parameters in list: "
+                    "%d != 1.", (int) strOne.size() );
+            for( auto it = strOne.begin(); strOne.end() != it; ++it, ++c ) {
+                _ASSERT( !strcmp( *c, it->c_str() ),
+                         "#6 list: parameter #%d is set to unexpected value: %s.",
+                         (int) (c - strLstDftCheck), it->c_str() );
+            }
+        }
+        {  // --lstr-ii has to be list of strings:
+            auto strTwo = conf["lstr-ii"].as_list_of<std::string>();
+            const char (*c)[16] = strLstDftCheck;
+            _ASSERT( 3 == strTwo.size(),
+                    "#7 Wrong number of parameters in list: "
+                    "%d != 1.", (int) strTwo.size() );
+            for( auto it = strTwo.begin(); strTwo.end() != it; ++it, ++c ) {
+                _ASSERT( !strcmp( *c, it->c_str() ),
+                         "#7 list: parameter #%d is set to unexpected value: %s.",
+                         (int) (c - strLstDftCheck), it->c_str() );
             }
         }
 
@@ -395,6 +423,102 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                     "\"subsect3.sub-parameter-one\" set wrong")
         _ASSERT( conf["subsect3.imaflag"].as<bool>(),
                     "\"subsect3.imaflag\" set wrong")
+    }
+    # endif
+
+    # if 1
+    // See http://unix.stackexchange.com/questions/147143/when-and-how-was-the-double-dash-introduced-as-an-end-of-options-delimiter
+    // for historical details about useful `--` special token that initially
+    // appeared as a kludge to further become a standard.
+    {
+        os << "End-of-options test : {" << std::endl;
+        goo::dict::Configuration conf( "theApplication6", "Testing parameter set #4." );
+
+        conf.positional_arguments<std::string>( "exec-cmd-argv",
+                "All positional arguments will be forwarded to child "
+                "invokation in order of appearance." );
+
+        conf.insertion_proxy()
+            .bgn_sect( "log", "Logging options" )
+                .list<std::string>( '1', "stdout",
+                                    "List of files where stdout has to be "
+                                    "redirected. The '-' will be considered as "
+                                    "terminal's stdout if available.", {"-"} )
+                .list<std::string>( '2', "stderr",
+                                    "List of files where stderr has to be "
+                                    "redirected. The '-' will be considered as "
+                                    "terminal's stderr if available.", {"-"} )
+            .end_sect( "log" )
+            .flag(  "emulate-tty", "If provided, the fake TTY will be injected "
+                    "into child process' environment." )
+            ;
+
+        conf.print_ASCII_tree( os );
+        const char ex[] = "extended-tee cmake -1/tmp/build.log -2/tmp/errors.log "
+            "-1/tmp/build-11-03-017.log -2/tmp/build-11-03-017.log -1- -2- -- "
+            "-1 some -DSOMPARAM=OFF -2 thing ../some/where --foo --bar"
+            ;
+        char ** argv;
+        int argc = goo::dict::Configuration::tokenize_string( ex, argv );
+        os << "  ->";
+        for( int n = 0; n < argc; ++n ) {
+            os << argv[n] << "|";
+        } os << std::endl;
+
+        conf.extract( argc, argv, true, &os );
+
+        const char chkTokens[][10][64] = {
+            { "/tmp/build.log",     "/tmp/build-11-03-017.log", "-", "" },
+            { "/tmp/errors.log",    "/tmp/build-11-03-017.log", "-", "" },
+            { "cmake", "-1", "some", "-DSOMPARAM=OFF", "-2", "thing",
+                                    "../some/where", "--foo", "--bar", "" },
+        };
+
+        {
+            const char (* tok1)[64] = chkTokens[0];
+            for( auto stoFName : conf["log.stdout"].as_list_of<std::string>() ) {
+                os << "  stdout redirected to: " << stoFName << std::endl;
+                _ASSERT( !strcmp( *tok1, stoFName.c_str() ),
+                    "Positional argument #%d failure on list 1: \"%s\" instead of "
+                    "expected \"%s\".", (int) (chkTokens[0] - tok1), 
+                                        stoFName.c_str(), *tok1 );
+                tok1++;
+            }
+            _ASSERT( '\0' == tok1[0][0], "Missing argument for list 1: \"%s\".",
+                *tok1 );
+        }
+
+        {
+            const char (* tok2)[64] = chkTokens[1];
+            for( auto stoFName : conf["log.stderr"].as_list_of<std::string>() ) {
+                os << "  stderr redirected to: " << stoFName << std::endl;
+                _ASSERT( !strcmp( *tok2, stoFName.c_str() ),
+                    "Positional argument #%d failure on list 2: \"%s\" instead of "
+                    "expected \"%s\".", (int) (chkTokens[1] - tok2), 
+                                        stoFName.c_str(), *tok2 );
+                tok2++;
+            }
+            _ASSERT( '\0' == tok2[0][0], "Missing argument for list 2: \"%s\".",
+                *tok2 );
+        }
+
+        {
+            const char (* tok3)[64] = chkTokens[2];
+            os << " command to run: $";
+            for( auto fwdArgv : conf["exec-cmd-argv"].as_list_of<std::string>() ) {
+                os << " " << fwdArgv;
+                _ASSERT( !strcmp( *tok3, fwdArgv.c_str() ),
+                    "Positional argument #%d failure on list 3: \"%s\" instead of "
+                    "expected \"%s\".", (int) (chkTokens[2] - tok3), 
+                                        fwdArgv.c_str(), *tok3 );
+                tok3++;
+            }
+            os << std::endl;
+            _ASSERT( '\0' == tok3[0][0], "Missing argument for list 3: \"%s\".",
+                *tok3 );
+        }
+
+        os << "} End-of-options test done." << std::endl;
     }
     # endif
 

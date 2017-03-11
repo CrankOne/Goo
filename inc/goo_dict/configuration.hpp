@@ -67,6 +67,10 @@ private:
     /// Access cache for long options (?).
     //mutable std::unordered_map<std::string, iSingularParameter *>   _longOptions;
 
+    /// Positional parameters. Ptr may be null if positional argument is
+    /// disallowed.
+    iSingularParameter * _positionalArgument;
+
     void _free_caches_if_need() const;
 protected:
     /// Recursively iterates through all the options and section producing getopt()-strings.
@@ -108,6 +112,9 @@ protected:
                                      Dictionary::LongOptionEntries &,
                                      const iSingularParameter & );
 
+    /// Helper function setting/appending given token as a positional argument.
+    void _append_positional_arg( const char * );
+
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
@@ -143,6 +150,9 @@ public:
     virtual const iSingularParameter & operator[]( const char p[] ) const {
         return parameter(p); }
 
+    /// Extendeds parent version with positional argument resolution.
+    virtual const iSingularParameter & parameter( const char path[] ) const override;
+
     /// Invalidates getopt's caches. Must be called if any containee topology
     /// has changed.
     virtual void invalidate_getopt_caches() const
@@ -159,6 +169,30 @@ public:
     /// Argument-overloaded method that user will probably wish to invoke to
     /// get an ASCII-tree in output stream.
     virtual void print_ASCII_tree( std::ostream & ) const;
+
+    /// Makes configuration able to acquire single (only) positional argument.
+    /// This is not an incremental procedure and has to be used rarely: if
+    /// user's code has to treat multiple positional arguments, the
+    /// `positional_arguments()` has to be used instead.
+    template<typename T> iParameter<T> &
+    single_positional_argument( const char name[], const char description[] ) {
+        auto * p = new InsertableParameter<T>( name, description );
+        p->_check_initial_validity();
+        _positionalArgument = p;
+        return *p;
+    }
+
+    /// Makes configuration instace be able to acquire a list of positional
+    /// arguments of the specific type.
+    template<typename T> Parameter<std::list<T> > &
+    positional_arguments( const char name[], const char description[] ) {
+        auto p = new InsertableParameter<std::list<T> >( name, description );
+        _positionalArgument = p;
+        return *p;
+    }
+
+    /// Returns forwarded arguments (if they were set).
+    const std::list<std::string> & forwarded_argv() const;
 
     friend class Dictionary;
 };  // class Configuration

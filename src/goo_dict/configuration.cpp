@@ -44,16 +44,20 @@ Configuration::Configuration( const char * name_,
                               const char * descr_ ) : Dictionary(name_, descr_),
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
-                                                      _getoptCachesValid( false ) {
-}
+                                                      _getoptCachesValid( false ),
+                                                      _positionalArgument( nullptr ) {}
 
 Configuration::Configuration( const Configuration & orig ) : Dictionary( orig ),
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
-                                                      _getoptCachesValid( false ) {}
+                                                      _getoptCachesValid( false ),
+                                                      _positionalArgument( nullptr ) {}
 
 Configuration::~Configuration() {
     _free_caches_if_need();
+    if( _positionalArgument ) {
+        delete _positionalArgument;
+    }
 }
 
 void
@@ -101,21 +105,15 @@ void
 Configuration::_set_argument_parameter( iSingularParameter & p,
                                         const char * strval,
                                         std::ostream * verbose ) {
-    if( p.is_singular() ) {
-        iSingularParameter & sp = auth_cast<iSingularParameter&>(p);
-        sp.parse_argument( strval );
-        if( verbose ) {
-            *verbose << strfmt( "    ...set to \"%s\".", sp.to_string().c_str() )
-                     << std::endl;
+    p.parse_argument( strval );
+    if( verbose ) {
+        if( p.is_singular() ) {
+                *verbose << strfmt( "    ...set to \"%s\".", p.to_string().c_str() )
+                         << std::endl;
+        } else {
+               *verbose << strfmt( "    ...appended with \"%s\".", p.to_string().c_str() )
+                        << std::endl;
         }
-    } else {
-        iSingularParameter & mp = auth_cast<iSingularParameter&>(p);
-        mp.parse_argument( strval );
-        if( verbose ) {
-           *verbose << strfmt( "    ...appended with \"%s\".", mp.to_string().c_str() )
-                    << std::endl;
-        }
-        // or whatever ...
     }
 }
 
@@ -196,6 +194,16 @@ Configuration::_cache_append_options( const Dictionary & self,
         _cache_append_options( *(it->second), sectPrefix,
                                                 shrtOpts, shrtPths, longOpts );
     }
+}
+
+void
+Configuration::_append_positional_arg( const char * strv ) {
+    if( !_positionalArgument ) {
+        emraise( malformedArguments, "Configuration \"%s\" does not "
+                    "accept positional arguments (\"%s\" given as one).",
+                    name(), ::optarg );
+    }
+    _positionalArgument->parse_argument( strv );
 }
 
 void
@@ -354,15 +362,23 @@ Configuration::extract( int argc,
         } else if(  01 == c ) {
             // this is a positional argument (because we have set the '-'
             // character first in optstring).
-            log_extraction( "\"%s\" considered as a positional argument.\n", ::optarg );
-            _TODO_  // TODO ...
+            log_extraction( "\"%s\" recognized as a positional argument.\n",
+                    ::optarg );
+            _append_positional_arg( ::optarg );
         } else {
             emraise( badValue, "getopt() returned character code %#02x.", c );
         }
         optIndex = -1;
     }
-    // TODO: further processing of positional arguments: forward ones given
-    // after "--" token.
+    // appending of positional arguments, if any:
+    if( ::optind < argc ) {
+        while( optind < argc ) {
+            _append_positional_arg( argv[optind++] );
+            log_extraction( "\"%s\" recognized as a positional argument "
+                    "(on argv-tail processing).\n",
+                    argv[optind-1] );
+        }
+    }
     {
         std::map<std::string, const iSingularParameter *> badParameters;
         if( doConsistencyCheck && !this->is_consistant( badParameters, "" ) ) {
@@ -371,6 +387,14 @@ Configuration::extract( int argc,
         }
     }
     # undef log_extraction
+}
+
+const iSingularParameter &
+Configuration::parameter( const char path[] ) const {
+    if( _positionalArgument && !strcmp(path, _positionalArgument->name()) ) {
+        return *_positionalArgument;
+    }
+    return Dictionary::parameter(path);
 }
 
 InsertionProxy

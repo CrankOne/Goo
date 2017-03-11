@@ -16,7 +16,19 @@ namespace dict {
 
 /**@brief Helper class for parameter insertion.
  *
- * TODO
+ * The typical lifetime of is instances is following:
+ *  1. Instance first is created with `Configuration` class `insertion_proxy()`
+ *     method.
+ *  2. Then parameters are added using this instance with various appropriate
+ *     methods like `p()`, `flag()` and `list()`.
+ *  3. Insertion proxy then may be safely deleted.
+ *
+ * Note that `bgn_sect()` and `end_sect()` methods have to be paired --- i.e.
+ * each created sub-section must be closed.
+ *
+ * Note, that to prevent user code from possible mistakes, positional arguments
+ * have to be added with own `Configuration` setter method
+ * `positional_arguments()`.
  * */
 class InsertionProxy {
 private:
@@ -28,7 +40,8 @@ public:
     /// Opens new section.
     InsertionProxy & bgn_sect( const char *, const char * );
 
-    /// Closes most recent section and switches to its previous (or finalizes last).
+    /// Closes most recent section and switches to its previous
+    /// (or finalizes last). Argument is optional and useful for self-check.
     InsertionProxy & end_sect( const char * = nullptr );
 
     /// Marks the last inserted parameter as mandatory one.
@@ -57,14 +70,6 @@ public:
         _stack.top()->insert_parameter( newParameterPtr );
         return *this;
     }
-
-    //template<typename ParameterT, class ... Types> InsertionProxy &
-    //rq( Types ... args ) {  // TODO?
-    //    _stack.top()->insert_parameter(
-    //            new Parameter<ParameterT>( args ... )
-    //        );
-    //    return *this;
-    //}
 
     //
     // List inserters

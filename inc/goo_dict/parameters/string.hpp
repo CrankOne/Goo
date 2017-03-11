@@ -61,11 +61,23 @@ public:
     Parameter( const char * name_,
                const char * description_,
                const char * default_=nullptr );
+
     /// Long option with shortcut.
     Parameter( char shortcut_,
                const char * name_,
                const char * description_,
                const char * default_=nullptr );
+
+    Parameter( const char * name_,
+               const char * description_,
+               const std::string & default_ ) :
+            Parameter( name_, description_, default_.c_str() ) {}
+
+    Parameter( char shortcut_,
+               const char * name_,
+               const char * description_,
+               const std::string & default_ ) :
+            Parameter( shortcut_, name_, description_, default_.c_str() ) {}
 
     Parameter( const Parameter<std::string> & o ) : DuplicableParent( o ) {}
 

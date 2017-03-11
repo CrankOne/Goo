@@ -361,6 +361,11 @@ using InsertableParameter = typename
  * Prameter list may have default values defined as an C++11 initializer list
  * upon construction. Default values will be deleted if at least one value
  * will override the parameter.
+ *
+ * Note about `_setToDefault` property: once it was set to true, the next
+ * appending operation will cause `_values` list to be cleared. This flag may
+ * be useful not only with the initial configuration, but also for overriding
+ * or appending variables set in config files.
  */
 template<typename ValueT>
 class Parameter<std::list<ValueT> > :
@@ -414,6 +419,13 @@ public:
     {}
 
     ~Parameter() {}
+
+    /// Returns `_setToDefault` flag.
+    bool is_set_to_default() const { return _setToDefault; }
+
+    /// Sets `_setToDefault` flag. See note about this flag in class
+    /// description.
+    void set_to_default(bool v) { _setToDefault = v; }
 
     friend class InsertionProxy;
 
