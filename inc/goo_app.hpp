@@ -69,9 +69,6 @@ template<typename ConfigObjectT,
 
 namespace aux {
 
-
-
-
 /// Abstract application base class.
 class iApp {
 public:
@@ -151,7 +148,7 @@ protected:
     virtual int _V_run() = 0;
 public:
     /// Returns application instance.
-    static iApp & self() { assert(_self); return *_self; }
+    static iApp & self();
 
     /// Returns true, if instance was created.
     static bool exists() { return !!_self; }

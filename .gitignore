@@ -13,6 +13,7 @@ lib/*
 exec/*
 doc/*
 bin/*
+nbproject/*
 inc/goo_config.h
 tags
 .project
@@ -27,3 +28,4 @@ CMakeCache.txt
 CMakeFiles
 assets/buildsystems/FindGoo.cmake
 assets/buildsystems/goo.pc
+assets/buildsystems/GooConfig.cmake

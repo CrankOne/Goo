@@ -28,6 +28,7 @@
 #  Goo_CXX              - Goo C++ compiler
 #  Goo_CXX_CFLAGS       - Goo C++ compiler flags
 #  Goo_INSTALL_PREFIX   - Goo basic installation path
+#  Goo_CMAKE_MODULES_DIR- Goo aux CMake scripts
 # - If the unit test utility is enabled to build the following variables are
 # to be defined:
 #  Goo_UT_EXECUTABLE    - the Goo unit tests executable
@@ -36,6 +37,7 @@ set( Goo_INCLUDE_DIRS   "@CMAKE_INSTALL_PREFIX@/include/goo" )
 set( Goo_LIBRARIES      @Goo_LIBRARY@ )
 set( Goo_LIBRARY_DIR    @CMAKE_INSTALL_PREFIX@/lib/goo )
 set( Goo_INSTALL_PREFIX @CMAKE_INSTALL_PREFIX@ )
+set( Goo_CMAKE_MODULES_DIR @CMAKE_INSTALL_PREFIX@/lib/cmake/goo )
 
 set( Goo_CC             "@CMAKE_C_COMPILER@" )
 set( Goo_C_CFLAGS       "@CMAKE_C_FLAGS@"   )
@@ -44,4 +46,6 @@ set( Goo_CXX            "@CMAKE_CXX_COMPILER@" )
 set( Goo_CXX_CFLAGS     "@CMAKE_CXX_FLAGS@" )
 
 set( Goo_UT_EXECUTABLE  @Goo_UT_EXECUTABLE@ )
+
+@Goo_OPTIONS_STR@
 

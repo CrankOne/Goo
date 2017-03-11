@@ -25,8 +25,10 @@
 
 # include "goo_types.h"
 
+# ifndef STRINGIFY_MACRO_ARG
 # define STRINGIFY_MACRO_ARG(a) _STRINGIFY_MACRO_ARG(a)
 # define _STRINGIFY_MACRO_ARG(a) #a
+# endif  // STRINGIFY_MACRO_ARG
 
 # ifdef __cplusplus
 extern "C" {
@@ -68,6 +70,15 @@ char * rounded_mem_size_stb( unsigned long toPrint );
 
 /** A static buffer (uses own) version of fancy_mem_size(). */
 char * fancy_mem_size_stb( unsigned long toPrint );
+
+/**@brief raises custom GOO-exception from c-code
+ *
+ * C-function with C++ linkage that throws Goo-exception.
+ * Not defined for C++ code.
+ *
+ * Note: implemented at goo_exception.cpp
+ */
+int goo_C_error( ErrCode, const char * fmt, ... ) __attribute__ ((noreturn));
 
 # ifdef __cplusplus
 }

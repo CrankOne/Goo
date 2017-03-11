@@ -268,6 +268,7 @@ while( @inputFileNames ) {
         #check_unbalanced_pattern "option", "someopt", $inFile;
         my $str;
         if( $str = check_line_for_tag( "option",               "option",           $inFile ) ) {
+            # TODO: support also new push_option() tag
             if( $str !~ /^\s*option\s*\(\s*(\S+)\s+\"(.*)\"\s+(ON|OFF)\s*\)\s*$/  ) {
                 print STDERR "\033[1;31mError\033[0m: Unexpected form of option provided: \"$str\". Ignored.\n";
                 next;
