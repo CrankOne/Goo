@@ -2,20 +2,24 @@ cmake_minimum_required( VERSION 3.1 )
 
 # - Try to find "goo" library
 # Following variables should be defined once done:
-#   goo_LIBRARY           ... path to the library
-#   goo_INCLUDE_DIR       ... path to goo's includes dir
-#   goo_C_FLAGS           ... goo's sources C-flags
-#   goo_CXX_FLAGS         ... goo's sources C++-flags
+#  Goo_INCLUDE_DIRS     - include directories for Goo library
+#  Goo_LIBRARIES        - Goo libraries to link against
+#  Goo_LIBRARY_DIR      - Where Goo libraries is to be placed
+#  Goo_CC               - Goo C compiler
+#  Goo_C_CFLAGS         - Goo C compiler flags
+#  Goo_CXX              - Goo C++ compiler
+#  Goo_CXX_CFLAGS       - Goo C++ compiler flags
+#  Goo_INSTALL_PREFIX   - Goo basic installation path
 # In case of using pkconfig-based configuration, there are supplementary variables:
-#   pc_goo_FOUND          ... set to 1 if module(s) exist
-#   pc_goo_LIBRARY        ... only the libraries (w/o the '-l')
-#   pc_goo_LIBRARIES      ... only the libraries (w/o the '-l')
-#   pc_goo_LIBRARY_DIRS   ... the paths of the libraries (w/o the '-L')
-#   pc_goo_LDFLAGS        ... all required linker flags
-#   pc_goo_LDFLAGS_OTHER  ... all other linker flags
-#   pc_goo_INCLUDE_DIRS   ... the '-I' preprocessor flags (w/o the '-I')
-#   pc_goo_CFLAGS         ... all required cflags
-#   pc_goo_CFLAGS_OTHER   ... the other compiler flags
+#  pc_goo_FOUND         - set to 1 if module(s) exist
+#  pc_goo_LIBRARY       - only the libraries (w/o the '-l')
+#  pc_goo_LIBRARIES     - only the libraries (w/o the '-l')
+#  pc_goo_LIBRARY_DIRS  - the paths of the libraries (w/o the '-L')
+#  pc_goo_LDFLAGS       - all required linker flags
+#  pc_goo_LDFLAGS_OTHER - all other linker flags
+#  pc_goo_INCLUDE_DIRS  - the '-I' preprocessor flags (w/o the '-I')
+#  pc_goo_CFLAGS        - all required cflags
+#  pc_goo_CFLAGS_OTHER  - the other compiler flags
 
 # Note, that if GooTests util is build some info can be retrieved by running it with -c
 # flag. For example, the one-liner:
@@ -24,6 +28,10 @@ cmake_minimum_required( VERSION 3.1 )
 # gives the path of used C++-compiler.
 
 list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "@CMAKE_INSTALL_PREFIX@/lib" isSystemDir)
+
+#unset(Goo_LIBRARIES)
+#unset(pc_goo_LIBDIR)
+#unset(pc_goo_LIBRARY_DIRS)
 
 # find pkg config
 find_package(PkgConfig)
@@ -37,19 +45,17 @@ if( ${PKGCONFIG_FOUND} )
     endif("${isSystemDir}" STREQUAL "-1")
     pkg_check_modules(pc_goo QUIET goo)  # use prefix wc_goo...
     if("${pc_goo_FOUND}" STREQUAL "1")
-        #message(STATUS "Goo includedirs:  " ${pc_goo_INCLUDE_DIRS} ", " ${pc_goo_INCLUDEDIR} )
-        #message(STATUS "Goo library dirs: " ${pc_goo_LIBDIR} ", " ${pc_goo_LIBRARY_DIRS} )
         # Locate headers by goo_config.h header:
-        find_path( goo_INCLUDE_DIR goo_config.h
+        find_path( Goo_INCLUDE_DIRS goo_config.h
             HINTS ${pc_goo_INCLUDE_DIRS} ${pc_goo_INCLUDEDIR}
-            PATH_SUFFIXES goo )
+            PATH_SUFFIXES )
         # locate library by libgoo:
-        find_library( goo_LIBRARY NAMES goo libgoo
+        find_library( Goo_LIBRARIES NAMES @Goo_LIBRARY@ lib@Goo_LIBRARY@
             HINTS ${pc_goo_LIBDIR} ${pc_goo_LIBRARY_DIRS} )
         # Now, forward execution REQUIRED/QUIET to find_package_handle_standard_args() func:
         include(FindPackageHandleStandardArgs)
         find_package_handle_standard_args(goo            DEFAULT_MSG
-                                          goo_LIBRARY    goo_INCLUDE_DIR)
+                                          Goo_LIBRARIES    Goo_INCLUDE_DIRS)
     else("${pc_goo_FOUND}" STREQUAL "1")
         # TODO: continue configuration without a 
         message( SEND_ERROR "pkgconfig module for goo library wasn't found." )
@@ -59,13 +65,18 @@ else( ${PKGCONFIG_FOUND} )
     message( SEND_ERROR "pkgconfig isn't found. Pure CMake configuration is unimplemented yet (TODO). Sorry." )
 endif( ${PKGCONFIG_FOUND} )
 
-set( goo_C_FLAGS   "@CMAKE_C_FLAGS@"   )
-set( goo_CXX_FLAGS "@CMAKE_CXX_FLAGS@" )
+set( Goo_CC             "@CMAKE_C_COMPILER@" )
+set( Goo_C_CFLAGS       "@CMAKE_C_FLAGS@"   )
+set( Goo_CXX            "@CMAKE_CXX_COMPILER@" )
+set( Goo_CXX_CFLAGS     "@CMAKE_CXX_FLAGS@" )
+set( Goo_LIBRARY_DIR    @CMAKE_INSTALL_PREFIX@/lib/goo )
+set( Goo_INSTALL_PREFIX @CMAKE_INSTALL_PREFIX@ )
 
 message( STATUS "Found goo library configuration:" )
 message( STATUS "    built for: @buildDir@" )
-message( STATUS "      library: " ${goo_LIBRARY} )
-message( STATUS "  include dir: " ${goo_INCLUDE_DIR} )
+message( STATUS " library dirs: " ${Goo_LIBRARY_DIR} )
+message( STATUS "      library: " ${Goo_LIBRARIES} )
+message( STATUS "  include dir: " ${Goo_INCLUDE_DIRS} )
 
 #message( STATUS "    inclu#0: " ${pc_goo_DEFINITIONS} )
 #message( STATUS "    inclu#1: " ${pc_goo_LIBRARIES} )

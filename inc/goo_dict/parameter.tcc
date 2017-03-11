@@ -25,11 +25,11 @@
 
 # include "goo_types.h"
 # include "goo_exception.hpp"
-# include "goo_mixins.tcc"
 # include "goo_vcopy.tcc"
 
 # include <list>
 # include <cassert>
+# include <sstream>
 
 namespace goo {
 namespace dict {
