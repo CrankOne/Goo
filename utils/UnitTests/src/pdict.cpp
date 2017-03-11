@@ -61,7 +61,7 @@ static void expected_argv_parsing_error(
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # if 1
     {
-        os << "Path splitting regex : {" << std::endl;
+        os << "Path splitting test : {" << std::endl;
         int rc;
         char    one[] = "one.three-4.five.six-seven",
                 two[] = "v",
@@ -98,12 +98,12 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             os << "    ... current=\"" << current << "\", path=\"" << path << "\"." << std::endl;
         }
 
-        os << "} Path splitting regex done." << std::endl;
+        os << "} Path splitting test done." << std::endl;
     }
     # endif
     # if 1
     {
-        os << "Basic tests : {" << std::endl;
+        os << "Basic parsing tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication1", "Testing parameter set #1." );
 
         conf.insertion_proxy()
@@ -119,9 +119,11 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             //.p<bool>( "one", "two", "three" )  // should cause failure on linkage
             .p<float>( "fp-num-i", "Some fp-number" )
             .p<double>( "fp-num-ii", "Some fp-number (double)" )
+            .p<std::string>( "strval", "Some string value", "defstrval" )
+            .p<std::string>( 's', nullptr, "Another string value" )
             ;
 
-        const char ex1[] = "./foo -1vqfalse --fp-num-ii 0x1.568515b1d78d4p-36 "
+        const char ex1[] = "./foo -1vqfalse -simastrval --fp-num-ii 0x1.568515b1d78d4p-36 "
             " --quiet=true -V --quiet2 false --verbosity 23 --fp-num-i 1.23";
         char ** argv;
         os << "For given source string: " << ex1 << ":" << std::endl;
@@ -142,10 +144,14 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         _ASSERT(  23 == conf["verbosity"].as<short>(),  "Option --verbosity set wrong." );
         _ASSERT(  std::fabs(1.23 - conf["fp-num-i"].as<float>()) < 1e-6,
                   "Option fp-num-i set to wrong value (%e)",
-                  conf["fp-num-i"].as<float>() );  // TODO: fuzzy set
+                  conf["fp-num-i"].as<float>() );
         _ASSERT(  std::fabs(1.947e-11 - conf["fp-num-ii"].as<double>()) < 1e-24,
                   "Option fp-num-ii set to wrong value (%e)",
-                  conf["fp-num-ii"].as<double>() );  // TODO: fuzzy set
+                  conf["fp-num-ii"].as<double>() ); 
+        _ASSERT(  "defstrval" == conf["strval"].as<std::string>(),
+                  "\"strval\" default set wrong: \"%s\"", conf["strval"].as<std::string>().c_str() );
+        _ASSERT(  "imastrval" == conf["s"].as<std::string>(),
+                  "\"s\" set wrong: \"%s\"", conf["s"].as<std::string>().c_str() );
 
         try {
             conf["verbose"].as<bool>();
@@ -159,7 +165,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         _ASSERT( !conf["quiet2"].as<bool>(),
                 "Option --quiet2 set wrong to wrong value." );
         // ...
-        os << "} Basic tests done." << std::endl;
+        os << "} Basic parsing tests done." << std::endl;
     }
     # endif
     {

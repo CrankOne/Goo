@@ -9,6 +9,7 @@
 # include "goo_dict/parameters/logic.hpp"
 # include "goo_dict/parameters/integral.tcc"
 # include "goo_dict/parameters/floating_point.tcc"
+# include "goo_dict/parameters/string.hpp"
 
 namespace goo {
 namespace dict {
