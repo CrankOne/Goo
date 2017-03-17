@@ -26,7 +26,7 @@ TQ  \"{3}
 
 %{
 # include "gds/interpreter.h"
-# include "gds_parser.generated.h"
+# include "gds_parser_generated.h"
 # define MEMTOKEN(tc)                                                   \
     yyget_lval( yyscanner )->strval =                                   \
         gds_lexer_replicate_token( yyget_extra(yyscanner), yytext );    \

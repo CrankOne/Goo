@@ -361,7 +361,7 @@ for_all_statuscodes( define_error_code_C_alias )
 # undef define_error_code_C_alias
 
 int
-C_error( ErrCode code, const char * fmt, ... ) {
+goo_C_error( ErrCode code, const char * fmt, ... ) {
     char emBuf[GOO_EMERGENCY_BUFLEN];
     va_list argptr;
     va_start(argptr, fmt);

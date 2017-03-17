@@ -18,7 +18,7 @@ static const uint16_t _static_typeCodesSize = sizeof( _static_typeCodes ) / size
 
 static const BinaryArithOpCode _static_binopCodes[] = {
     # define substitute_code( u1, code, dscr ) code,
-    for_each_binary_arithmetic_lexical_operator( substitute_code )
+    for_each_common_binary_arithmetic_lexical_operator( substitute_code )
     # undef substitute_code
 };
 static const uint16_t _static_binopCodesSize = sizeof( _static_binopCodes ) / sizeof( BinaryArithOpCode );
@@ -40,6 +40,7 @@ testing_function_summation2(
                 struct ArithmeticConstant * l,
                 struct ArithmeticConstant * r,
                 struct ArithmeticConstant * R) {
+    /* function to never be really invoked */
     return 0;
 }
 
@@ -112,9 +113,10 @@ goo_gds__check_codes_structures() {
 
 int
 goo_gds__check_simple_arithmetics_evaluation() {
-    int insertionResult = 0;
+    int insertionResult = 0;  /* todo: change assert()'s w representative returns */
     struct GDS_BinOpArithmetic * table = gds_alloc_binop_table();
 
+    /* Imitates ready operator table */
     assert( 0 == (insertionResult = gds_add_binary_operator_table_entry(
             table,
             GDS_e_binary_summation,
@@ -136,6 +138,7 @@ goo_gds__check_simple_arithmetics_evaluation() {
      *         \- 2.34 : Float4
      * */
     {
+        /* CONSTRUCTION */
         struct GDSExpression nodes[5],
             * multiplyNode    = nodes,
             * uint8ThreeNode  = nodes + 1,
@@ -156,6 +159,7 @@ goo_gds__check_simple_arithmetics_evaluation() {
             uint32Node->pointer.arithmetic  = (struct ArithmeticConstant * ) malloc( sizeof(struct ArithmeticConstant) );
             float4Node->pointer.arithmetic  = (struct ArithmeticConstant * ) malloc( sizeof(struct ArithmeticConstant) );
         }
+        /* Construct expression tree */
         assert( multiplyNode == gds_init_binary_operator_expr(
                 GDS_e_binary_production, multiplyNode,
                 gds_init_arithmetic_value_expr( UByte_T_code, uint8ThreeNode, val1 ),
@@ -165,7 +169,7 @@ goo_gds__check_simple_arithmetics_evaluation() {
                         gds_init_arithmetic_value_expr( Float4_T_code, float4Node, val3 )
                 )
         ));
-
+        /* CHECKS */
         /* Check type deduction from basic nodes */
         if( 0 != gds_earn_binary_arithmetical_operator_result_type(
                     table, GDS_e_binary_production,
@@ -216,17 +220,18 @@ goo_gds__check_simple_arithmetics_evaluation() {
                     NULL ) ) {
             return -22;
         }
+        /* EVALUATION */
         /* Set evaluator caches */
         if( Float4_T_code != gds_recache_binary_arithmetical_operator_functions(table, multiplyNode) ) {
             return -32;
         }
-        /* Check evaluation result */
+        /* Check evaluation result (type and value; the former --- with threshold) */
         struct ArithmeticConstant res;
         if( Float4_T_code != gds_evaluate_binary_arithmetical_operator(
                     multiplyNode->pointer.binop, &res ) ){
             return -41;
         }
-        if( res.value.Float4Val < 10.02 - 1e-4 || res.value.Float4Val > 10.02 ) {
+        if( res.value.Float4Val < 10.02 - 1e-4 || res.value.Float4Val > 10.02 + 1e-4 ) {
             return -42;
         }
 

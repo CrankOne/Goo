@@ -3,7 +3,6 @@
  *
  * GDS generic expression data type representation.
  * */
-
 # ifndef H_GOO_GDS_EXPR_NODE_H
 # define H_GOO_GDS_EXPR_NODE_H
 
@@ -40,26 +39,38 @@ struct GDSExpression * gds_init_arithmetic_value_expr(
 /*
  * Binary operators ***********************************************************
  */
-/**\def for_each_binary_arithmetic_lexical_operator
+/**\def for_each_common_binary_arithmetic_lexical_operator
  * \ingroup xmacro GDS-simple-arithmetics
  * \brief Binary arithmetic operators table.
  *
- * Enlists supported binary operators.
+ * Contains supported binary operators for common simple binary arithmetic.
+ * Does not provide integer arithmetic like bitwise shifts (<<, >>) or
+ * division remainder (%).
  * */
-# define for_each_binary_arithmetic_lexical_operator( m )   \
-    m( "+",             0x1,    summation )                 \
-    m( "-",             0x2,    subtraction )               \
-    m( "*",             0x3,    production )                \
-    m( "/",             0x4,    division )                  \
-    m( "^",             0x5,    exponentiation )            \
-    m( "%%",            0x6,    divRemainder )              \
+# define for_each_common_binary_arithmetic_lexical_operator( m, ... )       \
+    m( "+",             0x1,    summation, ## __VA_ARGS__ )                 \
+    m( "-",             0x2,    subtraction, ## __VA_ARGS__ )               \
+    m( "*",             0x3,    production, ## __VA_ARGS__ )                \
+    m( "/",             0x4,    division, ## __VA_ARGS__ )                  \
+    m( "**",            0x5,    exponentiation, ## __VA_ARGS__ )            \
     /* ... */
+
+/* TODO: doc */
+# define for_each_integral_binary_arithmetic_lexical_operator( m, ... )     \
+    m( "%%",            0x6,    remainder, ## __VA_ARGS__ )                 \
+    m( "<<",            0x7,    lbitshift, ## __VA_ARGS__ )                 \
+    m( ">>",            0x8,    rbitshift, ## __VA_ARGS__ )                 \
+    m( "&",             0x9,    bw_and, ## __VA_ARGS__ )                    \
+    m( "|",             0xa,    bw_or,  ## __VA_ARGS__ )                    \
+    m( "^",             0xb,    bw_xor, ## __VA_ARGS__ )                    \
+    /* ... */
+
 
 typedef uint8_t BinaryArithOpCode;
 
 # define EX_declare_binary_arithmetical_code( sign, code, name ) \
     extern const BinaryArithOpCode GDS_e_binary_ ## name;
-for_each_binary_arithmetic_lexical_operator( EX_declare_binary_arithmetical_code )
+for_each_common_binary_arithmetic_lexical_operator( EX_declare_binary_arithmetical_code )
 # undef EX_declare_binary_arithmetical_code
 
 /**\brief Type of binary operator calculator callback function. */
@@ -101,12 +112,12 @@ struct GDSExpression * gds_init_binary_operator_expr(
  * \ingroup xmacro GDS-expression
  * \brief GDS expression subtypes table.
  * */
-# define for_each_gds_expr_node_type( m )                               \
-    m( unresolved,      0x0,    "Unresolved expression operand." )      \
-    m( arithmConstant,  0x2,    "GDS numeric expression operand." )     \
-    m( binArithOperator,0x3,    "GDS binary arithmetical operator." )   \
-    m( function,        0x4,    "GDS functional expression." )          \
-    m( scope,           0x5,    "Scope / associative array." )          \
+# define for_each_gds_expr_node_type( m, ... )                                  \
+    m( unresolved,      0x0,    "Unresolved expression operand.", ## __VA_ARGS__ )  \
+    m( arithmConstant,  0x2,    "GDS numeric expression operand.", ## __VA_ARGS__ )  \
+    m( binArithOperator,0x3,    "GDS binary arithmetical operator.", ## __VA_ARGS__ )  \
+    m( function,        0x4,    "GDS functional expression.", ## __VA_ARGS__ )  \
+    m( scope,           0x5,    "Scope / associative array.", ## __VA_ARGS__ )  \
     /* ... */
 
 /**\struct GDSExpression

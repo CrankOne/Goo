@@ -100,17 +100,18 @@ if( ENABLE_GDS )
         include(contrib/cmake/FindFLEX.custom)
     endif( NOT FLEX_FOUND )
     BISON_TARGET(GDSParser contrib/grammar/gds.y
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/gds_parser.generated.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gds_parser_generated.c
         VERBOSE ${CMAKE_CURRENT_BINARY_DIR}/gds.dbg
         COMPILE_FLAGS "--graph=${CMAKE_CURRENT_BINARY_DIR}/gds.dot" )
-    FLEX_TARGET(GDSLexer   contrib/grammar/gds.l ${CMAKE_CURRENT_SOURCE_DIR}/src/gds_lexer.generated.c)
+    FLEX_TARGET(GDSLexer   contrib/grammar/gds.l
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gds_lexer_generated.c)
     ADD_FLEX_BISON_DEPENDENCY(GDSLexer GDSParser)
 endif( ENABLE_GDS )
 
 #
 # Workaround some harmless compiler warnings about generated code.
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gds_lexer.generated.c  PROPERTIES COMPILE_FLAGS -Wno-sign-compare)
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gds_parser.generated.c PROPERTIES COMPILE_FLAGS -Wno-write-strings)
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gds_lexer_generated.c  PROPERTIES COMPILE_FLAGS -Wno-sign-compare)
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gds_parser_generated.c PROPERTIES COMPILE_FLAGS -Wno-write-strings)
 
 set( GOO_LIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/inc/" )
 

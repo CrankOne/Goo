@@ -97,34 +97,39 @@
  */
 
 # ifndef TYPES_128BIT_LENGTH
-# define for_all_atomic_datatypes(m)                    \
-    m(0x9,           uint8_t,   UByte,      UInt8     ) \
-    m(0x1,            int8_t,   SByte,      Int8      ) \
-    m(0x19,         uint16_t,   UShort,     UInt16    ) \
-    m(0x11,          int16_t,   SShort,     Int16     ) \
-    m(0x29,         uint32_t,   UInt,       UInt32    ) \
-    m(0x21,          int32_t,   SInt,       Int32     ) \
-    m(0x39,         uint64_t,   ULong,      UInt64    ) \
-    m(0x31,          int64_t,   SLong,      Int64     ) \
-    m(0x2,             float,   Float4,     Float32   ) \
-    m(0xa,            double,   Float8,     Float64   ) \
+# define for_all_integer_datatypes( m, ... )                                \
+    m(0x9,           uint8_t,   UByte,      UInt8     , ## __VA_ARGS__ )    \
+    m(0x1,            int8_t,   SByte,      Int8      , ## __VA_ARGS__ )    \
+    m(0x19,         uint16_t,   UShort,     UInt16    , ## __VA_ARGS__ )    \
+    m(0x11,          int16_t,   SShort,     Int16     , ## __VA_ARGS__ )    \
+    m(0x29,         uint32_t,   UInt,       UInt32    , ## __VA_ARGS__ )    \
+    m(0x21,          int32_t,   SInt,       Int32     , ## __VA_ARGS__ )    \
+    m(0x39,         uint64_t,   ULong,      UInt64    , ## __VA_ARGS__ )    \
+    m(0x31,          int64_t,   SLong,      Int64     , ## __VA_ARGS__ )    \
     /* ... */
-
+# define for_all_atomic_datatypes(m, ...)                                   \
+    for_all_integer_datatypes( m, ## __VA_ARGS__ )                          \
+    m(0x2,             float,   Float4,     Float32   , ## __VA_ARGS__ )    \
+    m(0xa,            double,   Float8,     Float64   , ## __VA_ARGS__ )    \
+    /* ... */
 # else  /* TYPES_128BIT_LENGTH */
-# define for_all_atomic_datatypes(m)                    \
-    m(0x9,           uint8_t,   UByte,      UInt8     ) \
-    m(0x1,            int8_t,   SByte,      Int8      ) \
-    m(0x19,         uint16_t,   UShort,     UInt16    ) \
-    m(0x11,          int16_t,   SShort,     Int16     ) \
-    m(0x29,         uint32_t,   UInt,       UInt32    ) \
-    m(0x21,          int32_t,   SInt,       Int32     ) \
-    m(0x39,         uint64_t,   ULong,      UInt64    ) \
-    m(0x31,          int64_t,   SLong,      Int64     ) \
-    m(0x79,        uint128_t,   ULLong,     UInt64    ) \
-    m(0x71,         int128_t,   SLLong,     Int64     ) \
-    m(0x2,             float,   Float4,     Float32   ) \
-    m(0xa,            double,   Float8,     Float64   ) \
-    m(0x12,      long double,   Float16,    Float128  ) \
+# define for_all_integer_datatypes( m, ... )                                \
+    m(0x9,           uint8_t,   UByte,      UInt8     , ## __VA_ARGS__ )    \
+    m(0x1,            int8_t,   SByte,      Int8      , ## __VA_ARGS__ )    \
+    m(0x19,         uint16_t,   UShort,     UInt16    , ## __VA_ARGS__ )    \
+    m(0x11,          int16_t,   SShort,     Int16     , ## __VA_ARGS__ )    \
+    m(0x29,         uint32_t,   UInt,       UInt32    , ## __VA_ARGS__ )    \
+    m(0x21,          int32_t,   SInt,       Int32     , ## __VA_ARGS__ )    \
+    m(0x39,         uint64_t,   ULong,      UInt64    , ## __VA_ARGS__ )    \
+    m(0x31,          int64_t,   SLong,      Int64     , ## __VA_ARGS__ )    \
+    m(0x79,        uint128_t,   ULLong,     UInt64    , ## __VA_ARGS__ )    \
+    m(0x71,         int128_t,   SLLong,     Int64     , ## __VA_ARGS__ )    \
+    /* ... */
+# define for_all_atomic_datatypes(m, ...)                                   \
+    for_all_integer_datatypes(m, ## __VA_ARGS__ )                           \
+    m(0x2,             float,   Float4,     Float32   , ## __VA_ARGS__ )    \
+    m(0xa,            double,   Float8,     Float64   , ## __VA_ARGS__ )    \
+    m(0x12,      long double,   Float16,    Float128  , ## __VA_ARGS__ )    \
     /* ... */
 # endif /* TYPES_128BIT_LENGTH */
 
@@ -141,38 +146,38 @@
  * This cmacro table is used to reporting errors in C++
  * and in ANSI C part of the Goo library.
  */
-# define for_all_errorcodes(m) \
-    m(1,        common,             "unspecific" ) \
-    m(2,        unimplemented,      "unimplemented routine reached") \
-    m(3,        unsupported,        "feature is unsupported in current build configuration") \
-    m(4,        uTestFailure,       "unit test failed" ) \
-    m(5,        interpreter,        "general interpreter error" ) \
-    m(6,        nullPtr,            "got null pointer" )\
-    m(7,        unknownType,        "unknown type") \
-    m(8,        badCast,            "incompatable types" ) \
-    m(9,        malformedArguments, "malformed arguments" ) \
-    m(10,       badState,           "bad state for such conditions") \
-    m(11,       noSuchKey,          "key not found" ) \
-    m(12,       nonUniq,            "non-uniq entry offered" ) \
-    m(13,       memAllocError,      "memory depleted" ) \
-    m(14,       lenMismatch,        "length is inadequate" )\
-    m(15,       underflow,          "underflow index met" ) \
-    m(16,       overflow,           "overflow index met" ) \
-    m(17,       narrowConversion,   "narrow number conversion is possible") \
-    m(18,       uninitialized,      "operation invoked for uninitialized data") \
-    m(25,       threadError,        "execution stopped due to in-thread error") \
-    m(50,       nwGeneric,          "network error") \
-    m(100,      ioError,            "common I/O error") \
-    m(101,      notFound,           "data is not found at location") /* TODO: rename to noSuchData */ \
-    m(102,      corruption,         "malformed data") \
-    m(103,      badValue,           "got unacceptable numeric value") \
-    m(104,      fileNotReachable,   "file is unreachable") \
-    m(105,      badParameter,       "got invalid parameter or parameter set" ) \
-    m(106,      objNotConstructed,  "requested object was not constructed" ) \
-    m(107,      singletonRepCtr,    "singleton repeated construction" ) \
-    m(108,      badArchitect,       "architectural incompleteness or undefined state" ) \
-    m(254,      gdsError,           "Declarative Semantics language parsing error") \
-    m(255,      thirdParty,         "thirt-party code error") \
+# define for_all_errorcodes(m, ...) \
+    m(1,        common,             "unspecific", ## __VA_ARGS__ ) \
+    m(2,        unimplemented,      "unimplemented routine reached", ## __VA_ARGS__) \
+    m(3,        unsupported,        "feature is unsupported in current build configuration", ## __VA_ARGS__) \
+    m(4,        uTestFailure,       "unit test failed", ## __VA_ARGS__ ) \
+    m(5,        interpreter,        "general interpreter error", ## __VA_ARGS__ ) \
+    m(6,        nullPtr,            "got null pointer", ## __VA_ARGS__ )\
+    m(7,        unknownType,        "unknown type", ## __VA_ARGS__) \
+    m(8,        badCast,            "incompatable types", ## __VA_ARGS__ ) \
+    m(9,        malformedArguments, "malformed arguments", ## __VA_ARGS__ ) \
+    m(10,       badState,           "bad state for such conditions", ## __VA_ARGS__) \
+    m(11,       noSuchKey,          "key not found", ## __VA_ARGS__ ) \
+    m(12,       nonUniq,            "non-uniq entry offered", ## __VA_ARGS__ ) \
+    m(13,       memAllocError,      "memory depleted", ## __VA_ARGS__ ) \
+    m(14,       lenMismatch,        "length is inadequate", ## __VA_ARGS__ )\
+    m(15,       underflow,          "underflow index met", ## __VA_ARGS__ ) \
+    m(16,       overflow,           "overflow index met", ## __VA_ARGS__ ) \
+    m(17,       narrowConversion,   "narrow number conversion is possible", ## __VA_ARGS__ ) \
+    m(18,       uninitialized,      "operation invoked for uninitialized data", ## __VA_ARGS__ ) \
+    m(25,       threadError,        "execution stopped due to in-thread error", ## __VA_ARGS__ ) \
+    m(50,       nwGeneric,          "network error", ## __VA_ARGS__ ) \
+    m(100,      ioError,            "common I/O error", ## __VA_ARGS__ ) \
+    m(101,      notFound,           "data is not found at location", ## __VA_ARGS__ ) /* TODO: rename to noSuchData */ \
+    m(102,      corruption,         "malformed data", ## __VA_ARGS__ ) \
+    m(103,      badValue,           "got unacceptable numeric value", ## __VA_ARGS__ ) \
+    m(104,      fileNotReachable,   "file is unreachable", ## __VA_ARGS__ ) \
+    m(105,      badParameter,       "got invalid parameter or parameter set", ## __VA_ARGS__  ) \
+    m(106,      objNotConstructed,  "requested object was not constructed", ## __VA_ARGS__ ) \
+    m(107,      singletonRepCtr,    "singleton repeated construction", ## __VA_ARGS__ ) \
+    m(108,      badArchitect,       "architectural incompleteness or undefined state", ## __VA_ARGS__ ) \
+    m(254,      gdsError,           "Declarative Semantics language parsing error", ## __VA_ARGS__ ) \
+    m(255,      thirdParty,         "thirt-party code error", ## __VA_ARGS__ ) \
     /* ... */
 
 /*!\def for_all_statuscodes
@@ -276,6 +281,28 @@ for_all_atomic_datatypes(declare_typeid_getter)
     # undef declare_dtype_introspection_code
 
 /*! @} */
+
+
+# ifdef __cplusplus
+extern "C" {
+# endif
+
+/**@brief raises custom GOO-exception from c-code
+ *
+ * C-function with C++ linkage that throws Goo-exception.
+ * Not defined for C++ code.
+ * Note: for implementation, see goo_exception.cpp
+ */
+int goo_C_error( ErrCode, const char * fmt, ... ) __attribute__ ((noreturn));
+
+# define declare_error_code_C_alias( code, name, descr ) \
+extern const ErrCode goo_e_ ## name;
+for_all_statuscodes( declare_error_code_C_alias )
+# undef declare_error_code_C_alias
+
+# ifdef __cplusplus
+} // extern "C"
+# endif
 
 # endif  /* GOO_TYPES_H */
 

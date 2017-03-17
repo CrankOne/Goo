@@ -55,7 +55,7 @@ gds_init_arithmetic_value_expr(
 
 # define LCL_define_binary_arithmetical_code( sign, code, name ) \
 const BinaryArithOpCode GDS_e_binary_ ## name = code;
-for_each_binary_arithmetic_lexical_operator( LCL_define_binary_arithmetical_code )
+for_each_common_binary_arithmetic_lexical_operator( LCL_define_binary_arithmetical_code )
 # undef LCL_define_binary_arithmetical_code
 
 /** \note the tNode->pointer.binop needs to be allocated!
