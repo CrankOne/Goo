@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/**@file iterators.itcc
+ * @brief file contains declaration of iterable mixin
+ *        implementation nested classes.
+ *
+ *  One should probably never attend to this file separately
+ *  from iterable mixin.
+ */
+
+template<typename EndIteratorClassT>
+class IteratorBase : public PostfixIncOp<EndIteratorClassT> {
+public:
+    typedef Self Authority;
+    typedef EndIteratorClassT EndIteratorClass;
+private:
+    Authority * _authorityPtr;  ///< no check for authority for performance.
+    IteratorSym _sym;
+    void _check_authority_is_set() const { DBG_NULLPTR_CHECK( _authorityPtr, "Empty iterator %p.", this ); }
+public:
+    // Ctr/dtr
+    IteratorBase() : _authorityPtr(nullptr) {}
+    IteratorBase( const IteratorSym & d ) : 
+            _authorityPtr(nullptr), _sym(d) {}
+
+    // authority acquizition:
+    Authority & authority() {
+            _check_authority_is_set();
+            return *_authorityPtr; }
+    const Authority & authority() const {
+            _check_authority_is_set();
+            return *_authorityPtr; }
+
+    // increment:
+    virtual EndIteratorClass & operator++() override {
+        _check_authority_is_set();
+        _authorityPtr->_V_increase_iterator_sym( _sym );
+    }
+};
+
+template<typename EndIteratorClassT>
+class BidirectIterator : public PrefixIncOp<EndIteratorClassT> {
+public:
+    // decrement:
+    virtual EndIteratorClass & operator--() override {
+        _check_authority_is_set();
+        _authorityPtr->_V_increase_iterator_sym( _sym );
+    }
+};
+
+// vi: ft=cpp

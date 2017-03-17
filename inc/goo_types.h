@@ -1,6 +1,27 @@
+/*
+ * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 # ifndef GOO_TYPES_H
 # define GOO_TYPES_H
-
 # include <stdint.h>
 # include "goo_config.h"
 # ifdef __cplusplus
@@ -151,7 +172,7 @@
     m(2,        unimplemented,      "unimplemented routine reached", ## __VA_ARGS__) \
     m(3,        unsupported,        "feature is unsupported in current build configuration", ## __VA_ARGS__) \
     m(4,        uTestFailure,       "unit test failed", ## __VA_ARGS__ ) \
-    m(5,        interpreter,        "general interpreter error", ## __VA_ARGS__ ) \
+    m(5,        interpreter,        "generic GDS interpreter error", ## __VA_ARGS__ ) \
     m(6,        nullPtr,            "got null pointer", ## __VA_ARGS__ )\
     m(7,        unknownType,        "unknown type", ## __VA_ARGS__) \
     m(8,        badCast,            "incompatable types", ## __VA_ARGS__ ) \
@@ -165,6 +186,8 @@
     m(16,       overflow,           "overflow index met", ## __VA_ARGS__ ) \
     m(17,       narrowConversion,   "narrow number conversion is possible", ## __VA_ARGS__ ) \
     m(18,       uninitialized,      "operation invoked for uninitialized data", ## __VA_ARGS__ ) \
+    m(19,       assertFailed,       "assertion check failed", ## __VA_ARGS__ ) \
+    m(20,       argumentExpected,   "argument is expected in context", ## __VA_ARGS__ ) \
     m(25,       threadError,        "execution stopped due to in-thread error", ## __VA_ARGS__ ) \
     m(50,       nwGeneric,          "network error", ## __VA_ARGS__ ) \
     m(100,      ioError,            "common I/O error", ## __VA_ARGS__ ) \
@@ -173,10 +196,13 @@
     m(103,      badValue,           "got unacceptable numeric value", ## __VA_ARGS__ ) \
     m(104,      fileNotReachable,   "file is unreachable", ## __VA_ARGS__ ) \
     m(105,      badParameter,       "got invalid parameter or parameter set", ## __VA_ARGS__  ) \
-    m(106,      objNotConstructed,  "requested object was not constructed", ## __VA_ARGS__ ) \
-    m(107,      singletonRepCtr,    "singleton repeated construction", ## __VA_ARGS__ ) \
-    m(108,      badArchitect,       "architectural incompleteness or undefined state", ## __VA_ARGS__ ) \
-    m(254,      gdsError,           "Declarative Semantics language parsing error", ## __VA_ARGS__ ) \
+    m(106,      objNotConstructed,  "requested object was not constructed", ## __VA_ARGS__  ) \
+    m(107,      singletonRepCtr,    "singleton repeated construction", ## __VA_ARGS__  ) \
+    m(108,      badArchitect,       "architectural incompleteness or undefined state", ## __VA_ARGS__  ) \
+    m(109,      parserFailure,      "failed to parse string expression or token", ## __VA_ARGS__  ) \
+    m(110,      inconsistentConfig, "inconsistent configuration or state", ## __VA_ARGS__ ) \
+    m(253,      gdsError,           "Declarative Semantics language parsing error") \
+    m(254,      dbgBadArchitect,    "code style violation / bad architecture / debug warning", ## __VA_ARGS__) \
     m(255,      thirdParty,         "thirt-party code error", ## __VA_ARGS__ ) \
     /* ... */
 
@@ -287,14 +313,6 @@ for_all_atomic_datatypes(declare_typeid_getter)
 extern "C" {
 # endif
 
-/**@brief raises custom GOO-exception from c-code
- *
- * C-function with C++ linkage that throws Goo-exception.
- * Not defined for C++ code.
- * Note: for implementation, see goo_exception.cpp
- */
-int goo_C_error( ErrCode, const char * fmt, ... ) __attribute__ ((noreturn));
-
 # define declare_error_code_C_alias( code, name, descr ) \
 extern const ErrCode goo_e_ ## name;
 for_all_statuscodes( declare_error_code_C_alias )
@@ -303,6 +321,5 @@ for_all_statuscodes( declare_error_code_C_alias )
 # ifdef __cplusplus
 } // extern "C"
 # endif
-
 # endif  /* GOO_TYPES_H */
 

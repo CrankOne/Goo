@@ -2,6 +2,7 @@ src/gds_parser_generated.c
 src/gds_parser_generated.h
 src/gds_parser_generated.output
 src/gds_lexer_generated.c
+src/gds_parser_generated.output
 *.swp
 *.swo
 *.pyc
@@ -13,6 +14,7 @@ lib/*
 exec/*
 doc/*
 bin/*
+nbproject/*
 inc/goo_config.h
 tags
 .project
@@ -26,4 +28,5 @@ utils/DeuPi0/g4deu/obj/*
 CMakeCache.txt
 CMakeFiles
 assets/buildsystems/goo.pc
-src/gds_parser_generated.output
+assets/buildsystems/GooConfig.cmake
+assets/buildsystems/FindGoo.cmake

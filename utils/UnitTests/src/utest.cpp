@@ -1,3 +1,25 @@
+/*
+ * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 # include <iostream>
 # include <iomanip>
 # include <cstdlib>
@@ -32,7 +54,8 @@ struct Config {
     bool quiet,
          keepGoing,
          printUnitsLogs,
-         ignoreDeps;
+         ignoreDeps,
+         noCatch;
 
     /// Vector of unit names desired to run.
     std::vector<std::string> namesToEvaluate, namesToAvoid;
@@ -73,12 +96,15 @@ Keys:\n\r\
     --dot-graph ..............  print to stdout a DOT graph of units.\n\r\
     -u/--selective " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR " .....  run only named unit or unit in list\n\r\
                                 delimeted with comma.\n\r\
+    -s/--skip " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR " ..........  skip selected units.\n\r\
     --ignore-deps ............  ignore unit dependencies (for selective runs)\n\r\
     -r/--report ..............  print development reports (unit\n\r\
                                 runtime messages) to stdout.\n\r\
+    -E/--no-catch ............  do not catch any unexpected exceptions during\n\r\
+                                unit(s) run\n\r\
 Report bugs to crank@qcrypt.org.\n\r\
 Official repository page for this version:\n\r\
-    <https://bitbucket.org/CrankOne/goo>\n\r\
+    <https://github.com/CrankOne/Goo>\n\r\
 ", utilname);}
 
 static void
@@ -114,8 +140,22 @@ _set_task( Config & cfgObj, Config::Operations op ) {
 UTApp::UTApp( const std::string & appName ) : _ss(nullptr), _appName(appName) {}
 
 UTApp::~UTApp() {
-    if(_ss) {
-        //delete _ss; 
+    // free units:
+    for( auto it = _modulesStoragePtr->begin();
+         _modulesStoragePtr && _modulesStoragePtr->end() != it;
+         ++it ) {
+        delete it->second;
+    }
+    // free containers:
+    if( _modulesGraphPtr ) {
+        delete _modulesGraphPtr;
+    }
+    if( _modulesStoragePtr ) {
+        delete _modulesStoragePtr;
+    }
+    // free stringstream, if it wasn't set to standard objects:
+    if(_ss && _ss != &(std::cout) && _ss != &(std::cerr)) {
+        delete _ss;
     }
 }
 
@@ -155,11 +195,12 @@ UTApp::_V_construct_config_object( int argc, char * const argv[] ) const {
                 {"list",            no_argument,        0,  'l' },
                 {"selective",       required_argument,  0,  'u' },
                 {"skip",            required_argument,  0,  's' },
+                {"no-catch",        no_argument,        0,  'E' },
                 {"dot-graph",       no_argument,        0,   2  },
                 {"ignore-deps",     no_argument,        0,   1  },
                 {0,                 0,                  0,   0  }
             };
-            c = getopt_long(argc, argv, "hcqKrlsu:s:",
+            c = getopt_long(argc, argv, "hcqKrlsEu:s:",
                 long_options, &option_index);
             if (c == -1)
                 break;
@@ -170,6 +211,7 @@ UTApp::_V_construct_config_object( int argc, char * const argv[] ) const {
                 case 'K' : { cfg->keepGoing = true;  } break;
                 case 'q' : { cfg->quiet = true;      } break;
                 case 'r' : { cfg->printUnitsLogs = true; } break;
+                case 'E' : { cfg->noCatch = true; } break;
                 // TASKS
                 case 2: { _set_task( *cfg, Config::dumpDOT ); } break;
                 case 'u' : {
@@ -200,6 +242,9 @@ UTApp::_V_configure_application( const Config * c ) {
     if( c->operation < Config::runAll ) {
         return;
     }
+    if( !_modulesGraphPtr ) {
+        emraise( badState, "No modules graph structured yet. Couldn't continue." );
+    }
     // If it is common run, just obtain the correct sequence:
     if( Config::runAll == c->operation ) {
         _modulesGraphPtr->dfs( c->units );
@@ -209,8 +254,6 @@ UTApp::_V_configure_application( const Config * c ) {
         // For all units pointed out:
         for( auto it = c->namesToEvaluate.begin(); c->namesToEvaluate.end() != it; ++it ) {
             if( !c->ignoreDeps ) {
-                // if full-depth evaluation is not prohibited, obtain deps chain:
-                // TODO: _modulesGraphPtr = 0 causes segfault when module is not found.
                 _modulesGraphPtr->chain_for_node_by_label( *it, c->units );
             } else {
                 // utherwise, just obtain the module pointer:
@@ -259,7 +302,11 @@ UTApp::_run_unit( TestingUnit * unit,
          << ESC_CLRCLEAR
          << " ... ";
     unit->make_own_outstream();
-    unit->run( noRun );
+    if( co().noCatch ) {
+        unit->run_unsafe( noRun );
+    } else {
+        unit->run( noRun );
+    }
     if( 0 == unit->ran_result() ) {
         ls() << ESC_BLDGREEN << "success" << ESC_CLRCLEAR;
     } else if( 2 == unit->ran_result() ) {
@@ -368,6 +415,16 @@ UTApp::TestingUnit::set_dependencies(
 }
 
 void
+UTApp::TestingUnit::run_unsafe( bool dryRun ) {
+    if( dryRun ) {
+        _ranResult = 2;
+        return;
+    }
+    _V_run( *_outStream );
+    _ranResult = 0;
+}
+
+void
 UTApp::TestingUnit::run( bool dryRun ) noexcept {
     if( dryRun ) {
         _ranResult = 2;
@@ -384,6 +441,10 @@ UTApp::TestingUnit::run( bool dryRun ) noexcept {
             _ranResult = -2;  // Other (unexpected) Goo's error
             return;
         }
+    } catch( std::exception & e ) {
+        outs() << "std::exception cought. e.what(): \"" << e.what() << "\"" << std::endl;
+        _ranResult = -3;
+        return;
     } catch( ... ) {
         _ranResult = -3;  // third party exception
         return;

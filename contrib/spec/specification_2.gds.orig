@@ -1,0 +1,269 @@
+# The most fundamental category in GDS is called `scope' and has a type
+# `Scope'.
+# It is represented lexically as a set of expressions with lvalue and rvalue
+# separated with `=' or `<-' terminals inside the curly bracets `{}'. The `='
+# means immediate evaluation
+# to numerical (or third-party object) value and never can be a `Function'.
+# The `<-' defines a function or deferred evaluated symbol.
+
+# The GDS type system implies a set of so-called atomic types, the classes and 
+# reducible polymorphic objects:
+# --------------------------+------------------------------------------
+#       Type name           | Classes
+# --------------------------+------------------------------------------
+#   Logical                 | Scalar, Algebraic
+#   (U)Int(8,16,32,64,128)  | Scalar, Integral, Numeric, Algebraic
+#   Float                   | Scalar, Integral, Numeric, Algebraic
+#   Function                | Injection
+#   List                    | Injection, Discrete, Ordered
+#   Tensor                  | Injection, Discrete, Ordered, Algebraic
+#   Scope                   | Injection, Discrete
+#   Functional              | Injection
+# --------------------------+------------------------------------------
+#   Polymorphic             |  --
+# --------------------------+------------------------------------------
+
+\={
+
+# The beginning `!' symbol is reserved for special directive that
+# has immediate side effect on parser. They are called `instructions'.
+# For example:
+!requires Geo3;
+# imports some external module named `Geo3' whose declarations are
+# now available by symbol lookup resolutin `::', e.g. `Geo3::Vector'.
+
+
+# (EXP) This statment sets math-evaluator:
+
+!math-evaluator Default;
+
+
+# This instruction forbids closures at all. Such behaviour is convinient for
+# strict thread-safe code. By default GDS allows closures, but only for immutable
+# external context.
+#!forbid-closures
+
+# This instruction, in contradiction, allows mutable variables inside functions:
+#!soft-closures
+
+Basics = {
+    #
+    # Simple values
+    #
+
+    # Defining a simple value:
+    a = 5;
+
+    # Defining a simple value of strict type:
+    Sys:Numeric:Float8 b = 32.1;  # Has a shortcut T:Float8
+
+    # import statement allows to create a shortcut. Direct:
+    !import Sys:Arithmetic:Numeric;
+    # or aliased:
+    !import Sys:Quantity:energy as work;
+    !import Sys:SymTable = SymTable;
+
+    # Defining a value of classed type:
+    Numeric c = 123/12;
+
+    # Forward value declaration:
+    Numeric d;
+
+    # Equivalent forms of Scope creation:
+    symTable1 = {
+        foo = 1;
+        bar = 2;
+    };
+    SymTable symTable2(bar=2, foo=1);
+    isEquivalent = symTable1 == symTable2;
+
+    #
+    # Functions Basics
+    #
+
+    # Declaring a simple function:
+    f(x) <- x%a;    # NOTE: it's a closure.
+                    # Non-local variables in closures are always
+                    # immutable (read-only).
+
+    # Immediate evaluating a simple function:
+    e = f(15);
+
+    # Deferred evaluating of a value
+    g <- f(b)*d;
+
+    e /:d=5:/= e + g;   # `g' will be actually computed here.
+                        # /:...:/= is a special context-manipulating
+                        # operator that submittes additional temporary
+                        # symbols to current manipulation. Can be used
+                        # to resolve dreferred symbols like variable aliases
+                        # and so on.
+                        # Supports all scopes operators, plus some special
+                        # type/value restriction qualifiers (expr. starts with `for').
+    # Note, that one can not write:
+    #h = 2*z;
+    # as `z' couldn't be resolved.
+};
+
+Units = {
+    import Sys:Quantity;
+    Quantity:energy energyDeposition = 30 keV;  # Strict declaration
+    g = 9.8 m/sec;  # automatic deuction
+    wayPassed( Quantity:time t ) <- g*T^2/2;
+};
+
+PiecewiseFunctions = {
+
+    f0(x) <- x < -1 ? 0,    # Here, the simple piecewise function is defined
+          |- x >  1 ? 0,    # in form, very similar to Haskell syntax.
+          ^-          x^2;  # `|-', '`-', '\-', '<|' and '^-' is a special literals meaning
+                            # `else if' or `else'. The part
+                            # before the question mark `?' should be logical
+                            # expression.
+
+    f1(x) <- -1 < x < 1 ? 0     # This function is similar to `f1' and only demonstrates
+          ^-            x^2;    # the usage of ternary comparison operator.
+
+    # (EXP)
+    f2(x) <- x > -1 ? <|                # more sophisticated function doing the same.
+           |           \- x < 1 ? 1,    # One can combine expression like an SCII-art tree.
+           `- 0;
+
+
+    # One another syntax uses if/else keywords.
+    f3(x) <-    x if -1 < x < 1,
+             -x^2 if -1 < x,
+              x^2 otherwise;
+
+    # We can declare a typed function like so: (TODO)
+    f4</Numeric/>(Numeric a, Numeric b, String c);
+    #f4( Numeric <- Numeric, Numeric, String );
+    #f4( Numeric, Numeric, String -> Numeric )
+
+    # That is equivalent with:
+    shouldBeTrue1 = typeof(f4) == </Numeric/>(Numeric, Numeric, String);
+
+    # A typed function that returns a function (functional) looks a bit more sophisticated:
+    #F1</</Float16, Float16/>(Float t)/>(String s)
+    #      <- s == "ellipse"  ? <- {a*M::cos(t), b*sin(t)},
+    #      |- s == "parabola" ? <- {t, t^2}
+    #      ;
+    F1( (Float, Float <- Float t) <- String s )
+          <- s == "ellipse"  ? <- {a*M:cos(t), b*sin(t)},
+          |- s == "parabola" ? <- {t, t^2}
+          ;
+
+    # Carrying:
+    F2( ( Numeric <- Numeric ) <- ( Numeric <- Numeric, Numeric ) ff ) <-  ff(x, 1.25)
+    # Decarrying
+    F3( x1 <- ( Numeric <- Numeric x1 ) ff, Numeric x2_ )
+        /: d=x2_ :/ <- ff( x1, x2 )
+    #F2</</Numeric/>(Numeric)/>(ff</Numeric/>(Numrtic, Numeric)) <- ff(x, 1.25);
+    # That's equivalent with more laconic:
+    F2equiv /:y=1.25:/= f;
+
+    shouldBeTrue2 = typeof(F2) == typeof(F2equiv);
+
+    f5(x, y) <- x^2 + y^2;
+    f6 <- F2(f5);
+    shouldBeTrue3 typeof(f5) == </Numeric/>(Numeric);
+};
+
+DereferredBasics = {
+    a.. <- 0..99;   # `a' now has a type `Sequence' that can be used as follows:
+    b = a_5;        # `b' is now of type Int32 and stores a value `4';
+
+
+    # Variadic function:
+    sum( Numeric <- Numeric x.. ) /: n = len(x..) :/
+    # is equivalent with:
+    #sum( Numeric <- Numeric x..[n] )
+        <- n > 2 ? sum( x[0], x[1..n] )
+        ^-         x[0] + x[1]
+        ;
+
+    # Note, that example above leads to accumulation of rounding error. In order
+    # to avoid this issue, one can declare pairwise sum:
+    pairwise_sum( Numeric <- Numeric x..[n], N=8 )
+        <- n < N ? sum( x..[n] )
+        ^-         pairwise_sum( x[0:floor(n/2.)], N ) + pairwise_sum( x[floor(n/2.)..n], N )
+        ;
+
+    # notes about operator exp?
+};
+
+Constructors = {
+    # Constructors is a special kind of functions that returns a
+    # non-standard objects. These objects sometimes (but not necessarily)
+    # may be typecasted to GDS's terms like numbers, lists or mathematical
+    # expressions.
+    # For example, let's imagine that we have some module `Geo3D', where the
+    # `Vector' constructor is defined. Instances constructed with `Vector3'
+    # can participate in some arithmetical expressions like exponentiation,
+    # summation or dot product:
+
+    Geo3D::Vector a(-1, -1, -1),        # Positional (list) initialization form.
+                  b{ z=1,  x=1,  y=1},  # Named initialization form.
+                  c = a + b;            # `c' is now (0, 0, 0);
+    d = a.b;                            # `d' is now `-2'.
+
+    # For some object `Box' defined in the same module, that accepts two vectors
+    # to be constructed:
+
+    Geo3D::Box  box1(a, b),
+                box2((-2, -2, -2), (2, 2, 2));  # Here, as `(...)' invokes positional
+                                                # ctr, inner `(...)' tuples will be used
+                                                # to construct objects of type required
+                                                # by extern (`Box') ctr.
+    hull = box2 - box1;     # Let's imagine that `-' operator applied to `Box' instances
+                            # invokes some 3D boolean operation. GDS supports operator
+                            # overloading this way.
+
+    e <- Function(b);       # Explicit type casting. Here, if `Geo::Vector' instances
+                            # supports casting to GDS's `Function' type, the some sort of
+                            # `-i - j - k' mathematical expression will be yielded.
+};
+
+
+# (EXP) Tensors:
+
+Tensors = {
+    # TODO: indexed with [[...]]
+};
+
+Types = {
+    # Declares a kind of complex float type.
+    Complex/typid BaseT/(BaseT r, BaseT i) <- {
+        BaseT real, imag = r, i;
+
+        \classes = {CommutativeSum, CommutativeProd};
+
+        \binaryPlus</Complex/>(right, left) <- Complex( righ::real + left::real, righ::imag + left::imag );
+        \unaryMinus</Complex/>(orig) <- Complex( - orig::real, - orig::imag );
+        # TODO
+    };
+};
+
+
+#
+# (EXP) The rewriting rules sub-language:
+#
+
+# The {: and :} defines rewriting rules that further called `Algebra'
+Algebra SimpleNumericals = {:
+    /:{a, b} is {CommutativeSum}:/=
+        a + b       <=> b + a;
+    /:{a, b} is {CommutativeSum, has \unaryMinus}:/=
+        a - b       <=> -b + a;
+    /:{a, b} is {CommutativeProd}:/=
+        a*b         <=> b*a;
+
+    /:{a, b} is {Assotiative}:/
+    a*(a + b)       <=> a*a + b*b;
+
+    /:a is {has \exponentiative, has \binaryProduct}:/
+    a^$n            <=> a **[n];
+:};
+
+}
+

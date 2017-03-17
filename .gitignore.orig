@@ -1,0 +1,37 @@
+src/gds_parser_generated.c
+src/gds_parser_generated.h
+src/gds_parser_generated.output
+src/gds_lexer_generated.c
+*.swp
+*.swo
+*.pyc
+*.o
+*.gch
+*nohup.out
+*.lvimrc
+lib/*
+exec/*
+doc/*
+bin/*
+nbproject/*
+inc/goo_config.h
+tags
+.project
+.pydevproject
+.settings
+.dat
+a.out
+a.out.*
+utils/DeuPi0/g4deu/bin/*
+utils/DeuPi0/g4deu/obj/*
+CMakeCache.txt
+CMakeFiles
+<<<<<<< HEAD
+assets/buildsystems/goo.pc
+src/gds_parser_generated.output
+||||||| merged common ancestors
+=======
+assets/buildsystems/FindGoo.cmake
+assets/buildsystems/goo.pc
+assets/buildsystems/GooConfig.cmake
+>>>>>>> development

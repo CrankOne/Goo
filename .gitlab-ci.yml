@@ -1,0 +1,8 @@
+build:
+  stage: build
+  
+  script:
+    - mkdir -p goo.build/debug
+    - cd goo.build/debug
+    - cmake ../../goo
+    - make
