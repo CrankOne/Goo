@@ -1,3 +1,25 @@
+/*
+ * Copyright (c) 2017 Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 /***/
 # ifndef H_GDS_GOO_INTERPRETER_DIAGNOSTIC_H
 # define H_GDS_GOO_INTERPRETER_DIAGNOSTIC_H
@@ -54,7 +76,7 @@ void gds_abort( struct gds_Parser *, int );
  * \brief A shortcut for routing between \ref gds_error_printf
  * / \ref gds_wrnng_printf variadic-arguments function.
  *
- * When rc parameter is 0, mothing will happen. Otherwise, depending
+ * When rc parameter is 0, nothing will happen. Otherwise, depending
  * on rc warning/error treatment mechanism will be invoked.
  */
 # define gds_treat_function_result( f, rc )     \
@@ -62,7 +84,7 @@ if(rc) {                                        \
     if( rc < 0 ) {                              \
         gds_diagnostic_message( P,              \
                 gds_kDiagnostic_error,          \
-"${location}:" ESC_BLDRED "error" ESC_CLRCLEAR ": invokation of %s(...) issued: %s",    \
+"${location}:" ESC_BLDRED "error" ESC_CLRCLEAR ": invokation of %s(...) issued: %s", \
                 # f,                            \
                 gds_get_error_description_for(  \
                         (void(*)()) f, rc ) );  \
@@ -70,7 +92,7 @@ if(rc) {                                        \
     } else if( rc > 0 ) {                       \
         gds_diagnostic_message( P,              \
                 gds_kDiagnostic_warning,        \
-"${location}:" ESC_BLDYELLOW "warning" ESC_CLRCLEAR ": invokation of %s(...) issued: %s",    \
+"${location}:" ESC_BLDYELLOW "warning" ESC_CLRCLEAR ": invokation of %s(...) issued: %s", \
                 # f,                            \
                 gds_get_error_description_for(  \
                         (void(*)()) f, rc ) );  \

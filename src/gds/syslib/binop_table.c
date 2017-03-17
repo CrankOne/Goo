@@ -3,8 +3,7 @@
 # include "gds/expression.h"
 # include "gds/arithmetic_eval.h"
 
-/*
- *  This file implements binary operators tabular functions for atomic
+/* This file implements binary operators tabular functions for atomic
  * arithmetical types like n-byte integer and floating-point numbers.
  * For now, there is only one function per operation ...
  */

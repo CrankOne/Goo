@@ -8,7 +8,7 @@
 # include <iostream>
 
 /**@file gds-math-eval.cpp
- * @brief GDS interpretator base elvel test.
+ * @brief GDS interpretator base level test.
  *
  * This file provides testing of some auxilliary basics in GDS evaluator.
  * */

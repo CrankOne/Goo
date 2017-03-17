@@ -106,6 +106,11 @@ void yyerror();
 # include <string.h>
 # include "gds/interpreter.h"
 
+gds_parser_new_ArithmeticConstant( struct gds_Parser * P ) {
+    /* TODO: need re-implement this using pool */
+    return NULL;
+}
+
 void
 yyerror( struct YYLTYPE * locp, struct gds_Parser * P, const char * msg ) {
     gds_error( P, msg );
