@@ -223,6 +223,7 @@ set( Goo_LIBRARY goo${Goo_BUILD_POSTFIX} )
 
 include_directories(
         ${GOO_LIB_INCLUDE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR}
     )
 
 #
@@ -230,7 +231,7 @@ include_directories(
 file(GLOB_RECURSE GOO_LIB_SOURCES src/*.c*)
 configure_file (
     "${GOO_LIB_INCLUDE_DIR}/goo_config.h.in"
-    "${GOO_LIB_INCLUDE_DIR}/goo_config.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/goo_config.h"
 )
 
 configure_file (
@@ -263,6 +264,8 @@ set_target_properties(${Goo_LIBRARY} PROPERTIES VERSION ${Goo_VERSION}
 install( TARGETS ${Goo_LIBRARY} LIBRARY DESTINATION lib/goo )
 install( DIRECTORY inc/ DESTINATION include/goo FILES_MATCHING PATTERN
     "*.h" PATTERN "*.hpp" PATTERN "*.tcc" PATTERN "*.itcc" )
+install( FILES "${CMAKE_CURRENT_BINARY_DIR}/goo_config.h"
+    DESTINATION include/goo )
 
 #
 # Misc third-party libraries
