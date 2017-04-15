@@ -33,9 +33,9 @@ project( Goo )
 #   - The patch postfix : alphanumerical identifier used to indicate latest
 #   patch applied for release version. For development minor numbers its
 #   form is arbitrary.
-set( Goo_VERSION_MAJOR 0  )
-set( Goo_VERSION_MINOR 1  )
-set( Goo_VERSION_PATCH dev )
+set( Goo_VERSION_MAJOR 1  )
+set( Goo_VERSION_MINOR 0  )
+set( Goo_VERSION_PATCH pure )
 set( Goo_VERSION ${Goo_VERSION_MAJOR}.${Goo_VERSION_MINOR}.${Goo_VERSION_PATCH} )
 
 include(contrib/cmake/OptionList.cmake)
@@ -91,6 +91,10 @@ push_option( ENABLE_PTREE
 push_option( HASKELL_MODULE
         "Haskell extensions."
         OFF )
+#\option
+push_option( BUILD_STATIC_LIBRARIES
+        "Enables build of static versions of libraries also"
+        OFF )
 
 #
 # Find third-party packages
@@ -99,11 +103,8 @@ find_package( ZLIB  )
 find_package( Lzo   )
 find_package( BZip2 )
 find_package( Git   )
-#unset( GOO_GDB_EXEC CACHE )  # XXX
-#unset( GOO_GCORE_EXEC CACHE )  # XXX
 find_program( GOO_GDB_EXEC      gdb     )
 find_program( GOO_GCORE_EXEC    gcore   )
-#find_program( KILL_EXEC     kill     )
 if( EM_STACK_UNWINDING )
     find_package( BFD REQUIRED )
     find_package( LibIberty REQUIRED )
@@ -207,7 +208,7 @@ if( CMAKE_COMPILER_IS_GNUCXX )
 endif( CMAKE_COMPILER_IS_GNUCXX )
 set( CMAKE_Haskell_FLAGS "-fPIC -no-hs-main" )
 
-set( CMAKE_C_FLAGS_DEBUG            "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer" ) # -Wfatal-errors -fprofile-use? -fprofile-correction
+set( CMAKE_C_FLAGS_DEBUG            "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer" )
 set( CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer" )
 set( CMAKE_C_FLAGS_RELEASE          "${CMAKE_C_FLAGS_RELEASE}" )
 set( CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS_RELEASE}" )
@@ -220,6 +221,9 @@ set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}" )
 # Attain configuration depending on current build dir.
 include(contrib/cmake/BuildConf.cmake)
 set( Goo_LIBRARY goo${Goo_BUILD_POSTFIX} )
+if( BUILD_STATIC_LIBRARIES )
+    set( Goo_StaticLIBRARY goo${Goo_BUILD_POSTFIX}-static )
+endif( BUILD_STATIC_LIBRARIES )
 
 include_directories(
         ${GOO_LIB_INCLUDE_DIR}
@@ -242,15 +246,6 @@ configure_file (
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/goo.pc"
         DESTINATION ${CMAKE_INSTALL_PREFIX}/usr/share/pkgconfig )
 
-# XXX :
-#if( GIT_FOUND )
-#    # This fake causes cmake to reconfigure itself when git versioning
-#    # information is changed.
-#    configure_file( ${CMAKE_SOURCE_DIR}/.git/COMMIT_EDITMSG
-#                    ${CMAKE_CURRENT_BINARY_DIR}/COMMIT_EDITMSG )
-#endif( GIT_FOUND )
-
-
 #
 # Build Goo library
 add_library( ${Goo_LIBRARY} SHARED
@@ -259,9 +254,19 @@ add_library( ${Goo_LIBRARY} SHARED
         ${FLEX_GDSLexer_OUTPUTS}
     )
 set_target_properties(${Goo_LIBRARY} PROPERTIES VERSION ${Goo_VERSION}
-                                                     SOVERSION ${Goo_VERSION_MAJOR} )
+                                     SOVERSION ${Goo_VERSION_MAJOR} )
 
 install( TARGETS ${Goo_LIBRARY} LIBRARY DESTINATION lib/goo )
+
+if( BUILD_STATIC_LIBRARIES )
+    add_library( ${Goo_StaticLIBRARY} STATIC
+        ${GOO_LIB_SOURCES}
+        ${BISON_GDSParser_OUTPUTS}
+        ${FLEX_GDSLexer_OUTPUTS}
+    )
+install( TARGETS ${Goo_StaticLIBRARY} ARCHIVE DESTINATION lib/goo )
+endif( BUILD_STATIC_LIBRARIES )
+
 install( DIRECTORY inc/ DESTINATION include/goo FILES_MATCHING PATTERN
     "*.h" PATTERN "*.hpp" PATTERN "*.tcc" PATTERN "*.itcc" )
 install( FILES "${CMAKE_CURRENT_BINARY_DIR}/goo_config.h"
