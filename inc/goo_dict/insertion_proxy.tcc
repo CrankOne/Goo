@@ -135,6 +135,7 @@ public:
     }
 
     friend class Configuration;
+    friend class Dictionary;
 };  // class InsertionProxy
 
 }  // namespace goo

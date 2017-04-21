@@ -134,9 +134,6 @@ public:
                   bool doConsistencyCheck=true,
                   std::ostream * verbose=nullptr );
 
-    /// Constructs a bound insertion proxy instance object.
-    InsertionProxy insertion_proxy();
-
     /// Produces an `usage' instruction text to the stream provided by arg.
     void usage_text( std::ostream &, bool enableASCIIColoring = false );
 
@@ -169,6 +166,11 @@ public:
     /// Argument-overloaded method that user will probably wish to invoke to
     /// get an ASCII-tree in output stream.
     virtual void print_ASCII_tree( std::ostream & ) const;
+
+    /// Inserts dictionary instance created by third-party code (causes caches)
+    /// invalidation. Note, that copy of dictionary will be dynamically
+    /// allocated on heap.
+    virtual void append_section( const Dictionary & dPtr );
 
     /// Makes configuration able to acquire single (only) positional argument.
     /// This is not an incremental procedure and has to be used rarely: if

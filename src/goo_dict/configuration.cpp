@@ -398,11 +398,6 @@ Configuration::parameter( const char path[] ) const {
     return Dictionary::parameter(path);
 }
 
-InsertionProxy
-Configuration::insertion_proxy() {
-    return InsertionProxy( this );
-}
-
 void
 Configuration::_free_caches_if_need() const {
     if( _cache_longOptionsPtr ) {
@@ -474,6 +469,11 @@ void
 Configuration::insert_section( Dictionary * sect ) {
     Dictionary::insert_section( sect );
     invalidate_getopt_caches();
+}
+
+void
+Configuration::append_section( const Dictionary & dPtr ) {
+    insert_section( new Dictionary( dPtr ) );
 }
 
 # if 0

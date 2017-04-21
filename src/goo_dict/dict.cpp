@@ -336,6 +336,11 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
     }
 }
 
+InsertionProxy
+Dictionary::insertion_proxy() {
+    return InsertionProxy( this );
+}
+
 }  // namespace dict
 }  // namespace dict
 

@@ -134,10 +134,6 @@ protected:
     /// Inserts dictionary instance created by insertion proxy.
     virtual void insert_section( Dictionary * );
 
-    Dictionary( const char *, const char * );
-
-    ~Dictionary();
-
     # if 0
     /// Internal procedure --- appends access caches.
     virtual void _append_configuration_caches(
@@ -158,8 +154,15 @@ protected:
     friend class InsertionProxy;
     friend class Configuration;
 public:
+    Dictionary( const char *, const char * );
+
+    ~Dictionary();
+
     /// Public copy ctr for virtual copy ctr.
     Dictionary( const Dictionary & );
+
+    /// Constructs a bound insertion proxy instance object.
+    InsertionProxy insertion_proxy();
 
     /// This routine performs simple token extraction from option path.
     /// For example, the following string:
