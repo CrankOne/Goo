@@ -112,6 +112,23 @@ protected:
                                      Dictionary::LongOptionEntries &,
                                      const iSingularParameter & );
 
+    ///  Collects shortcutted flags and required options.
+    static void _collect_first_level_options(
+                        const Dictionary & d,
+                        const std::string & nameprefix,
+                        std::unordered_map<std::string, iSingularParameter *> & rqs,
+                        std::unordered_map<char, iSingularParameter *> & shrt );
+
+    /// Returns string describing parameter usage information with its
+    /// fully-qualified name. (TODO: document pattern!).
+    static std::string _parameter_usage_info(
+                        iSingularParameter & p,
+                        const char * lnName=nullptr );
+
+    /// Used for usage/help print.
+    static void _print_dict_usage( const Dictionary & d,
+                                   const std::string & omitShortcuts );
+
     /// Helper function setting/appending given token as a positional argument.
     void _append_positional_arg( const char * );
 
@@ -135,7 +152,7 @@ public:
                   std::ostream * verbose=nullptr );
 
     /// Produces an `usage' instruction text to the stream provided by arg.
-    void usage_text( std::ostream &, bool enableASCIIColoring = false );
+    void usage_text( std::ostream &, const char * );
 
     /// A wrapper to glibc's wordexp() function.
     static Size tokenize_string( const std::string &, char **& argvTokens );

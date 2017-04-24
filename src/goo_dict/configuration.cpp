@@ -25,6 +25,7 @@
 # include "goo_exception.hpp"
 # include "goo_utility.hpp"
 
+# include <algorithm>
 # include <cstring>
 # include <unistd.h>
 # include <getopt.h>
@@ -419,10 +420,162 @@ Configuration::_free_caches_if_need() const {
 }
 
 void
+Configuration::_collect_first_level_options(
+                    const Dictionary & self,
+                    const std::string & nameprefix,
+                    std::unordered_map<std::string, iSingularParameter *> & rqs,
+                    std::unordered_map<char, iSingularParameter *> & shrt ) {
+    // Iterate among dictionary options collecting the parameters:
+    for( auto it  = self._parameters.begin();
+              it != self._parameters.end(); ++it ) {
+        // Collect, if parameter has the shortcut or is mandatory:
+        if( (*it)->has_shortcut() || (*it)->is_mandatory() ) {
+            if( (*it)->name() ) {
+                // parameter has long name, collect it with its full path:
+                # ifndef NDEBUG
+                auto ir = rqs.emplace( nameprefix + (*it)->name(), *it );
+                assert( ir.first );
+                # else
+                rqs.emplace( nameprefix + (*it)->name(), *it );
+                # endif
+            } else {
+                // parameter has no long name, collect it with its shortcut:
+                # ifndef NDEBUG
+                auto ir = shrt.emplace( (*it)->shortcut(), *it );
+                assert( ir.first );
+                # else
+                shrt.emplace( (*it)->shortcut(), *it );
+                # endif
+            }
+            // TODO: positional?
+        }
+    }
+    for( auto it  = self._dictionaries.cbegin();
+              it != self._dictionaries.cend(); ++it ) {
+        std::string sectPrefix = nameprefix
+                               + it->second->name()
+                               + nameprefix;
+    }
+}
+
+std::string
+Configuration::_parameter_usage_info(
+        iSingularParameter & p,
+        const char * lnName ) {
+    char nameID[128],
+         valueID[128],
+         fullID[256]
+         ;
+
+    if( p.has_shortcut() ) {
+        if( !lnName ) {
+            // Shortcut-only.
+            snprintf( nameID, sizeof(nameID), "-%c", p.shortcut() );
+        } else {
+            // Fully-qualified name.
+            snprintf( nameID, sizeof(nameID), "--%s|-%c", lnName, p.shortcut() );
+        }
+    } else if( lnName ) {
+        // Long name-only.
+        snprintf( nameID, sizeof(nameID), "--%s", lnName );
+    }
+    // TODO: else --- positional
+    
+    if( p.requires_value() ) {
+        if( !p.is_set() ) {
+            // Has no default value:
+            snprintf( valueID, sizeof(valueID), " %s",
+                      p.target_type_info().name() );
+        } else {
+            // Has default value:
+            snprintf( valueID, sizeof(valueID), " %s=<dftval>",
+                      p.target_type_info().name() );
+        }
+    } else {
+        valueID[0] = '\0';
+    }
+
+    if( p.is_optional() || p.is_set() ) {
+        // May be omitted:
+        if( !p.has_multiple_values() ) {
+            snprintf( fullID, sizeof(fullID), "[%s%s]", nameID, valueID );
+        } else {
+            snprintf( fullID, sizeof(fullID), "[%s%s]...", nameID, valueID );
+        }
+    } else {
+        if( !p.has_multiple_values() ) {
+            snprintf( fullID, sizeof(fullID), "%s%s", nameID, valueID );
+        } else {
+            snprintf( fullID, sizeof(fullID), "%s%s...", nameID, valueID );
+        }
+    }
+    return fullID;
+}
+
+void
 Configuration::usage_text( std::ostream & os,
-                           bool enableASCIIColoring ) {
+                           const char * appName ) {
     os << name() << " --- " << description() << std::endl
-       << "Usage:" << std::endl;
+       << "Usage:" << std::endl
+       << "    $ ";
+    // Print utility name:
+    if( appName ) {
+        os << appName;
+    } else {
+        os << name();
+    }
+    os << " ";
+
+    std::unordered_map<std::string, iSingularParameter *> fla;
+    std::unordered_map<char, iSingularParameter *> shrt;
+
+    _collect_first_level_options( *this, "", fla, shrt );
+    std::string shrtFlags;
+    
+    for( const auto & p : shrt ) {
+        if( p.second->is_flag() ) {
+            shrtFlags.push_back( p.first );
+        }
+    }
+    if( !shrtFlags.empty() ) {
+        std::sort( shrtFlags.begin(), shrtFlags.end());
+        os << "[-" << shrtFlags << "] ";
+    }
+
+    {
+        std::map<char, iSingularParameter *> sshrt(shrt.begin(), shrt.end());
+        for( const auto & p : sshrt ) {
+            assert( !p.second->name() );
+            if( p.second->requires_value() ) {
+                os << _parameter_usage_info(*(p.second) ) << " ";
+            }
+        }
+    }
+
+    {
+        for( const auto & p : fla ) {
+            os << _parameter_usage_info(*(p.second), p.first.c_str() ) << " ";
+        }
+    }
+
+    os << std::endl;
+    # if 0
+    _collect_options_descriptions( *this, shrtFlags );
+    // Print single-character flags (options) that does not require argument:
+    //      example: [-1ab]
+    if( !shrtFlags.empty() ) {
+        std::sort( shrtFlags.begin(), shrtFlags.end() );
+        os << "[-" << shrtFlags "]" << " ";
+    }
+    // Print sorted options of current level. Examples:
+    //      [-a]
+    //      [-o|--output <str>]
+    //      --input|-i <str>...
+    //      -O <I>
+    //      [--flag <yes|no>]
+    //      [--opt-w-dft-val=<str:dft-val>]
+    //      [--opt-w-dft-val=<str:{dft-val#1,dft-val#2,dft-val#3}>]...
+    # endif
 }
 
 Size
