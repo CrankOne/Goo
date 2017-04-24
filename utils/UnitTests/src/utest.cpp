@@ -58,7 +58,8 @@ struct Config {
          noCatch;
 
     /// Vector of unit names desired to run.
-    std::vector<std::string> namesToEvaluate, namesToAvoid;
+    std::vector<std::string> namesToEvaluate,
+                             namesToAvoid;
 
     /// Prepared unit sequence to run.
     mutable LabeledDAG<UTApp::TestingUnit>::Order units;
@@ -216,9 +217,17 @@ UTApp::_V_construct_config_object( int argc, char * const argv[] ) const {
                 case 2: { _set_task( *cfg, Config::dumpDOT ); } break;
                 case 'u' : {
                         _set_task( *cfg, Config::runChoosen );
+                        if( !optarg ) {
+                            fprintf( stderr, "optarg is NULL.\n" );
+                            return nullptr;
+                        }
                         tokenize_unit_names( optarg, cfg->namesToEvaluate );
                     } break;
                 case 's' : {
+                        if( !optarg ) {
+                            fprintf( stderr, "optarg is NULL.\n" );
+                            return nullptr;
+                        }
                         tokenize_unit_names( optarg, cfg->namesToAvoid );
                     } break;
                 case 'c' : { _set_task( *cfg, Config::printBuildConfig ); } break;

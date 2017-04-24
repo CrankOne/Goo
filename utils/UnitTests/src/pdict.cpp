@@ -172,6 +172,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Basic parsing tests done." << std::endl;
     }
     # endif
+    # if 0
     {
         os << "Basic parsing errors checks: {" << std::endl;
         goo::dict::Configuration conf( "theApplication2", "Testing parameter set #1." );
@@ -202,7 +203,8 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         os << "} Basic parsing errors checks." << std::endl;
     }
-    # if 1
+    # endif
+    # if 0
     {
         os << "List parameters tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication3", "Testing parameter set #2." );
@@ -335,7 +337,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     // todo:
     // ✔ need floating point parser to perform these tests as is;
     // ✔ has to implement throw/catch mechanics here for consistensy checks.
-    # if 1
+    # if 0
     {
         os << "Consistency tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication4", "Testing parameter set #3." );
@@ -380,8 +382,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Consistency tests done." << std::endl;
     }
     # endif
-
-    # if 1
+    # if 0
     {
         os << "Subsection parameter retrieving : {" << std::endl;
         goo::dict::Configuration conf( "theApplication5", "Testing parameter set #3." );
@@ -429,8 +430,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                     "\"subsect3.imaflag\" set wrong")
     }
     # endif
-
-    # if 1
+    # if 0
     // See http://unix.stackexchange.com/questions/147143/when-and-how-was-the-double-dash-introduced-as-an-end-of-options-delimiter
     // for historical details about useful `--` special token that initially
     // appeared as a kludge to further become a standard.

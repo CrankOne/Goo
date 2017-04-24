@@ -208,6 +208,12 @@ public:
     /// parameters and sub-sections.
     virtual void print_ASCII_tree( std::list<std::string> & ) const;
     
+    const std::list<iSingularParameter *> & parameters() const
+                                                    { return _parameters; }
+
+    /// A sub-dictionaries composition index.
+    const std::unordered_map<std::string, Dictionary *> & dictionaries() const
+                                                    { return _dictionaries; }
 };  // class Dictionary
 
 }  // namespace dict

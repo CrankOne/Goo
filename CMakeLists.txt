@@ -200,8 +200,9 @@ set( GOO_LIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/inc/" )
 
 #
 # Configure compiler -- base flags
+# NOTE: for ASan, prepend with -fsanitize=address -fno-omit-frame-pointer
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99" )
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++1y" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++1y " )
 if( CMAKE_COMPILER_IS_GNUCXX )
     set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -rdynamic" )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic" )

@@ -64,8 +64,9 @@ iAbstractParameter::iAbstractParameter( const char * name_,
 }
 
 iAbstractParameter::iAbstractParameter( const iAbstractParameter & o ) {
-    memcpy( this, &o, sizeof(o) );  // TODO: find a better solution b'cause overwriting
-                                    // zee vtable can be dangerous!
+    //memcpy( this, &o, sizeof(o) );  // TODO: find a better solution b'cause overwriting
+    //                                // zee vtable can be dangerous!
+    *this = o;
     const size_t nLen = (o._name ? strlen( o._name ) + 1 : 0),
                  dLen = strlen( o._description ) + 1
                  ;

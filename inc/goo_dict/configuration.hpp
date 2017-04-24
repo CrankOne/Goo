@@ -60,6 +60,9 @@ private:
     /// Indicates whether `getopt_long()` caches are valid.
     mutable bool _getoptCachesValid;
 
+    /// Controls, whether to automatically generate -h|--help [subsect] interface.
+    bool _dftHelpIFace;
+
     /// Access cache for short options. This index includes recursively all the
     /// shortcuts provided in sub-sections. Filled by overrided
     /// insert_parameter() method.
@@ -119,12 +122,6 @@ protected:
                         std::unordered_map<std::string, iSingularParameter *> & rqs,
                         std::unordered_map<char, iSingularParameter *> & shrt );
 
-    /// Returns string describing parameter usage information with its
-    /// fully-qualified name. (TODO: document pattern!).
-    static std::string _parameter_usage_info(
-                        iSingularParameter & p,
-                        const char * lnName=nullptr );
-
     /// Used for usage/help print.
     static void _print_dict_usage( const Dictionary & d,
                                    const std::string & omitShortcuts );
@@ -135,7 +132,9 @@ protected:
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
-    Configuration( const char * name, const char * description );
+    Configuration( const char * name,
+                   const char * description,
+                   bool defaultHelpIFace=true );
 
     ~Configuration();
 
@@ -145,14 +144,17 @@ public:
     /// Explicit copy creation.
     //Configuration copy() const { return *this; }
 
-    /// Parses command-line arguments.
-    void extract( int argc,
+    /// Parses command-line arguments. Returns -1 if immediate exit is required.
+    int extract( int argc,
                   char * const argv[],
                   bool doConsistencyCheck=true,
                   std::ostream * verbose=nullptr );
 
     /// Produces an `usage' instruction text to the stream provided by arg.
     void usage_text( std::ostream &, const char * );
+
+    /// Produces subsection reference.
+    void subsection_reference( std::ostream &, const char * );
 
     /// A wrapper to glibc's wordexp() function.
     static Size tokenize_string( const std::string &, char **& argvTokens );

@@ -24,6 +24,7 @@
 # include "goo_dict/insertion_proxy.tcc"
 # include "goo_exception.hpp"
 # include "goo_utility.hpp"
+# include "goo_dict/conf_help_render.hpp"
 
 # include <algorithm>
 # include <cstring>
@@ -42,16 +43,19 @@ const int Configuration::longOptKey = 2;
 const int Configuration::longOptNoShortcutRequiresArgument = 3;
 
 Configuration::Configuration( const char * name_,
-                              const char * descr_ ) : Dictionary(name_, descr_),
+                              const char * descr_,
+                              bool defaultHelpIFace ) : Dictionary(name_, descr_),
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
                                                       _getoptCachesValid( false ),
+                                                      _dftHelpIFace(defaultHelpIFace),
                                                       _positionalArgument( nullptr ) {}
 
 Configuration::Configuration( const Configuration & orig ) : Dictionary( orig ),
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
                                                       _getoptCachesValid( false ),
+                                                      _dftHelpIFace(orig._dftHelpIFace),
                                                       _positionalArgument( nullptr ) {}
 
 Configuration::~Configuration() {
@@ -65,21 +69,36 @@ void
 Configuration::_recache_getopt_arguments() const {
     _free_caches_if_need();
 
+    //abort();
+
     Configuration::ShortOptString    sOptsQ;
     Configuration::LongOptionEntries lOptsQ;
     _cache_append_options( *this, "", sOptsQ, _cache_shortcutPaths, lOptsQ );
-    static const char _static_shortOptionsPrefix[] = "-:";  // todo: move to define
-    const size_t sOptsStrLen = sizeof(_static_shortOptionsPrefix) + sOptsQ.size() - 1;
+    static const char _static_shortOptionsPrefix[] = "-:",  // todo: move to define
+                      _static_shortOptionsPrefixWHelp[] = "-:";
+    const char * cmnShrtPrfx = ( _dftHelpIFace ? _static_shortOptionsPrefixWHelp
+                                               : _static_shortOptionsPrefix );
+    size_t cmnShrtPrfxLen = strlen(cmnShrtPrfx);
+    const size_t sOptsStrLen = cmnShrtPrfxLen + sOptsQ.size();
 
     // TODO: string with back-insertion iterator?
     _cache_shortOptionsPtr             = new char [ sOptsStrLen + 1 ];
-    struct ::option * longOptionsPtr_t = new struct ::option [ lOptsQ.size() + 1 ];
+    struct ::option * longOptionsPtr_t = new struct ::option [
+                                    lOptsQ.size() + (_dftHelpIFace ? 2 : 1) ];
     _cache_longOptionsPtr = longOptionsPtr_t;
 
+    if( _dftHelpIFace ) {
+        longOptionsPtr_t[0].name = strdup("help");
+        longOptionsPtr_t[0].has_arg = required_argument; //optional_argument;
+        longOptionsPtr_t[0].flag = NULL;
+        longOptionsPtr_t[0].val = 'h';
+    }
+
     {  // Form short options string:
-        memcpy( _cache_shortOptionsPtr, _static_shortOptionsPrefix,
-                sizeof(_static_shortOptionsPrefix) );
-        for( char * c = _cache_shortOptionsPtr + sizeof(_static_shortOptionsPrefix) - 1;
+        memcpy( _cache_shortOptionsPtr,
+                cmnShrtPrfx,
+                cmnShrtPrfxLen );
+        for( char * c = _cache_shortOptionsPtr + cmnShrtPrfxLen;
                         !sOptsQ.empty();
                         ++c, sOptsQ.pop_front() ) {
             *c = sOptsQ.front();
@@ -88,9 +107,10 @@ Configuration::_recache_getopt_arguments() const {
     }
 
     {  // Form long options structures array:
-        longOptionsPtr_t[lOptsQ.size()] = {NULL, 0, 0, 0};  // sentinel
+        longOptionsPtr_t[lOptsQ.size() + (_dftHelpIFace ? 1 : 0)]
+                                                = {NULL, 0, 0, 0};  // sentinel
         struct ::option * queuedInstancePtr;
-        for( struct ::option * c = longOptionsPtr_t;
+        for( struct ::option * c = longOptionsPtr_t + (_dftHelpIFace ? 1 : 0);
              !lOptsQ.empty();
              ++c, lOptsQ.pop_front() ) {
             memcpy(c,
@@ -207,7 +227,7 @@ Configuration::_append_positional_arg( const char * strv ) {
     _positionalArgument->parse_argument( strv );
 }
 
-void
+int
 Configuration::extract( int argc,
                         char * const argv[],
                         bool doConsistencyCheck,
@@ -240,12 +260,23 @@ Configuration::extract( int argc,
     // If they are --- shall we raise an exception? How about shortened-only
     // case or even when only positional arguments are provided?
     int optIndex = -1, c;
+
     while( -1 != (c = getopt_long( argc, argv, _cache_shortOptionsPtr, longOptions, &optIndex )) ) {
         //if ( optind == prevInd + 2 && *optarg == '-' ) {
         //    c = ':';
         //    -- optind;
         //}
         if( isalnum(c) ) {
+            if( 'h' == c && _dftHelpIFace ) {
+                if( !strnlen(optarg, USHRT_MAX) ) {
+                    // No argument given --- print default usage text.
+                    usage_text( std::cout, argv[0] );
+                    return -1;
+                } else {
+                    // Section name given --- print subsection reference.
+                    subsection_reference( std::cout, optarg );
+                }
+            }
             // indicates this is an option with shortcut (or a shortcut-only option)
             auto pIt = _parametersIndexByShortcut.find( c );
             if( _parametersIndexByShortcut.end() == pIt ) {
@@ -389,6 +420,7 @@ Configuration::extract( int argc,
         }
     }
     # undef log_extraction
+    return 0;
 }
 
 const iSingularParameter &
@@ -434,7 +466,7 @@ Configuration::_collect_first_level_options(
                 // parameter has long name, collect it with its full path:
                 # ifndef NDEBUG
                 auto ir = rqs.emplace( nameprefix + (*it)->name(), *it );
-                assert( ir.first );
+                assert( ir.second );
                 # else
                 rqs.emplace( nameprefix + (*it)->name(), *it );
                 # endif
@@ -442,7 +474,7 @@ Configuration::_collect_first_level_options(
                 // parameter has no long name, collect it with its shortcut:
                 # ifndef NDEBUG
                 auto ir = shrt.emplace( (*it)->shortcut(), *it );
-                assert( ir.first );
+                assert( ir.second );
                 # else
                 shrt.emplace( (*it)->shortcut(), *it );
                 # endif
@@ -458,74 +490,20 @@ Configuration::_collect_first_level_options(
     }
 }
 
-std::string
-Configuration::_parameter_usage_info(
-        iSingularParameter & p,
-        const char * lnName ) {
-    char nameID[128],
-         valueID[128],
-         fullID[256]
-         ;
-
-    if( p.has_shortcut() ) {
-        if( !lnName ) {
-            // Shortcut-only.
-            snprintf( nameID, sizeof(nameID), "-%c", p.shortcut() );
-        } else {
-            // Fully-qualified name.
-            snprintf( nameID, sizeof(nameID), "--%s|-%c", lnName, p.shortcut() );
-        }
-    } else if( lnName ) {
-        // Long name-only.
-        snprintf( nameID, sizeof(nameID), "--%s", lnName );
-    }
-    // TODO: else --- positional
-    
-    if( p.requires_value() ) {
-        if( !p.is_set() ) {
-            // Has no default value:
-            snprintf( valueID, sizeof(valueID), " %s",
-                      p.target_type_info().name() );
-        } else {
-            // Has default value:
-            snprintf( valueID, sizeof(valueID), " %s=<dftval>",
-                      p.target_type_info().name() );
-        }
-    } else {
-        valueID[0] = '\0';
-    }
-
-    if( p.is_optional() || p.is_set() ) {
-        // May be omitted:
-        if( !p.has_multiple_values() ) {
-            snprintf( fullID, sizeof(fullID), "[%s%s]", nameID, valueID );
-        } else {
-            snprintf( fullID, sizeof(fullID), "[%s%s]...", nameID, valueID );
-        }
-    } else {
-        if( !p.has_multiple_values() ) {
-            snprintf( fullID, sizeof(fullID), "%s%s", nameID, valueID );
-        } else {
-            snprintf( fullID, sizeof(fullID), "%s%s...", nameID, valueID );
-        }
-    }
-    return fullID;
+void
+Configuration::subsection_reference(
+                    std::ostream & os,
+                    const char * subsectName ) {
+    os << "ONE:" << subsectName << std::endl;
 }
 
 void
 Configuration::usage_text( std::ostream & os,
                            const char * appName ) {
-    os << name() << " --- " << description() << std::endl
-       << "Usage:" << std::endl
-       << "    $ ";
-    // Print utility name:
-    if( appName ) {
-        os << appName;
-    } else {
-        os << name();
-    }
-    os << " ";
+    POSIXRenderer pr( *this );
+    pr.render_help_page( os );
 
+    # if 0
     std::unordered_map<std::string, iSingularParameter *> fla;
     std::unordered_map<char, iSingularParameter *> shrt;
 
@@ -557,6 +535,7 @@ Configuration::usage_text( std::ostream & os,
             os << _parameter_usage_info(*(p.second), p.first.c_str() ) << " ";
         }
     }
+    # endif
 
     os << std::endl;
     # if 0
