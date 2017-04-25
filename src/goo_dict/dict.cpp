@@ -172,8 +172,8 @@ Dictionary::pull_opt_path_token( char *& path,
     return 1;  // tail is not empty
 }
 
-const iSingularParameter &
-Dictionary::_get_parameter( char path[] ) const {
+const iSingularParameter *
+Dictionary::_get_parameter( char path[], bool noThrow ) const {
     char * current;
     int rc = pull_opt_path_token( path, current );
     if( 0 == rc ) {
@@ -183,12 +183,16 @@ Dictionary::_get_parameter( char path[] ) const {
             // option parameter indexed by long name
             auto it = _parametersIndexByName.find( current );
             if( it != _parametersIndexByName.end() ) {
-                return *(it->second);
+                return it->second;
             }
-            emraise( notFound,
-                 "Option \"%s\" (long name considered) not found in "
-                 "section \"%s\"",
-                 current, name() ? name() : "<root>" );
+            if( !noThrow ) {
+                emraise( notFound,
+                     "Option \"%s\" (long name considered) not found in "
+                     "section \"%s\"",
+                     current, name() ? name() : "<root>" );
+            } else {
+                return nullptr;
+            }
         } else if( path - current == 0 ) {
             emraise( badState, "Unexpected state of option path parser --- "
                                "null option length."
@@ -197,21 +201,29 @@ Dictionary::_get_parameter( char path[] ) const {
             // option parameter indexed by shortcut
             auto it = _parametersIndexByShortcut.find( *current );
             if( it == _parametersIndexByShortcut.end() ) {
-                emraise( notFound,
-                     "Option \"%s\" (shortcut considered) not found in "
-                     "section \"%s\"",
-                     current, name() ? name() : "<root>" );
+                if( !noThrow ) {
+                    emraise( notFound,
+                         "Option \"%s\" (shortcut considered) not found in "
+                         "section \"%s\"",
+                         current, name() ? name() : "<root>" );
+                } else {
+                    return nullptr;
+                }
             }
-            return *(it->second);
+            return it->second;
         }
     } else {
         // proceed recursively within section -- `current' contains
         // section name and the `path' leads to an option.
         auto it = _dictionaries.find( current );
         if( it == _dictionaries.end() ) {
-            emraise( notFound,
-                     "Section \"%s\" not found in section \"%s\"",
-                     current, name() ? name() : "<root>" );
+            if( !noThrow ) {
+                emraise( notFound,
+                         "Section \"%s\" not found in section \"%s\"",
+                         current, name() ? name() : "<root>" );
+            } else {
+                return nullptr;
+            }
         }
         return it->second->_get_parameter( path );
     }
@@ -219,32 +231,46 @@ Dictionary::_get_parameter( char path[] ) const {
 
 const iSingularParameter &
 Dictionary::parameter( const char path [] ) const {
-    return _get_parameter( strdupa( path ) );
+    return *_get_parameter( strdupa( path ) );
 }
 
-const Dictionary &
-Dictionary::_get_subsection( char path[] ) const {
+const iSingularParameter *
+Dictionary::probe_parameter( const char path [] ) const {
+    return _get_parameter( strdupa( path ), true );
+}
+
+const Dictionary *
+Dictionary::_get_subsection( char path[], bool noThrow ) const {
     char * current;
     int rc = pull_opt_path_token( path, current );
     auto it = _dictionaries.find( current );
     if( _dictionaries.end() == it ) {
-        emraise( notFound, "Dictionary %p has no section named \"%s\".",
-                this, current );
+        if( !noThrow ) {
+            emraise( notFound, "Dictionary %p has no section named \"%s\".",
+                    this, current );
+        } else {
+            return nullptr;
+        }
     }
     if( 0 == rc ) {
         // terminal case --- consider the `current' refers to one of
         // own sections:
-        return *(it->second);
+        return it->second;
     } else {
         // proceed recursively within section -- `current' contains
         // section name and the `path' leads to an option.
-        return it->second->subsection( path );
+        return it->second->_get_subsection( path, noThrow );
     }
 }
 
 const Dictionary &
 Dictionary::subsection( const char path[] ) const {
-    return _get_subsection( strdupa(path) );
+    return *_get_subsection( strdupa(path) );
+}
+
+const Dictionary *
+Dictionary::probe_subsection( const char path[] ) const {
+    return _get_subsection( strdupa(path), true );
 }
 
 void

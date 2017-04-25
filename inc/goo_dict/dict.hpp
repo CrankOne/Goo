@@ -146,10 +146,10 @@ protected:
     void _mark_last_inserted_as_required();
 
     /// Internal function mutating given path str --- parameter entry getter.
-    virtual const iSingularParameter & _get_parameter( char [] ) const;
+    virtual const iSingularParameter * _get_parameter( char [], bool noThrow=false ) const;
 
     /// Internal function mutating given path str --- subsection getter.
-    virtual const Dictionary & _get_subsection( char [] ) const;
+    virtual const Dictionary * _get_subsection( char [], bool noThrow=false ) const;
 
     friend class InsertionProxy;
     friend class Configuration;
@@ -179,6 +179,7 @@ public:
 
     /// Get parameter instance by its full name.
     /// Note, that path delimeter here is dot symbol '.' (const getter).
+    /// When parameter is not found, raises `notFound' exception.
     virtual const iSingularParameter & parameter( const char path [] ) const;
 
     /// Get parameter instance by its full name.
@@ -186,6 +187,17 @@ public:
     virtual iSingularParameter & parameter( const char path[] ) {
         const Dictionary * constThis = this;
         return const_cast<iSingularParameter &>(constThis->parameter( path ));
+    }
+
+    /// Const version of faulty-tolerant parameter instance getter. If
+    /// parameter lookup fails, returns nullptr.
+    virtual const iSingularParameter * probe_parameter( const char path[] ) const;
+
+    /// Faulty-tolerant parameter instance getter. If parameter lookup fails,
+    /// returns nullptr.
+    virtual iSingularParameter * probe_parameter( const char path[] ) {
+        const Dictionary * constThis = this;
+        return const_cast<iSingularParameter *>(constThis->probe_parameter( path ));
     }
 
     /// Get sub-dictionary instance by its full name.
@@ -197,6 +209,17 @@ public:
     virtual Dictionary & subsection( const char path[] ) {
         const Dictionary * constThis = this;
         return const_cast<Dictionary &>(constThis->subsection( path ));
+    }
+
+    /// Const version of faulty-tolerant subsection instance getter. If
+    /// parameter lookup fails, returns nullptr.
+    virtual const Dictionary * probe_subsection( const char path[] ) const;
+
+    /// Faulty-tolerant subsection instance getter. If lookup fails,
+    /// returns nullptr.
+    virtual Dictionary * probe_subsection( const char path[] ) {
+        const Dictionary * constThis = this;
+        return const_cast<Dictionary *>(constThis->probe_subsection( path ));
     }
 
     /// Performs consistency check (only has sense, if extract() was performed
