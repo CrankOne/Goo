@@ -26,6 +26,8 @@
 # include "goo_utility.hpp"
 # include "goo_dict/conf_help_render.hpp"
 
+# include <yaml.h>
+
 # include <algorithm>
 # include <cstring>
 # include <unistd.h>
@@ -75,7 +77,7 @@ Configuration::_recache_getopt_arguments() const {
     Configuration::LongOptionEntries lOptsQ;
     _cache_append_options( *this, "", sOptsQ, _cache_shortcutPaths, lOptsQ );
     static const char _static_shortOptionsPrefix[] = "-:",  // todo: move to define
-                      _static_shortOptionsPrefixWHelp[] = "-:";
+                      _static_shortOptionsPrefixWHelp[] = "-:h::";
     const char * cmnShrtPrfx = ( _dftHelpIFace ? _static_shortOptionsPrefixWHelp
                                                : _static_shortOptionsPrefix );
     size_t cmnShrtPrfxLen = strlen(cmnShrtPrfx);
@@ -89,7 +91,7 @@ Configuration::_recache_getopt_arguments() const {
 
     if( _dftHelpIFace ) {
         longOptionsPtr_t[0].name = strdup("help");
-        longOptionsPtr_t[0].has_arg = required_argument; //optional_argument;
+        longOptionsPtr_t[0].has_arg = optional_argument;
         longOptionsPtr_t[0].flag = NULL;
         longOptionsPtr_t[0].val = 'h';
     }
@@ -268,13 +270,14 @@ Configuration::extract( int argc,
         //}
         if( isalnum(c) ) {
             if( 'h' == c && _dftHelpIFace ) {
-                if( !strnlen(optarg, USHRT_MAX) ) {
+                if( !optarg || !strnlen(optarg, USHRT_MAX) ) {
                     // No argument given --- print default usage text.
                     usage_text( std::cout, argv[0] );
                     return -1;
                 } else {
                     // Section name given --- print subsection reference.
                     subsection_reference( std::cout, optarg );
+                    return -1;
                 }
             }
             // indicates this is an option with shortcut (or a shortcut-only option)
@@ -494,13 +497,14 @@ void
 Configuration::subsection_reference(
                     std::ostream & os,
                     const char * subsectName ) {
-    os << "ONE:" << subsectName << std::endl;
+    POSIXRenderer pr( *this );
+    pr.render_reference( os, subsection( subsectName ) );
 }
 
 void
 Configuration::usage_text( std::ostream & os,
                            const char * appName ) {
-    POSIXRenderer pr( *this );
+    POSIXRenderer pr( *this );  // TODO
     pr.render_help_page( os );
 
     # if 0

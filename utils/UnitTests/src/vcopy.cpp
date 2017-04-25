@@ -128,6 +128,7 @@ run_test_on_base( std::ostream & os ) {
         _ASSERT( copyAPtr->original_id() == baseA->id(),
                  "Wrong original ID set for copy." )
         os << "ok (expected)" << std::endl;
+        delete copyAPtr;
     }
     {   // Far descendant copy check:
         Derived3<BaseT> a;
@@ -140,6 +141,7 @@ run_test_on_base( std::ostream & os ) {
         _ASSERT( copyAPtr->original_id() == baseA->id(),
                  "Wrong original ID set for copy." )
         os << "ok (expected)" << std::endl;
+        delete copyAPtr;
     }
 
     # ifndef NDEBUG

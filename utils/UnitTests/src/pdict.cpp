@@ -25,9 +25,9 @@ static void expected_argv_parsing_error(
             goo::dict::Configuration conf,
             std::ostream & mainOutStream ) {
     char ** argv;
+    int argc = goo::dict::Configuration::tokenize_string( str, argv );
     std::stringstream subStream;
     try {
-        int argc = goo::dict::Configuration::tokenize_string( str, argv );
         subStream << "Input arguments after tokenization:" << std::endl;
         for( uint8_t i = 0; i < argc; ++i ) {
             subStream << "  argv[" << (int) i << "]=\""
@@ -36,7 +36,6 @@ static void expected_argv_parsing_error(
         conf.extract( argc, argv, true, &subStream );
         // The code from here to catch() part has not be evaluated unless
         // expected exception was not triggered:
-        goo::dict::Configuration::free_tokens( argc, argv );
         mainOutStream << "Failed case extraction log dump {" << std::endl
                       << subStream.str()
                       << "} Failed case extraction log dump" << std::endl
@@ -60,6 +59,7 @@ static void expected_argv_parsing_error(
                 get_errcode_description(e.code()) );
         }
     }
+    goo::dict::Configuration::free_tokens( argc, argv );
 }
 
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
@@ -172,7 +172,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Basic parsing tests done." << std::endl;
     }
     # endif
-    # if 0
+    # if 1
     {
         os << "Basic parsing errors checks: {" << std::endl;
         goo::dict::Configuration conf( "theApplication2", "Testing parameter set #1." );
@@ -204,7 +204,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Basic parsing errors checks." << std::endl;
     }
     # endif
-    # if 0
+    # if 1
     {
         os << "List parameters tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication3", "Testing parameter set #2." );
@@ -337,7 +337,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     // todo:
     // ✔ need floating point parser to perform these tests as is;
     // ✔ has to implement throw/catch mechanics here for consistensy checks.
-    # if 0
+    # if 1
     {
         os << "Consistency tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication4", "Testing parameter set #3." );
@@ -382,7 +382,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Consistency tests done." << std::endl;
     }
     # endif
-    # if 0
+    # if 1
     {
         os << "Subsection parameter retrieving : {" << std::endl;
         goo::dict::Configuration conf( "theApplication5", "Testing parameter set #3." );
@@ -417,6 +417,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         os << "} Subsection parameter retrieving." << std::endl;
         conf.extract( argc, argv, true, &os );
+        goo::dict::Configuration::free_tokens( argc, argv );
 
         _ASSERT( conf["v"].as<uint8_t>() == 3, "'v' parameter set wrong" );
         _ASSERT( conf["quiet"].as<bool>(), "\"quiet\" parameter set wrong" );
@@ -430,7 +431,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                     "\"subsect3.imaflag\" set wrong")
     }
     # endif
-    # if 0
+    # if 1
     // See http://unix.stackexchange.com/questions/147143/when-and-how-was-the-double-dash-introduced-as-an-end-of-options-delimiter
     // for historical details about useful `--` special token that initially
     // appeared as a kludge to further become a standard.
@@ -470,6 +471,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         } os << std::endl;
 
         conf.extract( argc, argv, true, &os );
+        goo::dict::Configuration::free_tokens( argc, argv );
 
         const char chkTokens[][10][64] = {
             { "/tmp/build.log",     "/tmp/build-11-03-017.log", "-", "" },

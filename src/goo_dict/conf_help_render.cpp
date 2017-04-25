@@ -85,7 +85,7 @@ POSIXRenderer::_V_render_help_page( std::ostream & os,
     if( !conf().dictionaries().empty() ) {
         os << "The " ESC_CLRUNDRLN "SECT OPTIONS" ESC_CLRCLEAR " placeholder "
            "refers to parameters in sub-sections. Type " ESC_CLRBOLD
-           "--help <subsection-name>" ESC_CLRCLEAR
+           "--help=<subsection-name>" ESC_CLRCLEAR " or " ESC_CLRBOLD "-h<subsection-name>" ESC_CLRCLEAR
            " to get help about parameters from sub-sections."
            << std::endl
            ;
