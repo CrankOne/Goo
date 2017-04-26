@@ -319,13 +319,13 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
         n--;
         ss << (n || hasSubsections ? "╟─" : "╙─") << " ";
         if( p->name() ) {
-            ss << "--" << ESC_CLRUNDRLN << p->name() << ESC_CLRCLEAR;
+            ss << ESC_CLRUNDRLN << p->name() << ESC_CLRCLEAR;
             if( p->has_shortcut() ) {
                 ss << "|";
             }
         }
         if( p->has_shortcut() ) {
-            ss << "-" << ESC_CLRBOLD << p->shortcut() << ESC_CLRCLEAR;
+            ss << ESC_CLRBOLD << p->shortcut() << ESC_CLRCLEAR;
         }
         ss << ", type=`" << p->target_type_info().name() << "'";
         if( p->is_flag() ) {
@@ -338,10 +338,10 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
             ss << ", list";
         }
         if( p->is_set() ) {
-            ss << ", value set";
+            ss << ", value set: \"" << p->to_string() << "\"";
         }
         // TODO: somehow reflect other parameter properties?
-        ss << std::endl;
+        ss << " " << p->description() << std::endl;
     }
     n = _dictionaries.size();
     for( auto dctPair : _dictionaries ) {

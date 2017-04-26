@@ -33,8 +33,9 @@ void
 POSIXRenderer::_V_render_help_page( std::ostream & os,
                                  const char * appName ) {
 
-    os << conf().name() << ": " << conf().description() << std::endl
-       << "Usage:" << std::endl
+    os << ESC_CLRBOLD "" << conf().name() << "" ESC_CLRCLEAR << std::endl
+       << conf().description() << std::endl << std::endl
+       << ESC_CLRBOLD "USAGE" ESC_CLRCLEAR << std::endl
        << "    $ ";
     // Print utility name:
     if( appName ) {
@@ -44,7 +45,7 @@ POSIXRenderer::_V_render_help_page( std::ostream & os,
     }
     os << " ";
 
-    _recollect_first_level_options( conf(), "" );
+    _recollect_first_level_options( conf(), "", true );
 
     if( !_shrtFlags.empty() ) {
         std::string shrtFlags;
@@ -78,7 +79,7 @@ POSIXRenderer::_V_render_help_page( std::ostream & os,
     // TODO os << _positionalPtr
 
     os  << std::endl << std::endl
-        << "Where:" << std::endl;
+        << ESC_CLRBOLD "OPTIONS" ESC_CLRCLEAR << std::endl;
 
     render_reference( os, conf() );
 
@@ -94,7 +95,8 @@ POSIXRenderer::_V_render_help_page( std::ostream & os,
 
 void
 POSIXRenderer::_V_render_reference( std::ostream & os,
-                          const Dictionary & d ) {
+                                    const Dictionary & d,
+                                    const std::string & prefix ) {
     std::map<std::string, const iSingularParameter *> mySortedPs;
     const auto & myParameters = d.parameters();
     std::transform( myParameters.begin(), myParameters.end(),
@@ -105,7 +107,7 @@ POSIXRenderer::_V_render_reference( std::ostream & os,
                                                            : std::string(1, pPtr->shortcut())),
                                               pPtr ); } );
     for( auto p : mySortedPs ) {
-        os << "  " << _singular_parameter_usage_info( *(p.second), p.first.c_str() )
+        os << "  " << _singular_parameter_usage_info( *(p.second), (prefix + p.first).c_str() )
            << /*TODO: more verbose info about flags, type, default, etc*/ std::endl
            << "        " << p.second->description()
            << std::endl
@@ -153,8 +155,9 @@ POSIXRenderer::_singular_parameter_usage_info(
                       p.target_type_info().name() );
         } else {
             // Has default value:
-            snprintf( valueID, sizeof(valueID), " " ESC_CLRUNDRLN "%s" ESC_CLRCLEAR "(=default)",
-                      p.target_type_info().name() );
+            snprintf( valueID, sizeof(valueID), " " ESC_CLRUNDRLN "%s" ESC_CLRCLEAR "(=%s)",
+                      p.target_type_info().name(),
+                      p.to_string().c_str() );
         }
     } else {
         valueID[0] = '\0';
@@ -180,12 +183,13 @@ POSIXRenderer::_singular_parameter_usage_info(
 void
 POSIXRenderer::_recollect_first_level_options(
                 const Dictionary & self,
-                const std::string & nameprefix ) {
+                const std::string & nameprefix,
+                bool thisIsBaseLevel ) {
     // Iterate among dictionary options collecting the parameters:
     for( auto it  = self.parameters().begin();
               it != self.parameters().end(); ++it ) {
         // Collect, if parameter has the shortcut or is mandatory:
-        if( (*it)->has_shortcut() || (*it)->is_mandatory() ) {
+        if( (*it)->has_shortcut() || (*it)->is_mandatory() || thisIsBaseLevel ) {
             if( (*it)->name() ) {
                 // parameter has long name, collect it with its full path:
                 # ifndef NDEBUG

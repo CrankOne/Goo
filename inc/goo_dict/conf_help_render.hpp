@@ -47,7 +47,8 @@ protected:
     virtual void _V_render_help_page( std::ostream &,
                                       const char * appName=nullptr ) = 0;
     virtual void _V_render_reference( std::ostream &,
-                                      const Dictionary & dict ) = 0;
+                                      const Dictionary & dict,
+                                      const std::string & prefix ) = 0;
 public:
     iHelpRenderer( const Configuration & c ) : _confPtr(&c) {}
 
@@ -60,9 +61,11 @@ public:
     }
 
     /// Renders help message for particular section.
-    void render_reference( std::ostream & os, const Dictionary & dict ) {
+    void render_reference(  std::ostream & os,
+                            const Dictionary & dict,
+                            const std::string prefix="") {
         assert( _confPtr );
-        _V_render_reference(os, dict);
+        _V_render_reference(os, dict, prefix);
     }
 
     /// Returns
@@ -87,7 +90,9 @@ protected:
     /// shortened options, required arguments and positional arguments that
     /// must be printed at top level reference page.
     virtual void _recollect_first_level_options(
-                        const Dictionary &, const std::string & );
+                        const Dictionary &,
+                        const std::string &,
+                        bool thisIsBaseLevel=false);
 
     /// Returns string describing parameter usage information with its
     /// fully-qualified name.
@@ -99,7 +104,8 @@ protected:
                                       const char * appName=nullptr ) override;
 
     void _V_render_reference( std::ostream &,
-                              const Dictionary & ) override;
+                              const Dictionary &,
+                              const std::string &) override;
 
 public:
     POSIXRenderer( const Configuration & c ) : iHelpRenderer(c) {}

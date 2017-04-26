@@ -251,6 +251,7 @@ protected:
     virtual std::string _V_to_string( ) const override {
         assert( this->is_set() );
         return _V_stringify_value( value() ); }
+    ValueT & mutable_value() { return _value; }
 
     virtual Value _V_parse( const char * ) const = 0;
     virtual std::string _V_stringify_value( const Value & ) const = 0;
