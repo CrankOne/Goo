@@ -64,6 +64,7 @@ Path::get_stat() const {
     const std::string & path = interpolated();
     if( !_statCacheValid ) {
         int rs = ::stat( path.c_str(), &_statCache );
+        _exists = true;
         if( -1 == rs ) {
             if( errno == ENOENT ) {
                 _exists = false;
@@ -97,17 +98,20 @@ Path::is_file() const {
 }
 
 void
-Path::interpolator( Interpolator * ip ) {
+Path::interpolator( Interpolator * ip ) const {
     _interpolatedCacheValid = _statCacheValid = false;  // TODO: invalidate_caches();
     _interpolator = ip;
 }
 
 const std::string &
 Path::interpolated() const {
-    if( _interpolatedCacheValid ) {
+    if( !_interpolatedCacheValid ) {
         if( _interpolator ) {
-            _interpolatedCache = (*_interpolator)(*this);
-            _interpolatedCache = true;
+            _interpolatedCache = _interpolator->interpolate(*this);
+            _interpolatedCacheValid = true;
+        } else {
+            // Trivial interpolation (identity).
+            _interpolatedCache = *this;
         }
     }
     return _interpolatedCache;
@@ -134,7 +138,7 @@ Path::get_dir_entries() const {
 }
 
 Path
-Path::concat( const std::string & postfix ) {
+Path::concat( const std::string & postfix ) const {
     return Path(interpolated() + "/" + postfix );
 }
 

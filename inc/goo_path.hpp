@@ -58,7 +58,7 @@ protected:
     mutable bool _interpolatedCacheValid;
     mutable std::string _interpolatedCache;
 
-    Interpolator * _interpolator;
+    mutable Interpolator * _interpolator;
 
     struct stat & get_stat() const;
 public:
@@ -74,12 +74,12 @@ public:
     // TODO: support wildcards, caching, etc.
     virtual std::vector<std::string> get_dir_entries() const;
 
-    void interpolator( Interpolator * ip );
+    void interpolator( Interpolator * ip ) const;
 
     virtual const std::string & interpolated() const;
 
     // TODO: quite primitive
-    virtual Path concat( const std::string & );
+    virtual Path concat( const std::string & ) const;
 };  // class Path
 
 }  // namespace filesystem
