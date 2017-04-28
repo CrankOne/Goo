@@ -26,24 +26,60 @@ InsertionProxy::InsertionProxy( Dictionary * root ) {
 
 InsertionProxy &
 InsertionProxy::bgn_sect( const char * name, const char * descr) {
-    auto newDict = new Dictionary( name, descr );
-    _stack.top()->insert_section( newDict );
-    _stack.push( newDict );
+    // Suppose, we have relative path and need to recursively insert
+    // parent sections:
+    char * path = strdupa( name ),
+         * current = NULL;
+
+    Dictionary * newTop;
+
+    while( Dictionary::pull_opt_path_token( path, current ) ) {
+        newTop = _stack.top()->probe_subsection( current );
+        if( !newTop ) {
+            newTop = new Dictionary( current, nullptr );
+            _stack.top()->insert_section( newTop );
+        }
+        _stack.push( newTop );
+    }
+
+    
+    if( !(newTop = _stack.top()->probe_subsection( current )) ) {
+        // Insert new section.
+        newTop = new Dictionary( current, descr );
+        _stack.top()->insert_section( newTop );
+        _stack.push( newTop );
+    } else {
+        // Append existing section:
+        _stack.push( newTop );
+        if( !newTop->description() ) {
+            newTop->_append_description( descr );
+        }
+    }
+
     return *this;
 }
 
 InsertionProxy &
 InsertionProxy::end_sect( const char * name ) {
     if( name ) {
-        if( strcmp( name, _stack.top()->name() ) ) {
-            emraise( assertFailed,
-                    "Insertion proxy state check failed: current section is "
-                    "named \"%s\" while \"%s\" expected.",
-                _stack.top()->name(),
-                name );
+        char * path = strdupa( name ),
+             * current = NULL;
+        std::vector<std::string> tokens;
+        while( Dictionary::pull_opt_path_token( path, current ) ) {
+            tokens.push_back( current );
+        }
+        tokens.push_back( current );
+
+        for( auto it = tokens.rbegin(); tokens.rend() != it; ++it ) {
+            if( strcmp( it->c_str(), _stack.top()->name() ) ) {
+                emraise( assertFailed,
+                        "Insertion proxy state check failed: current section is "
+                        "named \"%s\" while \"%s\" expected (full path is %s).",
+                    _stack.top()->name(), current, name );
+            }
+            _stack.pop();
         }
     }
-    _stack.pop();
     return *this;
 }
 

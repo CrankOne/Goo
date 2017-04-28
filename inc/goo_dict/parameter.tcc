@@ -112,6 +112,9 @@ protected:
     /// Raises an exception if contradictory states are set for parameter
     /// on initial stage.
     void _check_initial_validity();
+
+    /// Useful for auxilliary classes.
+    void _append_description( const char * );
 public:
     virtual ~iAbstractParameter();
 

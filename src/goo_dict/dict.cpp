@@ -219,7 +219,7 @@ Dictionary::_get_parameter( char path[], bool noThrow ) const {
         if( it == _dictionaries.end() ) {
             if( !noThrow ) {
                 emraise( notFound,
-                         "Section \"%s\" not found in section \"%s\"",
+                         "Subsection \"%s\" is not found in section \"%s\"",
                          current, name() ? name() : "<root>" );
             } else {
                 return nullptr;
@@ -341,7 +341,10 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
             ss << ", value set: \"" << p->to_string() << "\"";
         }
         // TODO: somehow reflect other parameter properties?
-        ss << " " << p->description() << std::endl;
+        if( p->description() ) {
+            ss << " " << p->description();
+        }
+        ss << std::endl;
     }
     n = _dictionaries.size();
     for( auto dctPair : _dictionaries ) {
