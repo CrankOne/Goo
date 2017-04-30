@@ -182,11 +182,19 @@ public:
     /// When parameter is not found, raises `notFound' exception.
     virtual const iSingularParameter & parameter( const char path [] ) const;
 
+    virtual const iSingularParameter & parameter( const std::string & path ) const {
+        return parameter( path.c_str() );
+    }
+
     /// Get parameter instance by its full name.
     /// Note, that path delimeter here is dot symbol '.'.
     virtual iSingularParameter & parameter( const char path[] ) {
         const Dictionary * constThis = this;
         return const_cast<iSingularParameter &>(constThis->parameter( path ));
+    }
+
+    virtual iSingularParameter & parameter( const std::string & path ) {
+        return parameter( path.c_str() );
     }
 
     /// Const version of faulty-tolerant parameter instance getter. If
