@@ -197,6 +197,10 @@ public:
         return parameter( path.c_str() );
     }
 
+    /// Operator shortcut for `parameter()`.
+    virtual const iSingularParameter & operator[]( const char p[] ) const {
+        return parameter(p); }
+
     /// Const version of faulty-tolerant parameter instance getter. If
     /// parameter lookup fails, returns nullptr.
     virtual const iSingularParameter * probe_parameter( const char path[] ) const;
@@ -206,6 +210,13 @@ public:
     virtual iSingularParameter * probe_parameter( const char path[] ) {
         const Dictionary * constThis = this;
         return const_cast<iSingularParameter *>(constThis->probe_parameter( path ));
+    }
+
+    virtual const iSingularParameter * probe_parameter( const std::string & sPath ) const;
+
+    virtual iSingularParameter * probe_parameter( const std::string & sp ) {
+        const Dictionary * constThis = this;
+        return const_cast<iSingularParameter *>(constThis->probe_parameter( sp ));
     }
 
     /// Get sub-dictionary instance by its full name.
@@ -219,6 +230,14 @@ public:
         return const_cast<Dictionary &>(constThis->subsection( path ));
     }
 
+    virtual Dictionary & subsection( const std::string & s ) {
+        return subsection(s.c_str());
+    }
+
+    virtual const Dictionary & subsection( const std::string & s ) const {
+        return subsection(s.c_str());
+    }
+
     /// Const version of faulty-tolerant subsection instance getter. If
     /// parameter lookup fails, returns nullptr.
     virtual const Dictionary * probe_subsection( const char path[] ) const;
@@ -228,6 +247,14 @@ public:
     virtual Dictionary * probe_subsection( const char path[] ) {
         const Dictionary * constThis = this;
         return const_cast<Dictionary *>(constThis->probe_subsection( path ));
+    }
+
+    virtual const Dictionary * probe_subsection( const std::string & p ) const {
+        return probe_subsection( p.c_str() );
+    }
+
+    virtual Dictionary * probe_subsection( const std::string & p ) {
+        return probe_subsection( p.c_str() );
     }
 
     /// Performs consistency check (only has sense, if extract() was performed

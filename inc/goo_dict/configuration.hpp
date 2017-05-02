@@ -162,10 +162,6 @@ public:
     /// Cleaner for tokenized string
     static void free_tokens( size_t argcTokens, char ** argvTokens );
 
-    /// Operator shortcut for `parameter()`.
-    virtual const iSingularParameter & operator[]( const char p[] ) const {
-        return parameter(p); }
-
     /// Extendeds parent version with positional argument resolution.
     virtual const iSingularParameter & parameter( const char path[] ) const override;
 

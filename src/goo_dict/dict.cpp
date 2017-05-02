@@ -239,6 +239,11 @@ Dictionary::probe_parameter( const char path [] ) const {
     return _get_parameter( strdupa( path ), true );
 }
 
+const iSingularParameter *
+Dictionary::probe_parameter( const std::string & sPath ) const {
+    return _get_parameter( strdupa( sPath.c_str() ), true );
+}
+
 const Dictionary *
 Dictionary::_get_subsection( char path[], bool noThrow ) const {
     char * current;

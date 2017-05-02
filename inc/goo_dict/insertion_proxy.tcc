@@ -48,7 +48,7 @@ public:
     InsertionProxy & required_argument();
 
     // Marks the last inserted logical argument as mandatory one.
-    //InsertionProxy & as_flag();
+    void insert_copy_of( const iSingularParameter & );
 
     //
     // Parameter inserter

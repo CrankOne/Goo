@@ -83,6 +83,11 @@ InsertionProxy::end_sect( const char * name ) {
     return *this;
 }
 
+void
+InsertionProxy::insert_copy_of( const iSingularParameter & sp ) {
+    _stack.top()->insert_parameter( clone_as<iAbstractParameter, iSingularParameter>( &sp ) );
+}
+
 }  // namespace goo
 }  // namespace dicts
 

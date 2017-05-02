@@ -61,6 +61,9 @@ public:
     /// add_mapping() method.
     void inject_parameters( const Dictionary & source,
                                   Dictionary & target ) const;
+
+    /// Returns const reference of mappings for inspection.
+    const Injection & injections() const { return _mappings; }
 };  // class DictionaryInjectionMap
 
 }  // namespace dict
