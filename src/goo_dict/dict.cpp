@@ -225,7 +225,7 @@ Dictionary::_get_parameter( char path[], bool noThrow ) const {
                 return nullptr;
             }
         }
-        return it->second->_get_parameter( path );
+        return it->second->_get_parameter( path, noThrow );
     }
 }
 

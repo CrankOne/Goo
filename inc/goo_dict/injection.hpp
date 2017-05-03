@@ -52,10 +52,24 @@ private:
 public:
     /// Declares a single injection pair. Set transformation to null, to state
     /// type identity between mapping variables.
-    std::pair<Injection::iterator, bool> add_mapping( const std::string &,
-                                                      const std::string &,
+    std::pair<Injection::iterator, bool> add_mapping( const std::string & from,
+                                                      const std::string & to,
                                                       Transformation t=nullptr);
-    
+
+    /// Shortcut for adding parameters mapping. Comparing to `add_mapping()`
+    /// method mapped and mapping paths are inverted for convinience. Returns
+    /// current instance for clearance, so that one may chain mapping in code.
+    DictionaryInjectionMap & operator()(const std::string & to,
+                                        const std::string & from,
+                                        Transformation t=nullptr ) {
+        auto ir = add_mapping( from, to, t );
+        if( !ir.second ) {
+            emraise( nonUniq, "Repeatative insertion of mapping \"%s\"->\"%s\".",
+                from.c_str(), to.c_str() );
+        }
+        return *this;
+    }
+
     /// Performs setting parameters in "target" instance with ones from "source"
     /// using paths (and transformations) previously supplied with
     /// add_mapping() method.
