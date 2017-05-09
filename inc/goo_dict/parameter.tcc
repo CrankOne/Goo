@@ -193,6 +193,7 @@ class iSingularParameter : public iAbstractParameter /*{{{*/ {
 protected:
     virtual void _V_parse_argument( const char * ) = 0;
     virtual std::string _V_to_string() const = 0;
+    virtual void _V_assign( const iSingularParameter & ) = 0;
 public:
     /// Returns single-char shortcut for this parameter.
     char shortcut() const { return _shortcut; }
@@ -227,6 +228,15 @@ public:
     as_list_of() const;
 
     virtual const std::type_info & target_type_info() const = 0;
+
+    virtual void assign( const iSingularParameter & src ) {
+        _V_assign( src );
+    }
+
+    iSingularParameter & operator=( const iSingularParameter & src ) {
+        assign( src );
+        return *this;
+    }
 };  // }}} class iSingularParameter
 
 
@@ -248,6 +258,7 @@ public:
 private:
     Value _value;
 protected:
+    virtual void _V_assign( const iSingularParameter & ) override;
     void _set_value( const ValueT & );
     virtual void _V_parse_argument( const char * strval ) override {
         _set_value( _V_parse( strval ) ); }
@@ -324,6 +335,27 @@ template<typename ValueT> void
 iParameter<ValueT>::_set_value( const ValueT & val ) {
     this->_set_is_set_flag();
     _value = val;
+}
+
+template<typename ValueT> void
+iParameter<ValueT>::_V_assign( const iSingularParameter & spVal ) {
+    if( !spVal.is_set() ) {
+        // The original value is not set. The expected behaviour in this case
+        // is to do nothing with own value. TODO: this has to be reflected in
+        // documentation!
+        return;
+    }
+    this->_set_is_set_flag();
+
+    // TODO: dynamic_cast<> here may ruin the performance for complex types.
+    auto p = dynamic_cast<const iParameter<ValueT> *>( &spVal );
+    if( !p ) {
+        emraise( badCast, "Types mismatch. Unable to perform assignment of "
+            "parameter instance \"%s\" (with value =%s) to iParameter<%s> "
+            "instance.", spVal.target_type_info().name(),
+            spVal.to_string().c_str(), typeid(ValueT).name() );
+    }
+    _set_value( p->value() );
 }
 
 /*}}}*/  // class iParameter implementation
