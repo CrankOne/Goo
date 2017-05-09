@@ -111,6 +111,17 @@ public:
     POSIXRenderer( const Configuration & c ) : iHelpRenderer(c) {}
 };  // class HelpRenderer
 
+/**@class LineListRenderer
+ * @brief A simple configuration rendering class useful for bash completion.
+ *
+ * This help renderer was designed for bash completion util. It produces
+ * merely a list of options delimeted with spaces for them to further be used
+ * with bash completion facility.
+ *
+ * TODO: enum
+ * */
+//class LineListRenderer;
+
 }  // namespace dict
 }  // namespace goo
 

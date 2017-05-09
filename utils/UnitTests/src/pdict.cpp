@@ -2,6 +2,7 @@
 # include <wordexp.h>
 # include "utest.hpp"
 # include "goo_dict/configuration.hpp"
+# include "goo_dict/parameters/enum_parameter.tcc"
 
 /**@file pdict.cpp
  * @brief Parameters dictionary test.
@@ -61,6 +62,23 @@ static void expected_argv_parsing_error(
     }
     goo::dict::Configuration::free_tokens( argc, argv );
 }
+
+namespace other {
+struct another {
+enum TestingEnum {
+    zero = 0,
+    one = 1,
+    two = 2,
+    ten = 10
+};  // TestingEnum
+};  // struct another
+}  // namespace other
+
+# define for_all_TestingEnum_enum_entries( m ) \
+    m( zero ) m( one ) m( two ) m( ten )
+# define add_TestingEnum_entry( entry ) \
+    GOO_ENUM_PARAMETER_DEFINE( other::another:: entry, entry );
+for_all_TestingEnum_enum_entries( add_TestingEnum_entry )
 
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # if 1
@@ -125,10 +143,11 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .p<double>( "fp-num-ii", "Some fp-number (double)" )
             .p<std::string>( "strval", "Some string value", "defstrval" )
             .p<std::string>( 's', nullptr, "Another string value" )
+            .p<goo::aux::Enum<other::another::TestingEnum> >( 'e', "enum parameter", other::another::zero )
             ;
 
         const char ex1[] = "./foo -1vqfalse -simastrval --fp-num-ii 0x1.568515b1d78d4p-36 "
-            " --quiet=true -V --quiet2 false --verbosity 23 --fp-num-i 1.23";
+            " --quiet=true -V --quiet2 false -eten --verbosity 23 --fp-num-i 1.23";
         char ** argv;
         os << "For given source string: " << ex1 << ":" << std::endl;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
