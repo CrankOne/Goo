@@ -79,6 +79,8 @@ enum TestingEnum {
 # define add_TestingEnum_entry( entry ) \
     GOO_ENUM_PARAMETER_DEFINE( other::another:: entry, entry );
 for_all_TestingEnum_enum_entries( add_TestingEnum_entry )
+# undef add_TestingEnum_entry
+# undef for_all_TestingEnum_enum_entries
 
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # if 1
@@ -143,7 +145,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .p<double>( "fp-num-ii", "Some fp-number (double)" )
             .p<std::string>( "strval", "Some string value", "defstrval" )
             .p<std::string>( 's', nullptr, "Another string value" )
-            .p<goo::aux::Enum<other::another::TestingEnum> >( 'e', "enum parameter", other::another::zero )
+            .p<other::another::TestingEnum>( 'e', "enum parameter", other::another::zero )
             ;
 
         const char ex1[] = "./foo -1vqfalse -simastrval --fp-num-ii 0x1.568515b1d78d4p-36 "
@@ -175,6 +177,8 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                   "\"strval\" default set wrong: \"%s\"", conf["strval"].as<std::string>().c_str() );
         _ASSERT(  "imastrval" == conf["s"].as<std::string>(),
                   "\"s\" set wrong: \"%s\"", conf["s"].as<std::string>().c_str() );
+        _ASSERT(  other::another::ten == conf["e"].as<other::another::TestingEnum>(),
+                  "\"e\" set wrong: %d", (int) conf["e"].as<other::another::TestingEnum>() );
 
         try {
             conf["verbose"].as<bool>();

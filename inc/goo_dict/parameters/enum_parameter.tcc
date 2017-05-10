@@ -27,31 +27,138 @@
 # include "goo_path.hpp"
 
 namespace goo {
+namespace dict {
 
-namespace aux {
-template<typename EnumT, typename Enabled=void>
-class Enum;  // undefined for EnumT=<non-enum>
-
+/**@brief Enum parameter.
+ *
+ * This "enumeration" dictionary parameter introduces restrictionas for certain
+ * string parameter.
+ * */
 template<typename EnumT>
-class Enum<EnumT, typename std::enable_if<std::is_enum<EnumT>::value>::type> {
+class EnumParameter : public mixins::iDuplicable< iAbstractParameter,
+                                                    EnumParameter<EnumT>,
+                                                    iParameter<EnumT> > {
 public:
-    typedef std::unordered_map<std::string, EnumT> Entries;
-
+    typedef EnumT Enum;
+    typedef mixins::iDuplicable< iAbstractParameter,
+                                 EnumParameter<Enum>,
+                                 iParameter<Enum> > DuplicableParent;
+    typedef std::unordered_map<std::string, Enum> Entries;
 private:
-    EnumT _eValue;
-    /// This static field has to be initialized with some compiler-related magic.
     static Entries * _entriesPtr;
 public:
-    Enum( EnumT v ) : _eValue(v) {}
-    Enum() {}
-
-    operator const EnumT&() const{ return _eValue; }
-
-    static EnumT parse( const std::string & );
-    static std::string to_string( EnumT );
-    static void add_entry( const std::string &, EnumT val );
+    static Enum str_to_enum( const std::string & str );
+    static std::string enum_to_str( Enum eVal );
+    static void add_entry( const std::string & strVal, Enum eVal );
     static std::vector<std::string> available_values();
-};  // class enum
+public:
+    /// Long option with shortcut.
+    EnumParameter( char shortcut_,
+               const char * name_,
+               const char * description_,
+               Enum default_ ) : DuplicableParent( (name_ ? ('\0' == name_[0] ?
+                                                nullptr : name_) : nullptr),
+                                          description_,
+                              0x0 | iAbstractParameter::atomic
+                                  | iAbstractParameter::singular
+                                  | iAbstractParameter::shortened,
+                              shortcut_
+                            ) {
+        DuplicableParent::_set_value( default_ );
+    }
+
+    /// Only long option ctr.
+    EnumParameter( const char * name_,
+               const char * description_,
+               Enum default_ ) : EnumParameter( '\0', name_, description_, default_ ) {}
+
+    /// Only shortcut option ctr.
+    EnumParameter( char shortcut_,
+               const char * description_,
+               Enum default_ ) : EnumParameter( shortcut_, nullptr, description_, default_ ) {}
+
+    EnumParameter( const EnumParameter<Enum> & o ) : DuplicableParent( o ) {}
+
+    operator const Enum&() const { return DuplicableParent::value(); }
+
+    friend class ::goo::dict::InsertionProxy;
+protected:
+    /// Sets parameter value from given string.
+    virtual Enum _V_parse( const char * strval ) const override
+        { return str_to_enum(strval); }
+
+    /// Returns set value.
+    virtual std::string _V_stringify_value( const Enum & eVal ) const override
+        { return enum_to_str(eVal); }
+};
+
+
+//
+// Implementation
+
+template<typename EnumT>
+typename EnumParameter<EnumT>::Entries * EnumParameter<EnumT>::_entriesPtr = nullptr;
+
+template<typename EnumT> EnumT
+EnumParameter<EnumT>::str_to_enum( const std::string & str ) {
+    if( !_entriesPtr ) {
+        emraise( badArchitect, "String-to-enum mapping wasn't defined. "
+            "Consider usage of GOO_ENUM_PARAMETER_DEFINE macro to fill "
+            "mapping object for enum type \"%s\".",
+            typeid(Enum).name() );
+    }
+    auto it = _entriesPtr->find( str );
+    if( _entriesPtr->end() == it ) {
+        emraise( notFound, "String \"%s\" does not match to any known "
+            "entries of enumeration \"%s\".", str.c_str(), typeid(Enum).name() );
+    }
+    return it->second;
+}
+
+
+template<typename EnumT> std::string
+EnumParameter<EnumT>::enum_to_str( EnumT eVal ) {
+    if( !_entriesPtr ) {
+        emraise( badArchitect, "String-to-enum mapping wasn't defined. "
+            "Consider usage of GOO_ENUM_PARAMETER_DEFINE macro to fill "
+            "mapping object for enum type \"%s\".",
+            typeid(Enum).name() );
+    }
+    for( auto p : *_entriesPtr ) {
+        if( p.second == eVal ) {
+            return p.first;
+        }
+    }
+    emraise( notFound, "Couldn't find match for value %d of enum type "
+        "\"%s\".", (int) eVal, typeid(Enum).name() );
+}
+
+template<typename EnumT> void
+EnumParameter<EnumT>::add_entry( const std::string & strVal, EnumT eVal ) {
+    if( !_entriesPtr ) {
+        _entriesPtr = new Entries();
+    }
+    auto ir = _entriesPtr->emplace( strVal, eVal );
+    if( !ir.second ) {
+        emraise( nonUniq, "Duplicate insertion of entry \"%s\" for enum type \"%s\".",
+            strVal.c_str(), typeid(Enum).name() );
+    }
+}
+
+template<typename EnumT> std::vector<std::string>
+EnumParameter<EnumT>::available_values() {
+    std::vector<std::string> ret;
+    if( !_entriesPtr ) {
+        emraise( badArchitect, "String-to-enum mapping wasn't defined. "
+            "Consider usage of GOO_ENUM_PARAMETER_DEFINE macro to fill "
+            "mapping object for enum type \"%s\".",
+            typeid(Enum).name() );
+    }
+    for( auto p : *_entriesPtr ) {
+        ret.push_back( p.first );
+    }
+    return ret;
+}
 
 /**@def GOO_ENUM_PARAMETER_DEFINE
  *
@@ -63,67 +170,9 @@ public:
 # define GOO_ENUM_PARAMETER_DEFINE( entry, entryName )                          \
 static void __goo_define_enum_entry_ ## entryName() __attribute__((__constructor__(155))); \
 static void __goo_define_enum_entry_ ## entryName()  {                          \
-    ::goo::aux::Enum<decltype(entry)>                                           \
+    ::goo::dict::EnumParameter<decltype(entry)>                                 \
         ::add_entry( STRINGIFY_MACRO_ARG(entryName), entry );                   \
 }
-}// namespace goo::aux
-
-namespace dict {
-
-/**@brief Enum parameter.
- *
- * This "enumeration" dictionary parameter introduces restrictionas for certain
- * string parameter.
- * */
-template<typename EnumT>
-class Parameter<aux::Enum<EnumT> > :
-                        public mixins::iDuplicable< iAbstractParameter,
-                                                    Parameter<aux::Enum<EnumT> >,
-                                                    iParameter<aux::Enum<EnumT> > > {
-public:
-    typedef typename aux::Enum<EnumT> Value;
-    typedef mixins::iDuplicable< iAbstractParameter,
-                                 Parameter<aux::Enum<EnumT> >,
-                                 iParameter<aux::Enum<EnumT> > > DuplicableParent;
-    typedef iParameter<aux::Enum<EnumT> > exactIParameter;
-public:
-    /// Long option with shortcut.
-    Parameter( char shortcut_,
-               const char * name_,
-               const char * description_,
-               EnumT default_ ) : DuplicableParent( (name_ ? ('\0' == name_[0] ?
-                                                nullptr : name_) : nullptr),
-                                          description_,
-                              0x0 | iAbstractParameter::atomic
-                                  | iAbstractParameter::singular
-                                  | iAbstractParameter::shortened,
-                              shortcut_
-                            ) {
-        exactIParameter::_set_value( default_ );
-    }
-
-    /// Only long option ctr.
-    Parameter( const char * name_,
-               const char * description_,
-               EnumT default_ ) : Parameter( '\0', name_, description_, default_ ) {}
-
-    /// Only shortcut option ctr.
-    Parameter( char shortcut_,
-               const char * description_,
-               EnumT default_ ) : Parameter( shortcut_, nullptr, description_, default_ ) {}
-
-    Parameter( const Parameter<aux::Enum<EnumT> > & o ) : DuplicableParent( o ) {}
-
-    friend class ::goo::dict::InsertionProxy;
-protected:
-    /// Sets parameter value from given string.
-    virtual Value _V_parse( const char * strval ) const override
-        { return aux::Enum<EnumT>::parse(strval); }
-
-    /// Returns set value.
-    virtual std::string _V_stringify_value( const Value & eVal ) const override
-        { return aux::Enum<EnumT>::to_string(eVal); }
-};
 
 }  // namespace dict
 }  // namespace goo
