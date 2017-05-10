@@ -32,7 +32,9 @@ namespace dict {
 /**@brief Enum parameter.
  *
  * This "enumeration" dictionary parameter introduces restrictionas for certain
- * string parameter.
+ * string parameter. This class is designed for support the "classic" C++ enums
+ * which permits quite restricted functionality. It is convinient, however, to
+ * use them for short static enumerations defined at compile time.
  * */
 template<typename EnumT>
 class EnumParameter : public mixins::iDuplicable< iAbstractParameter,
@@ -46,6 +48,7 @@ public:
     typedef std::unordered_map<std::string, Enum> Entries;
 private:
     static Entries * _entriesPtr;
+    static void _assert_entries_initialized();
 public:
     static Enum str_to_enum( const std::string & str );
     static std::string enum_to_str( Enum eVal );
@@ -99,14 +102,19 @@ protected:
 template<typename EnumT>
 typename EnumParameter<EnumT>::Entries * EnumParameter<EnumT>::_entriesPtr = nullptr;
 
-template<typename EnumT> EnumT
-EnumParameter<EnumT>::str_to_enum( const std::string & str ) {
+template<typename EnumT> void
+EnumParameter<EnumT>::_assert_entries_initialized() {
     if( !_entriesPtr ) {
         emraise( badArchitect, "String-to-enum mapping wasn't defined. "
             "Consider usage of GOO_ENUM_PARAMETER_DEFINE macro to fill "
             "mapping object for enum type \"%s\".",
             typeid(Enum).name() );
     }
+}
+
+template<typename EnumT> EnumT
+EnumParameter<EnumT>::str_to_enum( const std::string & str ) {
+    _assert_entries_initialized();
     auto it = _entriesPtr->find( str );
     if( _entriesPtr->end() == it ) {
         emraise( notFound, "String \"%s\" does not match to any known "
@@ -118,12 +126,7 @@ EnumParameter<EnumT>::str_to_enum( const std::string & str ) {
 
 template<typename EnumT> std::string
 EnumParameter<EnumT>::enum_to_str( EnumT eVal ) {
-    if( !_entriesPtr ) {
-        emraise( badArchitect, "String-to-enum mapping wasn't defined. "
-            "Consider usage of GOO_ENUM_PARAMETER_DEFINE macro to fill "
-            "mapping object for enum type \"%s\".",
-            typeid(Enum).name() );
-    }
+    _assert_entries_initialized();
     for( auto p : *_entriesPtr ) {
         if( p.second == eVal ) {
             return p.first;
@@ -147,13 +150,8 @@ EnumParameter<EnumT>::add_entry( const std::string & strVal, EnumT eVal ) {
 
 template<typename EnumT> std::vector<std::string>
 EnumParameter<EnumT>::available_values() {
+    _assert_entries_initialized();
     std::vector<std::string> ret;
-    if( !_entriesPtr ) {
-        emraise( badArchitect, "String-to-enum mapping wasn't defined. "
-            "Consider usage of GOO_ENUM_PARAMETER_DEFINE macro to fill "
-            "mapping object for enum type \"%s\".",
-            typeid(Enum).name() );
-    }
     for( auto p : *_entriesPtr ) {
         ret.push_back( p.first );
     }
@@ -167,11 +165,21 @@ EnumParameter<EnumT>::available_values() {
  *
  * Example: GOO_ENUM_PARAMETER_DEFINE( foo::Bar::Baz::one, one )
  */
-# define GOO_ENUM_PARAMETER_DEFINE( entry, entryName )                          \
+# define GOO_ENUM_PARAMETER_DEFINE_XXX( entry, entryName )                      \
 static void __goo_define_enum_entry_ ## entryName() __attribute__((__constructor__(155))); \
 static void __goo_define_enum_entry_ ## entryName()  {                          \
     ::goo::dict::EnumParameter<decltype(entry)>                                 \
         ::add_entry( STRINGIFY_MACRO_ARG(entryName), entry );                   \
+}
+
+# define __GOO_ENUM_EXPAND_ENTRY( entry, scope )                                \
+    ::goo::dict::EnumParameter<decltype(scope entry)>                           \
+        ::add_entry( STRINGIFY_MACRO_ARG(entry), scope entry );                 \
+
+# define GOO_ENUM_PARAMETER_DEFINE( scope, enumName, substMacro )               \
+static void __goo_define_enum_entry_ ## enumName () __attribute__((__constructor__(155))); \
+static void __goo_define_enum_entry_ ## enumName ()  {                          \
+    substMacro( __GOO_ENUM_EXPAND_ENTRY, scope )                                \
 }
 
 }  // namespace dict

@@ -35,7 +35,7 @@
 #cmakedefine ANSI_ESCSEQ_PRINT      3
 #cmakedefine ENABLE_GDS             4
 
-#cmakedefine ZLIB_FOUND             0
+/*#cmakedefine ZLIB_FOUND             0*/
 #cmakedefine LZO_FOUND              1
 #cmakedefine BZIP2_FOUND            2
 #cmakedefine PNG_FOUND              3

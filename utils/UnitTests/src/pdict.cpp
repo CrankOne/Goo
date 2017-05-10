@@ -74,12 +74,13 @@ enum TestingEnum {
 };  // struct another
 }  // namespace other
 
-# define for_all_TestingEnum_enum_entries( m ) \
-    m( zero ) m( one ) m( two ) m( ten )
-# define add_TestingEnum_entry( entry ) \
-    GOO_ENUM_PARAMETER_DEFINE( other::another:: entry, entry );
-for_all_TestingEnum_enum_entries( add_TestingEnum_entry )
-# undef add_TestingEnum_entry
+# define for_all_TestingEnum_enum_entries( m, ... )   \
+    m( zero,  __VA_ARGS__ ) \
+    m( one,  __VA_ARGS__  ) \
+    m( two,  __VA_ARGS__  ) \
+    m( ten,  __VA_ARGS__  )
+GOO_ENUM_PARAMETER_DEFINE( other::another:: , TestingEnum,
+                            for_all_TestingEnum_enum_entries )
 # undef for_all_TestingEnum_enum_entries
 
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
