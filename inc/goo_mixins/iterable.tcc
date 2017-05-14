@@ -30,53 +30,38 @@
 
 namespace goo {
 
-namespace iterators {
-
-/**@brief An iterator abstract base.
+/* TODO: make a Doxygen section from this note
+ * Iterators
  *
- * This template class declares common virtual base for descendant iterator
- * classes. The most basic traits of all subsequent iterator classes is to
- * keep associated state referencing value here names "iterator symbol".
- **/
-template<typename SymT>
-class BaseIterator {
-public:
-    typedef SymT Sym;
-private:
-    Sym _sym;
-protected:
-    Sym & sym() { return _sym; }
-    const Sym & sym() const { return _sym; }
-public:
-    BaseIterator() {}
-    BaseIterator( const Sym & sym ) : _sym(sym) {}
-    virtual ~BaseIterator() {}
-};  // BaseIterator
+ * The goo iterators are nothing but merely lexical helpers to automate the
+ * most frequent iterators definitions in C++.
+ *
+ * Direction:
+ *  - BaseForwardIterator<FinalT, SymT>
+ *  - BaseBidirIterator<FinalT, SymT>
+ * Access:
+ *  - BaseOutputIterator<FinalT, SymT, T>
+ *  - BaseInputIterator<FinalT, SymT, T>
+ *  - BaseIOIterator<FinalT, SymT, T>
+ * Comparison:
+ *  - BaseComparableIterator<FinalT, SymT>
+ *  - DirectionComparableIterator<FinalT, SymT>
+ */
 
+namespace iterators {
 
 /**@brief Basic comparison trait of iterators.
  *
  * Defines how iterator may be compared. Overloads the '==' and '!=' operators.
  **/
-template<typename FinalT,
-         typename SymT>
-class BaseComparableIterator : public virtual BaseIterator<SymT>,
-                               public virtual mixins::IdentityOp<FinalT> {
-public:
-    typedef FinalT Final;
-    typedef SymT Sym;
-    typedef BaseIterator<Sym> Parent;
-protected:
-    /// Shall return true if own state and state given as an argument are
-    /// equivalent.
-    virtual bool _V_compare( const Sym & ) const = 0;
-public:
-    BaseComparableIterator() {}
-    BaseComparableIterator( const SymT & s ) : Parent(s) {}
-    virtual ~BaseComparableIterator() {}
+template<typename FinalT, typename SymT>
+struct BaseComparableIterator {
+    bool operator!= (const FinalT & eit) const {
+        return static_cast<const FinalT*>(this)->sym() != eit.sym();
+    }
 
-    virtual bool operator!= (const Final & eit) const override {
-        return _V_compare( eit.sym() );
+    bool operator== (const FinalT & o) const {
+        return !(*this != o);
     }
 };
 
@@ -87,133 +72,83 @@ public:
  */
 template<typename FinalT,
          typename SymT>
-class BaseForwardIterator : public virtual BaseIterator<SymT>,
-                            public mixins::PostfixIncOp<FinalT> {
-public:
-    typedef FinalT Final;
-    typedef SymT Sym;
-    typedef BaseIterator<Sym> Parent;
-protected:
-    /// Shall increment iterator state.
-    virtual void _V_increment( ) = 0;
-public:
-    BaseForwardIterator() {}
-    BaseForwardIterator( const Sym & s ) : Parent(s) {}
-    virtual ~BaseForwardIterator() {}
+struct BaseForwardIterator {
+    FinalT & operator++() {
+        ++(static_cast<FinalT*>(this)->sym());
+        return *static_cast<FinalT*>(this);
+    }
 
-    virtual Final & operator++() override {
-        _V_increment( );
-        return static_cast<Final &>(*this);
+    FinalT operator++ (int) {
+        return FinalT( ++ (static_cast<FinalT &>(*this)) );
     }
 };  // BaseForwardIterator
 
 
 
-template<typename FinalT,
-         typename SymT,
-         typename T>
-class BaseOutputIterator : public virtual BaseIterator<SymT> {
-public:
-    typedef FinalT Final;
-    typedef SymT Sym;
-    typedef T Value;
-    typedef BaseIterator<SymT> Parent;
-protected:
-    /// Shall return immutable reference to value referenced by the given state.
-    virtual const Value & _V_dereference( const Sym & ) const = 0;
-public:
-    BaseOutputIterator() {}
-    BaseOutputIterator( const SymT & s ) : Parent(s) {}
-    virtual ~BaseOutputIterator() {}
-
-    const Value & operator*() const {
-        return _V_dereference( Parent::sym() );
+template<typename FinalT, typename SymT, typename T>
+struct BaseOutputIterator {
+    T & operator*() const {
+        return *(static_cast<const FinalT*>(this)->sym());
     }
 };  // BaseOutputIterator
 
 
 
-template<typename FinalT,
-         typename SymT,
-         typename T>
-class BaseInputIterator : public virtual BaseIterator<SymT> {
-public:
-    typedef FinalT Final;
-    typedef SymT Sym;
-    typedef T Value;
-    typedef BaseIterator<SymT> Parent;
-protected:
-    /// Shall return mutable reference to value referenced by the given state.
-    virtual Value & _V_dereference_mutable( Sym & ) = 0;
-public:
-    BaseInputIterator() {}
-    BaseInputIterator( const SymT & s ) : Parent(s) {}
-    virtual ~BaseInputIterator() {}
-
-    Value & operator*() {
-        return _V_dereference_mutable( Parent::sym() );
+template<typename FinalT, typename SymT, typename T>
+struct BaseInputIterator {
+    static_assert(!std::is_const<T>::value,
+            "Input iterator can not be dereferenced for const value type." );
+    T & operator*() {
+        return *(static_cast<FinalT*>(this)->sym());
     }
 };  // BaseOutputIterator
 
 
+template<typename FinalT, typename SymT, typename T>
+struct BaseIOIterator {
+    const T & operator*() const {
+        return *(static_cast<const FinalT*>(this)->sym());
+    }
 
-template<typename FinalT,
-         typename SymT>
-class BaseBidirIterator :   public BaseForwardIterator<FinalT, SymT>,
-                            public mixins::PostfixDecOp<FinalT> {
-public:
-    typedef FinalT Final;
-    typedef SymT Sym;
+    T & operator*() {
+        return *(static_cast<FinalT*>(this)->sym());
+    }
+};
+
+
+template<typename FinalT, typename SymT>
+struct BaseBidirIterator : public BaseForwardIterator<FinalT, SymT> {
     typedef BaseForwardIterator<FinalT, SymT> Parent;
-protected:
-    /// Has to decrement iterator state.
-    virtual void _V_decrement( Sym & ) = 0;
-public:
-    BaseBidirIterator() {}
-    BaseBidirIterator( const Sym & s ) : BaseIterator<Sym>(s), Parent(s) {}
-    virtual ~BaseBidirIterator() {}
 
-    virtual Final & operator--() override {
-        _V_decrement( Parent::sym() );
-        return *this;
+    FinalT & operator--() {
+        --(*(static_cast<const FinalT*>(this)->sym()));
+        return static_cast<FinalT &>(*this);
+    }
+    FinalT operator-- (int) {
+        return FinalT( -- (static_cast<FinalT &>(*this)) );
     }
 };  // BaseForwardIterator
 
 
 template<typename FinalT,
          typename SymT>
-class DirectionComparableIterator : 
-                            public BaseComparableIterator<FinalT, SymT>,
-                            public mixins::FullComparableOp<FinalT> {
-public:
-    typedef FinalT Final;
-    typedef SymT Sym;
-    typedef DirectionComparableIterator<Final, Sym> Self;
-    typedef BaseComparableIterator<Final, Sym> Parent;
-protected:
-    /// Has to return true if own state is greater than one provided as an
-    /// argument.
-    virtual bool _V_is_greater( const Self & ) const = 0;
-public:
-    DirectionComparableIterator() {}
-    DirectionComparableIterator( const SymT & s ) : BaseIterator<Sym>(s), Parent(s) {}
-    virtual ~DirectionComparableIterator() {}
+struct DirectionComparableIterator :
+                            public BaseComparableIterator<FinalT, SymT> {
+    typedef DirectionComparableIterator<FinalT, SymT> Self;
+    typedef BaseComparableIterator<FinalT, SymT> Parent;
 
-    virtual bool operator>( const Self & prhs ) const override {
-        return _V_is_greater( prhs.sym() ) > 0;
+    bool operator>( const FinalT & prhs ) const {
+        return static_cast<const FinalT*>(this)->sym() > prhs.sym();
+    }
+
+    bool operator<  (const FinalT & o) const {
+        return (  static_cast<const FinalT*>(this)->sym() != o.sym
+            && !( static_cast<const FinalT*>(this)->sym()  > o.sym ) );
     }
 };  // DirectionComparableIterator
 
 
-// Direction:
-//  - BaseForwardIterator<FinalT, SymT>
-//  - BaseBidirIterator<FinalT, SymT>
-// Access:
-//  - BaseOutputIterator<FinalT, SymT, T>
-//  - BaseInputIterator<FinalT, SymT, T>
-// Comparison:
-//  - BaseComparableIterator<FinalT, SymT>
-//  - DirectionComparableIterator<FinalT, SymT>
+
 template<
         template<class, class> class DirectionTT,
         template<class, class, class> class AccessTT,
@@ -222,25 +157,12 @@ template<
         typename SymT,
         typename T,
         typename DistanceT=void>
-class Iterator : public DirectionTT<FinalT, SymT>,
+struct Iterator : public DirectionTT<FinalT, SymT>,
                  public AccessTT<FinalT, SymT, T>,
                  public ComparisonTT<FinalT, SymT> {
-public:
-    typedef FinalT Final;
-    typedef SymT Sym;
-    typedef T Value;
-    typedef DistanceT Distance;
-
-    typedef DirectionTT<Final, Sym> Direction;
-    typedef AccessTT<Final, Sym, Value> Access;
-    typedef ComparisonTT<Final, Sym> Comparison;
-public:
-    Iterator() {}
-    Iterator( const Sym & s ) : BaseIterator<Sym>(s),
-                                Direction(s),
-                                Access(s),
-                                Comparison(s) {}
-    virtual ~Iterator() {}
+    typedef DirectionTT<FinalT, SymT> Direction;
+    typedef AccessTT<FinalT, SymT, T> Access;
+    typedef ComparisonTT<FinalT, SymT> Comparison;
 };
 
 
@@ -249,64 +171,55 @@ template<template<class, class, class> class AccessTT,
          typename SymT,
          typename T,
          typename DistanceT>
-class Iterator<BaseBidirIterator,
+struct Iterator<BaseBidirIterator,
                AccessTT,
                DirectionComparableIterator,
             FinalT,
             SymT,
             T,
             DistanceT> : public BaseBidirIterator<FinalT, SymT>,
-                         public DirectionComparableIterator<FinalT, SymT>,
-                         public mixins::PlusOp<FinalT, DistanceT>,
-                         public mixins::DashOp<FinalT, DistanceT> {
-public:
-    typedef FinalT Final;
-    typedef SymT Sym;
-    typedef T Value;
-    typedef DistanceT Distance;
-
-    typedef BaseBidirIterator<Final, Sym> Direction;
-    typedef AccessTT<Final, Sym, Value> Access;
-    typedef DirectionComparableIterator<Final, Sym> Comparison;
+                         public AccessTT<FinalT, SymT, T>,
+                         public DirectionComparableIterator<FinalT, SymT> {
+    typedef BaseBidirIterator<FinalT, SymT> Direction;
+    typedef AccessTT<FinalT, SymT, T> Access;
+    typedef DirectionComparableIterator<FinalT, SymT> Comparison;
 
     typedef Iterator<BaseBidirIterator, AccessTT, DirectionComparableIterator,
                      FinalT, SymT, T, DistanceT> Self;
-protected:
-    /// Has to compute and return distance between own state and state given as
-    /// an argument.
-    virtual Distance _V_distance( const Sym & ) const = 0;
-    /// Has to increment own iterator state with given distance value.
-    virtual void _V_advance( const Distance & ) = 0;
 
-    /// Overrides interface method of DirectionComparableIterator with distance
-    /// comparison.
-    virtual bool _V_is_greater( const Self & prhs ) const override {
-        return _V_distance( prhs.sym() ) > 0;
-    }
-public:
-    Iterator() {}
-    Iterator( const Sym & s ) : BaseIterator<Sym>(s),
-                                Direction(s),
-                                Access(s),
-                                Comparison(s) {}
-    virtual ~Iterator() {}
-
-    virtual Final & operator+= ( const Distance & d ) override {
-        _V_advance(  d );
-        return *this;
+    FinalT operator+( const DistanceT & o ) const {
+        FinalT C(*static_cast<const FinalT*>(this));
+        return C += o;
     }
 
-    virtual Final & operator-= ( const Distance & d ) override {
-        _V_advance( -d );
-        return *this;
+    FinalT & operator+= ( const DistanceT & d ) {
+        static_cast<FinalT*>(this)->sym() += d;
+        return *static_cast<FinalT*>(this);
     }
 
-    virtual Distance operator- ( const Final & prhs ) const {
-        return _V_distance( prhs );
+    FinalT operator-( const DistanceT & o ) const {
+        FinalT C(*static_cast<const FinalT*>(this));
+        return C -= o;
+    }
+
+    FinalT & operator-= ( const DistanceT & d ) {
+        static_cast<FinalT*>(this)->sym() += -d;
+        return *static_cast<FinalT*>(this);
+    }
+
+    DistanceT operator- ( const FinalT & prhs ) const {
+        return static_cast<const FinalT*>(this)->sym() - prhs.sym();
     }
 };
 
 }  // namespace ::goo::iterators
+
+namespace mixins {
+
+//template
+//class Iterable
+
+}  // namespace ::goo::mixins
 
 # if 0
 // XXX:
@@ -460,7 +373,7 @@ public:
                          IteratorSym> Parent;
 protected:
     template<typename EndIteratorClassT>
-    class ComparableIterator : public virtual IdentityOp<EndIteratorClassT>,
+    class ComparableIterator : public IdentityOp<EndIteratorClassT>,
                                public virtual Parent::template ConstIteratorBase<EndIteratorClassT> {
     public:
         typedef EndIteratorClassT EndIteratorClass;

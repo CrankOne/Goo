@@ -66,54 +66,81 @@ inline std::ostream & operator<<(std::ostream& os, const ToOStreamOp & t) {
     return os;
 }
 
-# define decl_mixin_struct  template<typename SelfT> struct
+# define decl_mixin_struct template<typename SelfT> struct
 # define vinl virtual inline
 # define _vPub virtual public
+
+# if 1
+template<typename SelfT>
+class DownCastHandle {
+private:
+    //mutable const SelfT * this_;
+    mutable short _offset;
+protected:
+    DownCastHandle() : _offset(0) {}
+    virtual const SelfT * _self_cast() const {
+        if(!_offset){
+            const uint8_t * this_ = reinterpret_cast<const uint8_t *>(dynamic_cast<const SelfT*>(this));
+            const uint8_t * this_my = reinterpret_cast<const uint8_t *>(this);
+            _offset = ( this_ - this_my );
+        }
+        return reinterpret_cast<const SelfT *>(reinterpret_cast<const uint8_t *>(this) + _offset);
+    }
+    virtual SelfT * _self_cast() {
+        if(!_offset){
+            uint8_t * this_ = reinterpret_cast<uint8_t *>(dynamic_cast<SelfT*>(this));
+            uint8_t * this_my = reinterpret_cast<uint8_t *>(this);
+            _offset = ( this_ - this_my );
+        }
+        return reinterpret_cast<SelfT *>(reinterpret_cast<uint8_t *>(this) + _offset);
+    }
+};
+
+//template<typename SelfT> const SelfT * DownCastHandle<SelfT>::this_ = nullptr;
+# else
+// Dev implementation. dynamic_cast<>() may sometimes lead to significant
+// performance lack, so it is preferable to use cached version above. However,
+// for some development tests we may use the following form instead. This
+// change has to have no side effects except of performance.
+decl_mixin_struct
+DownCastHandle {
+protected:
+    virtual const SelfT * _self_cast() const {
+        return static_cast<const SelfT*>(this);
+    }
+    virtual SelfT * _self_cast() {
+        return static_cast<SelfT*>(this);
+    }
+};
+# endif
+
+# define self (*DownCastHandle<SelfT>::_self_cast())
 
 /** @brief identity operator `==` mixin (uses `!=`)
  *
  * Curiously recurring template pattern implementing «is-equal» operator when
  * «is‐non‐equal» defined.
  */
-# if 1
 decl_mixin_struct
-IdentityOp {
-private:
-    mutable const SelfT * this_;
-public:
-    IdentityOp() : this_(0) {}
-    vinl bool operator!= (const SelfT&) const = 0;
-    vinl bool operator== (const SelfT& o) const {
-        if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
-        return !((*this_)!=o);
-    }
-};
-# else
-decl_mixin_struct
-IdentityOp {
+IdentityOp : _vPub DownCastHandle<SelfT>   {
 public:
     IdentityOp() {}
     vinl bool operator!= (const SelfT&) const = 0;
     vinl bool operator== (const SelfT& o) const {
-        return !((*static_cast<const SelfT*>(this))!=o);
+        return !(self!=o);
     }
 };
-# endif
 
 /** @brief lesser or equals operator `<=` (uses `>`)
  *
  * Curiously recurring template pattern implementing «lesser-or-equals»
  * operator when «is-greater-than» defined.
  */ decl_mixin_struct
-LesserEqOp {
-private:
-    mutable const SelfT * this_;
+LesserEqOp : _vPub DownCastHandle<SelfT> {
 public:
-    LesserEqOp() : this_(0) {}
     vinl bool operator> (const SelfT& ) const = 0;
     vinl bool operator<= (const SelfT& o) const {
-        if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
-        return !((*this_) > o);
+        return !(self > o);
     }
 };
 
@@ -121,15 +148,11 @@ public:
  *
  * Curiously recurring template pattern.
  */ decl_mixin_struct
-GreaterEqOp {
-private:
-    mutable const SelfT * this_;
+GreaterEqOp : _vPub DownCastHandle<SelfT> {
 public:
-    GreaterEqOp() : this_(0) {}
     vinl bool operator< (const SelfT&) const = 0;
     vinl bool operator>= (const SelfT& o) const {
-        if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
-        return !((*this_) < o);
+        return !(self < o);
     }
 };
 
@@ -141,15 +164,11 @@ public:
 FullComparableOp : _vPub IdentityOp<SelfT>,
                    _vPub GreaterEqOp<SelfT>,
                    _vPub LesserEqOp<SelfT> {
-private:
-    mutable const SelfT * this_;
 public:
-    FullComparableOp() : this_(0) {}
     vinl bool operator!= (const SelfT&) const = 0;
     vinl bool operator>  (const SelfT&) const = 0;
     vinl bool operator<  (const SelfT& o) const {
-        if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
-        return ( *this_ != o && !(*this_ > o) );
+        return ( self != o && !(self > o) );
     }
 };
 
@@ -157,11 +176,11 @@ public:
  *
  * Curiously recurring template pattern.
  */ decl_mixin_struct
-PostfixIncOp {
+PostfixIncOp : _vPub DownCastHandle<SelfT> {
 public:
     vinl SelfT& operator++ () = 0; // prefix
     vinl SelfT  operator++ (int) {
-        return SelfT( ++ (*static_cast<SelfT*>(this)) );
+        return SelfT( ++ self );
     }
 };
 
@@ -169,11 +188,11 @@ public:
  *
  * Curiously recurring template pattern.
  */decl_mixin_struct
-PostfixDecOp {
+PostfixDecOp : _vPub DownCastHandle<SelfT> {
 public:
     vinl SelfT& operator-- () = 0;
     vinl SelfT  operator-- (int) { // prefix
-        return SelfT( -- (*static_cast<SelfT*>(this)) );
+        return SelfT( -- self );
     }
 };
 
@@ -184,21 +203,16 @@ public:
 
 
 template<typename SelfT, typename OperandT> struct
-AsteriskOp {
-private:
-    mutable const SelfT * this_;
+AsteriskOp : _vPub DownCastHandle<SelfT> {
 public:
-    AsteriskOp() : this_(0) {}
     vinl void operator*= ( const OperandT & t ) = 0;
     vinl SelfT operator* ( const OperandT & o ) {
-        if(!this_){this_ = dynamic_cast<const SelfT*>(this);}
-        SelfT C(*this_);
+        SelfT C(self);
         C *= o;
         return C;
     }
     vinl SelfT operator* ( const OperandT & o ) const {
-        if(!this_){this_ = dynamic_cast<const SelfT*>(this);}
-        SelfT C(*this_);
+        SelfT C(self);
         C *= o;
         return C;
     }
@@ -216,22 +230,16 @@ SelfT operator*( const OperandT & r,
 # endif
 
 template<typename SelfT, typename OperandT> struct
-SlashOp {
-private:
-    mutable const SelfT * this_;
+SlashOp : _vPub DownCastHandle<SelfT> {
 public:
-    SlashOp() : this_(0) {}
-
     vinl void operator/= ( const OperandT & t ) = 0;
     vinl SelfT operator/ ( const OperandT & o ) {
-        if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
-        SelfT C(*this_);
+        SelfT C(self);
         C /= o;
         return C;
     }
     vinl SelfT operator/ ( const OperandT & o ) const {
-        if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
-        SelfT C(*this_);
+        SelfT C(self);
         C /= o;
         return C;
     }
@@ -239,42 +247,32 @@ public:
 
 template<typename SelfT,
          typename OperandT> struct
-PlusOp {
-private:
-    mutable const SelfT * this_;
+PlusOp : _vPub DownCastHandle<SelfT> {
 public:
-    PlusOp() : this_(0) {}
-
     vinl SelfT & operator+= ( const OperandT & t ) = 0;
     vinl SelfT operator+ ( const OperandT & o ) const {
-        if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
-        SelfT C(*this_);
+        SelfT C(self);
         return C += o;
     }
 };
 
 template<typename SelfT,
          typename OperandT> struct
-DashOp {
-private:
-    mutable const SelfT * this_;
+DashOp : _vPub DownCastHandle<SelfT> {
 public:
-    DashOp() : this_(0) {}
-
     vinl SelfT & operator-= ( const OperandT & t ) = 0;
     vinl SelfT operator- ( const OperandT & o ) const {
-        if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
-        SelfT C(*this_);
+        SelfT C(self);
         return C -= o;
     }
 };
 
 template<typename Origin> struct
-ImplicitUpcast {
+ImplicitDowncast {
 private:
     Origin * this_;
 public:
-    ImplicitUpcast() : this_(dynamic_cast<Origin*>(this)) {}
+    ImplicitDowncast() : this_(dynamic_cast<Origin*>(this)) {}
 
     operator Origin&() {
         return *this_;
@@ -287,6 +285,7 @@ public:
 }  // namespace mixins
 }  // namespace goo
 
+# undef self
 # undef decl_mixin_struct
 # undef vinl
 # undef _vPub
