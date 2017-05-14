@@ -74,7 +74,9 @@ inline std::ostream & operator<<(std::ostream& os, const ToOStreamOp & t) {
  *
  * Curiously recurring template pattern implementing «is-equal» operator when
  * «is‐non‐equal» defined.
- */ decl_mixin_struct
+ */
+# if 1
+decl_mixin_struct
 IdentityOp {
 private:
     mutable const SelfT * this_;
@@ -86,6 +88,17 @@ public:
         return !((*this_)!=o);
     }
 };
+# else
+decl_mixin_struct
+IdentityOp {
+public:
+    IdentityOp() {}
+    vinl bool operator!= (const SelfT&) const = 0;
+    vinl bool operator== (const SelfT& o) const {
+        return !((*static_cast<const SelfT*>(this))!=o);
+    }
+};
+# endif
 
 /** @brief lesser or equals operator `<=` (uses `>`)
  *
@@ -145,14 +158,10 @@ public:
  * Curiously recurring template pattern.
  */ decl_mixin_struct
 PostfixIncOp {
-private:
-    SelfT * this_;
 public:
-    PostfixIncOp() : this_(0) {}
     vinl SelfT& operator++ () = 0; // prefix
     vinl SelfT  operator++ (int) {
-        if(!this_){ this_ = dynamic_cast<SelfT*>(this); }
-        return SelfT( ++ (*this_) );
+        return SelfT( ++ (*static_cast<SelfT*>(this)) );
     }
 };
 
@@ -161,14 +170,10 @@ public:
  * Curiously recurring template pattern.
  */decl_mixin_struct
 PostfixDecOp {
-private:
-    SelfT * this_;
 public:
-    PostfixDecOp() : this_(0) {}
     vinl SelfT& operator-- () = 0;
     vinl SelfT  operator-- (int) { // prefix
-        if(!this_){this_ = dynamic_cast<SelfT*>(this);}
-        return SelfT( -- (*this_) );
+        return SelfT( -- (*static_cast<SelfT*>(this)) );
     }
 };
 
@@ -232,47 +237,35 @@ public:
     }
 };
 
-template<typename SelfT, typename OperandT> struct
+template<typename SelfT,
+         typename OperandT> struct
 PlusOp {
 private:
     mutable const SelfT * this_;
 public:
     PlusOp() : this_(0) {}
 
-    vinl void operator+= ( const OperandT & t ) = 0;
-    vinl SelfT operator+ ( const OperandT & o ) {
-        if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
-        SelfT C(*this_);
-        C += o;
-        return C;
-    }
+    vinl SelfT & operator+= ( const OperandT & t ) = 0;
     vinl SelfT operator+ ( const OperandT & o ) const {
         if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
         SelfT C(*this_);
-        C += o;
-        return C;
+        return C += o;
     }
 };
 
-template<typename SelfT, typename OperandT> struct
+template<typename SelfT,
+         typename OperandT> struct
 DashOp {
 private:
     mutable const SelfT * this_;
 public:
     DashOp() : this_(0) {}
 
-    vinl void operator-= ( const OperandT & t ) = 0;
-    vinl SelfT operator- ( const OperandT & o ) {
-        if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
-        SelfT C(*this_);
-        C -= o;
-        return C;
-    }
+    vinl SelfT & operator-= ( const OperandT & t ) = 0;
     vinl SelfT operator- ( const OperandT & o ) const {
         if(!this_){ this_ = dynamic_cast<const SelfT*>(this); }
         SelfT C(*this_);
-        C -= o;
-        return C;
+        return C -= o;
     }
 };
 
