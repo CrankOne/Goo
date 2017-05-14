@@ -140,7 +140,7 @@ public:
     }
 };
 
-/** @brief implements postfix single increment op-r (uses prefix)
+/**@brief implements postfix single increment op-r (uses prefix)
  *
  * Curiously recurring template pattern.
  */ decl_mixin_struct
