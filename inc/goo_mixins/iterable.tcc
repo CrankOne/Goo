@@ -121,7 +121,7 @@ struct BaseBidirIterator : public BaseForwardIterator<FinalT, SymT> {
     typedef BaseForwardIterator<FinalT, SymT> Parent;
 
     FinalT & operator--() {
-        --(*(static_cast<const FinalT*>(this)->sym()));
+        --(static_cast<FinalT*>(this)->sym());
         return static_cast<FinalT &>(*this);
     }
     FinalT operator-- (int) {

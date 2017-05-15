@@ -84,6 +84,7 @@ GOO_UT_BGN( Iterator, "Iterator helpers" ) {
         int values[20],
             k=20,
             * valuesEnd = values + sizeof(values)/sizeof(int);
+
         for( int * c = values; valuesEnd != c; ++c, --k ) {
             *c = k;
         }
@@ -109,7 +110,22 @@ GOO_UT_BGN( Iterator, "Iterator helpers" ) {
         }
         _ASSERT( it == end, "RA-Iterator is not set to end element upon completion." );
 
-        // TODO: ... other tests
+        RAIterator it2( values + 10 );
+
+        _ASSERT( it != it2, "Iterator comparison failure #1." )
+
+        _ASSERT( *it2 == 10, "Base iterator ctr failure: %d != %d (10-th element).",
+            *it2, 10 );
+        RAIterator it3(--it2);
+        _ASSERT( *it2 == 11, "Base iterator dec #1 failure: %d != %d (9-th element).",
+            *it2, 11 );
+        it2--;
+        _ASSERT( *it2 == 12, "Base iterator dec #2 failure: %d != %d (8-th element).",
+            *it2, 12 );
+        ++it2;
+        _ASSERT( *it2 == 11, "Base iterator inc #1 failure: %d != %d (9-th element).",
+            *it2, 11 );
+        _ASSERT( it2 == it3, "Iterator comparison failure #2." );
     }  // RAIterator
 
 } GOO_UT_END( Iterator )

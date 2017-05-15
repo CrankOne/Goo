@@ -48,7 +48,7 @@ one can draw the nodes in following form:
  6  7
 1 2 3 4 5
 and denote the following dependency relations:)"
-;  // Note the new C++11 multiline string syntax
+;  // Note the C++11 multiline string syntax
 
 //
 // local testing routines:
