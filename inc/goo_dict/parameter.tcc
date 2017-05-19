@@ -372,6 +372,7 @@ class Parameter;  // Defailt implementation is empty.
 template <typename T> class IntegralParameter;
 template <typename T> class FloatingPointParameter;
 template <typename T> class EnumParameter;
+template <typename T> class PointerParameter;
 
 template<typename T>
 using InsertableParameter = typename
@@ -388,7 +389,10 @@ using InsertableParameter = typename
         >::type,
         typename std::conditional< std::is_enum<T>::value,
             EnumParameter<T>,
-            Parameter<T>
+            typename std::conditional< std::is_pointer<T>::value,
+                PointerParameter<T>,
+                Parameter<T>
+                >::type
             >::type
     >::type;
 
