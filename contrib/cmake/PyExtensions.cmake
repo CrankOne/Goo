@@ -33,6 +33,7 @@ set( THIS_MODULE_DIR ${CMAKE_CURRENT_LIST_DIR} )
 #                    [LINK_LIBS <lib1> <lib2> ...]
 #                    [WRAPPER_SOUCES <lstvariable_name>]
 #                    [SETUP_TEMPLATE <setup.py.in-path>]
+#                    [INIT_TEMPLATE <__init__.py.in>]
 #                    [NO_INIT_FILE] )
 # Please, note that one can specify Python_ADDITIONAL_VERSIONS to point out
 # desired versions of python to be used. Like that:
@@ -42,7 +43,7 @@ set( THIS_MODULE_DIR ${CMAKE_CURRENT_LIST_DIR} )
 function( goo_py_extensions )
     # Function signature:
     set( options NO_INIT_FILE )
-    set( oneValueArgs PKG_NAME WRAPPER_SOUCES SETUP_TEMPLATE )
+    set( oneValueArgs PKG_NAME WRAPPER_SOUCES SETUP_TEMPLATE INIT_TEMPLATE )
     set( multiValueArgs INTERFACES LINK_LIBS )
     cmake_parse_arguments( py_extensions
             "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
@@ -116,11 +117,20 @@ function( goo_py_extensions )
     # Form __all__ variable in __init__.py file according to
     # enabled targets
     if( NOT py_extensions_NO_INIT_FILE )
-        message( STATUS "__init__.py will be generated for ${PYPKGNM}" )
-        configure_file( ${THIS_MODULE_DIR}/PyExtensions_init-template.in
+        if( py_extensions_INIT_TEMPLATE )
+            set( INIT_PY_TEMPLATE ${py_extensions_INIT_TEMPLATE} )
+        else( py_extensions_INIT_TEMPLATE )
+            set( INIT_PY_TEMPLATE ${THIS_MODULE_DIR}/PyExtensions_init-template.in )
+        endif( py_extensions_INIT_TEMPLATE )
+        message( STATUS "__init__.py will be generated for ${PYPKGNM} from ${INIT_PY_TEMPLATE}" )
+        configure_file( ${INIT_PY_TEMPLATE}
                         ${CMAKE_CURRENT_BINARY_DIR}/__init__.py )
         #install( FILES ${CMAKE_CURRENT_BINARY_DIR}/__init__.py
         #DESTINATION ${PY_MODULES_INSTALL_DIR}/${PYPKGNM} )
+    else( NOT py_extensions_NO_INIT_FILE )
+        if( py_extensions_INIT_TEMPLATE )
+            message( FATAL_ERROR "INIT_TEMPLATE specified together with NO_INIT_FILE." )
+        endif( py_extensions_INIT_TEMPLATE )
     endif( NOT py_extensions_NO_INIT_FILE )
 
     if( py_extensions_SETUP_TEMPLATE )
