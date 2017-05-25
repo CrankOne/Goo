@@ -19,6 +19,7 @@ iAbstractParameter::iAbstractParameter( const char * name_,
                                         const char * description_,
                                         ParameterEntryFlag flags,
                                         char shortcut_ ) :
+                                        _name(nullptr),
                                         _flags( flags ),
                                         _shortcut( shortcut_ ) {
     const size_t nLen = name_ ? strlen(name_) : 0;
@@ -53,8 +54,7 @@ iAbstractParameter::iAbstractParameter( const char * name_,
     //}
     /* ... */
     if( name_ ) {
-        _name = new char [nLen + 1];
-        strncpy( _name, name_, nLen + 1 );
+        name( name_ );
     } else {
         _name = nullptr;
     }
@@ -99,6 +99,16 @@ iAbstractParameter::~iAbstractParameter() {
     if( _description ) {
         delete [] _description;
     }
+}
+
+void
+iAbstractParameter::name( const char * name_ ) {
+    size_t nLen = strlen( name_ ) + 1;
+    if( _name ) {
+        delete [] _name;
+    }
+    _name = new char [nLen + 1];
+    strncpy( _name, name_, nLen + 1 );
 }
 
 void

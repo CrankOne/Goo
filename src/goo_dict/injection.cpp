@@ -39,11 +39,13 @@ DictionaryInjectionMap::inject_parameters( const Dictionary & source,
     for( const auto & mp : _mappings ) {
         const iSingularParameter & fromP = source.parameter( mp.first );
         iSingularParameter & toP = target.parameter( mp.second.path );
+        const std::string & ownName = toP.name();
         if( mp.second.transformation ) {
             mp.second.transformation( fromP, toP );
         } else {
             toP = fromP;
         }
+        toP.name( ownName.c_str() );
     }
 }
 

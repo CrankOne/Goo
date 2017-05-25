@@ -121,6 +121,10 @@ public:
     /// Returns pointer to name string.
     const char * name() const;
 
+    /// Name setter. Use with care since these parameters may often be cached
+    /// by owning dictionaries.
+    void name( const char * );
+
     /// Returns pointer to description string.
     const char * description() const;
 

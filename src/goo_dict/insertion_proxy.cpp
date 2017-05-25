@@ -84,8 +84,14 @@ InsertionProxy::end_sect( const char * name ) {
 }
 
 void
-InsertionProxy::insert_copy_of( const iSingularParameter & sp ) {
-    _stack.top()->insert_parameter( clone_as<iAbstractParameter, iSingularParameter>( &sp ) );
+InsertionProxy::insert_copy_of( const iSingularParameter & sp,
+                                const char * newName ) {
+    iSingularParameter * isp =
+                    clone_as<iAbstractParameter, iSingularParameter>( &sp );
+    if( !! newName ) {
+        isp->name( newName );
+    }
+    _stack.top()->insert_parameter( isp );
 }
 
 }  // namespace goo

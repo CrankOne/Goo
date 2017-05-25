@@ -47,8 +47,9 @@ public:
     /// Marks the last inserted parameter as mandatory one.
     InsertionProxy & required_argument();
 
-    // Marks the last inserted logical argument as mandatory one.
-    void insert_copy_of( const iSingularParameter & );
+    /// Marks the last inserted logical argument as mandatory one.
+    /// newName may be null if name has to be preserved.
+    void insert_copy_of( const iSingularParameter &, const char * newName=nullptr );
 
     //
     // Parameter inserter
