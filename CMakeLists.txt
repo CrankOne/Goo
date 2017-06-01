@@ -21,6 +21,11 @@
 cmake_minimum_required( VERSION 2.6 )
 project( Goo )
 
+# TODO: read this:
+# https://cmake.org/cmake/help/v3.1/manual/cmake-packages.7.html#manual:cmake-packages(7)
+# to know about how to correctly make the redistributable package and handle
+# external dependencies.
+
 # Goo versioning:
 #   - The major (digit) indexes the Goo's revision number and may imply
 #   a massive changes of API.
@@ -276,21 +281,21 @@ install( FILES "${CMAKE_CURRENT_BINARY_DIR}/goo_config.h"
 #
 # Misc third-party libraries
 if( ZLIB_FOUND )
-    target_link_libraries( ${Goo_LIBRARY} ${ZLIB_LIBRARIES} )
+    target_link_libraries( ${Goo_LIBRARY} PUBLIC ${ZLIB_LIBRARIES} )
 endif( ZLIB_FOUND )
 if( LZO_FOUND )
-    target_link_libraries( ${Goo_LIBRARY} ${LZO_LIB} )
+    target_link_libraries( ${Goo_LIBRARY} PUBLIC ${LZO_LIB} )
 endif( LZO_FOUND )
 if( BZIP2_FOUND )
-    target_link_libraries( ${Goo_LIBRARY} ${BZIP2_LIBRARIES} )
+    target_link_libraries( ${Goo_LIBRARY} PUBLIC ${BZIP2_LIBRARIES} )
 endif( BZIP2_FOUND )
 
 if( EM_STACK_UNWINDING )
     if( BFD_FOUND )
-        target_link_libraries( ${Goo_LIBRARY} ${BFD_LIBRARY} )
+        target_link_libraries( ${Goo_LIBRARY} PRIVATE ${BFD_LIBRARY} )
     endif( BFD_FOUND )
     if( HASKELL_MODULE )
-        target_link_libraries( ${Goo_LIBRARY} HSrts-ghc${CMAKE_Haskell_NUMERIC_VERSION} )
+        target_link_libraries( ${Goo_LIBRARY} PUBLIC HSrts-ghc${CMAKE_Haskell_NUMERIC_VERSION} )
     endif( HASKELL_MODULE )
     # ... other backtrace libs here
 endif( EM_STACK_UNWINDING )
