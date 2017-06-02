@@ -72,7 +72,7 @@ set( Goo_CXX            "@CMAKE_CXX_COMPILER@" )
 set( Goo_CXX_CFLAGS     "@CMAKE_CXX_FLAGS@" )
 set( Goo_LIBRARY_DIR    @CMAKE_INSTALL_PREFIX@/lib/goo )
 set( Goo_INSTALL_PREFIX @CMAKE_INSTALL_PREFIX@ )
-set( Goo_CMAKE_MODULES_DIR @CMAKE_INSTALL_PREFIX@/lib/cmake/goo )
+set( Goo_CMAKE_MODULES_DIR @GOO_CMAKE_MODULES_DESTINATION@ )
 
 message( STATUS "Found goo library configuration:" )
 message( STATUS "    built for: @buildDir@" )

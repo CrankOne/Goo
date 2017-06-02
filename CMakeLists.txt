@@ -103,7 +103,7 @@ push_option( BUILD_STATIC_LIBRARIES
 
 #
 # Find third-party packages
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/contrib/cmake")
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/contrib/cmake)
 find_package( ZLIB  )
 find_package( Lzo   )
 find_package( BZip2 )
@@ -153,14 +153,14 @@ endif( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
 
 #
 # Add custom uninstall target (CMake by default does not provide it)
-CONFIGURE_FILE(
+configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/CMakeUninstall.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/CMakeUninstall.cmake"
     IMMEDIATE @ONLY)
-ADD_CUSTOM_TARGET(uninstall
+add_custom_target(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/CMakeUninstall.cmake") 
 
-SITE_NAME( BUILDER_HOSTNAME )
+site_name( BUILDER_HOSTNAME )
 
 include(contrib/cmake/OutOfSource.cmake)
 
@@ -168,11 +168,9 @@ AssureOutOfSourceBuilds()
 
 #
 # Obtain versioning parameters
-EXECUTE_PROCESS(COMMAND date +"%x %x"
+execute_process(COMMAND date +"%x %x"
                 OUTPUT_VARIABLE BUILD_TIMESTAMP
                 OUTPUT_STRIP_TRAILING_WHITESPACE )
-
-
 
 #
 # Configure grammar generator (for HDS, if not disabled)
@@ -231,17 +229,12 @@ if( BUILD_STATIC_LIBRARIES )
     set( Goo_StaticLIBRARY goo${Goo_BUILD_POSTFIX}-static )
 endif( BUILD_STATIC_LIBRARIES )
 
-include_directories(
-        ${GOO_LIB_INCLUDE_DIR}
-        ${CMAKE_CURRENT_BINARY_DIR}
-    )
-
 #
 # Configure source
 file(GLOB_RECURSE GOO_LIB_SOURCES src/*.c*)
 configure_file (
-    "${GOO_LIB_INCLUDE_DIR}/goo_config.h.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/goo_config.h"
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc/goo_config.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/goo_config.h
 )
 
 configure_file (
@@ -250,7 +243,10 @@ configure_file (
     @ONLY
 )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/goo.pc"
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/usr/share/pkgconfig )
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/pkgconfig )
+
+# This path refers to CMake modules installation
+set( GOO_CMAKE_MODULES_DESTINATION lib/cmake/goo )
 
 #
 # Build Goo library
@@ -262,7 +258,23 @@ add_library( ${Goo_LIBRARY} SHARED
 set_target_properties(${Goo_LIBRARY} PROPERTIES VERSION ${Goo_VERSION}
                                      SOVERSION ${Goo_VERSION_MAJOR} )
 
-install( TARGETS ${Goo_LIBRARY} LIBRARY DESTINATION lib/goo )
+target_include_directories( ${Goo_LIBRARY} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/inc>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<INSTALL_INTERFACE:include/goo> )
+target_compile_features( ${Goo_LIBRARY} PUBLIC
+            cxx_constexpr
+            cxx_final
+            cxx_delegating_constructors
+            cxx_variadic_templates
+            cxx_template_template_parameters )
+# Note this useful snippet to list compiler features:
+#get_property(cxx_features GLOBAL PROPERTY CMAKE_CXX_KNOWN_FEATURES)
+#foreach(feature ${cxx_features})
+#    message(" * ${feature}")
+#endforeach()
+
+install( TARGETS ${Goo_LIBRARY} EXPORT goo LIBRARY DESTINATION lib/goo )
 
 if( BUILD_STATIC_LIBRARIES )
     add_library( ${Goo_StaticLIBRARY} STATIC
@@ -270,7 +282,7 @@ if( BUILD_STATIC_LIBRARIES )
         ${BISON_GDSParser_OUTPUTS}
         ${FLEX_GDSLexer_OUTPUTS}
     )
-install( TARGETS ${Goo_StaticLIBRARY} ARCHIVE DESTINATION lib/goo )
+    install( TARGETS ${Goo_StaticLIBRARY} EXPORT goo ARCHIVE DESTINATION lib/goo )
 endif( BUILD_STATIC_LIBRARIES )
 
 install( DIRECTORY inc/ DESTINATION include/goo FILES_MATCHING PATTERN
@@ -319,33 +331,46 @@ configure_file (
     "${CMAKE_CURRENT_BINARY_DIR}/FindGoo.cmake"
     @ONLY
 )
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/FindGoo.cmake"
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/usr/share/cmake/Modules )
 
-options_list()
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/FindGoo.cmake
+        DESTINATION lib/goo )
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/GooConfigVersion.cmake
+  VERSION ${Goo_VERSION}
+  COMPATIBILITY AnyNewerVersion
+)
+options_list()  #< collects the ${PKG_NAME}_OPTIONS_STR variable
+export( EXPORT goo
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/GooTargets.cmake"
+)
 configure_file (
     "${CMAKE_CURRENT_SOURCE_DIR}/assets/buildsystems/GooConfig.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/GooConfig.cmake"
     @ONLY
 )
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/GooConfig.cmake"
-    DESTINATION lib/cmake/goo )
 
 #
 # Copy some useful contributed/vendor modules:
-install(FILES 
-    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OutOfSource.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/CMakeUninstall.cmake.in"
-    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionDepend.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/BuildConf.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionList.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/PyExtensions.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/PyExtensions_init-template.in"
-    DESTINATION lib/cmake/goo )
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/GooConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/GooConfig.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OutOfSource.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/CMakeUninstall.cmake.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionDepend.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/BuildConf.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/OptionList.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/PyExtensions.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/cmake/PyExtensions_init-template.in
+    DESTINATION ${GOO_CMAKE_MODULES_DESTINATION} )
 
 install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/assets/dev/testbuild.pl"
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     DESTINATION bin
 )
+
+install( EXPORT goo DESTINATION lib/cmake/goo
+         FILE GooTargets.cmake )
 
