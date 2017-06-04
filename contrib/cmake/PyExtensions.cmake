@@ -101,6 +101,16 @@ function( goo_py_extensions )
         ## ${SWIG_MODULE_${name}_REAL_NAME}.
         set_source_files_properties( ${IFACE_FILE} PROPERTIES CPLUSPLUS ON )
         #set_source_files_properties( ${IFACE_FILE} PROPERTIES COMPILE_FLAGS -Dregister= )
+        #target_include_directories( _events
+            #PUBLIC $<TARGET_PROPERTY:${StromaV_LIB},INCLUDE_DIRECTORIES>
+        #)
+        foreach( LINK_LIB IN LISTS py_extensions_LINK_LIBS )
+            #set_source_files_properties( ${IFACE_FILE} PROPERTIES COMPILE_FLAGS 
+            #    -I$<JOIN:$<TARGET_PROPERTY:${LINK_LIB},INCLUDE_DIRECTORIES>, -I> )
+            get_target_property( _LIB_INCS ${LINK_LIB} INTERFACE_INCLUDE_DIRECTORIES )
+            string(REGEX REPLACE "([^;]+)" "-I\\1" _LIB_INCS_PRFXD "${_LIB_INCS}")
+            set_property( SOURCE ${IFACE_FILE} PROPERTY SWIG_FLAGS ${_LIB_INCS_PRFXD} )
+        endforeach()
         swig_add_module( ${IFACE} python ${IFACE_FILE} )
         swig_link_libraries( ${IFACE} ${PYTHON_LIBRARIES} ${py_extensions_LINK_LIBS})
 

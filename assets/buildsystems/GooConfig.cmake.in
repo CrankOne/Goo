@@ -36,7 +36,6 @@
 
 #  Compute the installation prefix relative to this file.
 get_filename_component(_CURRENT_LOCATION "${CMAKE_CURRENT_LIST_FILE}" PATH)
-
 include( ${_CURRENT_LOCATION}/GooTargets.cmake )
 
 set( Goo_CMAKE_MODULES_DIR  ${_CURRENT_LOCATION} )

@@ -143,12 +143,13 @@ if( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
 else( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
     message( STATUS "NOTE: Install prefix is manually set to \""
         ${CMAKE_INSTALL_PREFIX} "\"." )
-    # ...
-    SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/goo")
-    SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    ## ...
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+    list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/goo")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
     # the RPATH to be used when installing, but only if it's not a system directory
-    LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+    #list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+    #message( STATUS "XXX - ${isSystemDir}" )  # -1 when it is not a system dir
 endif( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
 
 #
@@ -204,8 +205,8 @@ set( GOO_LIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/inc/" )
 #
 # Configure compiler -- base flags
 # NOTE: for ASan, prepend with -fsanitize=address -fno-omit-frame-pointer
-set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99" )
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -D_GNU_SOURCE -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++1y " )
+#set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99" )
+#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++1y " )
 if( CMAKE_COMPILER_IS_GNUCXX )
     set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -rdynamic" )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic" )
@@ -255,19 +256,26 @@ add_library( ${Goo_LIBRARY} SHARED
         ${BISON_GDSParser_OUTPUTS}
         ${FLEX_GDSLexer_OUTPUTS}
     )
-set_target_properties(${Goo_LIBRARY} PROPERTIES VERSION ${Goo_VERSION}
-                                     SOVERSION ${Goo_VERSION_MAJOR} )
+set_target_properties(${Goo_LIBRARY} PROPERTIES
+    VERSION ${Goo_VERSION}
+    SOVERSION ${Goo_VERSION_MAJOR}
+    INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib/goo )
 
 target_include_directories( ${Goo_LIBRARY} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/inc>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:include/goo> )
 target_compile_features( ${Goo_LIBRARY} PUBLIC
+            c_variadic_macros
             cxx_constexpr
             cxx_final
             cxx_delegating_constructors
+            cxx_variadic_macros
             cxx_variadic_templates
             cxx_template_template_parameters )
+
+target_compile_definitions( ${Goo_LIBRARY} PUBLIC _GNU_SOURCE _FILE_OFFSET_BITS=64 )
+target_compile_options( ${Goo_LIBRARY} PRIVATE -Wall -fexceptions -pthread )
 # Note this useful snippet to list compiler features:
 #get_property(cxx_features GLOBAL PROPERTY CMAKE_CXX_KNOWN_FEATURES)
 #foreach(feature ${cxx_features})
@@ -337,10 +345,9 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/FindGoo.cmake
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-  ${CMAKE_CURRENT_BINARY_DIR}/GooConfigVersion.cmake
-  VERSION ${Goo_VERSION}
-  COMPATIBILITY AnyNewerVersion
-)
+    ${CMAKE_CURRENT_BINARY_DIR}/GooConfigVersion.cmake
+    VERSION ${Goo_VERSION}
+    COMPATIBILITY AnyNewerVersion )
 options_list()  #< collects the ${PKG_NAME}_OPTIONS_STR variable
 export( EXPORT goo
   FILE "${CMAKE_CURRENT_BINARY_DIR}/GooTargets.cmake"
