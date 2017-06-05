@@ -105,13 +105,40 @@ function( goo_py_extensions )
             #PUBLIC $<TARGET_PROPERTY:${StromaV_LIB},INCLUDE_DIRECTORIES>
         #)
         foreach( LINK_LIB IN LISTS py_extensions_LINK_LIBS )
-            #set_source_files_properties( ${IFACE_FILE} PROPERTIES COMPILE_FLAGS 
-            #    -I$<JOIN:$<TARGET_PROPERTY:${LINK_LIB},INCLUDE_DIRECTORIES>, -I> )
-            get_target_property( _LIB_INCS ${LINK_LIB} INTERFACE_INCLUDE_DIRECTORIES )
-            string(REGEX REPLACE "([^;]+)" "-I\\1" _LIB_INCS_PRFXD "${_LIB_INCS}")
-            set_property( SOURCE ${IFACE_FILE} PROPERTY SWIG_FLAGS ${_LIB_INCS_PRFXD} )
+            if( NOT TARGET ${LINK_LIB} )
+                # The given library is not a target, so we're unable to retrieve
+                # its *_INCLUDE_DIRECTORIES properties.
+                continue()
+            endif()
+            # NOTE: what about INTERFACE_SYSTEM_INCLUDE_DIRECTORIES property?
+            get_target_property( _LIB_INCS     ${LINK_LIB} INTERFACE_INCLUDE_DIRECTORIES )
+            list( APPEND SWIG_MODULE_LIB_USR_INCS ${_LIB_INCS} )
+            get_target_property( _LIB_SYS_INCS ${LINK_LIB} INTERFACE_SYSTEM_INCLUDE_DIRECTORIES )
+            list( APPEND SWIG_MODULE_LIB_SYS_INCS ${_LIB_SYS_INCS} )
         endforeach()
+
+        list( REMOVE_DUPLICATES SWIG_MODULE_LIB_USR_INCS )
+        list( REMOVE_DUPLICATES SWIG_MODULE_LIB_SYS_INCS )
+
+        string(REGEX REPLACE "([^;]+)" "$<$<BOOL:\\1>:-I\\1>"       _USR_INCS_PRFXD "${SWIG_MODULE_LIB_USR_INCS}")
+        string(REGEX REPLACE "([^;]+)" "$<$<BOOL:\\1>:-isystem\\1>" _SYS_INCS_PRFXD "${SWIG_MODULE_LIB_SYS_INCS}" )
+        # NOTE: SWIG does not accept -isystem flag, so we have to prepend system includes
+        # with -I as well:
+        string(REGEX REPLACE "([^;]+)" "$<$<BOOL:\\1>:-I\\1>" _SYS_INCS_PRFXD_2 "${SWIG_MODULE_LIB_SYS_INCS}" )
+
+        set_property( SOURCE ${IFACE_FILE} PROPERTY SWIG_FLAGS "${_USR_INCS_PRFXD} ${_SYS_INCS_PRFXD_2}" )
+        
+        # DEBUG:
+        #get_property( _RET1 SOURCE ${IFACE_FILE} PROPERTY SWIG_FLAGS )
+        #message( STATUS "DEBUG:${IFACE_FILE}:${LINK_LIB};USR:${_LIB_INCS}|${_RET1};SYS:${_LIB_SYS_INCS};SYS2:${_LIB_SYS_INCS_PRFXD_2}" )
+
         swig_add_module( ${IFACE} python ${IFACE_FILE} )
+
+        set_source_files_properties( ${swig_generated_file_fullname} PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${_USR_INCS_PRFXD}" )
+        set_source_files_properties( ${swig_generated_file_fullname} PROPERTIES
+            INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${_SYS_INCS_PRFXD}" )
+
         swig_link_libraries( ${IFACE} ${PYTHON_LIBRARIES} ${py_extensions_LINK_LIBS})
 
         # TODO: use install.py
