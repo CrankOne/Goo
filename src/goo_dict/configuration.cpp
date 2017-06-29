@@ -26,8 +26,6 @@
 # include "goo_utility.hpp"
 # include "goo_dict/conf_help_render.hpp"
 
-# include <yaml.h>
-
 # include <algorithm>
 # include <cstring>
 # include <unistd.h>
