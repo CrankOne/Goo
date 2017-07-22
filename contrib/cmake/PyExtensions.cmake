@@ -27,6 +27,47 @@
 # for explaination why do we need that:
 set( THIS_MODULE_DIR ${CMAKE_CURRENT_LIST_DIR} )
 
+#
+# Will store the include directories assoicated with given libs list in two
+# variables named with given prefix base:
+#   ${PRFX}_USR_INCS for -I
+#   ${PRFX}_SYS_INCS for -isystem
+function( extract_include_dirs PRFX _LIBS )
+    foreach( linkLib IN LISTS ${_LIBS} )
+        if( NOT TARGET ${linkLib} )
+            # The given library is not a target, so we're unable to retrieve
+            # its *_INCLUDE_DIRECTORIES properties.
+            continue()
+        endif()
+        # Get 
+        get_target_property( _libUsrIncs ${linkLib} INTERFACE_INCLUDE_DIRECTORIES )
+        if( _libUsrIncs )
+            #message( STATUS "++ ${linkLib} usr: ${_libUsrIncs}" )  # XXX
+            list( APPEND usrIncs ${_libUsrIncs} )
+        endif()
+        get_target_property( _libSysIncs ${linkLib} INTERFACE_SYSTEM_INCLUDE_DIRECTORIES )
+        if( _libSysIncs )
+            #message( STATUS "++ ${linkLib} sys: ${_libSysIncs}" )  # XXX
+            list( APPEND sysIncs ${_libSysIncs} )
+        endif()
+
+        # Do not use INTERFACE_LINK_LIBRARIES since this list will easily
+        # lead to infinite loop.
+        get_target_property( _tLinkedLibs ${linkLib} LINK_LIBRARIES )
+        if( _tLinkedLibs )
+            extract_include_dirs( SUB_${PRFX} _tLinkedLibs )
+            list( APPEND usrIncs ${SUB_${PRFX}_USR_INCS} )
+            list( APPEND sysIncs ${SUB_${PRFX}_SYS_INCS} )
+        endif( _tLinkedLibs )
+    endforeach()
+
+    list( REMOVE_DUPLICATES usrIncs )
+    list( REMOVE_DUPLICATES sysIncs )
+
+    set( ${PRFX}_USR_INCS ${usrIncs} PARENT_SCOPE )
+    set( ${PRFX}_SYS_INCS ${sysIncs} PARENT_SCOPE )
+endfunction( extract_include_dirs  )
+
 # Function signature:
 # goo_py_extensions( INTERFACES <iface1> <iface2> ...
 #                    [PKG_NAME <package name>]
@@ -104,21 +145,7 @@ function( goo_py_extensions )
         #target_include_directories( _events
             #PUBLIC $<TARGET_PROPERTY:${StromaV_LIB},INCLUDE_DIRECTORIES>
         #)
-        foreach( LINK_LIB IN LISTS py_extensions_LINK_LIBS )
-            if( NOT TARGET ${LINK_LIB} )
-                # The given library is not a target, so we're unable to retrieve
-                # its *_INCLUDE_DIRECTORIES properties.
-                continue()
-            endif()
-            # NOTE: what about INTERFACE_SYSTEM_INCLUDE_DIRECTORIES property?
-            get_target_property( _LIB_INCS     ${LINK_LIB} INTERFACE_INCLUDE_DIRECTORIES )
-            list( APPEND SWIG_MODULE_LIB_USR_INCS ${_LIB_INCS} )
-            get_target_property( _LIB_SYS_INCS ${LINK_LIB} INTERFACE_SYSTEM_INCLUDE_DIRECTORIES )
-            list( APPEND SWIG_MODULE_LIB_SYS_INCS ${_LIB_SYS_INCS} )
-        endforeach()
-
-        list( REMOVE_DUPLICATES SWIG_MODULE_LIB_USR_INCS )
-        list( REMOVE_DUPLICATES SWIG_MODULE_LIB_SYS_INCS )
+        extract_include_dirs( SWIG_MODULE_LIB py_extensions_LINK_LIBS )
 
         string(REGEX REPLACE "([^;]+)" "$<$<BOOL:\\1>:-I\\1>"       _USR_INCS_PRFXD "${SWIG_MODULE_LIB_USR_INCS}")
         string(REGEX REPLACE "([^;]+)" "$<$<BOOL:\\1>:-isystem\\1>" _SYS_INCS_PRFXD "${SWIG_MODULE_LIB_SYS_INCS}" )
@@ -126,11 +153,14 @@ function( goo_py_extensions )
         # with -I as well:
         string(REGEX REPLACE "([^;]+)" "$<$<BOOL:\\1>:-I\\1>" _SYS_INCS_PRFXD_2 "${SWIG_MODULE_LIB_SYS_INCS}" )
 
-        set_property( SOURCE ${IFACE_FILE} PROPERTY SWIG_FLAGS "${_USR_INCS_PRFXD} ${_SYS_INCS_PRFXD_2}" )
+        set_property( SOURCE ${IFACE_FILE} PROPERTY SWIG_FLAGS ${_USR_INCS_PRFXD} ${_SYS_INCS_PRFXD_2} )
         
         # DEBUG:
         #get_property( _RET1 SOURCE ${IFACE_FILE} PROPERTY SWIG_FLAGS )
-        #message( STATUS "DEBUG:${IFACE_FILE}:${LINK_LIB};USR:${_LIB_INCS}|${_RET1};SYS:${_LIB_SYS_INCS};SYS2:${_LIB_SYS_INCS_PRFXD_2}" )
+        #message( STATUS "DEBUG:${IFACE_FILE}:${LINK_LIB}")
+        #message( STATUS " -- USR:${_RET1}")
+        #message( STATUS " -- SYS:${_LIB_SYS_INCS}")
+        #message( STATUS " -- SY2:${_LIB_SYS_INCS_PRFXD_2}" )
 
         swig_add_module( ${IFACE} python ${IFACE_FILE} )
 
@@ -181,5 +211,6 @@ function( goo_py_extensions )
         set( ${py_extensions_WRAPPER_SOUCES} ${PY_EXT_MODULES_LIST} PARENT_SCOPE )
     endif( py_extensions_WRAPPER_SOUCES )
 endfunction( goo_py_extensions )
+
 
 
