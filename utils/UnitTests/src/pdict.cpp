@@ -246,7 +246,8 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .list<short>( 'x', "List of short ints", { 112, 53, 1024 } )
             .list<float>( "fl-num", "List of floating numbers" )
             .list<std::string>( 's', "lstr-i", "String list one", {"a", "b", "c"} )
-            .list<std::string>( "lstr-ii", "String list one", { "one", "two", "three" } )
+            .list<std::string>( "lstr-ii", "String list two", { "one", "two", "three" } )
+            .list<std::string>( 's', nullptr, "String list three", { "1", "two", "III" } )
             ;
 
         const char ex1[] = "./foo -s one -1v --fl-num 1e-6 -b true -b Off -b On "

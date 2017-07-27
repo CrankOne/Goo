@@ -450,7 +450,20 @@ public:
         this->_unset_singular();
         this->_set_is_set_flag();
         assert( !(this->name() == nullptr && !this->has_shortcut()) );
-        assert( this->description() ); }
+        assert( this->description() );
+    }
+
+    template<class ... Types>
+    Parameter( const std::list<ValueT> & il, Types ... args ) :
+        DuplicableParent( args ... , *il.begin() ),
+        _setToDefault( true ),
+        _values( il )
+    {
+        this->_unset_singular();
+        this->_set_is_set_flag();
+        assert( !(this->name() == nullptr && !this->has_shortcut()) );
+        assert( this->description() );
+    }
 
     template<class ... Types>
     Parameter( Types ... args ) :
@@ -458,7 +471,8 @@ public:
         _setToDefault( false )
     {   this->_unset_singular();
         assert( !(this->name() == nullptr && !this->has_shortcut()) );
-        assert( this->description() ); }
+        assert( this->description() );
+    }
 
     Parameter( const Parameter<std::list<ValueT> > & orig ) :
         DuplicableParent( orig ),
