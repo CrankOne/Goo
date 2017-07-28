@@ -37,6 +37,9 @@ protected:
     /// Constructs new insertion proxy insance.
     InsertionProxy( Dictionary * );
 public:
+    InsertionProxy( const InsertionProxy & o ) : _stack(o._stack) {
+        printf( "Goo::XXX --- stack copy.\n" );
+    }
     /// Opens new section.
     InsertionProxy & bgn_sect( const char *, const char * );
 
