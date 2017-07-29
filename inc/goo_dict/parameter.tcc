@@ -294,8 +294,8 @@ public:
     virtual const std::type_info & target_type_info() const final {
         return typeid(ValueT); }
 
-    /// This method is to be used by user code, for special cases. It should be
-    /// not used by Goo API, during the normal argument parsing cycle.
+    /// This method is to be used by user code, for special cases. It should
+    /// not be used by Goo API, during the normal argument parsing cycle.
     void set_value( const ValueT & v ) { _set_value(v); }
 };  // class iParameter
 
@@ -492,6 +492,15 @@ public:
     /// Sets `_setToDefault` flag. See note about this flag in class
     /// description.
     void set_to_default(bool v) { _setToDefault = v; }
+
+    /// This method is usually used by some user code desiring set all the
+    /// parameters list at once. It should not be used by Goo API, during the
+    /// normal argument parsing cycle.
+    void assign( const std::list<ValueT> & plst ) {
+        for( auto v : plst ) {
+            _V_push_value(v);
+        }
+    }
 
     friend class InsertionProxy;
 
