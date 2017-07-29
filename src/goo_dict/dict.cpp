@@ -73,7 +73,6 @@ Dictionary::~Dictionary() {
  * be deleted by dictionary destructor. */
 void
 Dictionary::insert_parameter( iSingularParameter * instPtr ) {
-    _parameters.push_back( instPtr );
     bool wasIndexed = false;
     if( instPtr->has_shortcut() ) {
         auto insertionResult = _parametersIndexByShortcut
@@ -105,6 +104,7 @@ Dictionary::insert_parameter( iSingularParameter * instPtr ) {
         emraise( badArchitect, "Got %p parameter without name and shortcut.",
                                                                     instPtr );
     }
+    _parameters.push_back( instPtr );
 }
 
 /** Dictionary class design emplies that lifetime of sub-dictionaries inserted

@@ -293,6 +293,10 @@ public:
 
     virtual const std::type_info & target_type_info() const final {
         return typeid(ValueT); }
+
+    /// This method is to be used by user code, for special cases. It should be
+    /// not used by Goo API, during the normal argument parsing cycle.
+    void set_value( const ValueT & v ) { _set_value(v); }
 };  // class iParameter
 
 template<typename ValueT>

@@ -23,6 +23,9 @@
 # ifndef H_GOO_PARAMETERS_DICTIONARY_PARAMETER_INTEGRAL_H
 # define H_GOO_PARAMETERS_DICTIONARY_PARAMETER_INTEGRAL_H
 
+// TODO: This class has to be re-designed. The preleminary range checks has to
+// be performed on _set_value, not just within safe_parse procedure.
+
 # include "goo_dict/parameter.tcc"
 # include <climits>
 
