@@ -382,6 +382,7 @@ template <typename T> class FloatingPointParameter;
 template <typename T> class EnumParameter;
 template <typename T> class PointerParameter;
 
+# ifndef SWIG
 template<typename T>
 using InsertableParameter = typename
     std::conditional< std::is_arithmetic<T>::value,
@@ -403,6 +404,7 @@ using InsertableParameter = typename
                 >::type
             >::type
     >::type;
+# endif
 
 /**@brief A parameter list class.
  * 

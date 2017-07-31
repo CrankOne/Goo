@@ -49,7 +49,11 @@ template<typename BaseTypeT,
          typename ParentT=BaseTypeT,
          bool forceImplement=false,
          bool isSame=std::is_same<BaseTypeT, SelfTypeT>::value>
-class iDuplicable;
+class iDuplicable
+# ifdef SWIG
+{}
+# endif
+;
 }  // namespace mixins
 
 template<typename BaseTypeT, typename SelfTypeT, typename ParentT, bool forceImplem> BaseTypeT *

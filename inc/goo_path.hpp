@@ -67,6 +67,8 @@ public:
     Path( const char * p, Interpolator * intrp=nullptr );
     Path( const Path & o );
 
+    virtual ~Path() {}
+
     virtual bool exists() const;
     virtual bool is_dir() const;
     virtual bool is_file() const;
