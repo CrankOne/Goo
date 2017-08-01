@@ -34,9 +34,14 @@ namespace dict {
  * TODO: doc
  * */
 template<>
-class Parameter<filesystem::Path> : public mixins::iDuplicable< iAbstractParameter,
-                                                    Parameter<filesystem::Path>,
-                                                    iParameter<filesystem::Path> > {
+class Parameter<filesystem::Path> :
+        public mixins::iDuplicable< iAbstractParameter,
+                                    Parameter<filesystem::Path>,
+                                    iParameter<filesystem::Path>
+                                    # ifdef SWIG  // see iss#163
+                                    , false, false
+                                    # endif  // SWIG
+                                    > {
 public:
     typedef typename DuplicableParent::Parent::Value Value;
 public:
