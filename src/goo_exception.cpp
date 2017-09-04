@@ -114,7 +114,7 @@ sup_positional_info( const String & path,
                 nSymbols = bfd_read_minisymbols( abfd,          true,
                                                  sTablePtr,     &symbolSize );
             } else if( nSymbols < 0 ) {
-                entry.failure = "bfd_read_minisymbols() failed."; return -1;
+                entry.failure = "bfd_read_minisymbols() failed.";
                 return -1;
             }
         } else {

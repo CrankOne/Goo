@@ -62,7 +62,7 @@ get_timestamp() {
     time( &rawtime );
     info = localtime( &rawtime );
     strftime(tbf, 32, "%y/%m/%d/%H/%M/%S", info );
-    sprintf(timebf, "%s.%s", tbf, sbf );
+    snprintf(timebf, sizeof(timebf), "%s.%s", tbf, sbf );
     return timebf;
 }
 

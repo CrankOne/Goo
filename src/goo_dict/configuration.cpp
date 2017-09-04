@@ -483,12 +483,14 @@ Configuration::_collect_first_level_options(
             // TODO: positional?
         }
     }
+    /*
     for( auto it  = self._dictionaries.cbegin();
               it != self._dictionaries.cend(); ++it ) {
         std::string sectPrefix = nameprefix
                                + it->second->name()
                                + nameprefix;
     }
+    */
 }
 
 void

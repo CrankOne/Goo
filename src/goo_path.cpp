@@ -134,6 +134,9 @@ Path::get_dir_entries() const {
     while( (dirPtr = readdir(dp)) != NULL ) {
         content.insert( dirPtr->d_name );
     }
+    if( dp ) {
+        closedir( dp );
+    }
     return std::vector<std::string>( content.begin(), content.end() );
 }
 
