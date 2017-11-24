@@ -145,7 +145,9 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .p<float>( "fp-num-i", "Some fp-number" )
             .p<double>( "fp-num-ii", "Some fp-number (double)" )
             .p<std::string>( "strval", "Some string value", "defstrval" )
-            .p<std::string>( 's', nullptr, "Another string value" )
+            .p<std::string>( 's', nullptr, "Another string value" ) 
+            // ^^^ special case: setting string parameter idenitified by
+            // shortcut (one-letter string) only, WITHOUT a default valuue.
             .p<other::another::TestingEnum>( 'e', "enum parameter", other::another::zero )
             ;
 
