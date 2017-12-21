@@ -127,13 +127,6 @@ private:
     /// Shortcut parameters index (aggregation).
     std::unordered_map<char, iSingularParameter *> _parametersIndexByShortcut;
 
-protected:
-    /// Inserts parameter instance created by insertion proxy.
-    virtual void insert_parameter( iSingularParameter * );
-
-    /// Inserts dictionary instance created by insertion proxy.
-    virtual void insert_section( Dictionary * );
-
     # if 0
     /// Internal procedure --- appends access caches.
     virtual void _append_configuration_caches(
@@ -157,6 +150,12 @@ public:
     Dictionary( const char *, const char * );
 
     ~Dictionary();
+
+    /// Inserts parameter instance.
+    virtual void insert_parameter( iSingularParameter * );
+
+    /// Inserts dictionary instance.
+    virtual void insert_section( Dictionary * );
 
     /// Public copy ctr for virtual copy ctr.
     Dictionary( const Dictionary & );
