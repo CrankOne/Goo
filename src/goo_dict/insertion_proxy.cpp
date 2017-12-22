@@ -20,7 +20,7 @@ InsertionProxy::required_argument() {
 //    return *this;
 //}
 
-InsertionProxy::InsertionProxy( Dictionary * root ) {
+InsertionProxy::InsertionProxy( DictionaryParameter * root ) {
     _stack.push(root);
 }
 
@@ -31,12 +31,12 @@ InsertionProxy::bgn_sect( const char * name, const char * descr) {
     char * path = strdupa( name ),
          * current = NULL;
 
-    Dictionary * newTop;
+    DictionaryParameter * newTop;
 
-    while( Dictionary::pull_opt_path_token( path, current ) ) {
+    while( DictionaryParameter::pull_opt_path_token( path, current ) ) {
         newTop = _stack.top()->probe_subsection( current );
         if( !newTop ) {
-            newTop = new Dictionary( current, nullptr );
+            newTop = new DictionaryParameter( current, nullptr );
             _stack.top()->insert_section( newTop );
         }
         _stack.push( newTop );
@@ -45,7 +45,7 @@ InsertionProxy::bgn_sect( const char * name, const char * descr) {
     
     if( !(newTop = _stack.top()->probe_subsection( current )) ) {
         // Insert new section.
-        newTop = new Dictionary( current, descr );
+        newTop = new DictionaryParameter( current, descr );
         _stack.top()->insert_section( newTop );
         _stack.push( newTop );
     } else {
@@ -65,7 +65,7 @@ InsertionProxy::end_sect( const char * name ) {
         char * path = strdupa( name ),
              * current = NULL;
         std::vector<std::string> tokens;
-        while( Dictionary::pull_opt_path_token( path, current ) ) {
+        while( DictionaryParameter::pull_opt_path_token( path, current ) ) {
             tokens.push_back( current );
         }
         tokens.push_back( current );

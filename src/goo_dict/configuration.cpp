@@ -44,14 +44,14 @@ const int Configuration::longOptNoShortcutRequiresArgument = 3;
 
 Configuration::Configuration( const char * name_,
                               const char * descr_,
-                              bool defaultHelpIFace ) : Dictionary(name_, descr_),
+                              bool defaultHelpIFace ) : DictionaryParameter(name_, descr_),
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
                                                       _getoptCachesValid( false ),
                                                       _dftHelpIFace(defaultHelpIFace),
                                                       _positionalArgument( nullptr ) {}
 
-Configuration::Configuration( const Configuration & orig ) : Dictionary( orig ),
+Configuration::Configuration( const Configuration & orig ) : DictionaryParameter( orig ),
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
                                                       _getoptCachesValid( false ),
@@ -154,7 +154,7 @@ Configuration::_set_argument_parameter( iSingularParameter & p,
  * */
 void
 Configuration::_cache_insert_long_option( const std::string & nameprefix,
-                                          Dictionary::LongOptionEntries & q,
+                                          DictionaryParameter::LongOptionEntries & q,
                                           const iSingularParameter & p ) {
     assert( p.name() );
     struct ::option o = {
@@ -171,7 +171,7 @@ Configuration::_cache_insert_long_option( const std::string & nameprefix,
 }
 
 void
-Configuration::_cache_append_options( const Dictionary & self,
+Configuration::_cache_append_options( const DictionaryParameter & self,
                                       const std::string & nameprefix,
                                       ShortOptString & shrtOpts,
                                       std::unordered_map<char, std::string> & shrtPths,
@@ -288,7 +288,7 @@ Configuration::extract( int argc,
                 }
                 // The parameter is referred by shortcut and lies in
                 // one of the sub-sections referred by path:
-                Dictionary & subsection = this->subsection( byPath->second.c_str() );
+                DictionaryParameter & subsection = this->subsection( byPath->second.c_str() );
                 pIt = subsection._parametersIndexByShortcut.find( c );
                 assert( subsection._parametersIndexByShortcut.end() != pIt );  // impossible by design
             }
@@ -336,7 +336,7 @@ Configuration::extract( int argc,
             if( _parametersIndexByName.end() == pIt ) {
                 
             }
-            iSingularParameter & p = Dictionary::parameter( 
+            iSingularParameter & p = DictionaryParameter::parameter(
                                                 longOptions[optIndex].name );
             if( p.requires_value() ) {
                 // If went here, the getopt_long() returned a value indicating
@@ -378,7 +378,7 @@ Configuration::extract( int argc,
                     "\"%s\".", longOptions[optIndex].name, optarg);
             }
             _set_argument_parameter(
-                    Dictionary::parameter(  longOptions[optIndex].name ),
+                    DictionaryParameter::parameter(  longOptions[optIndex].name ),
                                             optarg,
                                             verbose );
         } else if( '?' == c ) {
@@ -429,7 +429,7 @@ Configuration::parameter( const char path[] ) const {
     if( _positionalArgument && !strcmp(path, _positionalArgument->name()) ) {
         return *_positionalArgument;
     }
-    return Dictionary::parameter(path);
+    return DictionaryParameter::parameter(path);
 }
 
 void
@@ -454,7 +454,7 @@ Configuration::_free_caches_if_need() const {
 
 void
 Configuration::_collect_first_level_options(
-                    const Dictionary & self,
+                    const DictionaryParameter & self,
                     const std::string & nameprefix,
                     std::unordered_map<std::string, iSingularParameter *> & rqs,
                     std::unordered_map<char, iSingularParameter *> & shrt ) {
@@ -597,19 +597,19 @@ Configuration::free_tokens( size_t argcTokens, char ** argvTokens ) {
 
 void
 Configuration::insert_parameter( iSingularParameter * p_ ) {
-    Dictionary::insert_parameter( p_ );
+    DictionaryParameter::insert_parameter( p_ );
     invalidate_getopt_caches();
 }
 
 void
-Configuration::insert_section( Dictionary * sect ) {
-    Dictionary::insert_section( sect );
+Configuration::insert_section( DictionaryParameter * sect ) {
+    DictionaryParameter::insert_section( sect );
     invalidate_getopt_caches();
 }
 
 void
-Configuration::append_section( const Dictionary & dPtr ) {
-    insert_section( new Dictionary( dPtr ) );
+Configuration::append_section( const DictionaryParameter & dPtr ) {
+    insert_section( new DictionaryParameter( dPtr ) );
 }
 
 # if 0
@@ -676,7 +676,7 @@ Configuration::print_ASCII_tree( std::ostream & ss ) const {
 
 void
 Configuration::print_ASCII_tree( std::list<std::string> & output ) const {
-    Dictionary::print_ASCII_tree( output );
+    DictionaryParameter::print_ASCII_tree( output );
     if( output.empty() ) {
         output.push_back( std::string("╚═ " ESC_BLDRED "<!empty!>" ESC_CLRCLEAR) );
     }

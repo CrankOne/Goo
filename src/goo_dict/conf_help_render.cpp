@@ -95,7 +95,7 @@ POSIXRenderer::_V_render_help_page( std::ostream & os,
 
 void
 POSIXRenderer::_V_render_reference( std::ostream & os,
-                                    const Dictionary & d,
+                                    const DictionaryParameter & d,
                                     const std::string & prefix ) {
     std::map<std::string, const iSingularParameter *> mySortedPs;
     const auto & myParameters = d.parameters();
@@ -182,7 +182,7 @@ POSIXRenderer::_singular_parameter_usage_info(
 
 void
 POSIXRenderer::_recollect_first_level_options(
-                const Dictionary & self,
+                const DictionaryParameter & self,
                 const std::string & nameprefix,
                 bool thisIsBaseLevel ) {
     // Iterate among dictionary options collecting the parameters:

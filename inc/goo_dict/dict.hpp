@@ -100,55 +100,35 @@ class Configuration;
 /**@brief Parameters container with basic querying support.
  * @class Dictionary
  *
- * This class represents a node in a "Configuration" tree-like structure.
- * Instances (usually named and owned by another Dictionary instance) store
- * a set of named (or shortcut-referenced) parameters and other
- * sub-dictionaries.
+ * The basic container for parameter instances providing basic querying support.
+ * Stores auxiliary indexes for efficient retrieval of a particular parameter
+ * instance by its name or single-char shortcuts.
  *
- * It is implied that user code will utilize InsertionProxy methods to fill
- * this container instances with particular parameters and sub-dictionaries.
+ * Albeit this container is embedded into goo::dict facility, it does not yet
+ * act as a standalone parameter and is used in subsequent class
+ * DictionaryParameter for actual parameter dictionary representation. Its
+ * intermediate functionality is used in AoS sequences as well.
  * */
-class Dictionary : public mixins::iDuplicable<  iAbstractParameter,
-                                                Dictionary,
-                                                iAbstractParameter> {
+class Dictionary : std::list<iSingularParameter *>
+                 , std::unordered_map<std::string, Dictionary *> {
 protected:
     typedef std::list<char>    ShortOptString;
     typedef std::list<void*>   LongOptionEntries;  // ptrs are malloc()'d
+    typedef std::list<iSingularParameter *> SingularsContainer;
+    typedef std::unordered_map<std::string, Dictionary *> DictionariesContainer;
 private:
-    /// A parameters storage (composition).
-    std::list<iSingularParameter *> _parameters;
-
-    /// A sub-dictionaries composition index.
-    std::unordered_map<std::string, Dictionary *> _dictionaries;
-
     /// Long-name parameters index (aggregation).
     std::unordered_map<std::string, iSingularParameter *> 
                                                     _parametersIndexByName;
     /// Shortcut parameters index (aggregation).
     std::unordered_map<char, iSingularParameter *> _parametersIndexByShortcut;
 
-    # if 0
-    /// Internal procedure --- appends access caches.
-    virtual void _append_configuration_caches(
-                const std::string & nameprefix,
-                Configuration * conf
-            ) const;
-    # endif
-
-    /// Marks last inserted parameter as required one.
-    void _mark_last_inserted_as_required();
-
     /// Internal function mutating given path str --- parameter entry getter.
     virtual const iSingularParameter * _get_parameter( char [], bool noThrow=false ) const;
 
     /// Internal function mutating given path str --- subsection getter.
     virtual const Dictionary * _get_subsection( char [], bool noThrow=false ) const;
-
-    friend class InsertionProxy;
-    friend class Configuration;
 public:
-    Dictionary( const char *, const char * );
-
     ~Dictionary();
 
     /// Inserts parameter instance.
@@ -159,9 +139,6 @@ public:
 
     /// Public copy ctr for virtual copy ctr.
     Dictionary( const Dictionary & );
-
-    /// Constructs a bound insertion proxy instance object.
-    InsertionProxy insertion_proxy();
 
     /// This routine performs simple token extraction from option path.
     /// For example, the following string:
@@ -264,14 +241,39 @@ public:
     /// Prints an ASCII-drawn tree with names and brief comments for all
     /// parameters and sub-sections.
     virtual void print_ASCII_tree( std::list<std::string> & ) const;
-    
-    const std::list<iSingularParameter *> & parameters() const
-                                                    { return _parameters; }
-
-    /// A sub-dictionaries composition index.
-    const std::unordered_map<std::string, Dictionary *> & dictionaries() const
-                                                    { return _dictionaries; }
 };  // class Dictionary
+
+/**
+ *
+ * This class represents a node in a "Configuration" tree-like structure.
+ * Instances (usually named and owned by another Dictionary instance) store
+ * a set of named (or shortcut-referenced) parameters and other
+ * sub-dictionaries.
+ *
+ * It is implied that user code will utilize InsertionProxy methods to fill
+ * this container instances with particular parameters and sub-dictionaries.
+ * */
+class DictionaryParameter : public Dictionary
+                          , public mixins::iDuplicable< iAbstractParameter
+                                                      , DictionaryParameter
+                                                      , iAbstractParameter> {
+    friend class InsertionProxy;
+    friend class Configuration;
+public:
+    typedef mixins::iDuplicable< iAbstractParameter
+                               , DictionaryParameter
+                               , iAbstractParameter> DuplicableParent;
+protected:
+    /// Marks last inserted parameter as required one.
+    void _mark_last_inserted_as_required();
+public:
+    DictionaryParameter( const char *, const char * );
+
+    /// Constructs a bound insertion proxy instance object.
+    InsertionProxy insertion_proxy();
+
+    // ...
+};
 
 }  // namespace dict
 /** @} */  // end of appParameters group

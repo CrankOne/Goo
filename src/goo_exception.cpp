@@ -289,10 +289,10 @@ __ExceptionDescrDictionary __jDict[] = {
     { 0, nullptr }
 };
 
-# define declare_static_const(num, nm, dscr) \
-const ErrCode Exception::nm = num;
-    for_all_errorcodes( declare_static_const )
-# undef declare_static_const
+//# define declare_static_const(num, nm, dscr) \
+//const ErrCode Exception::nm = num;
+//    for_all_errorcodes( declare_static_const )
+//# undef declare_static_const
 
 Exception::Exception(
                 const ErrCode c,

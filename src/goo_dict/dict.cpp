@@ -32,37 +32,34 @@
 namespace goo {
 namespace dict {
 
-Dictionary::Dictionary( const char * name_,
-                        const char * description_ ) :
-            DuplicableParent(name_,
-                             description_,
-                             0 ) {
-}
-
-Dictionary::Dictionary( const Dictionary & orig ) : DuplicableParent( orig ) {
-    for( auto it  = orig._parameters.begin();
-              it != orig._parameters.end(); ++it ) {
+Dictionary::Dictionary( const Dictionary & orig ) {
+    const SingularsContainer & singRef = orig;
+    const DictionariesContainer & dictsRef = orig;
+    for( auto it  = singRef.begin();
+              it != singRef.end(); ++it ) {
         if( *it ) {
             insert_parameter( clone_as<iAbstractParameter,
                               iSingularParameter>( *it ) );
         }
     }
-    for( auto it  = orig._dictionaries.begin();
-              it != orig._dictionaries.end(); ++it ) {
+    for( auto it  = dictsRef.begin();
+              it != dictsRef..end(); ++it ) {
         insert_section( clone_as<iAbstractParameter,
-                        Dictionary>( it->second ) );
+                Dictionary>( it->second ) );
     }
 }
 
 Dictionary::~Dictionary() {
-    for( auto it = _parameters.begin();
-         it != _parameters.end(); ++it ) {
+    //const SingularsContainer & singRef = ;
+    //const DictionariesContainer & dictsRef = orig;
+    for( auto it = SingularsContainer::begin();
+         it != SingularsContainer::end(); ++it ) {
         if( *it ) {
             delete *it;
         }
     }
-    for( auto it = _dictionaries.begin();
-         it != _dictionaries.end(); ++it ) {
+    for( auto it = DictionariesContainer::begin();
+         it != DictionariesContainer::end(); ++it ) {
         delete it->second;
     }
 }
@@ -278,16 +275,6 @@ Dictionary::probe_subsection( const char path[] ) const {
     return _get_subsection( strdupa(path), true );
 }
 
-void
-Dictionary::_mark_last_inserted_as_required() {
-    if( _parameters.empty() ) {
-        emraise( badState,
-            "None parameters were set to dictionary, but marking last as "
-            "required was requested." );
-    }
-    _parameters.back()->set_is_argument_required_flag();
-}
-
 bool
 Dictionary::is_consistant( std::map<std::string, const iSingularParameter *> & badParameters,
                            const std::string & prefix ) const {
@@ -370,9 +357,29 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
     }
 }
 
+
+// ---
+
 InsertionProxy
-Dictionary::insertion_proxy() {
+DictionaryParameter::insertion_proxy() {
     return InsertionProxy( this );
+}
+
+DictionaryParameter::DictionaryParameter( const char * name_,
+                        const char * description_ ) :
+            DuplicableParent(name_,
+                             description_,
+                             0 ) {
+}
+
+void
+DictionaryParameter::_mark_last_inserted_as_required() {
+    if( _parameters.empty() ) {
+        emraise( badState,
+            "None parameters were set to dictionary, but marking last as "
+            "required was requested." );
+    }
+    _parameters.back()->set_is_argument_required_flag();
 }
 
 }  // namespace dict

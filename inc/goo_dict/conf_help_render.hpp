@@ -33,7 +33,7 @@ namespace goo {
 namespace dict {
 
 class Configuration;
-class Dictionary;
+class DictionaryParameter;
 class iSingularParameter;
 
 /**@class iHelpRenderer
@@ -47,7 +47,7 @@ protected:
     virtual void _V_render_help_page( std::ostream &,
                                       const char * appName=nullptr ) = 0;
     virtual void _V_render_reference( std::ostream &,
-                                      const Dictionary & dict,
+                                      const DictionaryParameter & dict,
                                       const std::string & prefix ) = 0;
 public:
     iHelpRenderer( const Configuration & c ) : _confPtr(&c) {}
@@ -62,7 +62,7 @@ public:
 
     /// Renders help message for particular section.
     void render_reference(  std::ostream & os,
-                            const Dictionary & dict,
+                            const DictionaryParameter & dict,
                             const std::string prefix="") {
         assert( _confPtr );
         _V_render_reference(os, dict, prefix);
@@ -90,7 +90,7 @@ protected:
     /// shortened options, required arguments and positional arguments that
     /// must be printed at top level reference page.
     virtual void _recollect_first_level_options(
-                        const Dictionary &,
+                        const DictionaryParameter &,
                         const std::string &,
                         bool thisIsBaseLevel=false);
 
@@ -104,7 +104,7 @@ protected:
                                       const char * appName=nullptr ) override;
 
     void _V_render_reference( std::ostream &,
-                              const Dictionary &,
+                              const DictionaryParameter &,
                               const std::string &) override;
 
 public:

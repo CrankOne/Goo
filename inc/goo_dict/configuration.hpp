@@ -44,7 +44,7 @@ namespace dict {
  * `invalidate_getopt_caches()` just before `extract()` invokation if inserted
  * sub-sections were modified.
  * */
-class Configuration : public Dictionary {
+class Configuration : public DictionaryParameter {
 protected:
     /// Indicator of long option with mandatory argument.
     static const int longOptNoShortcutRequiresArgument;
@@ -83,7 +83,7 @@ protected:
     virtual void insert_parameter( iSingularParameter * ) override;
 
     /// Inserts dictionary instance created by insertion proxy with caches invalidation.
-    virtual void insert_section( Dictionary * ) override;
+    virtual void insert_section( DictionaryParameter * ) override;
 
     // Inserts shortcut inside hashing container for quick access.
     virtual void _cache_parameter_by_shortcut( iSingularParameter * );
@@ -104,7 +104,7 @@ protected:
 
     /// Internal procedure --- composes short & long options data structures.
     static void _cache_append_options(
-                                    const Dictionary &,
+                                    const DictionaryParameter &,
                                     const std::string & nameprefix,
                                     ShortOptString &,
                                     std::unordered_map<char, std::string> &,
@@ -112,18 +112,18 @@ protected:
 
     /// Aux insertion method for long options (reentrant routine).
     static void _cache_insert_long_option( const std::string &,
-                                     Dictionary::LongOptionEntries &,
+                                     DictionaryParameter::LongOptionEntries &,
                                      const iSingularParameter & );
 
     ///  Collects shortcutted flags and required options.
     static void _collect_first_level_options(
-                        const Dictionary & d,
+                        const DictionaryParameter & d,
                         const std::string & nameprefix,
                         std::unordered_map<std::string, iSingularParameter *> & rqs,
                         std::unordered_map<char, iSingularParameter *> & shrt );
 
     /// Used for usage/help print.
-    static void _print_dict_usage( const Dictionary & d,
+    static void _print_dict_usage( const DictionaryParameter & d,
                                    const std::string & omitShortcuts );
 
     /// Helper function setting/appending given token as a positional argument.
@@ -185,7 +185,7 @@ public:
     /// Inserts dictionary instance created by third-party code (causes caches)
     /// invalidation. Note, that copy of dictionary will be dynamically
     /// allocated on heap.
-    virtual void append_section( const Dictionary & dPtr );
+    virtual void append_section( const DictionaryParameter & dPtr );
 
     /// Makes configuration able to acquire single (only) positional argument.
     /// This is not an incremental procedure and has to be used rarely: if
@@ -211,7 +211,7 @@ public:
     /// Returns forwarded arguments (if they were set).
     const std::list<std::string> & forwarded_argv() const;
 
-    friend class Dictionary;
+    friend class DictionaryParameter;
 };  // class Configuration
 
 }  // namespace dict

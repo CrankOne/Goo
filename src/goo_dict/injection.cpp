@@ -34,8 +34,8 @@ DictionaryInjectionMap::add_mapping( const std::string & fromPath,
 }
 
 void
-DictionaryInjectionMap::inject_parameters( const Dictionary & source,
-                                                 Dictionary & target ) const {
+DictionaryInjectionMap::inject_parameters( const DictionaryParameter & source,
+                                                 DictionaryParameter & target ) const {
     for( const auto & mp : _mappings ) {
         const iSingularParameter & fromP = source.parameter( mp.first );
         iSingularParameter & toP = target.parameter( mp.second.path );

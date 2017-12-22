@@ -98,7 +98,7 @@
     char bf[GOO_EMERGENCY_BUFLEN];                                      \
     snprintf(bf, GOO_EMERGENCY_BUFLEN, __VA_ARGS__ );                   \
     if( goo::Exception::user_raise((int) goo::Exception::c, bf ) ) {    \
-        throw goo::Exception((int) goo::Exception::c, bf );}            \
+        throw goo::TheException<goo::Exception:: c>( bf );}            \
     }
 
 /*!\def _TODO_
@@ -251,7 +251,7 @@ std::ostream & operator<<(std::ostream& os, const StackTraceInfoEntry & t);
 class Exception : public std::exception {
 public:
     # define declare_static_const(num, nm, dscr) \
-        static const ErrCode nm;
+        static constexpr ErrCode nm = num;
     for_all_errorcodes( declare_static_const )
     # undef declare_static_const
     /// User's handler slot. Should return true wher exception throw is approved.
@@ -284,10 +284,32 @@ public:
     void dump(std::ostream &) const throw();
 };  // class Exception
 
+# define GOO_EXCPTN_IMPLEMENT_DFT_CTR(C_M) \
+    TheException( const em::String & s="" ) : Exception( C_M, s ) {}
+
+template<ErrCode ECodeT>
+class TheException : public Exception {
+public:
+    GOO_EXCPTN_IMPLEMENT_DFT_CTR(ECodeT)
+};
+
 namespace em {
 String demangle_class( const char * );
 String demangle_function( const String & name );
 }  // namespace em
+
+
+template<>
+class TheException<Exception::unimplemented> : public Exception {
+private:
+    // ... todo: lineno, file, pretty function, what shall be done
+public:
+    GOO_EXCPTN_IMPLEMENT_DFT_CTR(Exception::unimplemented)
+};
+
+// ... further specifications (add by demand)
+
+# undef GOO_EXCPTN_IMPLEMENT_DFT_CTR
 
 }  // namespace goo
 

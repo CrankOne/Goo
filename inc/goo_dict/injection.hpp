@@ -73,8 +73,8 @@ public:
     /// Performs setting parameters in "target" instance with ones from "source"
     /// using paths (and transformations) previously supplied with
     /// add_mapping() method.
-    void inject_parameters( const Dictionary & source,
-                                  Dictionary & target ) const;
+    void inject_parameters( const DictionaryParameter & source,
+                                  DictionaryParameter & target ) const;
 
     /// Returns const reference of mappings for inspection.
     const Injection & injections() const { return _mappings; }
