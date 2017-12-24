@@ -43,9 +43,9 @@ Dictionary::Dictionary( const Dictionary & orig ) {
         }
     }
     for( auto it  = dictsRef.begin();
-              it != dictsRef..end(); ++it ) {
+              it != dictsRef.end(); ++it ) {
         insert_section( clone_as<iAbstractParameter,
-                Dictionary>( it->second ) );
+                DictionaryParameter>( it->second ) );
     }
 }
 
@@ -101,7 +101,7 @@ Dictionary::insert_parameter( iSingularParameter * instPtr ) {
         emraise( badArchitect, "Got %p parameter without name and shortcut.",
                                                                     instPtr );
     }
-    _parameters.push_back( instPtr );
+    SingularsContainer::push_back( instPtr );
 }
 
 /** Dictionary class design emplies that lifetime of sub-dictionaries inserted
@@ -110,8 +110,8 @@ Dictionary::insert_parameter( iSingularParameter * instPtr ) {
  * instances inserted by ptr with this method will be deleted by owning
  * dictionary destructor. */
 void
-Dictionary::insert_section( Dictionary * instPtr ) {
-    auto insertionResult = _dictionaries.emplace( instPtr->name(), instPtr );
+Dictionary::insert_section( DictionaryParameter * instPtr ) {
+    auto insertionResult = DictionariesContainer::emplace( instPtr->name(), instPtr );
     if( !insertionResult.second ) {
         emraise( nonUniq, "Duplicated subsection name on insertion: "
                 "'%s' name was previously associated within subsection %p. "
@@ -185,8 +185,8 @@ Dictionary::_get_parameter( char path[], bool noThrow ) const {
             if( !noThrow ) {
                 emraise( notFound,
                      "Option \"%s\" (long name considered) not found in "
-                     "section \"%s\"",
-                     current, name() ? name() : "<root>" );
+                     "%p",
+                     current, this);
             } else {
                 return nullptr;
             }
@@ -201,8 +201,8 @@ Dictionary::_get_parameter( char path[], bool noThrow ) const {
                 if( !noThrow ) {
                     emraise( notFound,
                          "Option \"%s\" (shortcut considered) not found in "
-                         "section \"%s\"",
-                         current, name() ? name() : "<root>" );
+                         "section %p",
+                         current, this );
                 } else {
                     return nullptr;
                 }
@@ -212,12 +212,12 @@ Dictionary::_get_parameter( char path[], bool noThrow ) const {
     } else {
         // proceed recursively within section -- `current' contains
         // section name and the `path' leads to an option.
-        auto it = _dictionaries.find( current );
-        if( it == _dictionaries.end() ) {
+        auto it = DictionariesContainer::find( current );
+        if( it == DictionariesContainer::end() ) {
             if( !noThrow ) {
                 emraise( notFound,
-                         "Subsection \"%s\" is not found in section \"%s\"",
-                         current, name() ? name() : "<root>" );
+                         "Subsection \"%s\" is not found in section %p",
+                         current, this );
             } else {
                 return nullptr;
             }
@@ -241,12 +241,12 @@ Dictionary::probe_parameter( const std::string & sPath ) const {
     return _get_parameter( strdupa( sPath.c_str() ), true );
 }
 
-const Dictionary *
+const DictionaryParameter *
 Dictionary::_get_subsection( char path[], bool noThrow ) const {
     char * current;
     int rc = pull_opt_path_token( path, current );
-    auto it = _dictionaries.find( current );
-    if( _dictionaries.end() == it ) {
+    auto it = DictionariesContainer::find( current );
+    if( DictionariesContainer::end() == it ) {
         if( !noThrow ) {
             emraise( notFound, "Dictionary %p has no section named \"%s\".",
                     this, current );
@@ -265,12 +265,12 @@ Dictionary::_get_subsection( char path[], bool noThrow ) const {
     }
 }
 
-const Dictionary &
+const DictionaryParameter &
 Dictionary::subsection( const char path[] ) const {
     return *_get_subsection( strdupa(path) );
 }
 
-const Dictionary *
+const DictionaryParameter *
 Dictionary::probe_subsection( const char path[] ) const {
     return _get_subsection( strdupa(path), true );
 }
@@ -278,8 +278,8 @@ Dictionary::probe_subsection( const char path[] ) const {
 bool
 Dictionary::is_consistant( std::map<std::string, const iSingularParameter *> & badParameters,
                            const std::string & prefix ) const {
-    for( auto it  = _parameters.cbegin();
-              it != _parameters.cend(); ++it ) {
+    for( auto it  = SingularsContainer::cbegin();
+              it != SingularsContainer::cend(); ++it ) {
         if( (*it)->is_mandatory() && !(*it)->is_set() ) {
             if( (*it)->name() ) {
                 badParameters.emplace(
@@ -295,8 +295,8 @@ Dictionary::is_consistant( std::map<std::string, const iSingularParameter *> & b
             }
         }
     }
-    for( auto it  = _dictionaries.cbegin();
-              it != _dictionaries.cend(); ++it ) {
+    for( auto it  = DictionariesContainer::cbegin();
+              it != DictionariesContainer::cend(); ++it ) {
         it->second->is_consistant( badParameters, prefix + it->first );
     }
     return badParameters.empty();
@@ -305,9 +305,9 @@ Dictionary::is_consistant( std::map<std::string, const iSingularParameter *> & b
 void
 Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
     std::stringstream ss;
-    size_t n = _parameters.size();
-    bool hasSubsections = !_dictionaries.empty();
-    for( auto p : _parameters ) {
+    size_t n = SingularsContainer::size();
+    bool hasSubsections = !SingularsContainer::empty();
+    for( auto p : *static_cast<const SingularsContainer *>(this) ) {
         n--;
         ss << (n || hasSubsections ? "╟─" : "╙─") << " ";
         if( p->name() ) {
@@ -338,8 +338,8 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
         }
         ss << std::endl;
     }
-    n = _dictionaries.size();
-    for( auto dctPair : _dictionaries ) {
+    n = DictionariesContainer::size();
+    for( auto dctPair : *static_cast<const DictionariesContainer *>(this) ) {
         n--;
         std::list<std::string> sub;
         dctPair.second->print_ASCII_tree( sub );
@@ -374,12 +374,16 @@ DictionaryParameter::DictionaryParameter( const char * name_,
 
 void
 DictionaryParameter::_mark_last_inserted_as_required() {
-    if( _parameters.empty() ) {
+    # if 1
+    _TODO_  // TODO
+    # else
+    if( static_cast<Dictionary*>(this)->SingularsContainer::empty() ) {
         emraise( badState,
             "None parameters were set to dictionary, but marking last as "
             "required was requested." );
     }
-    _parameters.back()->set_is_argument_required_flag();
+    DuplicableParent::Parent::SingularsContainer::back()->set_is_argument_required_flag();
+    # endif
 }
 
 }  // namespace dict

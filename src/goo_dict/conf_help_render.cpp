@@ -72,7 +72,7 @@ POSIXRenderer::_V_render_help_page( std::ostream & os,
         }
     }
 
-    if( ! conf().dictionaries().empty() ) {
+    if( ! conf().DictionariesContainer::empty() ) {
         os << "[" ESC_CLRUNDRLN "SECT OPTIONS" ESC_CLRCLEAR "]";
     }
 
@@ -83,7 +83,7 @@ POSIXRenderer::_V_render_help_page( std::ostream & os,
 
     render_reference( os, conf() );
 
-    if( !conf().dictionaries().empty() ) {
+    if( !conf().DictionariesContainer::empty() ) {
         os << "The " ESC_CLRUNDRLN "SECT OPTIONS" ESC_CLRCLEAR " placeholder "
            "refers to parameters in sub-sections. Type " ESC_CLRBOLD
            "--help=<subsection-name>" ESC_CLRCLEAR " or " ESC_CLRBOLD "-h<subsection-name>" ESC_CLRCLEAR
@@ -98,7 +98,7 @@ POSIXRenderer::_V_render_reference( std::ostream & os,
                                     const DictionaryParameter & d,
                                     const std::string & prefix ) {
     std::map<std::string, const iSingularParameter *> mySortedPs;
-    const auto & myParameters = d.parameters();
+    const Dictionary::SingularsContainer & myParameters = d;
     std::transform( myParameters.begin(), myParameters.end(),
                 std::inserter( mySortedPs, mySortedPs.end() ),
                 //std::bind( &DECLTYPE(myParameters)::value_type, std::placeholders::_1 )
@@ -113,11 +113,11 @@ POSIXRenderer::_V_render_reference( std::ostream & os,
            << std::endl
            ;
     }
-    if( !d.dictionaries().empty() ) {
+    if( !d.DictionariesContainer::empty() ) {
         // TODO: sort?
-        os  << "There are also " << d.dictionaries().size()
+        os  << "There are also " << d.DictionariesContainer::size()
             << " sub-sections available in this section:" << std::endl;
-        for( auto p : d.dictionaries() ) {
+        for( auto p : static_cast<const Dictionary::DictionariesContainer &>(d) ) {
             os << "    " ESC_CLRBOLD << p.first << ESC_CLRCLEAR "" << std::endl;
         }
     }
@@ -186,8 +186,8 @@ POSIXRenderer::_recollect_first_level_options(
                 const std::string & nameprefix,
                 bool thisIsBaseLevel ) {
     // Iterate among dictionary options collecting the parameters:
-    for( auto it  = self.parameters().begin();
-              it != self.parameters().end(); ++it ) {
+    for( auto it  = self.Dictionary::SingularsContainer::begin();
+              it != self.Dictionary::SingularsContainer::end(); ++it ) {
         // Collect, if parameter has the shortcut or is mandatory:
         if( (*it)->has_shortcut() || (*it)->is_mandatory() || thisIsBaseLevel ) {
             if( (*it)->name() ) {
@@ -210,8 +210,8 @@ POSIXRenderer::_recollect_first_level_options(
             // TODO: positional?
         }
     }
-    for( auto it  = self.dictionaries().cbegin();
-              it != self.dictionaries().cend(); ++it ) {
+    for( auto it  = self.Dictionary::DictionariesContainer::cbegin();
+              it != self.Dictionary::DictionariesContainer::cend(); ++it ) {
         std::string sectPrefix = nameprefix
                                + it->second->name()
                                + ".";

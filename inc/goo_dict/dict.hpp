@@ -96,6 +96,7 @@ namespace dict {
 
 class InsertionProxy;
 class Configuration;
+class DictionaryParameter;
 
 /**@brief Parameters container with basic querying support.
  * @class Dictionary
@@ -109,36 +110,51 @@ class Configuration;
  * DictionaryParameter for actual parameter dictionary representation. Its
  * intermediate functionality is used in AoS sequences as well.
  * */
-class Dictionary : std::list<iSingularParameter *>
-                 , std::unordered_map<std::string, Dictionary *> {
-protected:
+class Dictionary : public std::list<iSingularParameter *>
+                 , public std::unordered_map<std::string, DictionaryParameter *>
+                 , public mixins::iDuplicable< Dictionary
+                                             , Dictionary
+                                             , Dictionary
+                                             , true> {
+public:
     typedef std::list<char>    ShortOptString;
     typedef std::list<void*>   LongOptionEntries;  // ptrs are malloc()'d
     typedef std::list<iSingularParameter *> SingularsContainer;
-    typedef std::unordered_map<std::string, Dictionary *> DictionariesContainer;
+    typedef std::unordered_map<std::string, DictionaryParameter *> DictionariesContainer;
+    typedef std::unordered_map<std::string, iSingularParameter *> ParametersByName;
+    typedef std::unordered_map<char, iSingularParameter *> ParametersByShortcut;
 private:
     /// Long-name parameters index (aggregation).
-    std::unordered_map<std::string, iSingularParameter *> 
-                                                    _parametersIndexByName;
+    ParametersByName _parametersIndexByName;
     /// Shortcut parameters index (aggregation).
-    std::unordered_map<char, iSingularParameter *> _parametersIndexByShortcut;
+    ParametersByShortcut _parametersIndexByShortcut;
 
     /// Internal function mutating given path str --- parameter entry getter.
     virtual const iSingularParameter * _get_parameter( char [], bool noThrow=false ) const;
 
     /// Internal function mutating given path str --- subsection getter.
-    virtual const Dictionary * _get_subsection( char [], bool noThrow=false ) const;
+    virtual const DictionaryParameter * _get_subsection( char [], bool noThrow=false ) const;
+protected:
+    ParametersByName & parameters_by_name() { return _parametersIndexByName; }
+
+    ParametersByShortcut & parameters_by_shortcut() { return _parametersIndexByShortcut; }
 public:
-    ~Dictionary();
+    const ParametersByName & parameters_by_name() const { return _parametersIndexByName; }
+
+    const ParametersByShortcut & parameters_by_shortcut() const { return _parametersIndexByShortcut; }
+
+    virtual ~Dictionary();
 
     /// Inserts parameter instance.
     virtual void insert_parameter( iSingularParameter * );
 
     /// Inserts dictionary instance.
-    virtual void insert_section( Dictionary * );
+    virtual void insert_section( DictionaryParameter * );
 
     /// Public copy ctr for virtual copy ctr.
     Dictionary( const Dictionary & );
+
+    Dictionary() {}
 
     /// This routine performs simple token extraction from option path.
     /// For example, the following string:
@@ -197,39 +213,39 @@ public:
 
     /// Get sub-dictionary instance by its full name.
     /// Note, that path delimeter here is dot symbol '.' (const getter).
-    virtual const Dictionary & subsection( const char [] ) const;
+    virtual const DictionaryParameter & subsection( const char [] ) const;
 
     /// Get sub-dictionary instance by its full name.
     /// Note, that path delimeter here is dot symbol '.'.
-    virtual Dictionary & subsection( const char path[] ) {
+    virtual DictionaryParameter & subsection( const char path[] ) {
         const Dictionary * constThis = this;
-        return const_cast<Dictionary &>(constThis->subsection( path ));
+        return const_cast<DictionaryParameter &>(constThis->subsection( path ));
     }
 
-    virtual Dictionary & subsection( const std::string & s ) {
+    virtual DictionaryParameter & subsection( const std::string & s ) {
         return subsection(s.c_str());
     }
 
-    virtual const Dictionary & subsection( const std::string & s ) const {
+    virtual const DictionaryParameter & subsection( const std::string & s ) const {
         return subsection(s.c_str());
     }
 
     /// Const version of faulty-tolerant subsection instance getter. If
     /// parameter lookup fails, returns nullptr.
-    virtual const Dictionary * probe_subsection( const char path[] ) const;
+    virtual const DictionaryParameter * probe_subsection( const char path[] ) const;
 
     /// Faulty-tolerant subsection instance getter. If lookup fails,
     /// returns nullptr.
-    virtual Dictionary * probe_subsection( const char path[] ) {
+    virtual DictionaryParameter * probe_subsection( const char path[] ) {
         const Dictionary * constThis = this;
-        return const_cast<Dictionary *>(constThis->probe_subsection( path ));
+        return const_cast<DictionaryParameter *>(constThis->probe_subsection( path ));
     }
 
-    virtual const Dictionary * probe_subsection( const std::string & p ) const {
+    virtual const DictionaryParameter * probe_subsection( const std::string & p ) const {
         return probe_subsection( p.c_str() );
     }
 
-    virtual Dictionary * probe_subsection( const std::string & p ) {
+    virtual DictionaryParameter * probe_subsection( const std::string & p ) {
         return probe_subsection( p.c_str() );
     }
 
@@ -253,10 +269,10 @@ public:
  * It is implied that user code will utilize InsertionProxy methods to fill
  * this container instances with particular parameters and sub-dictionaries.
  * */
-class DictionaryParameter : public Dictionary
-                          , public mixins::iDuplicable< iAbstractParameter
+class DictionaryParameter : public mixins::iDuplicable< iAbstractParameter
                                                       , DictionaryParameter
-                                                      , iAbstractParameter> {
+                                                      , iAbstractParameter>
+                          , public Dictionary {
     friend class InsertionProxy;
     friend class Configuration;
 public:
@@ -268,7 +284,7 @@ protected:
     void _mark_last_inserted_as_required();
 public:
     DictionaryParameter( const char *, const char * );
-
+    DictionaryParameter( const DictionaryParameter & );
     /// Constructs a bound insertion proxy instance object.
     InsertionProxy insertion_proxy();
 

@@ -177,8 +177,8 @@ Configuration::_cache_append_options( const DictionaryParameter & self,
                                       std::unordered_map<char, std::string> & shrtPths,
                                       LongOptionEntries & longOpts ) {
     // Form short options string (without any prefixes here):
-    for( auto it  = self._parametersIndexByShortcut.cbegin();
-              it != self._parametersIndexByShortcut.cend(); ++it ) {
+    for( auto it  = self.parameters_by_shortcut().cbegin();
+              it != self.parameters_by_shortcut().cend(); ++it ) {
         iSingularParameter & pRef = *(it->second);
         // It is mandatory for parameters in this index to
         // have shortcut. It is handy to check their shortcuts here to catch
@@ -201,15 +201,15 @@ Configuration::_cache_append_options( const DictionaryParameter & self,
         }
     }
     // Form long-only options struct:
-    for( auto it  = self._parametersIndexByName.cbegin();
-              it != self._parametersIndexByName.cend(); ++it ) {
+    for( auto it  = self.parameters_by_name().cbegin();
+              it != self.parameters_by_name().cend(); ++it ) {
         iSingularParameter & pRef = *(it->second);
         assert( pRef.name() == it->first );
         _cache_insert_long_option( nameprefix, longOpts, pRef );
     }
     // Now, recursively traverse via all sub-dictionaries (subsections):
-    for( auto it  = self._dictionaries.cbegin();
-              it != self._dictionaries.cend(); ++it ) {
+    for( auto it  = self.DictionariesContainer::cbegin();
+              it != self.DictionariesContainer::cend(); ++it ) {
         assert( it->second->name() == it->first );
         std::string sectPrefix = nameprefix + it->second->name() + ".";
         _cache_append_options( *(it->second), sectPrefix,
@@ -279,8 +279,8 @@ Configuration::extract( int argc,
                 }
             }
             // indicates this is an option with shortcut (or a shortcut-only option)
-            auto pIt = _parametersIndexByShortcut.find( c );
-            if( _parametersIndexByShortcut.end() == pIt ) {
+            auto pIt = parameters_by_shortcut().find( c );
+            if( parameters_by_shortcut().end() == pIt ) {
                 auto byPath = _cache_shortcutPaths.find( c );
                 if( _cache_shortcutPaths.end() == byPath ) {
                     emraise( badState, "Shortcut option '%c' (0x%02x) unknown.",
@@ -289,7 +289,7 @@ Configuration::extract( int argc,
                 // The parameter is referred by shortcut and lies in
                 // one of the sub-sections referred by path:
                 DictionaryParameter & subsection = this->subsection( byPath->second.c_str() );
-                pIt = subsection._parametersIndexByShortcut.find( c );
+                pIt = subsection.parameters_by_shortcut().find( c );
                 assert( subsection._parametersIndexByShortcut.end() != pIt );  // impossible by design
             }
             iSingularParameter & parameter = *(pIt->second);
@@ -332,8 +332,8 @@ Configuration::extract( int argc,
             log_extraction( "getopt_long() returned %d integer value --- "
                             "considering option \"%s\" (optIndex=%d).\n", c,
                             longOptions[optIndex].name, optIndex );
-            auto pIt = _parametersIndexByName.find( longOptions[optIndex].name );
-            if( _parametersIndexByName.end() == pIt ) {
+            auto pIt = parameters_by_name().find( longOptions[optIndex].name );
+            if( parameters_by_name().end() == pIt ) {
                 
             }
             iSingularParameter & p = DictionaryParameter::parameter(
@@ -459,8 +459,8 @@ Configuration::_collect_first_level_options(
                     std::unordered_map<std::string, iSingularParameter *> & rqs,
                     std::unordered_map<char, iSingularParameter *> & shrt ) {
     // Iterate among dictionary options collecting the parameters:
-    for( auto it  = self._parameters.begin();
-              it != self._parameters.end(); ++it ) {
+    for( auto it  = self.SingularsContainer::begin();
+              it != self.SingularsContainer::end(); ++it ) {
         // Collect, if parameter has the shortcut or is mandatory:
         if( (*it)->has_shortcut() || (*it)->is_mandatory() ) {
             if( (*it)->name() ) {
@@ -630,7 +630,7 @@ Configuration::_append_configuration_caches(
 void
 Configuration::_cache_parameter_by_shortcut( iSingularParameter * p_ ) {
     assert( p_->has_shortcut() );
-    auto ir = _parametersIndexByShortcut.emplace( p_->shortcut(), p_ );
+    auto ir = parameters_by_shortcut().emplace( p_->shortcut(), p_ );
     if( !ir.second ) {
         emraise( nonUniq, "Configuration \"%s\":%p already has parameter "
                           "referenced by '%c': %p \"%s\". "
@@ -648,13 +648,13 @@ Configuration::_cache_parameter_by_full_name( const std::string & fullName,
                                               iSingularParameter * p_ ) {
     assert( p_->name() );
     // TODO: insert and check insertion result
-    auto it = _parametersIndexByName.find( fullName );
-    if( it != _parametersIndexByName.end() ) {
+    auto it = parameters_by_name().find( fullName );
+    if( it != parameters_by_name().end() ) {
         emraise( nonUniq, "Configuration \"%s\":%p already has option '--%s'.",
                 this->name(), this,
                 fullName.c_str() );
     }
-    auto ir = _parametersIndexByName.emplace( fullName.c_str(), p_ );
+    auto ir = parameters_by_name().emplace( fullName.c_str(), p_ );
     if( !ir.second ) {
         emraise( nonUniq, "Configuration \"%s\":%p already has parameter "
                           "referenced by name \"%s\": %p. Unable to insert %p "

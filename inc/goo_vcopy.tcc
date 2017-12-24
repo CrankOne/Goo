@@ -48,7 +48,7 @@ template<typename BaseTypeT,
          typename SelfTypeT=BaseTypeT,
          typename ParentT=BaseTypeT,
          bool forceImplement=false,
-         bool isSame=std::is_same<BaseTypeT, SelfTypeT>::value>
+         bool isSame=std::is_same<BaseTypeT, SelfTypeT>::value>  // TODO: <- do we need it?
 class iDuplicable;
 }  // namespace mixins
 
