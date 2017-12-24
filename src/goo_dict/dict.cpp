@@ -374,17 +374,16 @@ DictionaryParameter::DictionaryParameter( const char * name_,
 
 void
 DictionaryParameter::_mark_last_inserted_as_required() {
-    # if 1
-    _TODO_  // TODO
-    # else
     if( static_cast<Dictionary*>(this)->SingularsContainer::empty() ) {
         emraise( badState,
             "None parameters were set to dictionary, but marking last as "
             "required was requested." );
     }
-    DuplicableParent::Parent::SingularsContainer::back()->set_is_argument_required_flag();
-    # endif
+    SingularsContainer::back()->set_is_argument_required_flag();
 }
+
+DictionaryParameter::DictionaryParameter( const DictionaryParameter & o ) :
+        DuplicableParent(o), Dictionary(o) {}
 
 }  // namespace dict
 }  // namespace dict

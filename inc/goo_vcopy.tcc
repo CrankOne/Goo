@@ -35,20 +35,30 @@ namespace mixins {
  * @brief Provides virtual copy ctr interface.
  *
  * This template class provides interfacing functions for copy construction
- * (cloning) without knoledge of concrete class. Base class is specified as
+ * (cloning) without knowledge of concrete class. Base class is specified as
  * a template parameter.
  *
  * By default, classes which does not implement a copy constructor will cause
  * a SFINAE (compilation failure) indicating that user code have to provide
  * it.
  *
+ * User code may rely on automatic cloning method implementation when target
+ * class provides a copy constructor. In that case, the fourth argument has to
+ * be set to `false`.
+ *
+ * For goo devs: please note that despite in most of the cases this fourth
+ * argument could be set to
+ * `std::is_copy_constructible<T>::value && !std::is_abstract::value` we can not
+ * provide this expression as a default argument since SelfTypeT is not known
+ * upon this template instantiation.
+ *
  * @ingroup utils
  */
-template<typename BaseTypeT,
-         typename SelfTypeT=BaseTypeT,
-         typename ParentT=BaseTypeT,
-         bool forceImplement=false,
-         bool isSame=std::is_same<BaseTypeT, SelfTypeT>::value>  // TODO: <- do we need it?
+template< typename BaseTypeT
+        , typename SelfTypeT=BaseTypeT
+        , typename ParentT=BaseTypeT
+        , bool forceImplement=false
+        >
 class iDuplicable;
 }  // namespace mixins
 
@@ -57,23 +67,21 @@ clone( const mixins::iDuplicable<BaseTypeT, SelfTypeT, ParentT, forceImplem> * o
 
 namespace mixins {
 
-//
-// An iDuplicable implementation for abstract base class
-// (copy ctr is not provided). Designed to be used in base
-// classes.
-template<typename BaseTypeT,
-         typename SelfTypeT,
-         typename ParentT>
-class iDuplicable<BaseTypeT, SelfTypeT, ParentT, false, true> {
+/// An iDuplicable implementation for abstract base class
+/// (copy ctr is not provided). Designed to be used in base
+/// classes.
+template<typename SelfTypeT>
+class iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, false> {
 public:
-    typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, false, true> DuplicableParent;
-    typedef iDuplicable<BaseTypeT, SelfTypeT> DuplicableBase;
-    typedef ParentT Parent;
+    typedef iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, false> DuplicableParent;
+    typedef iDuplicable<SelfTypeT, SelfTypeT> DuplicableBase;
+    typedef SelfTypeT Parent;
+    typedef SelfTypeT BaseType;
 
     virtual ~iDuplicable(){}
 protected:
     /// Pure virtual method for copy construction.
-    virtual BaseTypeT * _V_clone() const = 0;
+    virtual BaseType * _V_clone() const = 0;
 
     /// Returns standard C++ RTTI struct descibing this instance class
     /// (outermost descendant).
@@ -81,26 +89,24 @@ protected:
         return typeid( SelfTypeT );
     }
 
-    friend BaseTypeT * ::goo::clone<>( const DuplicableParent * origPtr );
+    friend BaseType * ::goo::clone<>( const DuplicableParent * origPtr );
 };  // class iDuplicable
 
-//
-// An iDuplicable implementation for base class with forced cloning
-// method implementation (copy ctr is provided). Designed to be used
-// in base classes which have to be instantiated.
-template<typename BaseTypeT,
-         typename SelfTypeT,
-         typename ParentT>
-class iDuplicable<BaseTypeT, SelfTypeT, ParentT, true, true> {
+/// An iDuplicable implementation for base class with default cloning
+/// method implementation (copy ctr is provided by class definition). Designed
+/// to be used in base classes which can be instantiated on its own.
+template< typename SelfTypeT >
+class iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, true> {
 public:
-    typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, true, true> DuplicableParent;
-    typedef iDuplicable<BaseTypeT, SelfTypeT> DuplicableBase;
-    typedef ParentT Parent;
+    typedef iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, true> DuplicableParent;
+    typedef iDuplicable<SelfTypeT, SelfTypeT> DuplicableBase;
+    typedef SelfTypeT Parent;
+    typedef SelfTypeT BaseType;
 
     virtual ~iDuplicable(){}
 protected:
     /// Performs invokation of copy constructor.
-    virtual BaseTypeT * _V_clone() const {
+    virtual SelfTypeT * _V_clone() const {
         return new SelfTypeT( *static_cast<const SelfTypeT *>(this) );
     }
 
@@ -110,20 +116,20 @@ protected:
         return typeid( SelfTypeT );
     }
 
-    friend BaseTypeT * ::goo::clone<>( const DuplicableParent * origPtr );
+    friend SelfTypeT * ::goo::clone<>( const DuplicableParent * origPtr );
 };  // class iDuplicable
 
-//
-// An iDuplicable implementation for outern descendant with
-// abstract base class (copy ctr is provided).
+/// An iDuplicable implementation for outern descendant with
+/// abstract base class (copy ctr is provided).
 template<typename BaseTypeT,
          typename SelfTypeT,
          typename ParentT>
-class iDuplicable<BaseTypeT, SelfTypeT, ParentT, false, false> : public ParentT {
+class iDuplicable<BaseTypeT, SelfTypeT, ParentT, false> : public ParentT {
 public:
-    typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, false, false> DuplicableParent;
+    typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, false> DuplicableParent;
     typedef iDuplicable<BaseTypeT, BaseTypeT> DuplicableBase;
     typedef ParentT Parent;
+    typedef BaseTypeT BaseType;
 
     virtual ~iDuplicable(){}
 protected:
