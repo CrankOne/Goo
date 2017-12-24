@@ -28,11 +28,20 @@
 # include "goo_vcopy.tcc"
 
 # include <list>
+# include <vector>
+
 # include <cassert>
 # include <sstream>
 
 namespace goo {
 namespace dict {
+
+/// Sequence container template. The particular selection may significantly
+/// affect performance or memory construction. Since goo::dict is generally
+/// designed for application configuration that occurs once, the performance
+/// matters less than memory consumption that is slightly more efficient for
+/// list sequencies (TODO: has to benchmarked, actually).
+template<typename T> using List = std::vector<T>;
 
 class InsertionProxy;
 
@@ -228,7 +237,7 @@ public:
     }
 
     /// Getter method for multiple parameters.
-    template<typename T> const std::list<T> &
+    template<typename T> const List<T> &
     as_list_of() const;
 
     virtual const std::type_info & target_type_info() const = 0;
@@ -422,17 +431,17 @@ using InsertableParameter = typename
  * or appending variables set in config files.
  */
 template<typename ValueT>
-class Parameter<std::list<ValueT> > :
+class Parameter<List<ValueT> > :
             public mixins::iDuplicable< iAbstractParameter,
-                                        Parameter< std::list<ValueT> >,
+                                        Parameter< List<ValueT> >,
                                         /*protected?*/ InsertableParameter< ValueT > > {
 public:
     typedef mixins::iDuplicable<iAbstractParameter,
-                                Parameter< std::list<ValueT> >,
+                                Parameter< List<ValueT> >,
                                 InsertableParameter<ValueT> > DuplicableParent;
 private:
     bool _setToDefault;
-    std::list<ValueT> _values;
+    List<ValueT> _values;
 protected:
     virtual void _V_push_value( const ValueT & v ) {
         if( _setToDefault ) {
@@ -445,7 +454,7 @@ protected:
         InsertableParameter<ValueT>::_V_parse_argument( strval );
         _V_push_value( InsertableParameter<ValueT>::value() ); }
 public:
-    const std::list<ValueT> & values() const { return _values; }
+    const List<ValueT> & values() const { return _values; }
 
     template<class ... Types>
     Parameter( const std::initializer_list<ValueT> & il, Types ... args ) :
@@ -460,7 +469,7 @@ public:
     }
 
     template<class ... Types>
-    Parameter( const std::list<ValueT> & il, Types ... args ) :
+    Parameter( const List<ValueT> & il, Types ... args ) :
         DuplicableParent( args ... , *il.begin() ),
         _setToDefault( true ),
         _values( il )
@@ -480,7 +489,7 @@ public:
         assert( this->description() );
     }
 
-    Parameter( const Parameter<std::list<ValueT> > & orig ) :
+    Parameter( const Parameter<List<ValueT> > & orig ) :
         DuplicableParent( orig ),
         _setToDefault( orig._setToDefault ),
         _values( orig._values )
@@ -498,7 +507,7 @@ public:
     /// This method is usually used by some user code desiring set all the
     /// parameters list at once. It should not be used by Goo API, during the
     /// normal argument parsing cycle.
-    void assign( const std::list<ValueT> & plst ) {
+    void assign( const List<ValueT> & plst ) {
         for( auto v : plst ) {
             _V_push_value(v);
         }
@@ -512,9 +521,9 @@ public:
     // ... whatever?
 };
 
-template<typename T> const std::list<T> &
+template<typename T> const List<T> &
 iSingularParameter::as_list_of() const {
-    auto ptr = dynamic_cast<Parameter<std::list<T> > const *>(this);
+    auto ptr = dynamic_cast<Parameter<List<T> > const *>(this);
     if( !ptr ) {
         if( this->name() ) {
             emraise(badCast, "Couldn't cast parameter \"%s\" to "

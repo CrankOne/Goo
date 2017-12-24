@@ -201,15 +201,15 @@ public:
 
     /// Makes configuration instace be able to acquire a list of positional
     /// arguments of the specific type.
-    template<typename T> Parameter<std::list<T> > &
+    template<typename T> Parameter<List<T> > &
     positional_arguments( const char name[], const char description[] ) {
-        auto p = new InsertableParameter<std::list<T> >( name, description );
+        auto p = new InsertableParameter<List<T> >( name, description );
         _positionalArgument = p;
         return *p;
     }
 
     /// Returns forwarded arguments (if they were set).
-    const std::list<std::string> & forwarded_argv() const;
+    const List<std::string> & forwarded_argv() const;
 
     friend class DictionaryParameter;
 };  // class Configuration

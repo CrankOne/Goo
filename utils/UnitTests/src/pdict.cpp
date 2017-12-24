@@ -554,6 +554,18 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} End-of-options test done." << std::endl;
     }
     # endif
+    # if 0
+    // There is no way to define application configuration in a way that allows
+    // construction of AoS-like structures. However goo::dict allows it in a
+    // perculiar way. Here is a test case of cunstructing such structure and
+    // retrieving  elements from it. The practical rationale for this is to provide
+    // native compatibility with similar structures in elaborated mark-up languages
+    // such as YAML or XML.
+    {
+        goo::dict::DictionaryParameter d("object", "Aggregating object.");
+        goo::dict::Parameter<goo::dict::Dictionary> pAoS("aos", "Array of structures.");
+    }
+    # endif
 
     //conf.usage_text( os );
 
