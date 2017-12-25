@@ -195,7 +195,7 @@ public:
 
 
 /* @class iSingularParameter
- * @brief Generic command-line parameter features interface.
+ * @brief Generic parameter features interface.
  *
  * At this level of inheritance the less-generic definition of
  * parameter dictionary entries is defined.
@@ -228,9 +228,11 @@ public:
         auto ptr = dynamic_cast<iParameter<T> const *>(this);
         if( !ptr ) {
             if( this->name() ) {
-                emraise(badCast, "Couldn't cast parameter \"%s\" to specified type.", name() );
+                goo_badcast( DECLTYPE(this), T, this, "Parameter name: \"%s\"."
+                           , name() );
             } else {
-                emraise(badCast, "Couldn't cast parameter '%c' to specified type.", shortcut() );
+                goo_badcast( DECLTYPE(this), T, this, "Parameter shortcut: \"%c\"."
+                           , shortcut() );
             }
         }
         return ptr->value();

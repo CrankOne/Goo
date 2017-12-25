@@ -31,7 +31,7 @@ namespace dict {
 
 /**@brief Enum parameter.
  *
- * This "enumeration" dictionary parameter introduces restrictionas for certain
+ * This "enumeration" dictionary parameter introduces restrictions for certain
  * string parameter. This class is designed for support the "classic" C++ enums
  * which permits quite restricted functionality. It is convinient, however, to
  * use them for short static enumerations defined at compile time.

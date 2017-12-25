@@ -30,6 +30,7 @@
 # ifdef __cplusplus
 #   include <string>
 #   include <exception>
+#   include <typeinfo>
 #   ifdef EM_STACK_UNWINDING
 #       include <forward_list>
 #       ifndef NO_BFD_LIB
@@ -101,10 +102,25 @@
         throw goo::TheException<goo::Exception:: c>( bf );}            \
     }
 
+/*!\def emraise_tp
+ * \brief Throws the goo::Exception object with detailed description constructed
+ *        with appropriate arguments.
+ * \ingroup errors
+ *
+ * Format is standard for ANSI printf() family.
+ * \param c is a encoded generic error ID from for_all_errorcodes macro.
+ */
+# define emraise_tp( c, ... ) while(true){                           \
+    if( goo::Exception::user_raise( (int) goo::Exception::c, s ) ) {    \
+        throw goo::TheException<goo::Exception:: c>( __VA_ARGS__ );} \
+    }
+
 /*!\def _TODO_
  * \brief Development helper macro to raise 'unimplemented' error.
  * \ingroup errors */
-# define _TODO_ emraise( unimplemented, "%s:%d %s", __FILE__, __LINE__, __PRETTY_FUNCTION__ )
+# define _TODO_ emraise_tp( unimplemented                \
+                          , __LINE__, __FILE__           \
+                          , __PRETTY_FUNCTION__, "(dev)" )
 /*!\def _UNSUPPORTED_
  * \brief Development helper macro to raise 'unsupported' error.
  * \ingroup errors
@@ -248,7 +264,7 @@ std::ostream & operator<<(std::ostream& os, const StackTraceInfoEntry & t);
  *
  * Inherited from std::exception.
  */
-class Exception : public std::exception {
+class Exception {
 public:
     # define declare_static_const(num, nm, dscr) \
         static constexpr ErrCode nm = num;
@@ -267,13 +283,13 @@ protected:
     void _get_trace() throw();
     # endif
 public:
-    /// Main (recommended) constructor.
-    Exception(  const ErrCode       c=0,
-                const em::String & s="");
+    /// Generic constructor.
+    Exception( const ErrCode       c=0
+             , const em::String & s="");
     /// Primitive constructor for most generic exception.
     Exception( const em::String & s="" );
 
-    virtual ~Exception( ) throw();
+    virtual ~Exception() throw();
 
     /// Goo's error code getter.
     inline ErrCode code() const { return _code; }
@@ -288,7 +304,8 @@ public:
     TheException( const em::String & s="" ) : Exception( C_M, s ) {}
 
 template<ErrCode ECodeT>
-class TheException : public Exception {
+class TheException : public Exception
+                   , public std::exception {
 public:
     GOO_EXCPTN_IMPLEMENT_DFT_CTR(ECodeT)
 };
@@ -299,13 +316,89 @@ String demangle_function( const String & name );
 }  // namespace em
 
 
+/**\brief Development exception indicating functionality to be implemented.
+ * \ingroup errors
+ *
+ * Albeit such kind of exceptions shall never be met at the production code,
+ * the practice of putting them temporary into development procedures is the
+ * common practice.
+ *
+ * This exception specific ctr relies on some information provided ususally by
+ * compiler with macro suxh definitions as __FILE__ or __LINE__.
+ */
 template<>
-class TheException<Exception::unimplemented> : public Exception {
+class TheException<Exception::unimplemented> : public Exception
+                                             , public std::exception {
 private:
-    // ... todo: lineno, file, pretty function, what shall be done
+    int _lineNo;
+    em::String _fileName, _prettyFunction;
 public:
-    GOO_EXCPTN_IMPLEMENT_DFT_CTR(Exception::unimplemented)
+    explicit TheException( const em::String & s="" ) : Exception( Exception::unimplemented, s )
+                                                     , _lineNo(-1)
+                                                     , _fileName("<not set>")
+                                                     , _prettyFunction("<not set>") {}
+    TheException( int lNo
+                , const em::String & fn
+                , const em::String & pf
+                , const em::String & description );
+    virtual const char * what() const throw() override;
+    // TODO: ... setters/getters
 };
+
+/**\brief Exception indicating bad type cast.
+ * \ingroup errors
+ *
+ * The bad dynamic type cast occurs when user code tries to perform wrong type
+ * conversion operation: the target type is not a ancestor or descendant of
+ * source type. This error is usually indicates that some dynamic data
+ * structure(s) was built erroneously due to mistake at the incoming data.
+ */
+template<>
+class TheException<Exception::badCast> : public Exception
+                                       , public std::bad_cast {
+private:
+    const std::type_info * _fromType
+                       , * _toType;
+    const void * _addr;
+public:
+    TheException( const em::String & s="" ) : Exception( Exception::badCast, s )
+                                            , _fromType( nullptr )
+                                            , _toType( nullptr )
+                                            , _addr(nullptr) {}
+
+    TheException( const std::type_info * fTI
+                , const std::type_info * tTI
+                , const void * addr
+                , const em::String & s="" ) : Exception( Exception::badCast, s )
+                                            , _fromType( fTI )
+                                            , _toType( tTI )
+                                            , _addr(addr) {}
+
+    template< typename FromTypeT
+            , typename ToTypeT>
+    static TheException<Exception::badCast> _( const void * addr
+                , const em::String & s="" ) throw() {
+        return TheException( &typeid(FromTypeT), &typeid(ToTypeT), addr, s );
+    }
+
+    virtual const char * what() const throw() override;
+
+    const std::type_info * from_type_info() const throw() { return _fromType; }
+    const std::type_info * to_type_info() const throw() { return _toType; }
+    const void * address() const throw() { return _addr; }
+};
+
+/*!\def goo_badcast
+ * \brief Shortcut macro for throwing goo::Exception's "bad cast" descendant.
+ * \ingroup errors
+ */
+# define goo_badcast( fT, tT, addr, ... ) while(true){                          \
+    char bf[GOO_EMERGENCY_BUFLEN];                                              \
+    snprintf(bf, sizeof(bf), __VA_ARGS__ );                                     \
+    if( goo::Exception::user_raise( (int) goo::Exception::badCast, bf ) ) {     \
+        typedef goo::TheException<goo::Exception::badCast> TE;                   \
+        throw TE::_<fT, tT>( addr, bf );}    \
+    }
 
 // ... further specifications (add by demand)
 

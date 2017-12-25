@@ -3,6 +3,7 @@
 # include "utest.hpp"
 # include "goo_dict/configuration.hpp"
 # include "goo_dict/parameters/enum_parameter.tcc"
+# include "goo_dict/parameters/los.hpp"
 
 /**@file pdict.cpp
  * @brief Parameters dictionary test.
@@ -554,7 +555,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} End-of-options test done." << std::endl;
     }
     # endif
-    # if 0
+    # if 1
     // There is no way to define application configuration in a way that allows
     // construction of AoS-like structures. However goo::dict allows it in a
     // perculiar way. Here is a test case of cunstructing such structure and
@@ -562,8 +563,13 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     // native compatibility with similar structures in elaborated mark-up languages
     // such as YAML or XML.
     {
-        goo::dict::DictionaryParameter d("object", "Aggregating object.");
-        goo::dict::Parameter<goo::dict::Dictionary> pAoS("aos", "Array of structures.");
+        typedef goo::dict::Parameter<goo::dict::List<goo::dict::iAbstractParameter * > > AoS;
+        goo::dict::DictionaryParameter d("object", "Aggregating object.")
+                                     , subD1("subObject1", "Aggregated object #1.")
+                                     , subD2("subObject2", "Aggregated object #2.")
+                                     ;
+
+        AoS * pAoS = new AoS("aos", "Array of structures.");
     }
     # endif
 

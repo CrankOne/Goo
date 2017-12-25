@@ -182,7 +182,7 @@
     m(5,        interpreter,        "generic GDS interpreter error", ## __VA_ARGS__ ) \
     m(6,        nullPtr,            "got null pointer", ## __VA_ARGS__ )\
     m(7,        unknownType,        "unknown type", ## __VA_ARGS__) \
-    m(8,        badCast,            "incompatable types", ## __VA_ARGS__ ) \
+    m(8,        badCast,            "incompitable types", ## __VA_ARGS__ ) \
     m(9,        malformedArguments, "malformed arguments", ## __VA_ARGS__ ) \
     m(10,       badState,           "bad state for such conditions", ## __VA_ARGS__) \
     m(11,       noSuchKey,          "key not found", ## __VA_ARGS__ ) \
@@ -209,7 +209,7 @@
     m(109,      parserFailure,      "failed to parse string expression or token", ## __VA_ARGS__  ) \
     m(110,      inconsistentConfig, "inconsistent configuration or state", ## __VA_ARGS__ ) \
     m(254,      dbgBadArchitect,    "code style violation / bad architecture / debug warning", ## __VA_ARGS__) \
-    m(255,      thirdParty,         "thirt-party code error", ## __VA_ARGS__ ) \
+    m(255,      thirdParty,         "third-party code error", ## __VA_ARGS__ ) \
     /* ... */
 
 /*!\def for_all_statuscodes

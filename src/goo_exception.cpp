@@ -289,11 +289,6 @@ __ExceptionDescrDictionary __jDict[] = {
     { 0, nullptr }
 };
 
-//# define declare_static_const(num, nm, dscr) \
-//const ErrCode Exception::nm = num;
-//    for_all_errorcodes( declare_static_const )
-//# undef declare_static_const
-
 Exception::Exception(
                 const ErrCode c,
                 const em::String & s
@@ -352,6 +347,53 @@ Exception::dump(std::ostream & os) const throw() {
     os << "Stack unwinding is unavailable in current build." << std::endl;
     # endif  // EM_STACK_UNWINDING
 }
+
+//
+// Exception specializations
+//
+
+
+// - Not implemented error.
+TheException<Exception::unimplemented>::TheException(
+                  int lNo
+                , const em::String & fn
+                , const em::String & pf
+                , const em::String & descr ) : Exception( Exception::unimplemented, descr )
+                                             , _lineNo(lNo)
+                                             , _fileName(fn)
+                                             , _prettyFunction(pf) {}
+
+const char *
+TheException<Exception::unimplemented>::what() const throw() {
+    static char emBf[4*GOO_EMERGENCY_BUFLEN];
+    if( -1 == _lineNo ) {
+        // Internal field not set --- use parent's method.
+        return Exception::what();
+    }
+    snprintf( emBf, sizeof(emBf), "Not implemented code block reached at: %s:%d"
+                     ", function %s. Description: %s."
+             , _fileName.c_str(), _lineNo, _prettyFunction.c_str(), Exception::what() );
+    return emBf;
+}
+
+// - Bad type cast error.
+
+const char *
+TheException<Exception::badCast>::what() const throw() {
+    static char emBf[4*GOO_EMERGENCY_BUFLEN];
+    if( _fromType && _toType ) {
+        // Internal field not set --- use parent's method.
+        return Exception::what();
+    }
+    snprintf( emBf, sizeof(emBf), "Unable to perform run-time type cast from"
+                     " type \"%s\" to type \"%s\" for data at %p: %s."
+                  , goo::em::demangle_class(_fromType->name()).c_str()
+                  , goo::em::demangle_class(_toType->name()).c_str()
+                  , _addr
+                  , Exception::what() );
+    return emBf;
+}
+
 
 }  // namespace goo
 

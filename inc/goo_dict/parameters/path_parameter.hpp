@@ -39,7 +39,7 @@ class Parameter<filesystem::Path> :
                                     Parameter<filesystem::Path>,
                                     iParameter<filesystem::Path>
                                     # ifdef SWIG  // see iss#163
-                                    , false, false
+                                    , false
                                     # endif  // SWIG
                                     > {
 public:
