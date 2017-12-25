@@ -84,7 +84,7 @@ public:
 
     operator const Enum&() const { return DuplicableParent::value(); }
 
-    friend class ::goo::dict::InsertionProxy;
+    friend class ::goo::dict::DictInsertionProxy;
 protected:
     /// Sets parameter value from given string.
     virtual Enum _V_parse( const char * strval ) const override

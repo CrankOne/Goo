@@ -73,7 +73,7 @@ public:
 
     Parameter( const Parameter<filesystem::Path> & o ) : DuplicableParent( o ) {}
 
-    friend class ::goo::dict::InsertionProxy;
+    friend class ::goo::dict::DictInsertionProxy;
 
 protected:
     /// Sets parameter value from given string.

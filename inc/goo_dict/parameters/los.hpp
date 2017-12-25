@@ -48,8 +48,8 @@ public:
                                , InsertableParameter<iAbstractParameter*> > DuplicableParent;
 public:
     Parameter( const Parameter & );
-    Parameter( const char * name_
-             , const char * description_ );
+    Parameter( const char *
+             , const char * );
 };  // class LOS
 
 }  // namespace dict

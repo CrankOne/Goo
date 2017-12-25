@@ -67,7 +67,7 @@ public:
 
     PointerParameter( const PointerParameter<T> & o ) : DuplicableParent( o ) {}
 
-    friend class ::goo::dict::InsertionProxy;
+    friend class ::goo::dict::DictInsertionProxy;
 protected:
     /// Sets parameter value from given string.
     virtual PointerType _V_parse( const char * strval ) const override

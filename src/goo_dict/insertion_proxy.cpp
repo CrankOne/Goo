@@ -6,26 +6,26 @@
 namespace goo {
 namespace dict {
 
-InsertionProxy &
-InsertionProxy::required_argument() {
+DictInsertionProxy &
+DictInsertionProxy::required_argument() {
     assert( !_stack.empty() );
-    _stack.top()->_mark_last_inserted_as_required();
+    _stack.top().dict()._mark_last_inserted_as_required();
     return *this;
 }
 
-//InsertionProxy &
-//InsertionProxy::as_flag() {
+//DictInsertionProxy &
+//DictInsertionProxy::as_flag() {
 //    assert( !_stack.empty() );
 //    _stack.top()->_set_is_flag_flag();
 //    return *this;
 //}
 
-InsertionProxy::InsertionProxy( DictionaryParameter * root ) {
+DictInsertionProxy::DictInsertionProxy( DictionaryParameter * root ) {
     _stack.push(root);
 }
 
-InsertionProxy &
-InsertionProxy::bgn_sect( const char * name, const char * descr) {
+DictInsertionProxy &
+DictInsertionProxy::bgn_sect( const char * name, const char * descr) {
     // Suppose, we have relative path and need to recursively insert
     // parent sections:
     char * path = strdupa( name ),
@@ -34,19 +34,19 @@ InsertionProxy::bgn_sect( const char * name, const char * descr) {
     DictionaryParameter * newTop;
 
     while( DictionaryParameter::pull_opt_path_token( path, current ) ) {
-        newTop = _stack.top()->probe_subsection( current );
+        newTop = _stack.top().dict().probe_subsection( current );
         if( !newTop ) {
             newTop = new DictionaryParameter( current, nullptr );
-            _stack.top()->insert_section( newTop );
+            _stack.top().dict().insert_section( newTop );
         }
         _stack.push( newTop );
     }
 
     
-    if( !(newTop = _stack.top()->probe_subsection( current )) ) {
+    if( !(newTop = _stack.top().dict().probe_subsection( current )) ) {
         // Insert new section.
         newTop = new DictionaryParameter( current, descr );
-        _stack.top()->insert_section( newTop );
+        _stack.top().dict().insert_section( newTop );
         _stack.push( newTop );
     } else {
         // Append existing section:
@@ -59,8 +59,8 @@ InsertionProxy::bgn_sect( const char * name, const char * descr) {
     return *this;
 }
 
-InsertionProxy &
-InsertionProxy::end_sect( const char * name ) {
+DictInsertionProxy &
+DictInsertionProxy::end_sect( const char * name ) {
     if( name ) {
         char * path = strdupa( name ),
              * current = NULL;
@@ -71,11 +71,11 @@ InsertionProxy::end_sect( const char * name ) {
         tokens.push_back( current );
 
         for( auto it = tokens.rbegin(); tokens.rend() != it; ++it ) {
-            if( strcmp( it->c_str(), _stack.top()->name() ) ) {
+            if( strcmp( it->c_str(), _stack.top().dict().name() ) ) {
                 emraise( assertFailed,
                         "Insertion proxy state check failed: current section is "
                         "named \"%s\" while \"%s\" expected (full path is %s).",
-                    _stack.top()->name(), current, name );
+                    _stack.top().dict().name(), current, name );
             }
             _stack.pop();
         }
@@ -84,14 +84,14 @@ InsertionProxy::end_sect( const char * name ) {
 }
 
 void
-InsertionProxy::insert_copy_of( const iSingularParameter & sp,
+DictInsertionProxy::insert_copy_of( const iSingularParameter & sp,
                                 const char * newName ) {
     iSingularParameter * isp =
                     clone_as<iAbstractParameter, iSingularParameter>( &sp );
     if( !! newName ) {
         isp->name( newName );
     }
-    _stack.top()->insert_parameter( isp );
+    _stack.top().dict().insert_parameter( isp );
 }
 
 }  // namespace goo

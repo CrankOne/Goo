@@ -94,7 +94,7 @@ namespace goo {
 
 namespace dict {
 
-class InsertionProxy;
+class DictInsertionProxy;
 class Configuration;
 class DictionaryParameter;
 
@@ -273,7 +273,7 @@ class DictionaryParameter : public mixins::iDuplicable< iAbstractParameter
                                                       , DictionaryParameter
                                                       , iAbstractParameter>
                           , public Dictionary {
-    friend class InsertionProxy;
+    friend class DictInsertionProxy;
     friend class Configuration;
 public:
     typedef mixins::iDuplicable< iAbstractParameter
@@ -286,7 +286,7 @@ public:
     DictionaryParameter( const char *, const char * );
     DictionaryParameter( const DictionaryParameter & );
     /// Constructs a bound insertion proxy instance object.
-    InsertionProxy insertion_proxy();
+    DictInsertionProxy insertion_proxy();
 
     // ...
 };

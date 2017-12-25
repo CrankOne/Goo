@@ -563,13 +563,26 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     // native compatibility with similar structures in elaborated mark-up languages
     // such as YAML or XML.
     {
-        typedef goo::dict::Parameter<goo::dict::List<goo::dict::iAbstractParameter * > > AoS;
+        //typedef goo::dict::Parameter<goo::dict::List<goo::dict::iAbstractParameter * > > AoS;
         goo::dict::DictionaryParameter d("object", "Aggregating object.")
-                                     , subD1("subObject1", "Aggregated object #1.")
-                                     , subD2("subObject2", "Aggregated object #2.")
+                                     //, subD1("subObject1", "Aggregated object #1.")
+                                     //, subD2("subObject2", "Aggregated object #2.")
                                      ;
 
-        AoS * pAoS = new AoS("aos", "Array of structures.");
+        //AoS * pAoS = new AoS("aos", "Array of structures.");
+        d.insertion_proxy().bgn_list( "aos", "Testing array of structures." )
+                .v( 1 )
+                .v( "two" )
+                .v( 3. )
+                .bgn_dict()
+                        .p<int>( "some-integer", "Integer parameter without a value." ).required_argument()
+                        .bgn_sect( "subsect", "Sub-section within a dict inside list of objects." )
+                            .p<float>( 'f', "float value" )
+                        .end_sect( "subsect" )
+                .end_dict()
+                .v( "five" )
+        ;
+        // ...
     }
     # endif
 

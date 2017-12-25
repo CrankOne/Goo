@@ -40,10 +40,10 @@ namespace dict {
 /// affect performance or memory construction. Since goo::dict is generally
 /// designed for application configuration that occurs once, the performance
 /// matters less than memory consumption that is slightly more efficient for
-/// list sequencies (TODO: has to benchmarked, actually).
+/// list sequencies (TODO: has to be checked on benchmarks, actually).
 template<typename T> using List = std::vector<T>;
 
-class InsertionProxy;
+class DictInsertionProxy;
 
 template<typename ValueT>
 class iParameter;
@@ -188,11 +188,8 @@ public:
     /// Sets the "required" flag marking a mandatory parameter.
     void set_is_argument_required_flag();
 
-    friend class ::goo::dict::InsertionProxy;
+    friend class ::goo::dict::DictInsertionProxy;
 };  /*}}}*/ // class iAbstractParameter
-
-
-
 
 /* @class iSingularParameter
  * @brief Generic parameter features interface.
@@ -208,9 +205,6 @@ protected:
     virtual std::string _V_to_string() const = 0;
     virtual void _V_assign( const iSingularParameter & ) = 0;
 public:
-    /// Returns single-char shortcut for this parameter.
-    char shortcut() const { return _shortcut; }
-
     /// Parses argument from string representation.
     void parse_argument( const char * strval ) {  _V_parse_argument( strval ); }
 
@@ -230,9 +224,11 @@ public:
             if( this->name() ) {
                 goo_badcast( DECLTYPE(this), T, this, "Parameter name: \"%s\"."
                            , name() );
-            } else {
+            } else if( this->has_shortcut() ) {
                 goo_badcast( DECLTYPE(this), T, this, "Parameter shortcut: \"%c\"."
                            , shortcut() );
+            } else {
+                goo_badcast( DECLTYPE(this), T, this, "Anonymous parameter." );
             }
         }
         return ptr->value();
@@ -515,7 +511,7 @@ public:
         }
     }
 
-    friend class InsertionProxy;
+    friend class DictInsertionProxy;
 
     using iAbstractParameter::name;
     using iAbstractParameter::description;

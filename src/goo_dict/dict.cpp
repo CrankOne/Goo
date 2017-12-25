@@ -159,7 +159,7 @@ Dictionary::pull_opt_path_token( char *& path,
             && '-' != *path
             && '_' != *path ) {
             emraise( badParameter,
-                     "Path specification contains unallowed character 0x%x.",
+                     "Path specification contains character %0x which is not allowed.",
                      *path );
         }
     }
@@ -360,9 +360,9 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
 
 // ---
 
-InsertionProxy
+DictInsertionProxy
 DictionaryParameter::insertion_proxy() {
-    return InsertionProxy( this );
+    return DictInsertionProxy( this );
 }
 
 DictionaryParameter::DictionaryParameter( const char * name_,

@@ -81,7 +81,7 @@ public:
 
     Parameter( const Parameter<std::string> & o ) : DuplicableParent( o ) {}
 
-    friend class ::goo::dict::InsertionProxy;
+    friend class ::goo::dict::DictInsertionProxy;
 
 protected:
     /// Sets parameter value from given string.
