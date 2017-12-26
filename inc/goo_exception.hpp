@@ -121,6 +121,18 @@
 # define _TODO_ emraise_tp( unimplemented                \
                           , __LINE__, __FILE__           \
                           , __PRETTY_FUNCTION__, "(dev)" )
+
+/*!\def _DETAILED_TODO_
+ * \brief Development helper macro to raise 'unimplemented' error.
+ * \ingroup errors */
+# define _DETAILED_TODO_( ... ) while(true){                            \
+    char bf[GOO_EMERGENCY_BUFLEN];                                      \
+    snprintf(bf, GOO_EMERGENCY_BUFLEN, __VA_ARGS__ );                   \
+    if( goo::Exception::user_raise((int) goo::Exception::unimplemented, bf ) ) {  \
+        throw goo::TheException<goo::Exception::unimplemented>(         \
+                    __LINE__, __FILE__, __PRETTY_FUNCTION__, bf );}     \
+    }
+
 /*!\def _UNSUPPORTED_
  * \brief Development helper macro to raise 'unsupported' error.
  * \ingroup errors

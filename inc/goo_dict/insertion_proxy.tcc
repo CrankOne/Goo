@@ -36,6 +36,7 @@ class LoDInsertionProxy;
 class DictInsertionProxy {
     friend class Configuration;
     friend class DictionaryParameter;
+    friend class LoDInsertionProxy;
 public:
     class InsertionTarget {
     public:
@@ -52,6 +53,8 @@ public:
 
         DictionaryParameter & dict();
         LOS & list();
+        bool is_dict() const { return  _isDict; }
+        bool is_list() const { return !_isDict; }
     };
 private:
     std::stack<InsertionTarget> _stack;
@@ -67,6 +70,9 @@ public:
     /// Closes most recent section and switches to its previous
     /// (or finalizes last). Argument is optional and useful for self-check.
     DictInsertionProxy & end_sect( const char * = nullptr );
+
+    /// Used to "close" dictionary insertion within list parent.
+    LoDInsertionProxy end_sect_within_list( const char * = nullptr );  // TODO
 
     /// Marks the last inserted parameter as mandatory one.
     DictInsertionProxy & required_argument();
@@ -161,27 +167,39 @@ public:
 
     /// Declares the list of dictionaries parameter and returns its insertion
     /// proxy object.
-    //LoDInsertionProxy bgn_list( const char *
-    //                         , const char * );
+    LoDInsertionProxy bgn_list( const char *
+                              , const char * );
 
     //LoDInsertionProxy end_dict();
 };  // class DictInsertionProxy
 
-# if 0
 class LoDInsertionProxy {
     friend class Configuration;
     friend class DictionaryParameter;
+    friend class DictInsertionProxy;
+public:
+    typedef DictInsertionProxy::InsertionTarget InsertionTarget;
+private:
+    std::stack<InsertionTarget> _stack;
 protected:
-    LoDInsertionProxy();
-    LoDInsertionProxy( const std::stack<DictInsertionProxy::InsertionTarget> & );
+    LoDInsertionProxy() {}
+    LoDInsertionProxy( const std::stack<InsertionTarget> & st ) : _stack(st) {}
 public:
     /// Closes the LoD and pops insertion targets stack.
-    DictInsertionProxy & end_list();
+    DictInsertionProxy end_list( const char * = nullptr );
+
     /// Inserts a dictionary and returns an insertion proxy for on it.
     DictInsertionProxy & bgn_dict();
+
+    /// Insert (anonymous) parameter in list.
     template<typename T> LoDInsertionProxy & v( const T & );
+
+    /// Used to "open" new list insertion within current list.
+    LoDInsertionProxy bgn_list();
+
+    /// Used to "close" list insertion within other list.
+    LoDInsertionProxy end_list_within_list( const char * = nullptr );
 };
-# endif
 
 }  // namespace goo
 }  // namespace dict

@@ -98,8 +98,28 @@ DictInsertionProxy::end_sect( const char * name ) {
             }
             _stack.pop();
         }
+    } else {
+        _stack.pop();  // TODO: this line wasn't here... But it shall be, isn't it?
     }
     return *this;
+}
+
+LoDInsertionProxy
+DictInsertionProxy::end_sect_within_list( const char * name ) {
+    if( ! _stack.top().is_list() ) {
+        emraise( assertFailed
+               , "Insertion proxy state check failed: stack top is not a list"
+                 " while end_sect_within_list(name=\"%s\") invoked."
+               , name );
+    }
+    if( name && strcmp(name, _stack.top().list().name() ) ) {
+        emraise( assertFailed
+               , "Insertion proxy state check failed: current list is"
+                 " named \"%s\" while \"%s\" expected."
+               , _stack.top().list().name(), name );
+    }
+    _stack.pop();
+    return _stack;
 }
 
 void
@@ -113,12 +133,26 @@ DictInsertionProxy::insert_copy_of( const iSingularParameter & sp,
     _stack.top().dict().insert_parameter( isp );
 }
 
-# if 0
 LoDInsertionProxy
-DictInsertionProxy::bgn_list( const char *, const char * ) {
-    _TODO_
+DictInsertionProxy::bgn_list( const char * name, const char * description) {
+    std::stack<InsertionTarget> stack(_stack);
+    if( NULL != strchr(name, '.')
+     || NULL != strchr(name, '[') || NULL != strchr(name, ']') ) {
+        _DETAILED_TODO_( "Array argument name specification \"%s\""
+                " given to insertion object contains path separator symbol"
+                " (\".\") or array indexing expression (\"[\", \"]\"). List"
+                " insertion proxy does not provide"
+                " automatic dictionary creation.", name );
+    }
+    InsertionTarget::LOS * los = new InsertionTarget::LOS( name, description );
+    stack.top().dict().insert_parameter( los );
+    stack.push( los );
+    return LoDInsertionProxy(stack);
 }
-# endif
+
+//
+// List insertion proxy
+
 
 
 }  // namespace goo

@@ -552,7 +552,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} End-of-options test done." << std::endl;
     }
     # endif
-    # if 0
+    # if 1
     // There is no way to define application configuration in a way that allows
     // construction of AoS-like structures. However goo::dict allows it in a
     // perculiar way. Here is a test case of cunstructing such structure and
