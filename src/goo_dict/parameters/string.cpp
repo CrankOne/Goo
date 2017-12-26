@@ -56,14 +56,14 @@ Parameter<std::string>::Parameter( const char * name_,
     }
 }
 
-Parameter<std::string>::Value
-Parameter<std::string>::_V_parse( const char * strVal ) const {
-    return strVal;
+std::string
+iStringConvertibleParameter::ConversionTraits<std::string>::parse_string_expression( const char * stv ) {
+    return stv;
 }
 
 std::string
-Parameter<std::string>::_V_stringify_value( const Value & ) const {
-    return value();
+iStringConvertibleParameter::ConversionTraits<std::string>::to_string_expression( const Value & val ) {
+    return val;
 }
 
 }  // namespace dict

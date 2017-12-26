@@ -350,7 +350,7 @@ sub populate_enabled_options_list {
     #my $noDepsResolution = shift;
     if( not scalar @{ $leafOptionsRef } ) {
         # Check, whether or not currently enabled options allow to resolve dependant
-        # option(s). Already enabled will be excluded from resolution list:
+        # option(s). Already enabled will be excluded from resolution array:
         my %alreadyConsidered = map { $_ => 1 } @{$currentOptsPool};
         my @resolvedOptions = get_allowed_options( $enabledOptionsRef );
         my @uniqueResolvedOptions = grep { not exists $alreadyConsidered{$_} } @resolvedOptions;

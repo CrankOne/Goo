@@ -44,9 +44,13 @@ namespace dict {
 template<typename T> using List = std::vector<T>;
 
 class DictInsertionProxy;
+class iSingularParameter;
 
 template<typename ValueT>
 class iParameter;
+
+// Type-agnostic parameter interface classes
+// ////////////////////////////////////////
 
 /**@class iAbstractParameter
  * @brief An abstract parameter is a base class for Goo's
@@ -79,7 +83,7 @@ class iParameter;
  *
  * @ingroup appParameters
  */
-class iAbstractParameter : public mixins::iDuplicable<iAbstractParameter>/* {{{ */ {
+class iAbstractParameter : public mixins::iDuplicable<iAbstractParameter> {
 public:
     typedef UByte ParameterEntryFlag;
     static const ParameterEntryFlag
@@ -189,9 +193,76 @@ public:
     void set_is_argument_required_flag();
 
     friend class ::goo::dict::DictInsertionProxy;
-};  /*}}}*/ // class iAbstractParameter
+}; // class iAbstractParameter
 
-/* @class iSingularParameter
+/**@brief Type-agnostic value parameter base.
+ *
+ * This abstract base claims interface of type-agnostic value-bearing parameter
+ * instance providing generic methods accessing the data memory address and
+ * C++ RTTI information.
+ * */
+class iBaseValue {
+protected:
+    /// Shall return untyped data pointer.
+    virtual void * _V_data_addr() = 0;
+    /// Shall return untyped (const) data pointer.
+    virtual const void * _V_data_addr() const = 0;
+    /// Shall return C++ RTTI type info.
+    virtual const std::type_info & _V_target_type_info() const = 0;
+public:
+    /// Returns untyped data pointer.
+    void * data_addr() { return _V_data_addr(); }
+    /// Returns untyped (const) data pointer.
+    const void * data_addr() const { return _V_data_addr(); }
+    /// Returns C++ RTTI value type info.
+    virtual const std::type_info & target_type_info() const
+                { return _V_target_type_info(); }
+
+    // note: for this two methods see implementation at the end of the header.
+    // They use downcast operations with types that are incomplete at the
+    // moment.
+    /// Getter method (convinience).
+    template<typename T> const T & as() const;
+    /// Getter method (convinience) for list parameters.
+    template<typename T> const List<T> & as_array_of() const;
+    // TODO: ^^^ rename to as_array_of
+};  // class iBaseValue
+
+
+/**@class iStringConvertibleParameter
+ * @brief Generic interface for parameter instance that may be converted to str.
+ *
+ * This is a data type-agnostic part of the string-convertible parameter class.
+ */
+class iStringConvertibleParameter : virtual public iBaseValue {
+protected:
+    /// Shall translate string expression to C++ value.
+    virtual void _V_parse_argument( const char * ) = 0;
+    /// Shall render C++ value to string.
+    virtual std::string _V_to_string() const = 0;
+public:
+    /// Translates value from string representation.
+    void parse_argument( const char * strval ) {  _V_parse_argument( strval ); }
+    /// Renders string from C++ value.
+    std::string to_string() const { return _V_to_string(); }
+    template<typename ValueT, typename EnableT=void> struct ConversionTraits;
+    //{
+    //    typedef ValueT Value;
+    //    static Value parse_string_expression( const char * stv ) {
+    //        Value v;
+    //        std::ostringstream ss(stv);
+    //        ss >> v;
+    //        return v;
+    //    }
+    //    static std::string to_string_expression( const Value & v ) {
+    //        std::stringstream ss;
+    //        ss << v;
+    //        return ss.str();
+    //    }
+    //};
+};  // class iStringConvertibleParameter
+
+/**@class iSingularParameter
  * @brief Generic parameter features interface.
  *
  * At this level of inheritance the less-generic definition of
@@ -199,46 +270,15 @@ public:
  *
  * @ingroup appParameters
  */
-class iSingularParameter : public iAbstractParameter /*{{{*/ {
+class iSingularParameter : public iAbstractParameter
+                         , virtual public iStringConvertibleParameter {
 protected:
-    virtual void _V_parse_argument( const char * ) = 0;
-    virtual std::string _V_to_string() const = 0;
     virtual void _V_assign( const iSingularParameter & ) = 0;
 public:
-    /// Parses argument from string representation.
-    void parse_argument( const char * strval ) {  _V_parse_argument( strval ); }
-
-    /// Forms a human-readable string to be displayed at logs.
-    std::string to_string() const { return _V_to_string(); }
-
     iSingularParameter( const char * name,
                         const char * description,
                         ParameterEntryFlag flags,
                         char shortcut = '\0' );
-
-    /// Getter method.
-    template<typename T> const T &
-    as() const {
-        auto ptr = dynamic_cast<iParameter<T> const *>(this);
-        if( !ptr ) {
-            if( this->name() ) {
-                goo_badcast( DECLTYPE(this), T, this, "Parameter name: \"%s\"."
-                           , name() );
-            } else if( this->has_shortcut() ) {
-                goo_badcast( DECLTYPE(this), T, this, "Parameter shortcut: \"%c\"."
-                           , shortcut() );
-            } else {
-                goo_badcast( DECLTYPE(this), T, this, "Anonymous parameter." );
-            }
-        }
-        return ptr->value();
-    }
-
-    /// Getter method for multiple parameters.
-    template<typename T> const List<T> &
-    as_list_of() const;
-
-    virtual const std::type_info & target_type_info() const = 0;
 
     virtual void assign( const iSingularParameter & src ) {
         _V_assign( src );
@@ -248,38 +288,94 @@ public:
         assign( src );
         return *this;
     }
-};  // }}} class iSingularParameter
+};  // class iSingularParameter
 
 
+//
+// Known type-handling abstraction layer
+// ////////////////////////////////////
+
+
+/**@brief Template container for a value.
+ * @class iTValue
+ *
+ * Represents a value-keeping aspect of the parameter classes.
+ * */
+template<typename ValueT>
+class iTValue : public virtual iBaseValue {
+public:
+    typedef ValueT Value;
+private:
+    Value _value;
+protected:
+    /// Mutable value reference getter.
+    ValueT & _mutable_value() { return _value; }
+    virtual const std::type_info & _V_target_type_info() const final {
+        return typeid(ValueT); }
+    /// This method is to be used by user code, for special cases. It should
+    /// not be used by Goo API, during the normal argument parsing cycle.
+    virtual void _set_value( const ValueT & v ) { _value = v; }
+    /// Returns kept value address.
+    virtual void * _V_data_addr() override { return &_value; }
+    /// Returns kept value address (const).
+    virtual const void * _V_data_addr() const override { return &_value; }
+    /// Potentially dangerous ctr leaving the value uninitialized.
+    iTValue() : _value() {}
+public:
+    /// Const value getter (public).
+    virtual const ValueT & value() const { return _value; }
+    explicit iTValue( const ValueT & v ) : _value(v) {}
+    iTValue( const iTValue<Value> & o ) : _value(o._value) {}
+};
+
+/**@brief Default template implementating value parameters that may be converted
+ * to string.
+ *
+ * One may be interested in partial specialization of this class to support
+ * various formatting modifiers.
+ * */
+template<typename ValueT>
+class iTStringConvertibleParameter : virtual public iStringConvertibleParameter
+                                   , public iTValue<ValueT> {
+public:
+    typedef ValueT Value;
+    typedef typename iStringConvertibleParameter::ConversionTraits<Value> ValueTraits;
+    typedef iTStringConvertibleParameter<ValueT> Self;
+protected:
+    /// Sets the value kept by current instance from string expression.
+    virtual void _V_parse_argument( const char * strval ) override {
+        this->_set_value( ValueTraits::parse_string_expression( strval ) );
+    }
+    /// Expresses the value kept by current instance as a string.
+    virtual std::string _V_to_string( ) const override {
+        return ValueTraits::to_string_expression( this->value() );
+    }
+    /// Potentially dangerous ctr leaving the value uninitialized.
+    iTStringConvertibleParameter() : iTValue<Value>() {}
+public:
+    iTStringConvertibleParameter( const ValueT & v ) : iTValue<Value>(v) {}
+    iTStringConvertibleParameter( const Self & o ) : iTValue<Value>( o ) {}
+};
 
 
 /**@class iParameter
  * @brief A valued intermediate class representing dictionary entry with
- * value of certain type.
+ *        value of certain type.
  *
- * Defines common value-operation routines.
+ * Junction class of the iTStringConvertibleParameter template with
+ * iSingularParameter defining annotated parameter structure used by
+ * parameter dictionaries (annotated hashing containers).
  * */
 template<typename ValueT>
-class iParameter : public iSingularParameter /*{{{*/ {
+class iParameter : public iSingularParameter
+                 , public iTStringConvertibleParameter<ValueT> {
 public:
-    //typedef iAbstractParameter::ParameterEntryFlag ParameterEntryFlag;
-    typedef ValueT Value;
-    //using iSingularParameter::ParameterEntryFlag;
+    typedef iTStringConvertibleParameter<ValueT> ValueStoringType;
+    typedef typename ValueStoringType::Value Value;
     typedef iSingularParameter::ParameterEntryFlag ParameterEntryFlag;
-private:
-    Value _value;
 protected:
+    virtual void _set_value( const ValueT & ) override;
     virtual void _V_assign( const iSingularParameter & ) override;
-    void _set_value( const ValueT & );
-    virtual void _V_parse_argument( const char * strval ) override {
-        _set_value( _V_parse( strval ) ); }
-    virtual std::string _V_to_string( ) const override {
-        assert( this->is_set() );
-        return _V_stringify_value( value() ); }
-    ValueT & mutable_value() { return _value; }
-
-    virtual Value _V_parse( const char * ) const = 0;
-    virtual std::string _V_stringify_value( const Value & ) const = 0;
 public:
     iParameter( const char * name,
                 const char * description,
@@ -296,14 +392,9 @@ public:
 
     ~iParameter() {}
 
-    const ValueT & value() const;
-
-    virtual const std::type_info & target_type_info() const final {
-        return typeid(ValueT); }
-
-    /// This method is to be used by user code, for special cases. It should
-    /// not be used by Goo API, during the normal argument parsing cycle.
-    void set_value( const ValueT & v ) { _set_value(v); }
+    /// Const value getter (public). Raises "unitialized" error if value was
+    /// not set.
+    virtual const ValueT & value() const;
 };  // class iParameter
 
 template<typename ValueT>
@@ -323,7 +414,7 @@ iParameter<ValueT>::iParameter( const char * name,
                                 char shortcut_,
                                 const ValueT & defaultValue ) :
         iSingularParameter( name, description, flags, shortcut_ ),
-        _value(defaultValue) {
+        ValueStoringType(defaultValue) {
     // Checks for consistency:
     /* ... */
 }
@@ -331,7 +422,7 @@ iParameter<ValueT>::iParameter( const char * name,
 template<typename ValueT>
 iParameter<ValueT>::iParameter( const iParameter<ValueT> & o ) :
         iSingularParameter(o),
-        _value(o._value) {
+        ValueStoringType(o) {
     // Checks for consistency:
     /* ... */
 }
@@ -339,17 +430,15 @@ iParameter<ValueT>::iParameter( const iParameter<ValueT> & o ) :
 template<typename ValueT> const ValueT &
 iParameter<ValueT>::value() const {
     if( !is_set() ) {
-        emraise( uninitialized,
-            "Option %s has not been set while its value required.",
-            name());
+        char vlOnShortcut[2] = {'\0', '\0'};
+        if( !name() && has_shortcut() ) {
+            vlOnShortcut[0] = shortcut();
+        }
+        throw goo::TheException<goo::Exception::uninitialized>(
+                name() ? name() : vlOnShortcut,
+                &(value()), "Parameter value is not set." );
     }
-    return _value;
-}
-
-template<typename ValueT> void
-iParameter<ValueT>::_set_value( const ValueT & val ) {
-    this->_set_is_set_flag();
-    _value = val;
+    return ValueStoringType::value();
 }
 
 template<typename ValueT> void
@@ -360,7 +449,7 @@ iParameter<ValueT>::_V_assign( const iSingularParameter & spVal ) {
         // documentation!
         return;
     }
-    this->_set_is_set_flag();
+    iSingularParameter::_set_is_set_flag();
 
     // TODO: dynamic_cast<> here may ruin the performance for complex types.
     auto p = dynamic_cast<const iParameter<ValueT> *>( &spVal );
@@ -373,7 +462,11 @@ iParameter<ValueT>::_V_assign( const iSingularParameter & spVal ) {
     _set_value( p->value() );
 }
 
-/*}}}*/  // class iParameter implementation
+template<typename ValueT> void
+iParameter<ValueT>::_set_value( const ValueT & val ) {
+    iSingularParameter::_set_is_set_flag();
+    iTValue<ValueT>::_set_value(val);
+}
 
 /**@class Parameter
  * @brief User-side implementation class. Extension point for user parameters type.
@@ -520,18 +613,44 @@ public:
 };
 
 template<typename T> const List<T> &
-iSingularParameter::as_list_of() const {
-    auto ptr = dynamic_cast<Parameter<List<T> > const *>(this);
+iBaseValue::as_array_of() const {
+    typedef Parameter<List<T> > const * CastTarget;
+    auto ptr = dynamic_cast<CastTarget>(this);
     if( !ptr ) {
-        if( this->name() ) {
-            emraise(badCast, "Couldn't cast parameter \"%s\" to "
-                    "requested list type.", name() );
-        } else {
-            emraise(badCast, "Couldn't cast parameter '%c' to requested "
-                    "list type.", shortcut() );
+        const iSingularParameter * namedP =
+                                dynamic_cast<const iSingularParameter *>(this);
+        if( namedP ) {
+            if( namedP->name() ) {
+                goo_badcast( DECLTYPE(this), CastTarget, this, "Parameter name: \"%s\"."
+                               , namedP->name() );
+            } else if( namedP->has_shortcut() ) {
+                goo_badcast( DECLTYPE(this), CastTarget, this, "Parameter shortcut: \"%c\"."
+                               , namedP->shortcut() );
+            }
         }
+        goo_badcast( DECLTYPE(this), CastTarget, this, "Anonymous parameter." );
     }
     return ptr->values();
+}
+
+template<typename T> const T &
+iBaseValue::as() const {
+    typedef iParameter<T> const * CastTarget;
+    auto ptr = dynamic_cast<CastTarget>(this);
+    if( !ptr ) {
+        const iSingularParameter * namedP = dynamic_cast<const iSingularParameter *>(this);
+        if( namedP ) {
+            if( namedP->name() ) {
+                goo_badcast( DECLTYPE(this), CastTarget, this, "Parameter name: \"%s\"."
+                           , namedP->name() );
+            } else if( namedP->has_shortcut() ) {
+                goo_badcast( DECLTYPE(this), CastTarget, this, "Parameter shortcut: \"%c\"."
+                           , namedP->shortcut() );
+            }
+        }
+        goo_badcast( DECLTYPE(this), CastTarget, this, "Anonymous parameter." );
+    }
+    return ptr->value();
 }
 
 }  // namespace dict

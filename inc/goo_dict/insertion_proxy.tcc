@@ -101,10 +101,10 @@ public:
     //
 
     template<typename ParameterT> DictInsertionProxy &
-    list( char shortcut,
-          const char * name,
-          const char * description,
-          const std::initializer_list<ParameterT> & dfts ) {
+    array( char shortcut
+         , const char * name
+         , const char * description
+         , const std::initializer_list<ParameterT> & dfts ) {
         _stack.top().dict().insert_parameter(
                 new Parameter<List<ParameterT> >( dfts, shortcut, name, description )
             );
@@ -112,9 +112,9 @@ public:
     }
 
     template<typename ParameterT> DictInsertionProxy &
-    list( const char * name,
-          const char * description,
-          const std::initializer_list<ParameterT> & dfts ) {
+    array( const char * name
+         , const char * description
+         , const std::initializer_list<ParameterT> & dfts ) {
         _stack.top().dict().insert_parameter(
                 new Parameter<List<ParameterT> >( dfts, name, description )
             );
@@ -122,9 +122,9 @@ public:
     }
 
     template<typename ParameterT> DictInsertionProxy &
-    list( char shortcut,
-          const char * description,
-          const std::initializer_list<ParameterT> & dfts ) {
+    array( char shortcut
+         , const char * description
+         , const std::initializer_list<ParameterT> & dfts ) {
         _stack.top().dict().insert_parameter(
                 new Parameter<List<ParameterT> >( dfts, shortcut, description )
             );
@@ -132,9 +132,9 @@ public:
     }
 
     template<typename ParameterT> DictInsertionProxy &
-    list( char shortcut,
-          const char * name,
-          const char * description ) {
+    array( char shortcut
+         , const char *name
+         , const char *description ) {
         _stack.top().dict().insert_parameter(
                 new Parameter<List<ParameterT> >( shortcut, name, description )
             );
@@ -142,8 +142,8 @@ public:
     }
 
     template<typename ParameterT> DictInsertionProxy &
-    list( const char * name,
-          const char * description ) {
+    array( const char *name
+         , const char *description ) {
         _stack.top().dict().insert_parameter(
                 new Parameter<List<ParameterT> >( name, description )
             );
@@ -151,8 +151,8 @@ public:
     }
 
     template<typename ParameterT> DictInsertionProxy &
-    list( char shortcut,
-          const char * description ) {
+    array( char shortcut
+         , const char *description ) {
         _stack.top().dict().insert_parameter(
                 new Parameter<List<ParameterT> >( shortcut, description )
             );
@@ -161,12 +161,13 @@ public:
 
     /// Declares the list of dictionaries parameter and returns its insertion
     /// proxy object.
-    LoDInsertionProxy bgn_list( const char *
-                             , const char * );
+    //LoDInsertionProxy bgn_list( const char *
+    //                         , const char * );
 
-    LoDInsertionProxy end_dict();
+    //LoDInsertionProxy end_dict();
 };  // class DictInsertionProxy
 
+# if 0
 class LoDInsertionProxy {
     friend class Configuration;
     friend class DictionaryParameter;
@@ -180,6 +181,7 @@ public:
     DictInsertionProxy & bgn_dict();
     template<typename T> LoDInsertionProxy & v( const T & );
 };
+# endif
 
 }  // namespace goo
 }  // namespace dict

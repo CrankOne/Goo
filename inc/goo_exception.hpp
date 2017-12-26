@@ -400,6 +400,29 @@ public:
         throw TE::_<fT, tT>( addr, bf );}    \
     }
 
+
+template<>
+class TheException<Exception::uninitialized> : public Exception
+                                             , public std::logic_error {
+private:
+    em::String _dataLabel;
+    const void * _addr;
+public:
+    TheException( const em::String & s="" ) : Exception( Exception::uninitialized, s )
+                                            , std::logic_error(s.c_str())
+                                            , _addr(nullptr) {}
+
+    TheException( const em::String & label
+                , const void * addr
+                , const em::String & s="" ) : Exception( Exception::badCast, s )
+                                            , std::logic_error(s.c_str())
+                                            , _dataLabel(label)
+                                            , _addr(addr) {}
+
+    virtual const char * what() const throw() override;  // TODO
+    const void * address() const throw() { return _addr; }
+};
+
 // ... further specifications (add by demand)
 
 # undef GOO_EXCPTN_IMPLEMENT_DFT_CTR

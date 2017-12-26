@@ -239,18 +239,17 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         const char strLstDftCheck[][16] = { "one", "two", "three" };
 
         conf.insertion_proxy()
-            .flag( '1', "parameter-one",  "First parameter" )
-            .list<bool>( 'b', "binary", "options array #1",
-                                                {true, true, false, false} )
-            .list<bool>( 'B', "options array #2", {false, false, false, false} )
-            .list<bool>( "binary2", "options array #3" )
-            .list<bool>( 'a', "options array #4", {true, false, true} )
-            .flag( 'v', "Enables verbose output" )
-            .list<short>( 'x', "List of short ints", { 112, 53, 1024 } )
-            .list<float>( "fl-num", "List of floating numbers" )
-            .list<std::string>( 's', "lstr-i", "String list one", {"a", "b", "c"} )
-            .list<std::string>( "lstr-ii", "String list two", { "one", "two", "three" } )
-            .list<std::string>( 'S', nullptr, "String list three", { "1", "two", "III" } )
+                .flag( '1', "parameter-one", "First parameter" )
+                .array<bool>( 'b', "binary", "options array #1", {true, true, false, false} )
+                .array<bool>( 'B', "options array #2", {false, false, false, false} )
+                .array<bool>( "binary2", "options array #3" )
+                .array<bool>( 'a', "options array #4", {true, false, true} )
+                .flag( 'v', "Enables verbose output" )
+                .array<short>( 'x', "List of short ints", {112, 53, 1024} )
+                .array<float>( "fl-num", "List of floating numbers" )
+                .array<std::string>( 's', "lstr-i", "String array one", {"a", "b", "c"} )
+                .array<std::string>( "lstr-ii", "String array two", {"one", "two", "three"} )
+                .array<std::string>( 'S', nullptr, "String array three", {"1", "two", "III"} )
             ;
 
         const char ex1[] = "./foo -s one -1v --fl-num 1e-6 -b true -b Off -b On "
@@ -268,92 +267,92 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         _ASSERT( conf["1"].as<bool>(),
                  "Opt -1 wasn't set." );
-        {  // -b/--binary list
-            auto binaryOne = conf["binary"].as_list_of<bool>();
+        {  // -b/--binary array
+            auto binaryOne = conf["binary"].as_array_of<bool>();
             bool tstSeq[] = { true, false, true, true, true };
             bool * c = tstSeq;
             _ASSERT( 5 == binaryOne.size(),
-                    "#1 Wrong number of parameters in list: "
+                    "#1 Wrong number of parameters in array: "
                     "%d != 4.", (int) binaryOne.size() );
             for( auto it = binaryOne.begin(); binaryOne.end() != it; ++it, ++c ) {
                 _ASSERT( *it == *c,
-                         "#1 list: parameter #%d is set to unexpected value.",
+                         "#1 array: parameter #%d is set to unexpected value.",
                          (int) (c - tstSeq) );
             }
         }
         {  // -B
-            auto binaryOne = conf["B"].as_list_of<bool>();
+            auto binaryOne = conf["B"].as_array_of<bool>();
             bool tstSeq[] = { true, false, false };
             bool * c = tstSeq;
             _ASSERT( 3 == binaryOne.size(),
-                    "#2 Wrong number of parameters in list: "
+                    "#2 Wrong number of parameters in array: "
                     "%d != 3.", (int) binaryOne.size() );
             for( auto it = binaryOne.begin(); binaryOne.end() != it; ++it, ++c ) {
                 _ASSERT( *it == *c,
-                         "#2 list: parameter #%d is set to unexpected value.",
+                         "#2 array: parameter #%d is set to unexpected value.",
                          (int) (c - tstSeq) );
             }
         }
         {  // -a (must be kept default)
-            auto binaryOne = conf["a"].as_list_of<bool>();
+            auto binaryOne = conf["a"].as_array_of<bool>();
             bool tstSeq[] = { true, false, true };
             bool * c = tstSeq;
             _ASSERT( 3 == binaryOne.size(),
-                    "#3 Wrong number of parameters in list: "
+                    "#3 Wrong number of parameters in array: "
                     "%d != 3.", (int) binaryOne.size() );
             for( auto it = binaryOne.begin(); binaryOne.end() != it; ++it, ++c ) {
                 _ASSERT( *it == *c,
-                         "#3 list: parameter #%d is set to unexpected value.",
+                         "#3 array: parameter #%d is set to unexpected value.",
                          (int) (c - tstSeq) );
             }
         }
         {  // -x (must be kept default)
-            auto ushortOne = conf["x"].as_list_of<short>();
+            auto ushortOne = conf["x"].as_array_of<short>();
             unsigned short tstSeq[] = { 112, 53, 1024 };
             unsigned short * c = tstSeq;
             _ASSERT( 3 == ushortOne.size(),
-                    "#4 Wrong number of parameters in list: "
+                    "#4 Wrong number of parameters in array: "
                     "%d != 3.", (int) ushortOne.size() );
             for( auto it = ushortOne.begin(); ushortOne.end() != it; ++it, ++c ) {
                 _ASSERT( *it == *c,
-                         "#4 list: parameter #%d is set to unexpected value.",
+                         "#4 array: parameter #%d is set to unexpected value.",
                          (int) (c - tstSeq) );
             }
         }
         {  // --fl-num (must have one element ~1e-6)
-            auto fltOne = conf["fl-num"].as_list_of<float>();
+            auto fltOne = conf["fl-num"].as_array_of<float>();
             float tstSeq[] = { 1e-6f };
             float * c = tstSeq;
             _ASSERT( 1 == fltOne.size(),
-                    "#5 Wrong number of parameters in list: "
+                    "#5 Wrong number of parameters in array: "
                     "%d != 1.", (int) fltOne.size() );
             for( auto it = fltOne.begin(); fltOne.end() != it; ++it, ++c ) {
                 _ASSERT( std::fabs(*it - *c) < 1e-7,
-                         "#5 list: parameter #%d is set to unexpected value.",
+                         "#5 array: parameter #%d is set to unexpected value.",
                          (int) (c - tstSeq) );
             }
         }
-        {  // --lstr-i has to be list of strings:
-            auto strOne = conf["lstr-i"].as_list_of<std::string>();
+        {  // --lstr-i has to be array of strings:
+            auto strOne = conf["lstr-i"].as_array_of<std::string>();
             const char (*c)[16] = strLstDftCheck;
             _ASSERT( 3 == strOne.size(),
-                    "#6 Wrong number of parameters in list: "
+                    "#6 Wrong number of parameters in array: "
                     "%d != 1.", (int) strOne.size() );
             for( auto it = strOne.begin(); strOne.end() != it; ++it, ++c ) {
                 _ASSERT( !strcmp( *c, it->c_str() ),
-                         "#6 list: parameter #%d is set to unexpected value: %s.",
+                         "#6 array: parameter #%d is set to unexpected value: %s.",
                          (int) (c - strLstDftCheck), it->c_str() );
             }
         }
-        {  // --lstr-ii has to be list of strings:
-            auto strTwo = conf["lstr-ii"].as_list_of<std::string>();
+        {  // --lstr-ii has to be array of strings:
+            auto strTwo = conf["lstr-ii"].as_array_of<std::string>();
             const char (*c)[16] = strLstDftCheck;
             _ASSERT( 3 == strTwo.size(),
-                    "#7 Wrong number of parameters in list: "
+                    "#7 Wrong number of parameters in array: "
                     "%d != 1.", (int) strTwo.size() );
             for( auto it = strTwo.begin(); strTwo.end() != it; ++it, ++c ) {
                 _ASSERT( !strcmp( *c, it->c_str() ),
-                         "#7 list: parameter #%d is set to unexpected value: %s.",
+                         "#7 array: parameter #%d is set to unexpected value: %s.",
                          (int) (c - strLstDftCheck), it->c_str() );
             }
         }
@@ -373,8 +372,8 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         conf.insertion_proxy()
             .p<int>( 'f', "first",          "First parameter, optional one." )
             .p<bool>( 's', "second",        "Second parameter, required." ).required_argument()
-            .list<float>( 't', "third",     "Third parameter, optional list." )
-            .list<double>( '4', "fourth",   "Fourth parameter, required list." ).required_argument()
+            .array<float>( 't', "third",     "Third parameter, optional array." )
+            .array<double>( '4', "fourth",   "Fourth parameter, required array." ).required_argument()
             ;
 
         os << "Original config object:" << std::endl;
@@ -472,15 +471,13 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                 "invokation in order of appearance." );
 
         conf.insertion_proxy()
-            .bgn_sect( "log", "Logging options" )
-                .list<std::string>( '1', "stdout",
-                                    "List of files where stdout has to be "
-                                    "redirected. The '-' will be considered as "
-                                    "terminal's stdout if available.", {"-"} )
-                .list<std::string>( '2', "stderr",
-                                    "List of files where stderr has to be "
-                                    "redirected. The '-' will be considered as "
-                                    "terminal's stderr if available.", {"-"} )
+                .bgn_sect( "log", "Logging options" )
+                .array<std::string>( '1', "stdout", "List of files where stdout has to be "
+                        "redirected. The '-' will be considered as "
+                        "terminal's stdout if available.", {"-"} )
+                .array<std::string>( '2', "stderr", "List of files where stderr has to be "
+                        "redirected. The '-' will be considered as "
+                        "terminal's stderr if available.", {"-"} )
             .end_sect( "log" )
             .flag(  "emulate-tty", "If provided, the fake TTY will be injected "
                     "into child process' environment." )
@@ -510,52 +507,52 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         {
             const char (* tok1)[64] = chkTokens[0];
-            for( auto stoFName : conf["log.stdout"].as_list_of<std::string>() ) {
+            for( auto stoFName : conf["log.stdout"].as_array_of<std::string>() ) {
                 os << "  stdout redirected to: " << stoFName << std::endl;
                 _ASSERT( !strcmp( *tok1, stoFName.c_str() ),
-                    "Positional argument #%d failure on list 1: \"%s\" instead of "
+                    "Positional argument #%d failure on array 1: \"%s\" instead of "
                     "expected \"%s\".", (int) (chkTokens[0] - tok1), 
                                         stoFName.c_str(), *tok1 );
                 tok1++;
             }
-            _ASSERT( '\0' == tok1[0][0], "Missing argument for list 1: \"%s\".",
+            _ASSERT( '\0' == tok1[0][0], "Missing argument for array 1: \"%s\".",
                 *tok1 );
         }
 
         {
             const char (* tok2)[64] = chkTokens[1];
-            for( auto stoFName : conf["log.stderr"].as_list_of<std::string>() ) {
+            for( auto stoFName : conf["log.stderr"].as_array_of<std::string>() ) {
                 os << "  stderr redirected to: " << stoFName << std::endl;
                 _ASSERT( !strcmp( *tok2, stoFName.c_str() ),
-                    "Positional argument #%d failure on list 2: \"%s\" instead of "
+                    "Positional argument #%d failure on array 2: \"%s\" instead of "
                     "expected \"%s\".", (int) (chkTokens[1] - tok2), 
                                         stoFName.c_str(), *tok2 );
                 tok2++;
             }
-            _ASSERT( '\0' == tok2[0][0], "Missing argument for list 2: \"%s\".",
+            _ASSERT( '\0' == tok2[0][0], "Missing argument for array 2: \"%s\".",
                 *tok2 );
         }
 
         {
             const char (* tok3)[64] = chkTokens[2];
             os << " command to run: $";
-            for( auto fwdArgv : conf["exec-cmd-argv"].as_list_of<std::string>() ) {
+            for( auto fwdArgv : conf["exec-cmd-argv"].as_array_of<std::string>() ) {
                 os << " " << fwdArgv;
                 _ASSERT( !strcmp( *tok3, fwdArgv.c_str() ),
-                    "Positional argument #%d failure on list 3: \"%s\" instead of "
+                    "Positional argument #%d failure on array 3: \"%s\" instead of "
                     "expected \"%s\".", (int) (chkTokens[2] - tok3), 
                                         fwdArgv.c_str(), *tok3 );
                 tok3++;
             }
             os << std::endl;
-            _ASSERT( '\0' == tok3[0][0], "Missing argument for list 3: \"%s\".",
+            _ASSERT( '\0' == tok3[0][0], "Missing argument for array 3: \"%s\".",
                 *tok3 );
         }
 
         os << "} End-of-options test done." << std::endl;
     }
     # endif
-    # if 1
+    # if 0
     // There is no way to define application configuration in a way that allows
     // construction of AoS-like structures. However goo::dict allows it in a
     // perculiar way. Here is a test case of cunstructing such structure and
@@ -576,7 +573,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                 .v( 3. )
                 .bgn_dict()
                         .p<int>( "some-integer", "Integer parameter without a value." ).required_argument()
-                        .bgn_sect( "subsect", "Sub-section within a dict inside list of objects." )
+                        .bgn_sect( "subsect", "Sub-section within a dict inside array of objects." )
                             .p<float>( 'f', "float value" )
                         .end_sect( "subsect" )
                 .end_dict()

@@ -148,7 +148,7 @@ else( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
     list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/goo")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
     # the RPATH to be used when installing, but only if it's not a system directory
-    #list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+    #array(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
     #message( STATUS "XXX - ${isSystemDir}" )  # -1 when it is not a system dir
 endif( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
 
@@ -276,7 +276,7 @@ target_compile_features( ${Goo_LIBRARY} PUBLIC
 
 target_compile_definitions( ${Goo_LIBRARY} PUBLIC _GNU_SOURCE _FILE_OFFSET_BITS=64 )
 target_compile_options( ${Goo_LIBRARY} PRIVATE -Wall -fexceptions -pthread )
-# Note this useful snippet to list compiler features:
+# Note this useful snippet to array compiler features:
 #get_property(cxx_features GLOBAL PROPERTY CMAKE_CXX_KNOWN_FEATURES)
 #foreach(feature ${cxx_features})
 #    message(" * ${feature}")

@@ -100,15 +100,19 @@ public:
                         Float default_ );
 
     FloatingPointParameter( const FloatingPointParameter<Float> & o ) : DuplicableParent( o ) {}
-
-protected:
-    /// Internally uses strtol() from standard library.
-    virtual Float _V_parse( const char * ) const override;
-
-    /// Returns 'True' or 'False' depending on current value.
-    virtual std::string _V_stringify_value( const Float & ) const override;
 };
 
+template< typename T >
+struct iStringConvertibleParameter::ConversionTraits<T, typename std::enable_if<std::is_floating_point<T>::value>::type> {
+    typedef T Value;
+    static Value parse_string_expression( const char * stv )
+            { floating_point_safe_parse<T>(stv); }
+    static std::string to_string_expression( const Value & v ) {
+        std::stringstream ss;
+        ss << v;
+        return ss.str();
+    }
+};
 
 template<typename T>
 FloatingPointParameter<T>::FloatingPointParameter( const char * name_,
@@ -182,18 +186,6 @@ FloatingPointParameter<T>::FloatingPointParameter( char shortcut_,
                               shortcut_,
                               default_
                             ) {}
-
-template<typename T> T
-FloatingPointParameter<T>::_V_parse( const char * str ) const {
-    return floating_point_safe_parse<T>(str);
-}
-
-template<typename T> std::string
-FloatingPointParameter<T>::_V_stringify_value( const Float & v ) const {
-    std::stringstream ss;
-    ss << v;  // TODO: scientific, at least
-    return ss.str();
-}
 
 }  // namespace dict
 }  // namespace goo

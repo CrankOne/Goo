@@ -26,6 +26,8 @@
 # include "goo_dict/parameter.tcc"
 # include "goo_path.hpp"
 
+# include <type_traits>
+
 namespace goo {
 namespace dict {
 
@@ -85,14 +87,15 @@ public:
     operator const Enum&() const { return DuplicableParent::value(); }
 
     friend class ::goo::dict::DictInsertionProxy;
-protected:
-    /// Sets parameter value from given string.
-    virtual Enum _V_parse( const char * strval ) const override
-        { return str_to_enum(strval); }
+};
 
-    /// Returns set value.
-    virtual std::string _V_stringify_value( const Enum & eVal ) const override
-        { return enum_to_str(eVal); }
+template< typename EnumT >
+struct iStringConvertibleParameter::ConversionTraits<EnumT, typename std::enable_if<std::is_enum<EnumT>::value>::type> {
+    typedef EnumT Value;
+    static Value parse_string_expression( const char * stv )
+            { return EnumParameter<Value>::str_to_enum(stv); }
+    static std::string to_string_expression( const Value & v )
+            { return EnumParameter<Value>::enum_to_str(v); }
 };
 
 

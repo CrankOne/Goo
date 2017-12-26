@@ -28,7 +28,7 @@ cmake_minimum_required( VERSION 3.1 )
 #                           awk -F ":" '{print $2}' | sed -e 's/^[ \t]*//;s/[ \t]*$//'
 # gives the path of used C++-compiler.
 
-list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "@CMAKE_INSTALL_PREFIX@/lib" isSystemDir)
+array(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "@CMAKE_INSTALL_PREFIX@/lib" isSystemDir)
 
 #unset(Goo_LIBRARIES)
 #unset(pc_goo_LIBDIR)

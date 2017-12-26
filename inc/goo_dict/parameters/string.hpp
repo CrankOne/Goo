@@ -82,13 +82,13 @@ public:
     Parameter( const Parameter<std::string> & o ) : DuplicableParent( o ) {}
 
     friend class ::goo::dict::DictInsertionProxy;
+};
 
-protected:
-    /// Sets parameter value from given string.
-    virtual Value _V_parse( const char * ) const override;
-
-    /// Returns set value.
-    virtual std::string _V_stringify_value( const Value & ) const override;
+template<>
+struct iStringConvertibleParameter::ConversionTraits<std::string> {
+    typedef std::string Value;
+    static std::string parse_string_expression( const char * stv );
+    static std::string to_string_expression( const std::string & v );
 };
 
 }  // namespace dict

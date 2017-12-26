@@ -135,10 +135,10 @@ iApp::add_handler( SignalCode code,
     if( !_handlers ) {
         _handlers = new std::remove_pointer<DECLTYPE(_handlers)>::type ();
     }
-    // try to find and append appropriate handlers list
+    // try to find and append appropriate handlers array
     auto handlersStackIt = _handlers->find( code );
     if( handlersStackIt != _handlers->end() ) {
-        // Append list:
+        // Append array:
         handlersStackIt->second.push_back(
                 HandlerEntry{
                         false,

@@ -25,6 +25,7 @@
 namespace goo {
 namespace dict {
 
+# if 0
 Parameter< List<iAbstractParameter*> >::Parameter(
         const Parameter< List<iAbstractParameter*> > & o ) :
                         DuplicableParent( o ) {
@@ -37,6 +38,7 @@ Parameter< List<iAbstractParameter*> >::Parameter(
                                         , description_
                                         ) {
 }
+# endif
 
 }  // namespace dict
 }  // namespace goo

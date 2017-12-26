@@ -44,7 +44,7 @@ Parameter<Path>::Parameter( char shortcut_,
         _set_value( default_ );
     }
     if( ip ) {
-        mutable_value().interpolator( ip );
+        _mutable_value().interpolator( ip );
     }
 }
 
@@ -62,18 +62,18 @@ Parameter<Path>::Parameter( const char * name_,
         _set_value( default_ );
     }
     if( ip ) {
-        mutable_value().interpolator( ip );
+        _mutable_value().interpolator( ip );
     }
 }
 
-Parameter<Path>::Value
-Parameter<Path>::_V_parse( const char * strVal ) const {
-    return strVal;
+filesystem::Path
+iStringConvertibleParameter::ConversionTraits<filesystem::Path>::parse_string_expression( const char * stv ) {
+    return stv;
 }
 
 std::string
-Parameter<Path>::_V_stringify_value( const Value & ) const {
-    return value();
+iStringConvertibleParameter::ConversionTraits<filesystem::Path>::to_string_expression( const Value & val ) {
+    return val;
 }
 
 }  // namespace dict

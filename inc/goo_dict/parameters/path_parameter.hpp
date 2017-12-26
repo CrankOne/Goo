@@ -74,13 +74,14 @@ public:
     Parameter( const Parameter<filesystem::Path> & o ) : DuplicableParent( o ) {}
 
     friend class ::goo::dict::DictInsertionProxy;
+};
 
-protected:
-    /// Sets parameter value from given string.
-    virtual Value _V_parse( const char * ) const override;
 
-    /// Returns set value.
-    virtual std::string _V_stringify_value( const Value & ) const override;
+template<>
+struct iStringConvertibleParameter::ConversionTraits<filesystem::Path> {
+    typedef filesystem::Path Value;
+    static Value parse_string_expression( const char * stv );
+    static std::string to_string_expression( const Value & v );
 };
 
 }  // namespace dict

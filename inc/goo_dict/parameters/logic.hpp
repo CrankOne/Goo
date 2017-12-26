@@ -111,7 +111,7 @@ public:
     virtual void set_option( bool );
 
     friend class ::goo::dict::DictInsertionProxy;
-
+# if 0
 protected:
     /// Sets parameter value from string. Following strings are acceptable
     /// with appropriate meaning (case insensitive):
@@ -121,6 +121,14 @@ protected:
 
     /// Returns 'True' or 'False' depending on current value.
     virtual std::string _V_stringify_value( const Value & ) const override;
+# endif
+};
+
+template<>
+struct iStringConvertibleParameter::ConversionTraits<bool> {
+    typedef bool Value;
+    static Value parse_string_expression( const char * stv );
+    static std::string to_string_expression( const Value & v );
 };
 
 }  // namespace dict

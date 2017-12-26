@@ -327,7 +327,7 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
             ss << ", required";
         }
         if( p->has_multiple_values() ) {
-            ss << ", list";
+            ss << ", array";
         }
         if( p->is_set() ) {
             ss << ", value set: \"" << p->to_string() << "\"";

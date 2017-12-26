@@ -111,21 +111,21 @@ Parameter<bool>::set_option( bool a ) {
 }
 
 bool
-Parameter<bool>::_V_parse( const char * argStr ) const {
-    // _static_logicalTermRegex_True
-    if( std::regex_match( argStr, _static_logicalTermRegex_True ) ) {
+iStringConvertibleParameter::ConversionTraits<bool>::parse_string_expression( const char * stv ) {
+     // _static_logicalTermRegex_True
+    if( std::regex_match( stv, _static_logicalTermRegex_True ) ) {
         return true;
-    } else if( std::regex_match( argStr, _static_logicalTermRegex_False) ) {
+    } else if( std::regex_match( stv, _static_logicalTermRegex_False) ) {
         return false;
     } else {
         emraise( parserFailure,
                  "Could not interpret \"%s\" as a logical option.",
-                 argStr );
+                 stv );
     }
 }
 
 std::string
-Parameter<bool>::_V_stringify_value( const bool & val ) const {
+iStringConvertibleParameter::ConversionTraits<bool>::to_string_expression( const bool & val ) {
     if( val ) {
         return "True";
     } else {

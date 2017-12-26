@@ -77,7 +77,7 @@ _print_usage(const char * utilname) { fprintf(stderr, "\
 GOO UNIT TESTING APPLICATION\n\r\
 Syntax:\n\r\
     $ " ESC_CLRBOLD "%s" ESC_CLRCLEAR " [-h/--help] [-c/--config] [-q/--quiet] \\\n\r\
-        [-l/--list] [--dot-graph] [-K/--keep-going] [-u/--selective " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR "] \\\n\r\
+        [-l/--array] [--dot-graph] [-K/--keep-going] [-u/--selective " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR "] \\\n\r\
         [-r/--report] [--ignore-deps]\n\r\
 \n\r\
 Provides unit testing functionality for Goo library. \n\r\
@@ -93,9 +93,9 @@ Keys:\n\r\
                                 messages.\n\r\
     -K/--keep-going ..........  do not interrupt unit sequence\n\r\
                                 walkthrough on errors.\n\r\
-    -l/--list ................  print available unit names to stdout.\n\r\
+    -l/--array ................  print available unit names to stdout.\n\r\
     --dot-graph ..............  print to stdout a DOT graph of units.\n\r\
-    -u/--selective " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR " .....  run only named unit or unit in list\n\r\
+    -u/--selective " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR " .....  run only named unit or unit in array\n\r\
                                 delimeted with comma.\n\r\
     -s/--skip " ESC_CLRITALIC "UNITS" ESC_CLRCLEAR " ..........  skip selected units.\n\r\
     --ignore-deps ............  ignore unit dependencies (for selective runs)\n\r\
@@ -111,7 +111,7 @@ Official repository page for this version:\n\r\
 static void
 _print_conflicting_tasks_warning() {
     fprintf( stderr, "You're specified multiple actions. Please,\n\r\
-choose exactly one of (--help/--config/--list/--dot-graph)." );
+choose exactly one of (--help/--config/--array/--dot-graph)." );
 }
 
 static void
@@ -193,7 +193,7 @@ UTApp::_V_construct_config_object( int argc, char * const argv[] ) const {
                 {"quiet",           no_argument,        0,  'q' },
                 {"keep-going",      no_argument,        0,  'K' },
                 {"report",          no_argument,        0,  'r' },
-                {"list",            no_argument,        0,  'l' },
+                {"array",            no_argument,        0,  'l' },
                 {"selective",       required_argument,  0,  'u' },
                 {"skip",            required_argument,  0,  's' },
                 {"no-catch",        no_argument,        0,  'E' },

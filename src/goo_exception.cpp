@@ -381,8 +381,8 @@ TheException<Exception::unimplemented>::what() const throw() {
 const char *
 TheException<Exception::badCast>::what() const throw() {
     static char emBf[4*GOO_EMERGENCY_BUFLEN];
-    if( _fromType && _toType ) {
-        // Internal field not set --- use parent's method.
+    if( ! (_fromType && _toType) ) {
+        // Internal field not set --- use generic method.
         return Exception::what();
     }
     snprintf( emBf, sizeof(emBf), "Unable to perform run-time type cast from"
@@ -394,6 +394,25 @@ TheException<Exception::badCast>::what() const throw() {
     return emBf;
 }
 
+// - Variable was not initialized error
+
+const char *
+TheException<Exception::uninitialized>::what() const throw() {
+    static char emBf[4*GOO_EMERGENCY_BUFLEN];
+    if( !_addr ) {
+        // Internal field not set --- use parent's method.
+        return Exception::what();
+    }
+    snprintf( emBf, sizeof(emBf), "Variable labeled \"%s\" by address %p was"
+                    " not initialized in current evaluation context. %s Unable"
+                    " to proceed."
+                  , _dataLabel.c_str()
+                  , _addr
+                  , Exception::what() );
+    return emBf;
+}
+
+// - ... other exceptions to be added here
 
 }  // namespace goo
 

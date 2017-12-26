@@ -26,8 +26,8 @@
 
 set(LibEvent_EXTRA_PREFIXES /usr/local /opt/local "$ENV{HOME}")
 foreach(prefix ${LibEvent_EXTRA_PREFIXES})
-	list(APPEND LibEvent_INCLUDE_PATHS "${prefix}/include")
-	list(APPEND LibEvent_LIB_PATHS "${prefix}/lib")
+	array(APPEND LibEvent_INCLUDE_PATHS "${prefix}/include")
+	array(APPEND LibEvent_LIB_PATHS "${prefix}/lib")
 endforeach()
 
 find_path(LIBEVENT_INCLUDE_DIR event.h PATHS ${LibEvent_INCLUDE_PATHS})

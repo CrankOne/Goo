@@ -6,6 +6,26 @@
 namespace goo {
 namespace dict {
 
+DictionaryParameter &
+DictInsertionProxy::InsertionTarget::dict() {
+    if( !_isDict ) {
+        emraise( badState, "Latest object (by address %p) in parameter "
+                " insertion proxy stack refers to list instead of dictionary"
+                " while dictionary requested.", this );
+    }
+    return *_dPtr;
+}
+
+DictInsertionProxy::InsertionTarget::LOS &
+DictInsertionProxy::InsertionTarget::list() {
+     if( ! _losPtr ) {
+        emraise( badState, "Latest object (by address %p) in parameter "
+                " insertion proxy stack refers to dictionary instead of "
+                " list while list requested.", this );
+    }
+    return *_losPtr;
+}
+
 DictInsertionProxy &
 DictInsertionProxy::required_argument() {
     assert( !_stack.empty() );
@@ -41,7 +61,6 @@ DictInsertionProxy::bgn_sect( const char * name, const char * descr) {
         }
         _stack.push( newTop );
     }
-
     
     if( !(newTop = _stack.top().dict().probe_subsection( current )) ) {
         // Insert new section.
@@ -93,6 +112,14 @@ DictInsertionProxy::insert_copy_of( const iSingularParameter & sp,
     }
     _stack.top().dict().insert_parameter( isp );
 }
+
+# if 0
+LoDInsertionProxy
+DictInsertionProxy::bgn_list( const char *, const char * ) {
+    _TODO_
+}
+# endif
+
 
 }  // namespace goo
 }  // namespace dicts

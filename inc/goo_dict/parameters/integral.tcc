@@ -126,15 +126,19 @@ public:
                         Integral default_ );
 
     IntegralParameter( const IntegralParameter<Integral> & o ) : DuplicableParent( o ) {}
-
-protected:
-    /// Internally uses strtol() from standard library.
-    virtual Integral _V_parse( const char * ) const override;
-
-    /// Returns 'True' or 'False' depending on current value.
-    virtual std::string _V_stringify_value( const Integral & ) const override;
 };
 
+template< typename T >
+struct iStringConvertibleParameter::ConversionTraits<T, typename std::enable_if<std::is_integral<T>::value>::type> {
+    typedef T Value;
+    static Value parse_string_expression( const char * stv )
+            { integral_safe_parse<T>(stv); }
+    static std::string to_string_expression( const Value & v ) {
+        std::stringstream ss;
+        ss << v;
+        return ss.str();
+    }
+};
 
 template<typename T>
 IntegralParameter<T>::IntegralParameter( const char * name_,
@@ -209,18 +213,6 @@ IntegralParameter<T>::IntegralParameter( char shortcut_,
                               shortcut_,
                               default_
                             ) {}
-
-template<typename T> T
-IntegralParameter<T>::_V_parse( const char * str ) const {
-    return integral_safe_parse<T>(str);
-}
-
-template<typename T> std::string
-IntegralParameter<T>::_V_stringify_value( const Integral & v ) const {
-    std::stringstream ss;
-    ss << v;
-    return ss.str();
-}
 
 }  // namespace dict
 }  // namespace goo
