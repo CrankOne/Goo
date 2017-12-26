@@ -106,7 +106,7 @@ template< typename T >
 struct iStringConvertibleParameter::ConversionTraits<T, typename std::enable_if<std::is_floating_point<T>::value>::type> {
     typedef T Value;
     static Value parse_string_expression( const char * stv )
-            { floating_point_safe_parse<T>(stv); }
+            { return floating_point_safe_parse<T>(stv); }
     static std::string to_string_expression( const Value & v ) {
         std::stringstream ss;
         ss << v;
