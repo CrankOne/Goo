@@ -105,7 +105,7 @@ DictInsertionProxy::end_sect( const char * name ) {
 }
 
 LoDInsertionProxy
-DictInsertionProxy::end_sect_within_list( const char * name ) {
+DictInsertionProxy::end_dict( const char * name ) {
     if( ! _stack.top().is_list() ) {
         emraise( assertFailed
                , "Insertion proxy state check failed: stack top is not a list"
@@ -153,7 +153,47 @@ DictInsertionProxy::bgn_list( const char * name, const char * description) {
 //
 // List insertion proxy
 
+DictInsertionProxy
+LoDInsertionProxy::end_list( const char * listName ) {
+    _stack.pop();
+    if( _stack.top().is_list() ) {
+        emraise( assertFailed
+               , "Insertion proxy state check failed: stack top is not a dict"
+                 " while en_list(name=\"%s\") invoked."
+               , listName ? listName : "<null>" );
+    }
+    const char * realDictName = _stack.top().dict().name();
+    if( listName && !strcmp(listName, realDictName ) ) {
+        emraise( assertFailed
+               , "bgn_list(name=\"%s\") doesn't match to enclosing"
+                 " end_list(name=\"%s\")."
+               , realDictName, listName );
+    }
+    return _stack;
+}
 
+# if 0
+DictInsertionProxy
+LoDInsertionProxy::end_dict( ) {
+    # if 0
+    _stack.pop();
+    if( _stack.top().is_list() ) {
+        emraise( assertFailed
+               , "Insertion proxy state check failed: stack top is not a dict"
+                 " while en_list(name=\"%s\") invoked."
+               , listName ? listName : "<null>" );
+    }
+    const char * realDictName = _stack.top().dict().name();
+    if( listName && !strcmp(listName, realDictName ) ) {
+        emraise( assertFailed
+               , "bgn_list(name=\"%s\") doesn't match to enclosing"
+                 " end_list(name=\"%s\")."
+               , realDictName, listName );
+    }
+    return _stack;
+    # endif
+}
+# endif
 
 }  // namespace goo
 }  // namespace dicts

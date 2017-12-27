@@ -566,18 +566,27 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                                      //, subD2("subObject2", "Aggregated object #2.")
                                      ;
 
-        //AoS * pAoS = new AoS("aos", "Array of structures.");
-        d.insertion_proxy().bgn_list( "aos", "Testing array of structures." )
+        // In comments in block below following notation is used:
+        // LIP -- list insertion proxy
+        // DIP -- dict insertion proxy
+        // ?IP's -- means, that method is defined in ? class.
+        d.insertion_proxy().bgn_list( "aos", "Testing array of structures." )  //< LIP's, returns LIP
                 .v( 1 )
                 .v( "two" )
                 .v( 3. )
-                .bgn_dict()
+                .bgn_dict()  //< LIP's, returns DIP
                         .p<int>( "some-integer", "Integer parameter without a value." ).required_argument()
-                        .bgn_sect( "subsect", "Sub-section within a dict inside array of objects." )
+                        .bgn_sect( "subsect", "Sub-section within a dict inside array of objects." )  //< DIP's -> DIP
                             .p<float>( 'f', "float value" )
-                        .end_sect( "subsect" )
-                .end_dict()
+                        .end_sect( "subsect" )  //< DIP's -> DIP
+                        .bgn_list( "empty-list", "Annotated empty list." )
+                        .end_list( "empty-list" )
+                .end_dict()  //< DIP's, returns LIP
                 .v( "five" )
+                .bgn_list()  //< LIP's, returns LIP
+                    .v( "six" )
+                    .v( 7. )
+                .end_list()  //< LIP's, returns LIP
         ;
         // ...
     }
