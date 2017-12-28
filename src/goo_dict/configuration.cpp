@@ -666,21 +666,44 @@ Configuration::_cache_parameter_by_full_name( const std::string & fullName,
 }
 
 void
-Configuration::print_ASCII_tree( std::ostream & ss ) const {
+Configuration::print_ASCII_tree( std::ostream & ss, size_t terminalWidth ) const {
     std::list<std::string> fullOutput;
-    print_ASCII_tree( fullOutput );
+    print_ASCII_tree( fullOutput, terminalWidth );
     for( auto line : fullOutput ) {
         ss << line << std::endl;
     }
 }
 
 void
-Configuration::print_ASCII_tree( std::list<std::string> & output ) const {
-    Dictionary::print_ASCII_tree( output );
+Configuration::print_ASCII_tree( std::list<std::string> & output,
+                                 size_t terminalWidth ) const {
+    Dictionary::print_ASCII_tree( output, terminalWidth );
     if( output.empty() ) {
         output.push_back( std::string("╚═ " ESC_BLDRED "<!empty!>" ESC_CLRCLEAR) );
     }
-    output.push_front( std::string("╔═ << " ESC_BLDGREEN) + name() + ESC_CLRCLEAR " >>" );
+    std::string prefix("╔═ << ")
+              , body( description() )
+              ;
+    const size_t prefixSize = 6;
+    std::string subprefix = "║" + std::string( prefixSize - 1, ' ' );
+    terminalWidth = terminalWidth - prefixSize;
+    if( body.size() > terminalWidth ) {
+        std::string tail = body.substr( body.size() -
+                                        body.size() % terminalWidth );
+        output.push_front( subprefix + tail + "\n║" );
+        body = body.substr( 0, body.size() - tail.size() );
+        for( ;body.size() > terminalWidth; ) {
+            std::string subbody = body.substr( body.size() - terminalWidth );
+            output.push_front( subprefix + subbody );
+            body = body.substr( 0, body.size() - subbody.size() );
+        }
+            output.push_front( subprefix + body );
+    }
+    else {
+        output.push_front( subprefix + body );
+    }
+
+    output.push_front( prefix + ESC_BLDGREEN + name() + ESC_CLRCLEAR " >>" );
 }
 
 }  // namespace dict

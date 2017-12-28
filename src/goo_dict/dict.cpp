@@ -316,10 +316,12 @@ Dictionary::is_consistant( std::map<std::string, const iSingularParameter *> & b
 }
 
 void
-Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
+Dictionary::print_ASCII_tree( std::list<std::string> & output,
+                              size_t terminalWidth ) const {
     std::stringstream ss;
     size_t n = _parameters.size();
     bool hasSubsections = !_dictionaries.empty();
+    terminalWidth = terminalWidth - 3;
     for( auto p : _parameters ) {
         n--;
         ss << (n || hasSubsections ? "╟─" : "╙─") << " ";
@@ -347,7 +349,29 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
         }
         // TODO: somehow reflect other parameter properties?
         if( p->description() ) {
-            ss << " " << p->description();
+            ss << std::endl;
+            if ( n > 0 || _dictionaries.size() > 0 ) {
+                ss << "║";
+            }
+            else {
+                ss << " ";
+            }
+            std::string desc( p->description() );
+            if ( desc.size() > terminalWidth ) {
+                for ( ;desc.size() > terminalWidth; ) {
+                    std::string subbody = desc.substr( 0, terminalWidth );
+                    ss << "  " << subbody;
+                    desc = desc.substr( terminalWidth );
+                    ss << std::endl;
+                    if ( n > 0 || _dictionaries.size() > 0 ) {
+                        ss << "║";
+                    }
+                    else {
+                        ss << " ";
+                    }
+                }
+            }
+            //ss << " " << p->description();
         }
         ss << std::endl;
     }
@@ -355,7 +379,7 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
     for( auto dctPair : _dictionaries ) {
         n--;
         std::list<std::string> sub;
-        dctPair.second->print_ASCII_tree( sub );
+        dctPair.second->print_ASCII_tree( sub, terminalWidth + 1 );
         ss << (n ? "╠═" : "╚═")
             << (sub.empty() ? "═" : "╦" )
             << " < " ESC_CLRGREEN << dctPair.first
