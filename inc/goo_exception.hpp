@@ -95,11 +95,11 @@
  * Format is standard for ANSI printf() family.
  * \param c is a encoded generic error ID from for_all_errorcodes macro.
  */
-# define emraise( c, ... ) while(true){                                 \
-    char bf[GOO_EMERGENCY_BUFLEN];                                      \
-    snprintf(bf, GOO_EMERGENCY_BUFLEN, __VA_ARGS__ );                   \
-    if( goo::Exception::user_raise((int) goo::Exception::c, bf ) ) {    \
-        throw goo::TheException<goo::Exception:: c>( bf );}            \
+# define emraise( c, ... ) while(true){                                        \
+    char __goo_em_bf[GOO_EMERGENCY_BUFLEN];                                    \
+    snprintf(__goo_em_bf, GOO_EMERGENCY_BUFLEN, __VA_ARGS__ );                 \
+    if( goo::Exception::user_raise((int) goo::Exception::c, __goo_em_bf ) ) {  \
+        throw goo::TheException<goo::Exception:: c>( __goo_em_bf );}           \
     }
 
 /*!\def emraise_tp
@@ -110,9 +110,9 @@
  * Format is standard for ANSI printf() family.
  * \param c is a encoded generic error ID from for_all_errorcodes macro.
  */
-# define emraise_tp( c, ... ) while(true){                           \
-    if( goo::Exception::user_raise( (int) goo::Exception::c, s ) ) {    \
-        throw goo::TheException<goo::Exception:: c>( __VA_ARGS__ );} \
+# define emraise_tp( c, ... ) while(true){                                     \
+    if( goo::Exception::user_raise( (int) goo::Exception::c, "<no details>" ) ) {  \
+        throw goo::TheException<goo::Exception:: c>( __VA_ARGS__ );}           \
     }
 
 /*!\def _TODO_
@@ -125,12 +125,12 @@
 /*!\def _DETAILED_TODO_
  * \brief Development helper macro to raise 'unimplemented' error.
  * \ingroup errors */
-# define _DETAILED_TODO_( ... ) while(true){                            \
-    char bf[GOO_EMERGENCY_BUFLEN];                                      \
-    snprintf(bf, GOO_EMERGENCY_BUFLEN, __VA_ARGS__ );                   \
-    if( goo::Exception::user_raise((int) goo::Exception::unimplemented, bf ) ) {  \
-        throw goo::TheException<goo::Exception::unimplemented>(         \
-                    __LINE__, __FILE__, __PRETTY_FUNCTION__, bf );}     \
+# define _DETAILED_TODO_( ... ) while(true){                                   \
+    char __goo_em_bf[GOO_EMERGENCY_BUFLEN];                                    \
+    snprintf(__goo_em_bf, GOO_EMERGENCY_BUFLEN, __VA_ARGS__ );                 \
+    if( goo::Exception::user_raise((int) goo::Exception::unimplemented, __goo_em_bf ) ) {  \
+        throw goo::TheException<goo::Exception::unimplemented>(                \
+                    __LINE__, __FILE__, __PRETTY_FUNCTION__, __goo_em_bf );}   \
     }
 
 /*!\def _UNSUPPORTED_

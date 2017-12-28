@@ -303,6 +303,7 @@ public:
  * */
 template<typename ValueT>
 class iTValue : public virtual iBaseValue {
+    friend class LoDInsertionProxy;
 public:
     typedef ValueT Value;
 private:

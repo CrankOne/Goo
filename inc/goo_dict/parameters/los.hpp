@@ -50,7 +50,7 @@ public:
     Parameter( const Parameter & );
     Parameter( const char *
              , const char * );
-};  // class LOS
+};  // class LoS
 
 }  // namespace dict
 }  // namespace goo

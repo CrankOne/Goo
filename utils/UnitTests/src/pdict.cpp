@@ -572,7 +572,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         // ?IP's -- means, that method is defined in ? class.
         d.insertion_proxy().bgn_list( "aos", "Testing array of structures." )  //< DIP's, returns LIP
                 .v( 1 )
-                .v( "two" )
+                .v( std::string("two") )
                 .v( 3. )
                 .bgn_dict()  //< LIP's, returns DIP
                         .p<int>( "some-integer", "Integer parameter without a value." ).required_argument()
@@ -582,9 +582,9 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                         .bgn_list( "empty-list", "Annotated empty list." )  //< DIP's -> LIP
                         .end_list( "empty-list" )  //< LIP's -> DITP
                 .end_dict()  //< DIP's, returns LIP
-                .v( "five" )
+                .v( std::string("five") )
                 .bgn_sublist()  //< LIP's, returns LIP
-                    .v( "six" )
+                    .v( std::string("six") )
                     .v( 7. )
                 .end_sublist()  //< LIP's, returns LIP
             .end_list()  // LIP's -> DIP

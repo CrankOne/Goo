@@ -146,8 +146,9 @@ Dictionary::_append_configuration_caches(
 # endif
 
 int
-Dictionary::pull_opt_path_token( char *& path,
-                                 char *& current ) {
+Dictionary::pull_opt_path_token( char *& path
+                               , char *& current
+                               , size_t & idx ) {
     current = path;
     for( ; *path != '\0'; ++path ) {
         if( '.' == *path ) {
@@ -155,12 +156,29 @@ Dictionary::pull_opt_path_token( char *& path,
             ++path;
             break;
         }
+        if( '[' == *path ) {
+            *(path++) = '\0';
+            current = path;
+            char * digitStart = path;
+            while(isdigit(*(++path))) {}
+            if( ']' != *path ) {
+                emraise( badParameter, "Path specification invalid: character ']'"
+                        " expected to close digits after '['. Got character %0x"
+                        " instead.", *path );
+            }
+            if( path - digitStart > 1 ) {
+                *path = '\0';
+                idx = atoi(digitStart);
+                return 2;
+            }
+            emraise( badParameter, "Path specification invalid: empty"
+                     " index provided." );
+        }
         if( !isalnum(*path)
             && '-' != *path
             && '_' != *path ) {
-            emraise( badParameter,
-                     "Path specification contains character %0x which is not allowed.",
-                     *path );
+            emraise( badParameter, "Path specification invalid: contains "
+                    "character %0x which is not allowed.", *path );
         }
     }
     if( '\0' == *path ) {
@@ -173,7 +191,7 @@ const iSingularParameter *
 Dictionary::_get_parameter( char path[], bool noThrow ) const {
     char * current;
     int rc = pull_opt_path_token( path, current );
-    if( 0 == rc ) {
+    if( rc < 0 ) {
         // terminal case --- consider the `current' indexes
         // an option and acquire the value.
         if( path - current > 1 ) {
@@ -357,6 +375,15 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
     }
 }
 
+void
+Dictionary::_mark_last_inserted_as_required() {
+    if( SingularsContainer::empty() ) {
+        emraise( badState,
+            "None parameters were set to dictionary, but marking last as "
+            "required was requested." );
+    }
+    SingularsContainer::back()->set_is_argument_required_flag();
+}
 
 // ---
 
@@ -370,16 +397,6 @@ DictionaryParameter::DictionaryParameter( const char * name_,
             DuplicableParent(name_,
                              description_,
                              0 ) {
-}
-
-void
-DictionaryParameter::_mark_last_inserted_as_required() {
-    if( static_cast<Dictionary*>(this)->SingularsContainer::empty() ) {
-        emraise( badState,
-            "None parameters were set to dictionary, but marking last as "
-            "required was requested." );
-    }
-    SingularsContainer::back()->set_is_argument_required_flag();
 }
 
 DictionaryParameter::DictionaryParameter( const DictionaryParameter & o ) :

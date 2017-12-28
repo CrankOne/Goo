@@ -116,6 +116,7 @@ class Dictionary : public std::list<iSingularParameter *>
                                              , Dictionary
                                              , Dictionary
                                              , true> {
+    friend class DictInsertionProxy;
 public:
     typedef std::list<char>    ShortOptString;
     typedef std::list<void*>   LongOptionEntries;  // ptrs are malloc()'d
@@ -135,6 +136,9 @@ private:
     /// Internal function mutating given path str --- subsection getter.
     virtual const DictionaryParameter * _get_subsection( char [], bool noThrow=false ) const;
 protected:
+    /// Marks last inserted parameter as required one.
+    void _mark_last_inserted_as_required();
+
     ParametersByName & parameters_by_name() { return _parametersIndexByName; }
 
     ParametersByShortcut & parameters_by_shortcut() { return _parametersIndexByShortcut; }
@@ -156,18 +160,33 @@ public:
 
     Dictionary() {}
 
-    /// This routine performs simple token extraction from option path.
+    /// @brief This routine performs simple token extraction from head of the option
+    /// path.
+    ///
     /// For example, the following string:
     ///     "one.three-four.five"
-    /// must be splitted in following manner:
+    /// will be splitted in following manner:
     ///     current = "one"
     ///     tail = "three-four.five".
     /// In case when only one token is provided, it will be written
     /// in `current', and the tail will be empty.
+    ///
+    /// No data will be allocated on heap, but path string will be rewritten.
+    ///
+    /// Throws goo::TheException<badParameter> if characters not allowed by
+    /// goo::dict path specification is found (alnum + '-', '_' for tokens and
+    /// '.', '[', ']' for separators). Note, that after throwing an exception
+    /// the path argument pointer reference will point to the "bad" character.
+    ///
     /// @returns 0 if no token can be extracted
     /// @returns 1 if there are something in path after extraction.
-    static int pull_opt_path_token( char *& path,
-                                    char *& current );
+    /// @returns 2 if token is digit within array-indexing brackets ('[', ']').
+    /// @param path the mutable path string expression
+    /// @param current the target pointer that will refer to extracted token
+    ///        start.
+    static int pull_opt_path_token( char *& path
+                                  , char *& current
+                                  , size_t & idx );
 
     /// Get parameter instance by its full name.
     /// Note, that path delimeter here is dot symbol '.' (const getter).
@@ -279,9 +298,6 @@ public:
     typedef mixins::iDuplicable< iAbstractParameter
                                , DictionaryParameter
                                , iAbstractParameter> DuplicableParent;
-protected:
-    /// Marks last inserted parameter as required one.
-    void _mark_last_inserted_as_required();
 public:
     DictionaryParameter( const char *, const char * );
     DictionaryParameter( const DictionaryParameter & );
