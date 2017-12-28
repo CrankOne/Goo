@@ -189,19 +189,19 @@ protected:
 public:
     /// Closes the LoD and pops insertion targets stack when LoD was created
     /// within dictionary.
-    //DictInsertionProxy end_dict();
+    DictInsertionProxy end_list( const char * );
 
     /// Inserts a dictionary and returns an insertion proxy for on it.
-    DictInsertionProxy & bgn_dict();
+    DictInsertionProxy bgn_dict();
 
     /// Insert (anonymous) parameter in list.
     template<typename T> LoDInsertionProxy & v( const T & );
 
     /// Used to "open" new list insertion within current list.
-    LoDInsertionProxy bgn_list();
+    LoDInsertionProxy bgn_sublist();
 
     /// Used to "close" list insertion within other list.
-    LoDInsertionProxy end_list();
+    LoDInsertionProxy end_sublist();
 };
 
 }  // namespace goo

@@ -555,7 +555,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # if 1
     // There is no way to define application configuration in a way that allows
     // construction of AoS-like structures. However goo::dict allows it in a
-    // perculiar way. Here is a test case of cunstructing such structure and
+    // peculiar way. Here is a test case of constructing such structure and
     // retrieving  elements from it. The practical rationale for this is to provide
     // native compatibility with similar structures in elaborated mark-up languages
     // such as YAML or XML.
@@ -570,7 +570,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         // LIP -- list insertion proxy
         // DIP -- dict insertion proxy
         // ?IP's -- means, that method is defined in ? class.
-        d.insertion_proxy().bgn_list( "aos", "Testing array of structures." )  //< LIP's, returns LIP
+        d.insertion_proxy().bgn_list( "aos", "Testing array of structures." )  //< DIP's, returns LIP
                 .v( 1 )
                 .v( "two" )
                 .v( 3. )
@@ -579,14 +579,15 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                         .bgn_sect( "subsect", "Sub-section within a dict inside array of objects." )  //< DIP's -> DIP
                             .p<float>( 'f', "float value" )
                         .end_sect( "subsect" )  //< DIP's -> DIP
-                        .bgn_list( "empty-list", "Annotated empty list." )
-                        .end_list( "empty-list" )
+                        .bgn_list( "empty-list", "Annotated empty list." )  //< DIP's -> LIP
+                        .end_list( "empty-list" )  //< LIP's -> DITP
                 .end_dict()  //< DIP's, returns LIP
                 .v( "five" )
-                .bgn_list()  //< LIP's, returns LIP
+                .bgn_sublist()  //< LIP's, returns LIP
                     .v( "six" )
                     .v( 7. )
-                .end_list()  //< LIP's, returns LIP
+                .end_sublist()  //< LIP's, returns LIP
+            .end_list()  // LIP's -> DIP
         ;
         // ...
     }
