@@ -132,6 +132,7 @@ private:
 
     /// Internal function mutating given path str --- parameter entry getter.
     virtual const iSingularParameter * _get_parameter( char [], bool noThrow=false ) const;
+    // TODO: ^^^ return type has to become iBaseParameterValue
 
     /// Internal function mutating given path str --- subsection getter.
     virtual const DictionaryParameter * _get_subsection( char [], bool noThrow=false ) const;
@@ -165,7 +166,7 @@ public:
     ///
     /// For example, the following string:
     ///     "one.three-four.five"
-    /// will be splitted in following manner:
+    /// will be split in following manner:
     ///     current = "one"
     ///     tail = "three-four.five".
     /// In case when only one token is provided, it will be written
@@ -175,18 +176,28 @@ public:
     ///
     /// Throws goo::TheException<badParameter> if characters not allowed by
     /// goo::dict path specification is found (alnum + '-', '_' for tokens and
-    /// '.', '[', ']' for separators). Note, that after throwing an exception
+    /// '.' as a separator). Note, that after throwing an exception
     /// the path argument pointer reference will point to the "bad" character.
     ///
-    /// @returns 0 if no token can be extracted
-    /// @returns 1 if there are something in path after extraction.
-    /// @returns 2 if token is digit within array-indexing brackets ('[', ']').
+    /// The idx reference is for digits-only rokens. They will be parsed and
+    /// special value will be returned.
+    ///
+    /// One may perform easy check for latest token extraction with bitwise-and
+    /// operation using the return result code ("rc & 0x2 == false" indicates
+    /// path depletion).
+    ///
+    /// @returns 0 if no token can be extracted and current token is a string
+    /// @returns 1 if no token can be extracted and current token is an index
+    /// @returns 2 if there are something in path after extraction and current
+    ///            token is a string
+    /// @returns 3 if there are something in path after extraction and current
+    ///            token is an index
     /// @param path the mutable path string expression
     /// @param current the target pointer that will refer to extracted token
     ///        start.
     static int pull_opt_path_token( char *& path
                                   , char *& current
-                                  , size_t & idx );
+                                  , long & idx );
 
     /// Get parameter instance by its full name.
     /// Note, that path delimeter here is dot symbol '.' (const getter).

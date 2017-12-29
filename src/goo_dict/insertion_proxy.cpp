@@ -46,21 +46,22 @@ InsertionProxyBase::InsertionTarget::_assert_is( bool requireNamed
 
 InsertionProxyBase::InsertionTargetsStack
 InsertionProxyBase::combine_path( const InsertionTargetsStack & currentStack
-                                , const char * path
+                                , const char * path_
                                 , bool extend
                                 , const std::string ed) {
     // Suppose, we have relative path and need to recursively insert
     // parent sections:
-    char * path = strdupa( path ),
+    char * path = strdupa( path_ ),
          * current = NULL;
 
     DictionaryParameter * newTop;
 
     InsertionProxyBase h(currentStack);
 
+    long index;
     int rc;
-    while(!!(rc = DictionaryParameter::pull_opt_path_token( path, current ))) {
-        if( rc > 1 ) {
+    while(0x2 & (rc = DictionaryParameter::pull_opt_path_token( path, current, index ))) {
+        if( !(rc & 0x1) ) {
             // Extracted token refers to a named parameter
             newTop = h._top_as<Dict>(false).probe_subsection( current );
             if( !newTop ) {
@@ -78,10 +79,12 @@ InsertionProxyBase::combine_path( const InsertionTargetsStack & currentStack
         } else {
             // Extracted token refers to a parameter with index and rc is its
             // index within list.
-
+            _TODO_
         }
     }
 
+    _TODO_
+    # if 0
     if( !(newTop = _top_as<NamedDict>(true).probe_subsection( current )) ) {
         // Insert new section.
         newTop = new DictionaryParameter( current, descr );
@@ -94,8 +97,8 @@ InsertionProxyBase::combine_path( const InsertionTargetsStack & currentStack
             newTop->_append_description( descr );
         }
     }
-
     return *this;
+    # endif
 }
 
 //
@@ -131,11 +134,13 @@ DictInsertionProxy::bgn_sect( const char * name, const char * descr) {
 
 DictInsertionProxy &
 DictInsertionProxy::end_sect( const char * name ) {
+    long index;
     if( name ) {
         char * path = strdupa( name ),
              * current = NULL;
         std::vector<std::string> tokens;
-        while( DictionaryParameter::pull_opt_path_token( path, current ) ) {
+        _TODO_  // TODO: has to handle not only the string path tokens
+        while( DictionaryParameter::pull_opt_path_token( path, current, index ) ) {
             tokens.push_back( current );
         }
         tokens.push_back( current );

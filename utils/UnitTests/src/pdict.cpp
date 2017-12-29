@@ -94,9 +94,10 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
               three[] = "12one-7.1",
             * path,
             * current ;
+        long index;
         {
             os << "Splitting \"" << one << "\" (common case):" << std::endl;
-            _ASSERT( 1 == (rc = goo::dict::DictionaryParameter::pull_opt_path_token( path = one, current )),
+            _ASSERT( 0x2 == (rc = goo::dict::DictionaryParameter::pull_opt_path_token( path = one, current, index )),
                         "Wrong path subtoken #1: %d.", rc );
             _ASSERT( !strcmp("one", current) && !strcmp("three-4.five.six-seven", path),
                      "#1 was splitted to \"%s\" and \"%s\"",
@@ -106,7 +107,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         {
             os << "Splitting \"" << two << "\" (single-char option remained):" << std::endl;
-            _ASSERT( 0 == (rc = goo::dict::DictionaryParameter::pull_opt_path_token( path = two, current )),
+            _ASSERT( 0 == (rc = goo::dict::DictionaryParameter::pull_opt_path_token( path = two, current, index )),
                         "Wrong path subtoken #2: %d.", rc  );
             _ASSERT( !strcmp("v", current) && 0 == strlen(path) && 1 == (path - current),
                      "#2 was splitted to \"%s\" and string of length %d; path - current = %d",
@@ -116,7 +117,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         {
             os << "Splitting \"" << three << "\" (dictionary short name):" << std::endl;
-            _ASSERT( 1 == (rc = goo::dict::DictionaryParameter::pull_opt_path_token( path = three, current )),
+            _ASSERT( 0x2 == (rc = goo::dict::DictionaryParameter::pull_opt_path_token( path = three, current, index )),
                         "Wrong path subtoken #3: %d.", rc  );
             _ASSERT( !strcmp("12one-7", current) && !strcmp("1", path) && 1 != (path - current),
                      "#3 was splitted to \"%s\" and string of length %d",

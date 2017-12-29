@@ -148,53 +148,61 @@ Dictionary::_append_configuration_caches(
 int
 Dictionary::pull_opt_path_token( char *& path
                                , char *& current
-                               , size_t & idx ) {
+                               , long & idx ) {
     current = path;
+    // if first char is digit, we'll interpret token as integer index:
+    int rc = (( '-' == *path || isdigit(*path)) ? 0x1 : 0x0);
     for( ; *path != '\0'; ++path ) {
         if( '.' == *path ) {
-            *path = '\0';
+            *path =  '\0';
             ++path;
+            rc |= 0x2;
             break;
-        }
-        if( '[' == *path ) {
-            *(path++) = '\0';
-            current = path;
-            char * digitStart = path;
-            while(isdigit(*(++path))) {}
-            if( ']' != *path ) {
-                emraise( badParameter, "Path specification invalid: character ']'"
-                        " expected to close digits after '['. Got character %0x"
-                        " instead.", *path );
-            }
-            if( path - digitStart > 1 ) {
-                *path = '\0';
-                idx = atoi(digitStart);
-                return 2;
-            }
-            emraise( badParameter, "Path specification invalid: empty"
-                     " index provided." );
         }
         if( !isalnum(*path)
             && '-' != *path
             && '_' != *path ) {
-            emraise( badParameter, "Path specification invalid: contains "
-                    "character %0x which is not allowed.", *path );
+            fprintf( stderr, "Path specification invalid: contains "
+                    "character %#x which is not allowed.\n", *path );
+            abort();
         }
     }
-    if( '\0' == *path ) {
-        return 0;  // no more tokens
+    if( 0x1 & rc ) {
+        // Parse index and check its validity
+        char * endPtr;
+        idx = strtol( current, &endPtr, 0 );
+        if( endPtr != ('\0' != *path ? path-1 : path) ) {
+            fprintf( stderr, "Path specification invalid: bad"
+                            " token: \"%s\" while parsing digits.\n",
+                    current );
+            abort();
+        }
+        if( errno ) {
+            fprintf( stderr, "Path specification invalid: strol()"
+                    "has set errno=%d: %s\n", errno, strerror(errno) );
+            abort();
+        }
     }
-    return 1;  // tail is not empty
+    return rc;
 }
 
 const iSingularParameter *
 Dictionary::_get_parameter( char path[], bool noThrow ) const {
+    // TODO: recursive part must be a dedicated method.
     char * current;
-    int rc = pull_opt_path_token( path, current );
-    if( rc < 0 ) {
+    long index = 0;
+    int rc = pull_opt_path_token( path, current, index );
+    if(!(0x2 & rc)) {
         // terminal case --- consider the `current' indexes
         // an option and acquire the value.
-        if( path - current > 1 ) {
+        if( 0x1 & rc ) {
+            // Latest extracted token is a integer digit that must be
+            // interpreted as a list index. Within dictionary, this case has to
+            // be considered as an error.
+            emraise( badParameter, "Path specification endpoint refers to a"
+                    " list (considering integer index %ld) while retrieved"
+                    " object is a dictionary.", index );
+        } if( path - current > 1 ) {
             // option parameter indexed by long name
             auto it = _parametersIndexByName.find( current );
             if( it != _parametersIndexByName.end() ) {
@@ -210,8 +218,7 @@ Dictionary::_get_parameter( char path[], bool noThrow ) const {
             }
         } else if( path - current == 0 ) {
             emraise( badState, "Unexpected state of option path parser --- "
-                               "null option length."
-                               "See sources for details." );
+                    " null path/name specification length." );
         } else {
             // option parameter indexed by shortcut
             auto it = _parametersIndexByShortcut.find( *current );
@@ -228,19 +235,24 @@ Dictionary::_get_parameter( char path[], bool noThrow ) const {
             return it->second;
         }
     } else {
-        // proceed recursively within section -- `current' contains
-        // section name and the `path' leads to an option.
-        auto it = DictionariesContainer::find( current );
-        if( it == DictionariesContainer::end() ) {
-            if( !noThrow ) {
-                emraise( notFound,
-                         "Subsection \"%s\" is not found in section %p",
-                         current, this );
-            } else {
-                return nullptr;
+        // Proceed recursively within section -- `current' contains
+        // section name (or index refers to a n-th list parameter) and the
+        // `path' leads to an option or element.
+        if( 0x1 & rc ) {
+            // Extracted token is
+            // ...
+            _TODO_
+        } else {
+            auto it = DictionariesContainer::find( current );
+            if( it == DictionariesContainer::end()) {
+                if( !noThrow ) {
+                    emraise( notFound, "Subsection \"%s\" is not found in section %p", current, this );
+                } else {
+                    return nullptr;
+                }
             }
+            return it->second->_get_parameter( path, noThrow );
         }
-        return it->second->_get_parameter( path, noThrow );
     }
 }
 
@@ -262,25 +274,61 @@ Dictionary::probe_parameter( const std::string & sPath ) const {
 const DictionaryParameter *
 Dictionary::_get_subsection( char path[], bool noThrow ) const {
     char * current;
-    int rc = pull_opt_path_token( path, current );
-    auto it = DictionariesContainer::find( current );
-    if( DictionariesContainer::end() == it ) {
-        if( !noThrow ) {
-            emraise( notFound, "Dictionary %p has no section named \"%s\".",
-                    this, current );
-        } else {
+    long index;
+    int rc = pull_opt_path_token( path, current, index );
+    if( 0x1 & rc ) {
+        if( noThrow ) {
             return nullptr;
         }
+        emraise( badParameter, "Unable to retrieve entry of dictionary by"
+                " integer index path specification \"%s\" -> %ld."
+               , current, index );
     }
-    if( 0 == rc ) {
-        // terminal case --- consider the `current' refers to one of
-        // own sections:
-        return it->second;
+    auto it = DictionariesContainer::find( current );
+    if( DictionariesContainer::end() != it ) {
+        if( 0 == rc ) {
+            // terminal case --- consider the `current' refers to one of
+            // own sections:
+            return it->second;
+        } else {
+            // proceed recursively within section -- `current' contains
+            // section name and the `path' leads to an option.
+            return it->second->_get_subsection( path, noThrow );
+        }
+    }
+    // TODO: code below duplicates parameter retrieval procedure and shall be
+    // deleted.
+    const iSingularParameter * listParPtr = nullptr;
+    if( '\0' == current[1] ) {
+        auto spIt = _parametersIndexByShortcut.find( current[0] );
+        if( _parametersIndexByShortcut.end() != spIt ) {
+            listParPtr = spIt->second;
+        }
     } else {
-        // proceed recursively within section -- `current' contains
-        // section name and the `path' leads to an option.
-        return it->second->_get_subsection( path, noThrow );
+        auto npIt = _parametersIndexByName.find( current );
+        if( _parametersIndexByName.end() != npIt ) {
+            listParPtr = npIt->second;
+        }
     }
+    if( !listParPtr ) {
+        if( noThrow ) {
+            return nullptr;
+        }
+        emraise( notFound, "Dictionary %p has no section named \"%s\"."
+               , this, current );
+    }
+    auto lst = dynamic_cast<const iParameter<List<
+                iStringConvertibleParameter*>> *>( listParPtr );
+    if( !lst ) {
+        if( noThrow ) {
+            return nullptr;
+        }
+        emraise( notFound, "Dictionary %p has no section named \"%s\" (there is"
+                " parameter of the same name)."
+               , this, current );
+    }
+    _TODO_  // TODO: retireve from list
+    // ...
 }
 
 const DictionaryParameter &
