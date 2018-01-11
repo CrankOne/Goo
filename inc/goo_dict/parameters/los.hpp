@@ -29,23 +29,17 @@
 namespace goo {
 namespace dict {
 
-/**@class LOS
- * @brief List-of-structures parameter is an AoS-like data structure.
- *
- * List-of-structures is a list with arbitrary-typed elements. It is not
- * generally supposed to be an initial application parameter structure, but may
- * appear at some sophisticated configuration schemes.
- */
 template<>
-class Parameter< List<iAbstractParameter*> > : public mixins::iDuplicable< iAbstractParameter
-                                                                         , Parameter< List<iAbstractParameter*> >
-                                                                         , InsertableParameter<iAbstractParameter*>
-                                                                         > {
+class Parameter< List<iStringConvertibleParameter*> > :
+                public mixins::iDuplicable< iAbstractParameter
+                                          , Parameter< List<iStringConvertibleParameter*> >
+                                          , iParameter< List<iStringConvertibleParameter*> >
+                                          > {
 public:
-    typedef List<iAbstractParameter*> Array;
-    typedef mixins::iDuplicable< iAbstractParameter
-                               , Parameter<Array>
-                               , InsertableParameter<iAbstractParameter*> > DuplicableParent;
+    typedef List<iStringConvertibleParameter*> Array;
+    //typedef mixins::iDuplicable< iAbstractParameter
+    //                           , Parameter<Array>
+    //                           , InsertableParameter<iAbstractParameter*> > DuplicableParent;
 public:
     Parameter( const Parameter & );
     Parameter( const char *

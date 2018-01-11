@@ -3,6 +3,8 @@
 # include "goo_dict/insertion_proxy.tcc"
 # include "goo_dict/dict.hpp"
 
+# include "goo_dict/parameters/los.hpp"
+
 namespace goo {
 namespace dict {
 
@@ -44,112 +46,182 @@ InsertionProxyBase::InsertionTarget::_assert_is( bool requireNamed
     }
 }
 
-/** @param currentStack describes the target stack instance where references to
+/**This routine serves few use cases, but basically it is designed to perform
+ * recursive evaluation according to textual path specified, within given
+ * goo::pdict data structure. Few major use-cases are:
+ *
+ * 1. Non-invasive look-up. Any not found entry will cause goo::notFound
+ * exception.
+ * 2. Extension. Routine will try to insert new subsections and lists inside
+ * the starting entity.
+ *
+ * Path examples:
+ *  - "one.#23" --- for non-invasive look-up this path expression will retrieve
+ *  iStringConvertibleParameter pointer to 23-rd element of list "one" in
+ *  starting dictionary. In extending mode it will add 23 element to list "one"
+ *  in the starting dictionary. If list "one" does not exist or contains less
+ *  than 22 elements, even extending look-up mode will emit the exception
+ *  (goo::overflow in both cases).
+ *  - "#11.#0" --- for non-invasive look-up, will retrieve first element of
+ *  element 11 of starting list.
+ *  - "one.#" --- possible only in extending mode. Will cause routine to insert
+ *  the list named "one" at the starting dictionary.
+ *
+ *  TODO: test this thing. Very. Carefully.
+ *
+ *  @param currentStack describes the target stack instance where references to
  *      dictionaries or lists have to be put in.
  *  @param path_ is a textual path.
  *  @param extend controls whether to insert new lists or dictionaries. Being
  *      set to `false` causes routine to emit notFound exception.
  * */
-InsertionProxyBase::InsertionTargetsStack
+InsertionProxyBase::MaterializedPath
 InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
                                 , char * path
                                 , bool extend
                                 , const std::string ed ) {
+    // This macro defines finishing block. Depending on whether the last token
+    // was extracted from path, the routine will terminate itself, or invoke
+    // itself further.
+    # define CONTINUE_RECURSIVELY                        \
+    if( !lastToken ) {                                   \
+        return combine_path( mpath, path, extend, ed );  \
+    } else { return mpath; }
+
     InsertionTarget & start = mpath.top();
-    // Suppose, we have relative path and need to recursively insert
-    // parent sections:
     char * current = NULL;
     long index;
+
+    // Pull token from left
     int rc = DictionaryParameter::pull_opt_path_token(path, current, index);
-    if( 0x2 & rc ) {
-        // Indicates that end of the path is not yet reached by
-        // pull_opt_path_token() routine.
-        if( 0x1 & rc ) {
-            // Token is a string. Consider start as (at least) of type Dict
-            // and try to retrieve parameter or subsection named as `current'
-            // refers.
-            Dict & startDctRef = start.as<Dict>(false);
-            {
-                NamedDict * newStart = startDctRef.probe_subsection( current );
-                if( newStart ) {
-                    // That's a dict indeed. Continue recursively.
-                    mpath.push( newStart );
-                    return combine_path( mpath, path, extend, ed );
-                }
+
+    const bool emptyToken = !strlen(current)
+             , lastToken = !! (0x2 & rc)
+             , isDict = !! (0x1 & rc)
+             ;
+
+    if( emptyToken && (!extend || lastToken) ) {
+        emraise( badParameter, "Empty token met in path specification within"
+                " non-extending call." );
+    }
+
+    if( isDict ) {
+        // Token is a string. Consider start as (at least) of type Dict
+        // and try to retrieve parameter or subsection named as `current'
+        // refers.
+        Dict & startDctRef = start.as<Dict>(false);
+        {
+            NamedDict * newStart = startDctRef.probe_subsection( current );
+            if( newStart ) {
+                // That's a dict indeed. Continue recursively.
+                mpath.push( newStart );
+                CONTINUE_RECURSIVELY;
             }
-            // It is probably a parameter. Note, that at this point we are not
-            // at the last token in the path, so it has to not to be a scalar
-            // value.
-            {
-                iSingularParameter * lst = startDctRef.probe_parameter( current );
-                if( lst ) {
-                    // Parameter found. Try to downcast it to dict and consider
-                    // next token in a path as an index.
-                    auto newStart = dynamic_cast<NamedLoS*>(lst);
-                    if( !newStart ) {
+        }
+        // Token apparently refers to a parameter
+        {
+            iSingularParameter * pPtr = startDctRef.probe_parameter( current );
+            if( pPtr ) {
+                // Parameter found. Try to downcast it to dict and consider
+                // next token in a path as an index.
+                auto newStart = dynamic_cast<NamedLoS*>( pPtr );
+                if( !newStart ) {
+                    if( 0x2 & rc ) {
                         // The parameter must be a subclass of LoS in this
                         // context.
                         emraise( notFound, "Interim path token \"%s\" refers to"
                                 " existing singular parameter %p within a"
                                 " dictionary, but this parameter does not"
-                                " support subsequent indexing.", current, lst );
+                                " support subsequent indexing.", current, pPtr );
+                    } else {
+                        // Token terminating path refers to a parameter.
+                        return MaterializedPath( mpath, pPtr );
                     }
-                    mpath.push( newStart );
-                    return combine_path( mpath, path, extend, ed );
                 }
-            }
-            if( !extend ) {
-                std::string nm = start.get_name("<anonymous>");
-                emraise( notFound, "No entry \"%s\" found within dictionary"
-                       " %p (within %s dict)."
-                       , current, &startDctRef, nm.c_str() );
-            }
-            // To extend a dictionary within given path, we have to assume the
-            // current parameter type. It may be either a named dict
-            // (subsection), or a list here. The obvious way is to look for the
-            // next token in a string path --- whether it starts from # sign.
-            if( '#' != *path ) {
-                // It is a named dict.
-                auto newStart = new NamedDict( current, ed.c_str() );
-                startDctRef.insert_section( newStart );
                 mpath.push( newStart );
-                return combine_path( mpath, path, extend, ed.c_str() );
-            } else {
-                // It is a named LoS.
-                auto newStart = new NamedLoS( current, ed.c_str() );
-                startDctRef.insert_parameter( newStart );
-                mpath.push( newStart );
-                return combine_path( mpath, path, extend, ed.c_str() );
-            }
-        } else {
-            // Token is an integer (index). Consider start as (at least of type
-            // LoS and try to retrieve element referenced by this index.
-            LoS & startLoSRef = start.as<LoS>(false);
-            if( index >= startLoSRef.value().size() ) {
-                emraise( notFound, "List object %p (%s) has only %zu elements"
-                        ", but %l-th element is requested."
-                       , &startLoSRef
-                       , start.get_name("<anonymous>").c_str()
-                       , startLoSRef.value().size()
-                       , index );
-            }
-            iStringConvertibleParameter * scpEl = startLoSRef.value().at(index);
-            // Since path implies, that retrieved element is not the las one,
-            // try to cast
-            bool isList = '#' == *path;
-            if( isList ) {
-                LoS * losPtr = dynamic_cast<LoS*>(scpEl);
-                if( losPtr ) {
-                    NamedLoS * nLoSPtr = dynamic_cast<NamedLoS*>(scpEl);
-                    mpath.push( nLoSPtr );
-                    return combine_path( mpath, path, extend, ed );
-                }
-                //mpath
-                //return ;
+                CONTINUE_RECURSIVELY;
             }
         }
+        // Following code corresponds to the case of not found entry within a
+        // dictionary
+        if( !extend ) {
+            std::string nm = start.get_name("<anonymous>");
+            emraise( notFound, "No entry \"%s\" found within dictionary"
+                   " %p (within %s dict)."
+                   , current, &startDctRef, nm.c_str() );
+        }
+        // To extend a dictionary within given path, we have to assume the
+        // current parameter type. It may be either a named dict
+        // (subsection), or a list here. The obvious way is to look for the
+        // next token in a string path --- whether it starts from # sign.
+        if( '#' != *path ) {
+            // It is a named dict.
+            auto newStart = new NamedDict( current, ed.c_str() );
+            startDctRef.insert_section( newStart );
+            mpath.push( newStart );
+            return combine_path( mpath, path, extend, ed.c_str() );
+        } else {
+            // It is a named LoS.
+            //auto newStart = new NamedLoS( current, ed.c_str() );
+            auto newStart = new Parameter<List<iStringConvertibleParameter*>>(current, ed.c_str());
+            startDctRef.insert_parameter( newStart );
+            mpath.push( static_cast<NamedLoS*>(newStart) );
+            return combine_path( mpath, path, extend, ed.c_str() );
+        }
+        // NOTE: one has to check, whether the situations like "one.two.#" or
+        // "one.two." works correctly.
+    } else {
+        // Token is an integer (index). Consider start as (at least of type
+        // LoS and try to retrieve element referenced by this index.
+        LoS & startLoSRef = start.as<LoS>(false);
+        bool newElement = false;
+        if( index >= (long) startLoSRef.value().size() ) {
+            if( !extend ) {
+                emraise( notFound, "List object %p (%s) has only %zu elements"
+                        ", but #%ld-th element is requested."
+                         , &startLoSRef
+                         , start.get_name( "<anonymous>" ).c_str()
+                         , startLoSRef.value().size()
+                         , index );
+            }
+            if( index != startLoSRef.value().size() ) {
+                newElement = true;
+            } else {
+                emraise( overflow, "Unable to extend list %p (%s) currently"
+                       " having %zu elements with %ld-th element (number"
+                       " has to refer the last element in a list)."
+                       , &startLoSRef
+                       , start.get_name( "<anonymous>" )
+                       , startLoSRef.value().size(),
+                       , index );
+            }
+        }
+        // Before we start to handle the element list as a materialized
+        // path entry, we have to find out its particular type in terms
+        // of goo::dict containers --- whether or not it is a list or a
+        // dict. Since we're currently operating within list context both
+        // of them have to be anonymous.
+
+        //iStringConvertibleParameter * scpEl;
+        /*
+        iStringConvertibleParameter * scpEl = startLoSRef.value().at(index);
+        // Since path implies, that retrieved element is not the last one,
+        // try to cast
+        bool isList = '#' == *path;
+        if( isList ) {
+            LoS * losPtr = dynamic_cast<LoS*>(scpEl);
+            if( losPtr ) {
+                NamedLoS * nLoSPtr = dynamic_cast<NamedLoS*>(scpEl);
+                mpath.push( nLoSPtr );
+                return combine_path( mpath, path, extend, ed );
+            }
+            //mpath
+            //return ;
+        }
+         */
     }
 
+    # if 0
     while(0x2 & (rc = DictionaryParameter::pull_opt_path_token( path
                                                               , current
                                                               , index ))) {
@@ -176,6 +248,7 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
             _TODO_
         }
     }
+    # endif
 
     _TODO_
     # if 0
@@ -193,6 +266,7 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
     }
     return *this;
     # endif
+    # undef CONTINUE_RECURSIVELY
 }
 
 //

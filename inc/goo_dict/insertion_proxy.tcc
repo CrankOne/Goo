@@ -26,7 +26,7 @@ namespace dict {
  * dictionaries and lists).
  */
 class InsertionProxyBase {
-protected:
+public:
     /// Named list-of-structures type.
     typedef iParameter<List<iStringConvertibleParameter*>> NamedLoS;
     /// Anonymous list-of-structures type.
@@ -61,6 +61,14 @@ protected:
     /// Materialized path --- insertion targets stack type keeping history of
     /// insertions.
     typedef std::stack<InsertionTarget> InsertionTargetsStack;
+    struct MaterializedPath {
+        InsertionTargetsStack stack;
+        iStringConvertibleParameter * parameterPtr;
+        MaterializedPath( InsertionTargetsStack s ) : \
+                                        stack(s), parameterPtr(nullptr) {}
+        MaterializedPath( InsertionTargetsStack s, iStringConvertibleParameter * p ) : \
+                                        stack(s), parameterPtr(p) {}
+    };
 private:
     /// Insertion history for insertion proxy instance. Controls validity of
     /// chaining insertions.
@@ -96,10 +104,10 @@ public:
     /// Multi-purpose path processing routine performing translation of
     /// textual path string to insertion proxy referencing particular instance
     /// within the parameters dictionary or list.
-    static InsertionTargetsStack combine_path( InsertionTargetsStack & mpath
-                                             , char * path
-                                             , bool extend=false
-                                             , const std::string extensionDescr="");
+    static MaterializedPath combine_path( InsertionTargetsStack & mpath
+                                        , char * path
+                                        , bool extend=false
+                                        , const std::string extensionDescr="");
 };  // class InsertionProxyBase
 
 class LoDInsertionProxy;

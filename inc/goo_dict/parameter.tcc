@@ -613,6 +613,11 @@ public:
     // ... whatever?
 };
 
+/// This specification has to be treated in the special manner, in a similar way
+/// to dicitonary.
+/// Include "goo_dict/los.hpp" header for full declaration.
+template<> class Parameter<List<iStringConvertibleParameter*> >;
+
 template<typename T> const List<T> &
 iBaseValue::as_array_of() const {
     typedef Parameter<List<T> > const * CastTarget;
@@ -653,6 +658,7 @@ iBaseValue::as() const {
     }
     return ptr->value();
 }
+
 
 }  // namespace dict
 }  // namespace goo
