@@ -44,41 +44,135 @@ InsertionProxyBase::InsertionTarget::_assert_is( bool requireNamed
     }
 }
 
+/** @param currentStack describes the target stack instance where references to
+ *      dictionaries or lists have to be put in.
+ *  @param path_ is a textual path.
+ *  @param extend controls whether to insert new lists or dictionaries. Being
+ *      set to `false` causes routine to emit notFound exception.
+ * */
 InsertionProxyBase::InsertionTargetsStack
-InsertionProxyBase::combine_path( const InsertionTargetsStack & currentStack
-                                , const char * path_
+InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
+                                , char * path
                                 , bool extend
-                                , const std::string ed) {
+                                , const std::string ed ) {
+    InsertionTarget & start = mpath.top();
     // Suppose, we have relative path and need to recursively insert
     // parent sections:
-    char * path = strdupa( path_ ),
-         * current = NULL;
-
-    DictionaryParameter * newTop;
-
-    InsertionProxyBase h(currentStack);
-
+    char * current = NULL;
     long index;
-    int rc;
-    while(0x2 & (rc = DictionaryParameter::pull_opt_path_token( path, current, index ))) {
+    int rc = DictionaryParameter::pull_opt_path_token(path, current, index);
+    if( 0x2 & rc ) {
+        // Indicates that end of the path is not yet reached by
+        // pull_opt_path_token() routine.
+        if( 0x1 & rc ) {
+            // Token is a string. Consider start as (at least) of type Dict
+            // and try to retrieve parameter or subsection named as `current'
+            // refers.
+            Dict & startDctRef = start.as<Dict>(false);
+            {
+                NamedDict * newStart = startDctRef.probe_subsection( current );
+                if( newStart ) {
+                    // That's a dict indeed. Continue recursively.
+                    mpath.push( newStart );
+                    return combine_path( mpath, path, extend, ed );
+                }
+            }
+            // It is probably a parameter. Note, that at this point we are not
+            // at the last token in the path, so it has to not to be a scalar
+            // value.
+            {
+                iSingularParameter * lst = startDctRef.probe_parameter( current );
+                if( lst ) {
+                    // Parameter found. Try to downcast it to dict and consider
+                    // next token in a path as an index.
+                    auto newStart = dynamic_cast<NamedLoS*>(lst);
+                    if( !newStart ) {
+                        // The parameter must be a subclass of LoS in this
+                        // context.
+                        emraise( notFound, "Interim path token \"%s\" refers to"
+                                " existing singular parameter %p within a"
+                                " dictionary, but this parameter does not"
+                                " support subsequent indexing.", current, lst );
+                    }
+                    mpath.push( newStart );
+                    return combine_path( mpath, path, extend, ed );
+                }
+            }
+            if( !extend ) {
+                std::string nm = start.get_name("<anonymous>");
+                emraise( notFound, "No entry \"%s\" found within dictionary"
+                       " %p (within %s dict)."
+                       , current, &startDctRef, nm.c_str() );
+            }
+            // To extend a dictionary within given path, we have to assume the
+            // current parameter type. It may be either a named dict
+            // (subsection), or a list here. The obvious way is to look for the
+            // next token in a string path --- whether it starts from # sign.
+            if( '#' != *path ) {
+                // It is a named dict.
+                auto newStart = new NamedDict( current, ed.c_str() );
+                startDctRef.insert_section( newStart );
+                mpath.push( newStart );
+                return combine_path( mpath, path, extend, ed.c_str() );
+            } else {
+                // It is a named LoS.
+                auto newStart = new NamedLoS( current, ed.c_str() );
+                startDctRef.insert_parameter( newStart );
+                mpath.push( newStart );
+                return combine_path( mpath, path, extend, ed.c_str() );
+            }
+        } else {
+            // Token is an integer (index). Consider start as (at least of type
+            // LoS and try to retrieve element referenced by this index.
+            LoS & startLoSRef = start.as<LoS>(false);
+            if( index >= startLoSRef.value().size() ) {
+                emraise( notFound, "List object %p (%s) has only %zu elements"
+                        ", but %l-th element is requested."
+                       , &startLoSRef
+                       , start.get_name("<anonymous>").c_str()
+                       , startLoSRef.value().size()
+                       , index );
+            }
+            iStringConvertibleParameter * scpEl = startLoSRef.value().at(index);
+            // Since path implies, that retrieved element is not the las one,
+            // try to cast
+            bool isList = '#' == *path;
+            if( isList ) {
+                LoS * losPtr = dynamic_cast<LoS*>(scpEl);
+                if( losPtr ) {
+                    NamedLoS * nLoSPtr = dynamic_cast<NamedLoS*>(scpEl);
+                    mpath.push( nLoSPtr );
+                    return combine_path( mpath, path, extend, ed );
+                }
+                //mpath
+                //return ;
+            }
+        }
+    }
+
+    while(0x2 & (rc = DictionaryParameter::pull_opt_path_token( path
+                                                              , current
+                                                              , index ))) {
         if( !(rc & 0x1) ) {
-            // Extracted token refers to a named parameter
-            newTop = h._top_as<Dict>(false).probe_subsection( current );
-            if( !newTop ) {
+            // Extracted token refers to a named parameter or dictionary.
+            NamedDict * newStart = start.as<Dict>(false).probe_subsection(current);
+            if( !newStart ) {
                 // Extracted token refers to non-existing dict.
                 if( !extend ) {
                     emraise( notFound, "No subsection named \"%s\" found in"
                             " subsection or dictionary instance %p."
                            , current, &(h._top_as<Dict>(false)) );
                 }
-                // ... otherwise, extend
+                // otherwise, extend
                 newTop = new DictionaryParameter( current, ed.c_str() );
+                // We invoke the _top_as<> with "Dict" type because current
+                // routine may operate with anonymous dict at this level
+                // (however, the dict we insert is not anonymous one).
                 h._top_as<Dict>(false).insert_section( newTop );
             }
             h._push_dict( newTop );
         } else {
-            // Extracted token refers to a parameter with index and rc is its
-            // index within list.
+            // Extracted token refers to a parameter with given index.
             _TODO_
         }
     }

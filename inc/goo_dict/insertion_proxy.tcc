@@ -15,13 +15,28 @@
 namespace goo {
 namespace dict {
 
+/**@brief Base class for insertion proxies.
+ * @class InsertionProxyBase
+ *
+ * Insertion proxies provides a convinient way to describe your configuration
+ * structures (parameters dictionaries and parameters lists) using lexical
+ * chaining.
+ *
+ * This class holds common functions for both types of insertion proxies (for
+ * dictionaries and lists).
+ */
 class InsertionProxyBase {
 protected:
+    /// Named list-of-structures type.
     typedef iParameter<List<iStringConvertibleParameter*>> NamedLoS;
+    /// Anonymous list-of-structures type.
     typedef iTValue<List<iStringConvertibleParameter*> > LoS;
+    /// Named parameters dictionary type.
     typedef DictionaryParameter NamedDict;
+    /// Anonymous dictionary type.
     typedef Dictionary Dict;
-
+    /// Wrapper type keeping pointers to the named and anonymous list or
+    /// dictionary.
     class InsertionTarget {
     private:
         union {
@@ -38,9 +53,17 @@ protected:
         InsertionTarget( NamedLoS * lPtr )  : _namedLoSPtr(lPtr), _isDict(false), _isNamed(true)  {}
         InsertionTarget( LoS * lPtr )       : _LoSPtr(lPtr),      _isDict(false), _isNamed(false) {}
         template<typename T> T & as(bool);
+        /// Returns name, if target entity is of named type. If target has no
+        /// name, returns dft string. Raises badState, if target is anonymous
+        /// and dft is nullptr.
+        std::string get_name( const char * dft=nullptr );
     };
+    /// Materialized path --- insertion targets stack type keeping history of
+    /// insertions.
     typedef std::stack<InsertionTarget> InsertionTargetsStack;
 private:
+    /// Insertion history for insertion proxy instance. Controls validity of
+    /// chaining insertions.
     InsertionTargetsStack _stack;
 protected:
     /// Ctr used by child classes
@@ -57,6 +80,9 @@ protected:
     }
     /// Returns stack top as reference to dictionary parameter. Raises
     /// assertFailed exception if top refers to list instance instead of dict.
+    /// @param fn controls whether to emit exception if requested object is
+    ///     anonymous while "named" type is required (see NamedLoS/LoS,
+    ///     NamedDict/dict).
     template<typename T> T & _top_as(bool fn=true) { return _stack.top().as<T>(fn); }
     /// Pops stack top.
     void _pop() { _stack.pop(); }
@@ -67,12 +93,14 @@ protected:
     /// Returns const reference to insertion target stack.
     const InsertionTargetsStack & stack() const { return _stack; }
 public:
-    static InsertionTargetsStack combine_path( const InsertionTargetsStack & current
-                                             , const char * path
+    /// Multi-purpose path processing routine performing translation of
+    /// textual path string to insertion proxy referencing particular instance
+    /// within the parameters dictionary or list.
+    static InsertionTargetsStack combine_path( InsertionTargetsStack & mpath
+                                             , char * path
                                              , bool extend=false
                                              , const std::string extensionDescr="");
 };  // class InsertionProxyBase
-
 
 class LoDInsertionProxy;
 
@@ -88,7 +116,7 @@ class LoDInsertionProxy;
  * Note that `bgn_sect()` and `end_sect()` methods have to be paired --- i.e.
  * each created sub-section must be closed.
  *
- * Note, that to prevent user code from possible mistakes, positional arguments
+ * To prevent user code from possible mistakes, positional arguments
  * have to be added with own `Configuration` setter method
  * `positional_arguments()`.
  * */
@@ -265,6 +293,21 @@ template<> inline InsertionProxyBase::LoS &
 InsertionProxyBase::InsertionTarget::as<InsertionProxyBase::LoS>(bool fn) {
     _assert_is( true, false, fn );
     return *(_isNamed ? static_cast<LoS*>( _namedLoSPtr ) : _LoSPtr );
+}
+
+inline std::string
+InsertionProxyBase::InsertionTarget::get_name( const char * dft ) {
+    if( !_isNamed ) {
+        if( !dft ) {
+            emraise( badState, "Diagnostic getter failure: target is anonymous and"
+                    " no default name given for insertion target %p.", this );
+        }
+        return dft;
+    }
+    if( _isDict ) {
+        return _namedDPtr->name();
+    }
+    return _namedLoSPtr->name();
 }
 
 }  // namespace goo

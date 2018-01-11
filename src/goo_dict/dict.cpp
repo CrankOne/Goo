@@ -149,9 +149,13 @@ int
 Dictionary::pull_opt_path_token( char *& path
                                , char *& current
                                , long & idx ) {
-    current = path;
     // if first char is digit, we'll interpret token as integer index:
-    int rc = (( '-' == *path || isdigit(*path)) ? 0x1 : 0x0);
+    int rc = 0;
+    if( '#' == *path ) {
+        rc |= 0x1;
+        ++path;
+    }
+    current = path;
     for( ; *path != '\0'; ++path ) {
         if( '.' == *path ) {
             *path =  '\0';
