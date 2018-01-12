@@ -29,6 +29,35 @@
 namespace goo {
 namespace dict {
 
+class ObjectsListParameter : public iTValue<List<iStringConvertibleParameter *> > {
+protected:
+    virtual void _set_value( const Value & ) override;
+public:
+    typedef List<iStringConvertibleParameter *> Value;
+    // ...
+    /// Const value getter (public). Raises "unitialized" error if value was
+    /// not set.
+    virtual const Value & value() const;
+};
+
+template<>
+class iParameter<List<iStringConvertibleParameter *> > : public iAbstractParameter
+                                                       , public ObjectsListParameter {
+public:
+    //typedef iTStringConvertibleParameter<List<iStringConvertibleParameter *> > ValueStoringType;
+    typedef List<iStringConvertibleParameter *> Value;
+    typedef iSingularParameter::ParameterEntryFlag ParameterEntryFlag;
+public:
+    iParameter( const char * name,
+                const char * description,
+                ParameterEntryFlag,
+                char shortcut_ = '\0' );
+
+    iParameter( const iParameter<Value> & );
+
+    ~iParameter() {}
+};  // class iParameter
+
 template<>
 class Parameter< List<iStringConvertibleParameter*> > :
                 public mixins::iDuplicable< iAbstractParameter
@@ -37,9 +66,10 @@ class Parameter< List<iStringConvertibleParameter*> > :
                                           > {
 public:
     typedef List<iStringConvertibleParameter*> Array;
-    //typedef mixins::iDuplicable< iAbstractParameter
-    //                           , Parameter<Array>
-    //                           , InsertableParameter<iAbstractParameter*> > DuplicableParent;
+    typedef mixins::iDuplicable< iAbstractParameter
+                               , Parameter< List<iStringConvertibleParameter*> >
+                               , iParameter< List<iStringConvertibleParameter*> >
+                               > DuplicableParent;
 public:
     Parameter( const Parameter & );
     Parameter( const char *

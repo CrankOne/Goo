@@ -25,20 +25,18 @@
 namespace goo {
 namespace dict {
 
-# if 0
-Parameter< List<iAbstractParameter*> >::Parameter(
-        const Parameter< List<iAbstractParameter*> > & o ) :
+Parameter< List<iStringConvertibleParameter*> >::Parameter(
+        const Parameter< List<iStringConvertibleParameter*> > & o ) :
                         DuplicableParent( o ) {
 }
 
-Parameter< List<iAbstractParameter*> >::Parameter(
+Parameter< List<iStringConvertibleParameter*> >::Parameter(
             const char * name_
           , const char * description_ ) :
                         DuplicableParent( name_
                                         , description_
-                                        ) {
+                                        , 0x0 ) {
 }
-# endif
 
 }  // namespace dict
 }  // namespace goo

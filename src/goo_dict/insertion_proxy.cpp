@@ -184,15 +184,15 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
                          , startLoSRef.value().size()
                          , index );
             }
-            if( index != startLoSRef.value().size() ) {
+            if( index != (long) startLoSRef.value().size() ) {
                 newElement = true;
             } else {
                 emraise( overflow, "Unable to extend list %p (%s) currently"
                        " having %zu elements with %ld-th element (number"
                        " has to refer the last element in a list)."
                        , &startLoSRef
-                       , start.get_name( "<anonymous>" )
-                       , startLoSRef.value().size(),
+                       , start.get_name( "<anonymous>" ).c_str()
+                       , startLoSRef.value().size()
                        , index );
             }
         }
@@ -220,6 +220,8 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
         }
          */
     }
+
+    _TODO_
 
     # if 0
     while(0x2 & (rc = DictionaryParameter::pull_opt_path_token( path
@@ -384,9 +386,25 @@ LoDInsertionProxy::end_list( const char * listName ) {
     # endif
 }
 
+DictInsertionProxy
+LoDInsertionProxy::bgn_dict() {
+    _TODO_
+}
+
+LoDInsertionProxy
+LoDInsertionProxy::bgn_sublist() {
+    _TODO_
+}
+
+LoDInsertionProxy
+LoDInsertionProxy::end_sublist() {
+    _TODO_
+}
+
 # if 0
 DictInsertionProxy
 LoDInsertionProxy::end_dict( ) {
+    _TODO_
     # if 0
     _stack.pop();
     if( _stack.top().is_list() ) {

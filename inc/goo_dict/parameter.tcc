@@ -81,6 +81,8 @@ class iParameter;
  *
  * Required can not be set (set=false)
  *
+ * List-of-Structures (LoS) have positional=true and atomic=false.
+ *
  * @ingroup appParameters
  */
 class iAbstractParameter : public mixins::iDuplicable<iAbstractParameter> {
@@ -89,9 +91,9 @@ public:
     static const ParameterEntryFlag
             set,            ///< Value is set (=false on init for required/flag/dict).
             flag,           ///< Two-state logical parameter without an argument.
-            positional,     ///< Positional argument (=false for flag/dict).
-            atomic,         ///< Indicates true parameter (otherwise, it's a dictionary).
-            singular,       ///< Can be provided only once (=false for dict).
+            positional,     ///< Positional argument (=false for flag or dict, true for list).
+            atomic,         ///< Indicates true parameter (otherwise, it's a dictionary or list).
+            singular,       ///< Can be provided only once (=false for array, dict or list).
             required,       ///< A mandatory parameter entry (=false for flag/dict).
             shortened       ///< Has a shortcut (single-letter option, =false for positional).
         ;
@@ -158,7 +160,7 @@ public:
         }
     /// Returns true, if parameter has no name (at all --- even one-letter shortcut).
     bool is_positional() const {
-            return _flags & positional;
+            return (_flags & positional) && (_flags & atomic);
         }
     /// Returns true, if parameter is not a dictionary.
     bool is_atomic() const {
@@ -187,6 +189,11 @@ public:
     /// Returns true, if parameter has a single-character shortcut.
     bool has_shortcut() const {
             return _flags & shortened;
+        }
+
+    /// Returns true, if parameter is a list of objects.
+    bool is_list_of_objects() const {
+            return (_flags & positional) && !(_flags & atomic);
         }
 
     /// Sets the "required" flag marking a mandatory parameter.
@@ -357,7 +364,6 @@ public:
     iTStringConvertibleParameter( const ValueT & v ) : iTValue<Value>(v) {}
     iTStringConvertibleParameter( const Self & o ) : iTValue<Value>( o ) {}
 };
-
 
 /**@class iParameter
  * @brief A valued intermediate class representing dictionary entry with
