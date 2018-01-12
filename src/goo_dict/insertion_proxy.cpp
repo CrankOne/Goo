@@ -163,7 +163,7 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
         } else {
             // It is a named LoS.
             //auto newStart = new NamedLoS( current, ed.c_str() );
-            auto newStart = new Parameter<List<iStringConvertibleParameter*>>(current, ed.c_str());
+            auto newStart = new Parameter<Array<iStringConvertibleParameter*>>(current, ed.c_str());
             startDctRef.insert_parameter( newStart );
             mpath.push( static_cast<NamedLoS*>(newStart) );
             return combine_path( mpath, path, extend, ed.c_str() );
@@ -177,7 +177,7 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
         bool newElement = false;
         if( index >= (long) startLoSRef.value().size() ) {
             if( !extend ) {
-                emraise( notFound, "List object %p (%s) has only %zu elements"
+                emraise( notFound, "Array object %p (%s) has only %zu elements"
                         ", but #%ld-th element is requested."
                          , &startLoSRef
                          , start.get_name( "<anonymous>" ).c_str()
@@ -284,7 +284,7 @@ void
 DictInsertionProxy::insert_copy_of( const iSingularParameter & sp
                                   , const char * newName ) {
     iSingularParameter * isp =
-                    clone_as<iAbstractParameter, iSingularParameter>( &sp );
+                    clone_as<AbstractParameter, iSingularParameter>( &sp );
     if( !! newName ) {
         isp->name( newName );
     }
@@ -349,7 +349,7 @@ DictInsertionProxy::bgn_list( const char * name, const char * description) {
      || NULL != strchr(name, '[') || NULL != strchr(name, ']') ) {
         _DETAILED_TODO_( "Array argument name specification \"%s\""
                 " given to insertion object contains path separator symbol"
-                " (\".\") or array indexing expression (\"[\", \"]\"). List"
+                " (\".\") or array indexing expression (\"[\", \"]\"). Array"
                 " insertion proxy does not provide"
                 " automatic dictionary creation.", name );
     }
@@ -361,7 +361,7 @@ DictInsertionProxy::bgn_list( const char * name, const char * description) {
 }
 
 //
-// List insertion proxy
+// Array insertion proxy
 // ///////////////////
 
 DictInsertionProxy

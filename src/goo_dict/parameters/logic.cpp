@@ -35,9 +35,9 @@ Parameter<bool>::Parameter( const char * name_,
                             const char * description_ ) :
             DuplicableParent( name_,
                               description_,
-                              0x0 | iAbstractParameter::set
-                                  | iAbstractParameter::atomic
-                                  | iAbstractParameter::singular
+                              0x0 | AbstractParameter::set
+                                  | AbstractParameter::atomic
+                                  | AbstractParameter::singular
                             ) {}
 
 
@@ -46,10 +46,10 @@ Parameter<bool>::Parameter( char shortcut_,
                             const char * description_ ) :
             DuplicableParent( name_,
                               description_,
-                              0x0 | iAbstractParameter::set
-                                  | iAbstractParameter::atomic
-                                  | iAbstractParameter::singular
-                                  | iAbstractParameter::shortened,
+                              0x0 | AbstractParameter::set
+                                  | AbstractParameter::atomic
+                                  | AbstractParameter::singular
+                                  | AbstractParameter::shortened,
                               shortcut_
                             ) {}
 
@@ -57,10 +57,10 @@ Parameter<bool>::Parameter( char shortcut_,
                             const char * description_ ) :
             DuplicableParent( nullptr,
                               description_,
-                              0x0 | iAbstractParameter::set
-                                  | iAbstractParameter::atomic
-                                  | iAbstractParameter::singular
-                                  | iAbstractParameter::shortened,
+                              0x0 | AbstractParameter::set
+                                  | AbstractParameter::atomic
+                                  | AbstractParameter::singular
+                                  | AbstractParameter::shortened,
                               shortcut_
                             ) {}
 
@@ -70,9 +70,9 @@ Parameter<bool>::Parameter( const char * name_,
                             bool default_ )  :
             DuplicableParent( name_,
                               description_,
-                              0x0 | iAbstractParameter::set
-                                  | iAbstractParameter::atomic
-                                  | iAbstractParameter::singular,
+                              0x0 | AbstractParameter::set
+                                  | AbstractParameter::atomic
+                                  | AbstractParameter::singular,
                               '\0',
                               default_
                             ) {}
@@ -84,10 +84,10 @@ Parameter<bool>::Parameter( char shortcut_,
                             bool default_ ) :
             DuplicableParent( name_,
                               description_,
-                              0x0 | iAbstractParameter::set
-                                  | iAbstractParameter::atomic
-                                  | iAbstractParameter::singular
-                                  | iAbstractParameter::shortened,
+                              0x0 | AbstractParameter::set
+                                  | AbstractParameter::atomic
+                                  | AbstractParameter::singular
+                                  | AbstractParameter::shortened,
                               shortcut_,
                               default_
                             ) {}
@@ -97,10 +97,10 @@ Parameter<bool>::Parameter( char shortcut_,
                             bool default_ ) :
             DuplicableParent( nullptr,
                               description_,
-                              0x0 | iAbstractParameter::set
-                                  | iAbstractParameter::atomic
-                                  | iAbstractParameter::singular
-                                  | iAbstractParameter::shortened,
+                              0x0 | AbstractParameter::set
+                                  | AbstractParameter::atomic
+                                  | AbstractParameter::singular
+                                  | AbstractParameter::shortened,
                               shortcut_,
                               default_
                             ) {}

@@ -299,16 +299,16 @@ public:
  * It is implied that user code will utilize InsertionProxy methods to fill
  * this container instances with particular parameters and sub-dictionaries.
  * */
-class DictionaryParameter : public mixins::iDuplicable< iAbstractParameter
+class DictionaryParameter : public mixins::iDuplicable< AbstractParameter
                                                       , DictionaryParameter
-                                                      , iAbstractParameter>
+                                                      , AbstractParameter>
                           , public Dictionary {
     friend class DictInsertionProxy;
     friend class Configuration;
 public:
-    typedef mixins::iDuplicable< iAbstractParameter
+    typedef mixins::iDuplicable< AbstractParameter
                                , DictionaryParameter
-                               , iAbstractParameter> DuplicableParent;
+                               , AbstractParameter> DuplicableParent;
 public:
     DictionaryParameter( const char *, const char * );
     DictionaryParameter( const DictionaryParameter & );

@@ -56,7 +56,7 @@ namespace dict {
  * This aspect affects generated help message.
  * */
 template<>
-class Parameter<bool> : public mixins::iDuplicable< iAbstractParameter,
+class Parameter<bool> : public mixins::iDuplicable< AbstractParameter,
                                                     Parameter<bool>,
                                                     iParameter<bool> > {
 public:

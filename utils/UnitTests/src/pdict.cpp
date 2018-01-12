@@ -234,7 +234,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # endif
     # if 1
     {
-        os << "List parameters tests : {" << std::endl;
+        os << "Array parameters tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication3", "Testing parameter set #2." );
 
         const char strLstDftCheck[][16] = { "one", "two", "three" };
@@ -246,8 +246,8 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                 .array<bool>( "binary2", "options array #3" )
                 .array<bool>( 'a', "options array #4", {true, false, true} )
                 .flag( 'v', "Enables verbose output" )
-                .array<short>( 'x', "List of short ints", {112, 53, 1024} )
-                .array<float>( "fl-num", "List of floating numbers" )
+                .array<short>( 'x', "Array of short ints", {112, 53, 1024} )
+                .array<float>( "fl-num", "Array of floating numbers" )
                 .array<std::string>( 's', "lstr-i", "String array one", {"a", "b", "c"} )
                 .array<std::string>( "lstr-ii", "String array two", {"one", "two", "three"} )
                 .array<std::string>( 'S', nullptr, "String array three", {"1", "two", "III"} )
@@ -359,7 +359,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         }
 
         goo::dict::Configuration::free_tokens( argc, argv );
-        os << "} List parameters done." << std::endl;
+        os << "} Array parameters done." << std::endl;
     }
     # endif
     // todo:
@@ -473,10 +473,10 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         conf.insertion_proxy()
                 .bgn_sect( "log", "Logging options" )
-                .array<std::string>( '1', "stdout", "List of files where stdout has to be "
+                .array<std::string>( '1', "stdout", "Array of files where stdout has to be "
                         "redirected. The '-' will be considered as "
                         "terminal's stdout if available.", {"-"} )
-                .array<std::string>( '2', "stderr", "List of files where stderr has to be "
+                .array<std::string>( '2', "stderr", "Array of files where stderr has to be "
                         "redirected. The '-' will be considered as "
                         "terminal's stderr if available.", {"-"} )
             .end_sect( "log" )
@@ -561,7 +561,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     // native compatibility with similar structures in elaborated mark-up languages
     // such as YAML or XML.
     {
-        //typedef goo::dict::Parameter<goo::dict::List<goo::dict::iAbstractParameter * > > AoS;
+        //typedef goo::dict::Parameter<goo::dict::Array<goo::dict::AbstractParameter * > > AoS;
         goo::dict::DictionaryParameter d("object", "Aggregating object.")
                                      //, subD1("subObject1", "Aggregated object #1.")
                                      //, subD2("subObject2", "Aggregated object #2.")

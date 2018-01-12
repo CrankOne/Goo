@@ -176,7 +176,7 @@ public:
     }
 
     //
-    // List inserters
+    // Array inserters
     //
 
     template<typename ParameterT> DictInsertionProxy &
@@ -185,7 +185,7 @@ public:
          , const char * description
          , const std::initializer_list<ParameterT> & dfts ) {
         _top_as<Dict>(false).insert_parameter(
-                new Parameter<List<ParameterT> >( dfts, shortcut, name, description )
+                new Parameter<Array<ParameterT> >( dfts, shortcut, name, description )
             );
         return *this;
     }
@@ -195,7 +195,7 @@ public:
          , const char * description
          , const std::initializer_list<ParameterT> & dfts ) {
         _top_as<Dict>(false).insert_parameter(
-                new Parameter<List<ParameterT> >( dfts, name, description )
+                new Parameter<Array<ParameterT> >( dfts, name, description )
             );
         return *this;
     }
@@ -205,7 +205,7 @@ public:
          , const char * description
          , const std::initializer_list<ParameterT> & dfts ) {
         _top_as<Dict>(false).insert_parameter(
-                new Parameter<List<ParameterT> >( dfts, shortcut, description )
+                new Parameter<Array<ParameterT> >( dfts, shortcut, description )
             );
         return *this;
     }
@@ -215,7 +215,7 @@ public:
          , const char *name
          , const char *description ) {
         _top_as<Dict>(false).insert_parameter(
-                new Parameter<List<ParameterT> >( shortcut, name, description )
+                new Parameter<Array<ParameterT> >( shortcut, name, description )
             );
         return *this;
     }
@@ -224,7 +224,7 @@ public:
     array( const char *name
          , const char *description ) {
         _top_as<Dict>(false).insert_parameter(
-                new Parameter<List<ParameterT> >( name, description )
+                new Parameter<Array<ParameterT> >( name, description )
             );
         return *this;
     }
@@ -233,7 +233,7 @@ public:
     array( char shortcut
          , const char *description ) {
         _top_as<Dict>(false).insert_parameter(
-                new Parameter<List<ParameterT> >( shortcut, description )
+                new Parameter<Array<ParameterT> >( shortcut, description )
             );
         return *this;
     }

@@ -1,4 +1,4 @@
-# include "goo_dict/parameter.tcc"
+# include "goo_dict/abstract_parameter.tcc"
 # include "goo_exception.hpp"
 
 # include <cstring>
@@ -6,16 +6,16 @@
 namespace goo {
 namespace dict {
 
-const iAbstractParameter::ParameterEntryFlag
-    iAbstractParameter::set         = 0x1,      // otherwise --- uninitialized still
-    iAbstractParameter::flag        = 0x2,      // otherwise --- requires an argument
-    iAbstractParameter::positional  = 0x4,      // otherwise --- has name or shortcut
-    iAbstractParameter::atomic      = 0x8,      // otherwise --- it is a dictionary
-    iAbstractParameter::singular    = 0x10,     // otherwise --- can be repeated multiple times
-    iAbstractParameter::required    = 0x20,     // otherwise --- is optional
-    iAbstractParameter::shortened   = 0x40;     // otherwise --- has not one-char shortcut
+const AbstractParameter::ParameterEntryFlag
+    AbstractParameter::set         = 0x1,      // otherwise --- uninitialized still
+    AbstractParameter::flag        = 0x2,      // otherwise --- requires an argument
+    AbstractParameter::positional  = 0x4,      // otherwise --- has name or shortcut
+    AbstractParameter::atomic      = 0x8,      // otherwise --- it is a dictionary
+    AbstractParameter::singular    = 0x10,     // otherwise --- can be repeated multiple times
+    AbstractParameter::required    = 0x20,     // otherwise --- is optional
+    AbstractParameter::shortened   = 0x40;     // otherwise --- has not one-char shortcut
 
-iAbstractParameter::iAbstractParameter( const char * name_,
+AbstractParameter::AbstractParameter( const char * name_,
                                         const char * description_,
                                         ParameterEntryFlag flags,
                                         char shortcut_ ) :
@@ -68,7 +68,7 @@ iAbstractParameter::iAbstractParameter( const char * name_,
     }
 }
 
-iAbstractParameter::iAbstractParameter( const iAbstractParameter & o ) {
+AbstractParameter::AbstractParameter( const AbstractParameter & o ) {
     //memcpy( this, &o, sizeof(o) );  // TODO: find a better solution b'cause overwriting
     //                                // zee vtable can be dangerous!
     this->_flags = o._flags;
@@ -92,7 +92,7 @@ iAbstractParameter::iAbstractParameter( const iAbstractParameter & o ) {
     }
 }
 
-iAbstractParameter::~iAbstractParameter() {
+AbstractParameter::~AbstractParameter() {
     if( _name ) {
         delete [] _name;
     }
@@ -102,7 +102,7 @@ iAbstractParameter::~iAbstractParameter() {
 }
 
 void
-iAbstractParameter::name( const char * name_ ) {
+AbstractParameter::name( const char * name_ ) {
     size_t nLen = strlen( name_ ) + 1;
     if( _name ) {
         delete [] _name;
@@ -112,7 +112,7 @@ iAbstractParameter::name( const char * name_ ) {
 }
 
 void
-iAbstractParameter::_check_initial_validity() {
+AbstractParameter::_check_initial_validity() {
     if( '\0' != _shortcut && 'W' == _shortcut ) {
         // See Guideline 3 of POSIX convention; 12.2 "Utility Syntax Guidelines".
         emraise( malformedArguments,
@@ -166,17 +166,17 @@ iAbstractParameter::_check_initial_validity() {
 }
 
 const char *
-iAbstractParameter::name() const {
+AbstractParameter::name() const {
     return _name;
 }
 
 const char *
-iAbstractParameter::description() const {
+AbstractParameter::description() const {
     return _description;
 }
 
 void
-iAbstractParameter::_append_description( const char * d ) {
+AbstractParameter::_append_description( const char * d ) {
     assert( d );
     size_t newDLength = strlen( d );
     if( _description ) {
@@ -191,22 +191,22 @@ iAbstractParameter::_append_description( const char * d ) {
 }
 
 void
-iAbstractParameter::_set_is_set_flag() {
+AbstractParameter::_set_is_set_flag() {
     _flags |= set;
 }
 
 void
-iAbstractParameter::_set_is_flag_flag() {
+AbstractParameter::_set_is_flag_flag() {
     _flags |= flag;
 }
 
 void
-iAbstractParameter::_unset_singular() {
+AbstractParameter::_unset_singular() {
     _flags &= ~singular;
 }
 
 void
-iAbstractParameter::set_is_argument_required_flag() {
+AbstractParameter::set_is_argument_required_flag() {
     _flags |= required;
 }
 
@@ -218,7 +218,7 @@ iSingularParameter::iSingularParameter( const char * name_,
                                         const char * description_,
                                         ParameterEntryFlag flags_,
                                         char shortcut_ ) :
-        iAbstractParameter( name_, description_, flags_, shortcut_ ) {}
+        AbstractParameter( name_, description_, flags_, shortcut_ ) {}
 
 }  // namespace dict
 }  // namespace goo

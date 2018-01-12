@@ -66,12 +66,12 @@ template<> long double _floating_point_parse( const char *, char ** );
 
 template<typename T>
 class FloatingPointParameter : public mixins::iDuplicable<
-                                    iAbstractParameter,
+                                    AbstractParameter,
                                     FloatingPointParameter<T>,
                                     iParameter<T> > {
 public:
     typedef T Float;
-    typedef mixins::iDuplicable< iAbstractParameter,
+    typedef mixins::iDuplicable< AbstractParameter,
                                  FloatingPointParameter<T>,
                                  iParameter<T> > DuplicableParent;
 
@@ -119,8 +119,8 @@ FloatingPointParameter<T>::FloatingPointParameter( const char * name_,
                                          const char * description_ ) :
             DuplicableParent( name_,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular
                             ) {}
 
 template<typename T>
@@ -129,9 +129,9 @@ FloatingPointParameter<T>::FloatingPointParameter(  char shortcut_,
                                           const char * description_ ) :
             DuplicableParent( name_,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular
-                                | iAbstractParameter::shortened,
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular
+                                | AbstractParameter::shortened,
                               shortcut_
                             ) {}
 
@@ -140,8 +140,8 @@ FloatingPointParameter<T>::FloatingPointParameter( char shortcut_,
                                          const char * description_ ) :
             DuplicableParent( nullptr,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular,
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular,
                               shortcut_
                             ) {}
 
@@ -151,9 +151,9 @@ FloatingPointParameter<T>::FloatingPointParameter( const char * name_,
                                          Float default_ ) :
             DuplicableParent( name_,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular
-                                | iAbstractParameter::set,
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular
+                                | AbstractParameter::set,
                               '\0',
                               default_
                             ) {}
@@ -165,10 +165,10 @@ FloatingPointParameter<T>::FloatingPointParameter( char shortcut_,
                                            Float default_ ) :
             DuplicableParent( name_,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular
-                                | iAbstractParameter::set
-                                | iAbstractParameter::shortened,
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular
+                                | AbstractParameter::set
+                                | AbstractParameter::shortened,
                               shortcut_,
                               default_
                             ) {}
@@ -179,10 +179,10 @@ FloatingPointParameter<T>::FloatingPointParameter( char shortcut_,
                                            Float default_ ) :
             DuplicableParent( nullptr,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular
-                                | iAbstractParameter::set
-                                | iAbstractParameter::shortened,
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular
+                                | AbstractParameter::set
+                                | AbstractParameter::shortened,
                               shortcut_,
                               default_
                             ) {}

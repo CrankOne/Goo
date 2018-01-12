@@ -92,12 +92,12 @@ integral_safe_parse<unsigned long long int>( const char * str, int base );
 
 template<typename T>
 class IntegralParameter : public mixins::iDuplicable<
-                                    iAbstractParameter,
+                                    AbstractParameter,
                                     IntegralParameter<T>,
                                     iParameter<T> > {
 public:
     typedef T Integral;
-    typedef mixins::iDuplicable< iAbstractParameter,
+    typedef mixins::iDuplicable< AbstractParameter,
                                  IntegralParameter<T>,
                                  iParameter<T> > DuplicableParent;
 
@@ -145,8 +145,8 @@ IntegralParameter<T>::IntegralParameter( const char * name_,
                                          const char * description_ ) :
             DuplicableParent( name_,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular
                             ) {}
 
 template<typename T>
@@ -155,9 +155,9 @@ IntegralParameter<T>::IntegralParameter(  char shortcut_,
                                           const char * description_ ) :
             DuplicableParent( name_,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular
-                                | iAbstractParameter::shortened,
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular
+                                | AbstractParameter::shortened,
                               shortcut_
                             ) {}
 
@@ -166,9 +166,9 @@ IntegralParameter<T>::IntegralParameter( char shortcut_,
                                          const char * description_ ) :
             DuplicableParent( nullptr,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular
-                                | iAbstractParameter::shortened,
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular
+                                | AbstractParameter::shortened,
                               shortcut_
                             ) {}
 
@@ -178,9 +178,9 @@ IntegralParameter<T>::IntegralParameter( const char * name_,
                                          Integral default_ ) :
             DuplicableParent( name_,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular
-                                | iAbstractParameter::set,
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular
+                                | AbstractParameter::set,
                               '\0',
                               default_
                             ) {}
@@ -192,10 +192,10 @@ IntegralParameter<T>::IntegralParameter( char shortcut_,
                                            Integral default_ ) :
             DuplicableParent( name_,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular
-                                | iAbstractParameter::set
-                                | iAbstractParameter::shortened,
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular
+                                | AbstractParameter::set
+                                | AbstractParameter::shortened,
                               shortcut_,
                               default_
                             ) {}
@@ -206,10 +206,10 @@ IntegralParameter<T>::IntegralParameter( char shortcut_,
                                            Integral default_ ) :
             DuplicableParent( nullptr,
                               description_,
-                              iAbstractParameter::atomic
-                                | iAbstractParameter::singular
-                                | iAbstractParameter::set
-                                | iAbstractParameter::shortened,
+                              AbstractParameter::atomic
+                                | AbstractParameter::singular
+                                | AbstractParameter::set
+                                | AbstractParameter::shortened,
                               shortcut_,
                               default_
                             ) {}

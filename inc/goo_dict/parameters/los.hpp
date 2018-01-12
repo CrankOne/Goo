@@ -29,11 +29,11 @@
 namespace goo {
 namespace dict {
 
-class ObjectsListParameter : public iTValue<List<iStringConvertibleParameter *> > {
+class ObjectsListParameter : public iTValue<Array<iStringConvertibleParameter *> > {
 protected:
     virtual void _set_value( const Value & ) override;
 public:
-    typedef List<iStringConvertibleParameter *> Value;
+    typedef Array<iStringConvertibleParameter *> Value;
     // ...
     /// Const value getter (public). Raises "unitialized" error if value was
     /// not set.
@@ -41,10 +41,10 @@ public:
 };
 
 template<>
-class iParameter<List<iStringConvertibleParameter *> > : public iAbstractParameter
+class iParameter<List<iStringConvertibleParameter *> > : public AbstractParameter
                                                        , public ObjectsListParameter {
 public:
-    //typedef iTStringConvertibleParameter<List<iStringConvertibleParameter *> > ValueStoringType;
+    //typedef iTStringConvertibleParameter<Array<iStringConvertibleParameter *> > ValueStoringType;
     typedef List<iStringConvertibleParameter *> Value;
     typedef iSingularParameter::ParameterEntryFlag ParameterEntryFlag;
 public:
@@ -60,13 +60,13 @@ public:
 
 template<>
 class Parameter< List<iStringConvertibleParameter*> > :
-                public mixins::iDuplicable< iAbstractParameter
+                public mixins::iDuplicable< AbstractParameter
                                           , Parameter< List<iStringConvertibleParameter*> >
                                           , iParameter< List<iStringConvertibleParameter*> >
                                           > {
 public:
     typedef List<iStringConvertibleParameter*> Array;
-    typedef mixins::iDuplicable< iAbstractParameter
+    typedef mixins::iDuplicable< AbstractParameter
                                , Parameter< List<iStringConvertibleParameter*> >
                                , iParameter< List<iStringConvertibleParameter*> >
                                > DuplicableParent;

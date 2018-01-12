@@ -39,12 +39,12 @@ namespace dict {
  * use them for short static enumerations defined at compile time.
  * */
 template<typename EnumT>
-class EnumParameter : public mixins::iDuplicable< iAbstractParameter,
+class EnumParameter : public mixins::iDuplicable< AbstractParameter,
                                                     EnumParameter<EnumT>,
                                                     iParameter<EnumT> > {
 public:
     typedef EnumT Enum;
-    typedef mixins::iDuplicable< iAbstractParameter,
+    typedef mixins::iDuplicable< AbstractParameter,
                                  EnumParameter<Enum>,
                                  iParameter<Enum> > DuplicableParent;
     typedef std::unordered_map<std::string, Enum> Entries;
@@ -64,9 +64,9 @@ public:
                Enum default_ ) : DuplicableParent( (name_ ? ('\0' == name_[0] ?
                                                 nullptr : name_) : nullptr),
                                           description_,
-                              0x0 | iAbstractParameter::atomic
-                                  | iAbstractParameter::singular
-                                  | iAbstractParameter::shortened,
+                              0x0 | AbstractParameter::atomic
+                                  | AbstractParameter::singular
+                                  | AbstractParameter::shortened,
                               shortcut_
                             ) {
         DuplicableParent::_set_value( default_ );

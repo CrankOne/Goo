@@ -30,7 +30,7 @@ use IPC::Open2;
 use Config;
 use POSIX;
 use Time::HiRes qw( time );
-use List::Util qw(reduce);
+use Array::Util qw(reduce);
 
 my %variables = (
     buildConfigs => [],

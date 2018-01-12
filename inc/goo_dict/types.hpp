@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
  * Author: Renat R. Dusaev <crank@qcrypt.org>
@@ -20,23 +21,42 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-# include "goo_dict/parameters/los.hpp"
+// Created by crank on 12.01.18.
+
+# ifndef H_GOO_PARAMETERS_BASES_H
+# define H_GOO_PARAMETERS_BASES_H
+
+# include <vector>
+# include <list>
+# include <map>
+
+/**@file bases.hpp
+ * Sequence container templates. The particular selection may significantly
+ * affect performance or memory fragmentation. Since goo::dict is generally
+ * designed for application configuration that occurs once, the performance
+ * matters less than memory consumption that is slightly more efficient for
+ * list sequences (TODO: has to be checked on benchmarks, actually).
+ */
 
 namespace goo {
 namespace dict {
 
-Parameter< Array<iStringConvertibleParameter*> >::Parameter(
-        const Parameter< Array<iStringConvertibleParameter*> > & o ) :
-                        DuplicableParent( o ) {
-}
+/// Array parameter container template. Used to store the homogeneous typed
+/// singular parameters.
+template<typename T> using Array = std::vector<T>;
 
-Parameter< Array<iStringConvertibleParameter*> >::Parameter(
-            const char * name_
-          , const char * description_ ) :
-                        DuplicableParent( name_
-                                        , description_
-                                        , 0x0 ) {
-}
+/// List of heterogeneous parameters kept within the section or "list of
+/// structres".
+template<typename T> using List = std::list<T>;
+
+/// This container is used to cache name-indexed parameters.
+template<typename ValueT> using NameHash = std::map<std::string, ValueT>;
+
+/// This container is used to cache shortcut-indexed parameters.
+template<typename ValueT> using CharsHash = std::map<char, ValueT>;
 
 }  // namespace dict
 }  // namespace goo
+
+
+#endif //GOO_BASES_HPP

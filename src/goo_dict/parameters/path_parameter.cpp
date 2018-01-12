@@ -35,9 +35,9 @@ Parameter<Path>::Parameter( char shortcut_,
                         DuplicableParent( (name_ ? ('\0' == name_[0] ?
                                                 nullptr : name_) : nullptr),
                                           description_,
-                              0x0 | iAbstractParameter::atomic
-                                  | iAbstractParameter::singular
-                                  | iAbstractParameter::shortened,
+                              0x0 | AbstractParameter::atomic
+                                  | AbstractParameter::singular
+                                  | AbstractParameter::shortened,
                               shortcut_
                             ) {
     if( default_ && '\0' != default_[0] ) {
@@ -54,9 +54,9 @@ Parameter<Path>::Parameter( const char * name_,
                                    Path::Interpolator * ip ) :
                         DuplicableParent( name_,
                               description_,
-                              0x0 | iAbstractParameter::set
-                                  | iAbstractParameter::atomic
-                                  | iAbstractParameter::singular,
+                              0x0 | AbstractParameter::set
+                                  | AbstractParameter::atomic
+                                  | AbstractParameter::singular,
                               '\0' ) {
     if( default_ && '\0' != default_[0] ) {
         _set_value( default_ );

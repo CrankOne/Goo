@@ -38,13 +38,13 @@ Dictionary::Dictionary( const Dictionary & orig ) {
     for( auto it  = singRef.begin();
               it != singRef.end(); ++it ) {
         if( *it ) {
-            insert_parameter( clone_as<iAbstractParameter,
+            insert_parameter( clone_as<AbstractParameter,
                               iSingularParameter>( *it ) );
         }
     }
     for( auto it  = dictsRef.begin();
               it != dictsRef.end(); ++it ) {
-        insert_section( clone_as<iAbstractParameter,
+        insert_section( clone_as<AbstractParameter,
                 DictionaryParameter>( it->second ) );
     }
 }
