@@ -5,8 +5,9 @@
 #ifndef GOO_PARAMETERS_SINGULAR_PARAMETER_TCC
 #define GOO_PARAMETERS_SINGULAR_PARAMETER_TCC
 
-# include "goo_dict/values.hpp"
-# include "goo_dict/abstract_parameter.hpp"
+# include "goo_exception.hpp"
+# include "goo_dict/parameter_values.hpp"
+# include "goo_dict/parameter_abstract.hpp"
 
 namespace goo {
 namespace dict {

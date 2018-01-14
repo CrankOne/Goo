@@ -41,6 +41,9 @@
 namespace goo {
 namespace dict {
 
+/// Type referencing element position in a List.
+typedef unsigned long ListIndex;
+
 /// Array parameter container template. Used to store the homogeneous typed
 /// singular parameters.
 template<typename T> using Array = std::vector<T>;
@@ -49,11 +52,50 @@ template<typename T> using Array = std::vector<T>;
 /// structres".
 template<typename T> using List = std::list<T>;
 
-/// This container is used to cache name-indexed parameters.
-template<typename ValueT> using NameHash = std::map<std::string, ValueT>;
+/// This container is used to cache parameters indexing.
+template<typename KeyT, typename ValueT> using Hash = std::map<KeyT, ValueT>;
 
-/// This container is used to cache shortcut-indexed parameters.
-template<typename ValueT> using CharsHash = std::map<char, ValueT>;
+namespace aux {
+
+/// @brief This routine performs simple token extraction from head of the option
+/// path.
+///
+/// For example, the following string:
+///     "one.three-four.five"
+/// will be split in following manner:
+///     current = "one"
+///     tail = "three-four.five".
+/// In case when only one token is provided, it will be written
+/// in `current', and the tail will be empty.
+///
+/// No data will be allocated on heap, but path string will be rewritten.
+///
+/// Throws goo::TheException<badParameter> if characters not allowed by
+/// goo::dict path specification is found (alnum + '-', '_' for tokens and
+/// '.' as a separator). Note, that after throwing an exception
+/// the path argument pointer reference will point to the "bad" character.
+///
+/// The idx reference is for digits-only rokens. They will be parsed and
+/// special value will be returned.
+///
+/// One may perform easy check for latest token extraction with bitwise-and
+/// operation using the return result code ("rc & 0x2 == false" indicates
+/// path depletion).
+///
+/// @returns 0 if no token can be extracted and current token is a string
+/// @returns 1 if no token can be extracted and current token is an index
+/// @returns 2 if there are something in path after extraction and current
+///            token is a string
+/// @returns 3 if there are something in path after extraction and current
+///            token is an index
+/// @param path the mutable path string expression
+/// @param current the target pointer that will refer to extracted token
+///        start.
+int pull_opt_path_token( char *& path
+                              , char *& current
+                              , long & idx );
+
+}  // namespace aux
 
 }  // namespace dict
 }  // namespace goo

@@ -23,7 +23,7 @@
 # ifndef H_GOO_PARAMETERS_DICTIONARY_INJECTION_MAPPING_H
 # define H_GOO_PARAMETERS_DICTIONARY_INJECTION_MAPPING_H
 
-# include "goo_dict/dict.hpp"
+# include "goo_dict/parameter_dict.hpp"
 
 namespace goo {
 namespace dict {

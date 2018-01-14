@@ -39,6 +39,8 @@
 namespace goo {
 namespace dict {
 
+# if 0
+
 const int Configuration::longOptKey = 2;
 const int Configuration::longOptNoShortcutRequiresArgument = 3;
 
@@ -682,6 +684,8 @@ Configuration::print_ASCII_tree( std::list<std::string> & output ) const {
     }
     output.push_front( std::string("╔═ << " ESC_BLDGREEN) + name() + ESC_CLRCLEAR " >>" );
 }
+
+# endif
 
 }  // namespace dict
 }  // namespace goo

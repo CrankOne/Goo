@@ -29,7 +29,9 @@
 
 # include <iostream>
 # include <list>
-# include "goo_dict/parameter.tcc"
+# include "goo_dict/plural.hpp"
+# include "goo_dict/parameters/los.hpp"
+# include "goo_dict/parameter_singular.tcc"
 
 namespace goo {
 
@@ -98,6 +100,14 @@ class DictInsertionProxy;
 class Configuration;
 class DictionaryParameter;
 
+# define _Goo_m_for_each_dict_index( m )        \
+    m(        char, iSingularParameter )        \
+    m( std::string, iSingularParameter )        \
+    m( std::string, Dictionary )                \
+    m(        char, ListOfStructures )          \
+    m( std::string, ListOfStructures )          \
+    /* ... */
+
 /**@brief Parameters container with basic querying support.
  * @class Dictionary
  *
@@ -110,213 +120,26 @@ class DictionaryParameter;
  * DictionaryParameter for actual parameter dictionary representation. Its
  * intermediate functionality is used in AoS sequences as well.
  * */
-class Dictionary : public std::list<iSingularParameter *>
-                 , public std::unordered_map<std::string, DictionaryParameter *>
-                 , public mixins::iDuplicable< Dictionary
-                                             , Dictionary
-                                             , Dictionary
-                                             , true> {
+class Dictionary :
+        # define _Goo_m_dict_base( KeyM, ValM ) protected DictionaryIndex<KeyM, ValM *>,
+        _Goo_m_for_each_dict_index( _Goo_m_dict_base )
+        # undef _Goo_m_dict_base
+        public mixins::iDuplicable< Dictionary
+                                  , Dictionary
+                                  , Dictionary > {
     friend class DictInsertionProxy;
-public:
-    typedef std::list<char>    ShortOptString;
-    typedef std::list<void*>   LongOptionEntries;  // ptrs are malloc()'d
-    typedef std::list<iSingularParameter *> SingularsContainer;
-    typedef std::unordered_map<std::string, DictionaryParameter *> DictionariesContainer;
-    typedef std::unordered_map<std::string, iSingularParameter *> ParametersByName;
-    typedef std::unordered_map<char, iSingularParameter *> ParametersByShortcut;
-private:
-    /// Long-name parameters index (aggregation).
-    ParametersByName _parametersIndexByName;
-    /// Shortcut parameters index (aggregation).
-    ParametersByShortcut _parametersIndexByShortcut;
-
-    /// Internal function mutating given path str --- parameter entry getter.
-    virtual const iSingularParameter * _get_parameter( char [], bool noThrow=false ) const;
-    // TODO: ^^^ return type has to become iBaseParameterValue
-
-    /// Internal function mutating given path str --- subsection getter.
-    virtual const DictionaryParameter * _get_subsection( char [], bool noThrow=false ) const;
 protected:
     /// Marks last inserted parameter as required one.
     void _mark_last_inserted_as_required();
-
-    ParametersByName & parameters_by_name() { return _parametersIndexByName; }
-
-    ParametersByShortcut & parameters_by_shortcut() { return _parametersIndexByShortcut; }
 public:
-    const ParametersByName & parameters_by_name() const { return _parametersIndexByName; }
-
-    const ParametersByShortcut & parameters_by_shortcut() const { return _parametersIndexByShortcut; }
-
-    virtual ~Dictionary();
-
-    /// Inserts parameter instance.
-    virtual void insert_parameter( iSingularParameter * );
-
-    /// Inserts dictionary instance.
-    virtual void insert_section( DictionaryParameter * );
-
     /// Public copy ctr for virtual copy ctr.
     Dictionary( const Dictionary & );
-
     Dictionary() {}
+    virtual ~Dictionary();
 
-    /// @brief This routine performs simple token extraction from head of the option
-    /// path.
-    ///
-    /// For example, the following string:
-    ///     "one.three-four.five"
-    /// will be split in following manner:
-    ///     current = "one"
-    ///     tail = "three-four.five".
-    /// In case when only one token is provided, it will be written
-    /// in `current', and the tail will be empty.
-    ///
-    /// No data will be allocated on heap, but path string will be rewritten.
-    ///
-    /// Throws goo::TheException<badParameter> if characters not allowed by
-    /// goo::dict path specification is found (alnum + '-', '_' for tokens and
-    /// '.' as a separator). Note, that after throwing an exception
-    /// the path argument pointer reference will point to the "bad" character.
-    ///
-    /// The idx reference is for digits-only rokens. They will be parsed and
-    /// special value will be returned.
-    ///
-    /// One may perform easy check for latest token extraction with bitwise-and
-    /// operation using the return result code ("rc & 0x2 == false" indicates
-    /// path depletion).
-    ///
-    /// @returns 0 if no token can be extracted and current token is a string
-    /// @returns 1 if no token can be extracted and current token is an index
-    /// @returns 2 if there are something in path after extraction and current
-    ///            token is a string
-    /// @returns 3 if there are something in path after extraction and current
-    ///            token is an index
-    /// @param path the mutable path string expression
-    /// @param current the target pointer that will refer to extracted token
-    ///        start.
-    static int pull_opt_path_token( char *& path
-                                  , char *& current
-                                  , long & idx );
-
-    /// Get parameter instance by its full name.
-    /// Note, that path delimeter here is dot symbol '.' (const getter).
-    /// When parameter is not found, raises `notFound' exception.
-    virtual const iSingularParameter & parameter( const char path [] ) const;
-
-    virtual const iSingularParameter & parameter( const std::string & path ) const {
-        return parameter( path.c_str() );
-    }
-
-    /// Get parameter instance by its full name.
-    /// Note, that path delimeter here is dot symbol '.'.
-    virtual iSingularParameter & parameter( const char path[] ) {
-        const Dictionary * constThis = this;
-        return const_cast<iSingularParameter &>(constThis->parameter( path ));
-    }
-
-    virtual iSingularParameter & parameter( const std::string & path ) {
-        return parameter( path.c_str() );
-    }
-
-    /// Operator shortcut for `parameter()`.
-    virtual const iSingularParameter & operator[]( const char p[] ) const {
-        return parameter(p); }
-
-    /// Const version of faulty-tolerant parameter instance getter. If
-    /// parameter lookup fails, returns nullptr.
-    virtual const iSingularParameter * probe_parameter( const char path[] ) const;
-
-    /// Faulty-tolerant parameter instance getter. If parameter lookup fails,
-    /// returns nullptr.
-    virtual iSingularParameter * probe_parameter( const char path[] ) {
-        const Dictionary * constThis = this;
-        return const_cast<iSingularParameter *>(constThis->probe_parameter( path ));
-    }
-
-    virtual const iSingularParameter * probe_parameter( const std::string & sPath ) const;
-
-    virtual iSingularParameter * probe_parameter( const std::string & sp ) {
-        const Dictionary * constThis = this;
-        return const_cast<iSingularParameter *>(constThis->probe_parameter( sp ));
-    }
-
-    /// Get sub-dictionary instance by its full name.
-    /// Note, that path delimeter here is dot symbol '.' (const getter).
-    virtual const DictionaryParameter & subsection( const char [] ) const;
-
-    /// Get sub-dictionary instance by its full name.
-    /// Note, that path delimeter here is dot symbol '.'.
-    virtual DictionaryParameter & subsection( const char path[] ) {
-        const Dictionary * constThis = this;
-        return const_cast<DictionaryParameter &>(constThis->subsection( path ));
-    }
-
-    virtual DictionaryParameter & subsection( const std::string & s ) {
-        return subsection(s.c_str());
-    }
-
-    virtual const DictionaryParameter & subsection( const std::string & s ) const {
-        return subsection(s.c_str());
-    }
-
-    /// Const version of faulty-tolerant subsection instance getter. If
-    /// parameter lookup fails, returns nullptr.
-    virtual const DictionaryParameter * probe_subsection( const char path[] ) const;
-
-    /// Faulty-tolerant subsection instance getter. If lookup fails,
-    /// returns nullptr.
-    virtual DictionaryParameter * probe_subsection( const char path[] ) {
-        const Dictionary * constThis = this;
-        return const_cast<DictionaryParameter *>(constThis->probe_subsection( path ));
-    }
-
-    virtual const DictionaryParameter * probe_subsection( const std::string & p ) const {
-        return probe_subsection( p.c_str() );
-    }
-
-    virtual DictionaryParameter * probe_subsection( const std::string & p ) {
-        return probe_subsection( p.c_str() );
-    }
-
-    /// Performs consistency check (only has sense, if extract() was performed
-    /// before).
-    virtual bool is_consistant( std::map<std::string, const iSingularParameter *> &,
-                                const std::string & prefix ) const;
-
-    /// Prints an ASCII-drawn tree with names and brief comments for all
-    /// parameters and sub-sections.
-    virtual void print_ASCII_tree( std::list<std::string> & ) const;
+    virtual void acquire_parameter_ptr( iSingularParameter * );
+    virtual void acquire_subsection_ptr( DictionaryParameter * );
 };  // class Dictionary
-
-/**
- *
- * This class represents a node in a "Configuration" tree-like structure.
- * Instances (usually named and owned by another Dictionary instance) store
- * a set of named (or shortcut-referenced) parameters and other
- * sub-dictionaries.
- *
- * It is implied that user code will utilize InsertionProxy methods to fill
- * this container instances with particular parameters and sub-dictionaries.
- * */
-class DictionaryParameter : public mixins::iDuplicable< AbstractParameter
-                                                      , DictionaryParameter
-                                                      , AbstractParameter>
-                          , public Dictionary {
-    friend class DictInsertionProxy;
-    friend class Configuration;
-public:
-    typedef mixins::iDuplicable< AbstractParameter
-                               , DictionaryParameter
-                               , AbstractParameter> DuplicableParent;
-public:
-    DictionaryParameter( const char *, const char * );
-    DictionaryParameter( const DictionaryParameter & );
-    /// Constructs a bound insertion proxy instance object.
-    DictInsertionProxy insertion_proxy();
-
-    // ...
-};
 
 }  // namespace dict
 /** @} */  // end of appParameters group

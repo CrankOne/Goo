@@ -25,6 +25,7 @@
 namespace goo {
 namespace dict {
 
+# if 0
 
 std::pair<DictionaryInjectionMap::Injection::iterator, bool>
 DictionaryInjectionMap::add_mapping( const std::string & fromPath,
@@ -48,6 +49,8 @@ DictionaryInjectionMap::inject_parameters( const DictionaryParameter & source,
         toP.name( ownName.c_str() );
     }
 }
+
+# endif
 
 }  // namespace dict
 }  // namespace goo

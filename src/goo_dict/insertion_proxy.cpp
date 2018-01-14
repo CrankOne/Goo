@@ -57,7 +57,7 @@ InsertionProxyBase::InsertionTarget::_assert_is( bool requireNamed
  *
  * Path examples:
  *  - "one.#23" --- for non-invasive look-up this path expression will retrieve
- *  iStringConvertibleParameter pointer to 23-rd element of list "one" in
+ *  iBaseValue pointer to 23-rd element of list "one" in
  *  starting dictionary. In extending mode it will add 23 element to list "one"
  *  in the starting dictionary. If list "one" does not exist or contains less
  *  than 22 elements, even extending look-up mode will emit the exception
@@ -163,7 +163,7 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
         } else {
             // It is a named LoS.
             //auto newStart = new NamedLoS( current, ed.c_str() );
-            auto newStart = new Parameter<Array<iStringConvertibleParameter*>>(current, ed.c_str());
+            auto newStart = new NamedLoS(current, ed.c_str());
             startDctRef.insert_parameter( newStart );
             mpath.push( static_cast<NamedLoS*>(newStart) );
             return combine_path( mpath, path, extend, ed.c_str() );
@@ -202,9 +202,9 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
         // dict. Since we're currently operating within list context both
         // of them have to be anonymous.
 
-        //iStringConvertibleParameter * scpEl;
+        //iBaseValue * scpEl;
         /*
-        iStringConvertibleParameter * scpEl = startLoSRef.value().at(index);
+        iBaseValue * scpEl = startLoSRef.value().at(index);
         // Since path implies, that retrieved element is not the last one,
         // try to cast
         bool isList = '#' == *path;

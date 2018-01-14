@@ -29,6 +29,8 @@
 namespace goo {
 namespace dict {
 
+# if 0
+
 void
 POSIXRenderer::_V_render_help_page( std::ostream & os,
                                  const char * appName ) {
@@ -218,6 +220,8 @@ POSIXRenderer::_recollect_first_level_options(
         _recollect_first_level_options( *(it->second), sectPrefix );
     }
 }
+
+# endif
 
 }  // namespace dict
 }  // namespace goo

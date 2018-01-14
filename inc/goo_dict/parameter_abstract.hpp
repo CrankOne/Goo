@@ -27,7 +27,7 @@
 # ifndef H_GOO_ABSTRACT_PARAMETER_H
 # define H_GOO_ABSTRACT_PARAMETER_H
 
-# include "goo_vcopy.tcc"
+# include "goo_mixins/vcopy.tcc"
 
 namespace goo {
 namespace dict {
@@ -63,6 +63,8 @@ class DictInsertionProxy;
  *
  * Required can not be set (set=false)
  *
+ * List-of-Structures has atomic=false, singular=true (TODO!)
+ *
  * @ingroup appParameters
  */
 class AbstractParameter : public mixins::iDuplicable<AbstractParameter> {
@@ -78,8 +80,8 @@ public:
             shortened       ///< Has a shortcut (single-letter option, =false for positional).
     ;
 private:
-    char * _name,           ///< Name of the option. Can be set to nullptr.
-            * _description;    ///< Description of the option. Can be set to nullptr.
+    char * _name           ///< Name of the option. Can be set to nullptr.
+       , * _description;    ///< Description of the option. Can be set to nullptr.
     /// Stores logical description of an instance.
     ParameterEntryFlag _flags;
 protected:

@@ -24,28 +24,22 @@
  */
 
 # include "goo_dict/parameter.tcc"
-# include "goo_dict/parameters/pointer_parameter.tcc"
+# include "goo_dict/plural.hpp"
 
 namespace goo {
 namespace dict {
 
-class ObjectsListParameter : public iTValue<Array<iStringConvertibleParameter *> > {
-protected:
-    virtual void _set_value( const Value & ) override;
-public:
-    typedef Array<iStringConvertibleParameter *> Value;
+class ListOfStructures : public iTValue<List<iBaseValue *> >
+                       , public DictionaryIndex<ListIndex, iBaseValue> {
     // ...
-    /// Const value getter (public). Raises "unitialized" error if value was
-    /// not set.
-    virtual const Value & value() const;
 };
 
 template<>
-class iParameter<List<iStringConvertibleParameter *> > : public AbstractParameter
-                                                       , public ObjectsListParameter {
+class iParameter<List<iBaseValue *> > : public AbstractParameter
+                                      , public ListOfStructures {
 public:
     //typedef iTStringConvertibleParameter<Array<iStringConvertibleParameter *> > ValueStoringType;
-    typedef List<iStringConvertibleParameter *> Value;
+    typedef List<iBaseValue *> Value;
     typedef iSingularParameter::ParameterEntryFlag ParameterEntryFlag;
 public:
     iParameter( const char * name,
@@ -53,25 +47,24 @@ public:
                 ParameterEntryFlag,
                 char shortcut_ = '\0' );
 
-    iParameter( const iParameter<Value> & );
+    explicit iParameter( const iParameter<Value> & );
 
-    ~iParameter() {}
+    ~iParameter() override = default;
 };  // class iParameter
 
 template<>
-class Parameter< List<iStringConvertibleParameter*> > :
+class Parameter< List<iBaseValue *> > :
                 public mixins::iDuplicable< AbstractParameter
-                                          , Parameter< List<iStringConvertibleParameter*> >
-                                          , iParameter< List<iStringConvertibleParameter*> >
+                                          , Parameter< List<iBaseValue *> >
+                                          , iParameter< List<iBaseValue *> >
                                           > {
 public:
-    typedef List<iStringConvertibleParameter*> Array;
     typedef mixins::iDuplicable< AbstractParameter
-                               , Parameter< List<iStringConvertibleParameter*> >
-                               , iParameter< List<iStringConvertibleParameter*> >
+                               , Parameter< List<iBaseValue *> >
+                               , iParameter< List<iBaseValue *> >
                                > DuplicableParent;
 public:
-    Parameter( const Parameter & );
+    explicit Parameter( const Parameter & );
     Parameter( const char *
              , const char * );
 };  // class LoS

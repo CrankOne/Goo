@@ -26,7 +26,7 @@
 # include "goo_types.h"
 # include "goo_exception.hpp"
 
-# include "goo_dict/singular_parameter.tcc"
+# include "goo_dict/parameter_singular.tcc"
 
 # include <list>
 # include <vector>
@@ -49,7 +49,7 @@ namespace dict {
  * are implemented in Goo library.
  */
 template<typename ValueT>
-class Parameter;  // Defailt implementation is empty.
+class Parameter;  // Default implementation is empty.
 
 template <typename T> class IntegralParameter;
 template <typename T> class FloatingPointParameter;
@@ -189,7 +189,7 @@ public:
 /// This specification has to be treated in the special manner, in a similar way
 /// to dicitonary.
 /// Include "goo_dict/los.hpp" header for full declaration.
-template<> class Parameter<Array<iStringConvertibleParameter*> >;
+template<> class Parameter<List<iBaseValue*> >;
 
 template<typename T> const Array<T> &
 iBaseValue::as_array_of() const {

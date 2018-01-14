@@ -1,0 +1,18 @@
+
+Current refactoring pursues the following goals:
+    1. Introduce the List-of-Object abstraction
+    2. Get rid of "name" property within singular parameter
+
+The set of iSingularParameter properties has reduntant properties "name" and
+shortcut which is irrelevant to parameter itself at the second sight. Besides
+of that, by introducing the List-of-Objects, we find a new indexing dictionary
+(by index) which demands us to duplicate item insertion/lookup routines
+previously related to singular parameters AND dictionary subsections. The
+dictionaries should, instead of having dedicated methods to deal with this
+types of their parameters and subsections provide a generalized approach to
+deal with them.
+
+First commit of 15 Jan 2018 introduces the renewed Dictionaries dissected into
+few sub-interfaces supporting unified hashing logic for names, shortcuts, and
+integral indexes.
+

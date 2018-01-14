@@ -33,34 +33,20 @@ namespace goo {
 namespace dict {
 
 Dictionary::Dictionary( const Dictionary & orig ) {
-    const SingularsContainer & singRef = orig;
-    const DictionariesContainer & dictsRef = orig;
-    for( auto it  = singRef.begin();
-              it != singRef.end(); ++it ) {
+    for( auto it  = orig.DictionaryIndex<ListIndex, iBaseValue>::begin();
+              it != orig.DictionaryIndex<ListIndex, iBaseValue>::end(); ++it ) {
         if( *it ) {
-            insert_parameter( clone_as<AbstractParameter,
-                              iSingularParameter>( *it ) );
+            insert_item( clone_as<AbstractParameter, AbstractParameter>( *it ) );
         }
-    }
-    for( auto it  = dictsRef.begin();
-              it != dictsRef.end(); ++it ) {
-        insert_section( clone_as<AbstractParameter,
-                DictionaryParameter>( it->second ) );
     }
 }
 
 Dictionary::~Dictionary() {
-    //const SingularsContainer & singRef = ;
-    //const DictionariesContainer & dictsRef = orig;
-    for( auto it = SingularsContainer::begin();
-         it != SingularsContainer::end(); ++it ) {
+    for( auto it = Parent::begin();
+             it != Parent::end(); ++it ) {
         if( *it ) {
             delete *it;
         }
-    }
-    for( auto it = DictionariesContainer::begin();
-         it != DictionariesContainer::end(); ++it ) {
-        delete it->second;
     }
 }
 

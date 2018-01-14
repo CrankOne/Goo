@@ -11,6 +11,7 @@
 # include "goo_dict/parameters/floating_point.tcc"
 # include "goo_dict/parameters/string.hpp"
 # include "goo_dict/parameters/los.hpp"
+# include "goo_dict/parameter_dict.hpp"
 
 namespace goo {
 namespace dict {
@@ -28,9 +29,9 @@ namespace dict {
 class InsertionProxyBase {
 public:
     /// Named list-of-structures type.
-    typedef iParameter<List<iStringConvertibleParameter*>> NamedLoS;
+    typedef Parameter< List<iBaseValue *> > NamedLoS;
     /// Anonymous list-of-structures type.
-    typedef iTValue<List<iStringConvertibleParameter*> > LoS;
+    typedef ListOfStructures LoS;
     /// Named parameters dictionary type.
     typedef DictionaryParameter NamedDict;
     /// Anonymous dictionary type.
@@ -162,7 +163,7 @@ public:
     p( Types ... args ) {
         auto * p = new InsertableParameter<ParameterT>( args ... );
         p->_check_initial_validity();
-        _top_as<Dict>(false).insert_parameter( p );
+        _top_as<Dict>(false).acquire_parameter_ptr( p );
         return *this;
     }
 
@@ -171,7 +172,7 @@ public:
         Parameter<bool> * newParameterPtr = new Parameter<bool>( args ... );
         newParameterPtr->reset_flag();
         newParameterPtr->_check_initial_validity();
-        _top_as<Dict>(false).insert_parameter( newParameterPtr );
+        _top_as<Dict>(false).acquire_parameter_ptr( newParameterPtr );
         return *this;
     }
 
@@ -184,7 +185,7 @@ public:
          , const char * name
          , const char * description
          , const std::initializer_list<ParameterT> & dfts ) {
-        _top_as<Dict>(false).insert_parameter(
+        _top_as<Dict>(false).acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( dfts, shortcut, name, description )
             );
         return *this;
@@ -194,7 +195,7 @@ public:
     array( const char * name
          , const char * description
          , const std::initializer_list<ParameterT> & dfts ) {
-        _top_as<Dict>(false).insert_parameter(
+        _top_as<Dict>(false).acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( dfts, name, description )
             );
         return *this;
@@ -204,7 +205,7 @@ public:
     array( char shortcut
          , const char * description
          , const std::initializer_list<ParameterT> & dfts ) {
-        _top_as<Dict>(false).insert_parameter(
+        _top_as<Dict>(false).acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( dfts, shortcut, description )
             );
         return *this;
@@ -214,7 +215,7 @@ public:
     array( char shortcut
          , const char *name
          , const char *description ) {
-        _top_as<Dict>(false).insert_parameter(
+        _top_as<Dict>(false).acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( shortcut, name, description )
             );
         return *this;
@@ -223,7 +224,7 @@ public:
     template<typename ParameterT> DictInsertionProxy &
     array( const char *name
          , const char *description ) {
-        _top_as<Dict>(false).insert_parameter(
+        _top_as<Dict>(false).acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( name, description )
             );
         return *this;
@@ -232,7 +233,7 @@ public:
     template<typename ParameterT> DictInsertionProxy &
     array( char shortcut
          , const char *description ) {
-        _top_as<Dict>(false).insert_parameter(
+        _top_as<Dict>(false).acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( shortcut, description )
             );
         return *this;

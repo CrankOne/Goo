@@ -45,6 +45,9 @@ namespace dict {
  * sub-sections were modified.
  * */
 class Configuration : public DictionaryParameter {
+public:
+    typedef std::list<char> ShortOptString;
+    typedef std::list<void*> LongOptionEntries;
 protected:
     /// Indicator of long option with mandatory argument.
     static const int longOptNoShortcutRequiresArgument;
@@ -80,10 +83,10 @@ protected:
     void _recache_getopt_arguments() const;
 
     /// Inserts parameter instance created by insertion proxy with caches invalidation.
-    virtual void insert_parameter( iSingularParameter * ) override;
+    virtual void acquire_parameter_ptr( iSingularParameter * ) override;
 
     /// Inserts dictionary instance created by insertion proxy with caches invalidation.
-    virtual void insert_section( DictionaryParameter * ) override;
+    virtual void acquire_subsection_ptr( DictionaryParameter * ) override;
 
     // Inserts shortcut inside hashing container for quick access.
     virtual void _cache_parameter_by_shortcut( iSingularParameter * );
@@ -112,7 +115,7 @@ protected:
 
     /// Aux insertion method for long options (reentrant routine).
     static void _cache_insert_long_option( const std::string &,
-                                     DictionaryParameter::LongOptionEntries &,
+                                     LongOptionEntries &,
                                      const iSingularParameter & );
 
     ///  Collects shortcutted flags and required options.
@@ -163,7 +166,7 @@ public:
     static void free_tokens( size_t argcTokens, char ** argvTokens );
 
     /// Extendeds parent version with positional argument resolution.
-    virtual const iSingularParameter & parameter( const char path[] ) const override;
+    //virtual const iSingularParameter & parameter( const char path[] ) const override;
 
     /// Invalidates getopt's caches. Must be called if any containee topology
     /// has changed.
@@ -176,11 +179,11 @@ public:
 
     /// Extended version of Dictionary's method printing additional decorations
     /// around root node.
-    virtual void print_ASCII_tree( std::list<std::string> & ) const override;
+    //virtual void print_ASCII_tree( std::list<std::string> & ) const override;
 
     /// Argument-overloaded method that user will probably wish to invoke to
     /// get an ASCII-tree in output stream.
-    virtual void print_ASCII_tree( std::ostream & ) const;
+    //virtual void print_ASCII_tree( std::ostream & ) const;
 
     /// Inserts dictionary instance created by third-party code (causes caches)
     /// invalidation. Note, that copy of dictionary will be dynamically
