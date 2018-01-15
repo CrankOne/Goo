@@ -54,7 +54,7 @@ public:
 
 template<>
 class Parameter< List<iBaseValue *> > :
-                public mixins::iDuplicable< AbstractParameter
+                public mixins::iDuplicable< iBaseValue
                                           , Parameter< List<iBaseValue *> >
                                           , iParameter< List<iBaseValue *> >
                                           > {

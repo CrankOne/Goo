@@ -25,6 +25,8 @@
 namespace goo {
 namespace dict {
 
+# if 0
+
 using filesystem::Path;
 
 Parameter<Path>::Parameter( char shortcut_,
@@ -75,6 +77,8 @@ std::string
 iStringConvertibleParameter::ConversionTraits<filesystem::Path>::to_string_expression( const Value & val ) {
     return val;
 }
+
+# endif
 
 }  // namespace dict
 }  // namespace goo

@@ -28,7 +28,8 @@
 
 # include <vector>
 # include <list>
-# include <map>
+# include <unordered_map>
+# include <unordered_set>
 
 /**@file bases.hpp
  * Sequence container templates. The particular selection may significantly
@@ -53,7 +54,9 @@ template<typename T> using Array = std::vector<T>;
 template<typename T> using List = std::list<T>;
 
 /// This container is used to cache parameters indexing.
-template<typename KeyT, typename ValueT> using Hash = std::map<KeyT, ValueT>;
+template<typename KeyT, typename ValueT> using Hash = std::unordered_map<KeyT, ValueT>;
+
+template<typename ValueT> using Set = std::unordered_set<ValueT>;
 
 namespace aux {
 

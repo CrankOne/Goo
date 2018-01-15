@@ -8,7 +8,6 @@
 namespace goo {
 namespace dict {
 
-
 void
 InsertionProxyBase::InsertionTarget::_assert_is( bool requireNamed
                                                , bool requireIsDict
@@ -93,7 +92,7 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
     long index;
 
     // Pull token from left
-    int rc = DictionaryParameter::pull_opt_path_token(path, current, index);
+    int rc = aux::pull_opt_path_token(path, current, index);
 
     const bool emptyToken = !strlen(current)
              , lastToken = !! (0x2 & rc)

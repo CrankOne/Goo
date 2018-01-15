@@ -33,33 +33,38 @@ namespace goo {
 namespace dict {
 
 Dictionary::Dictionary( const Dictionary & orig ) {
+    _TODO_
+    # if 0
     for( auto it  = orig.DictionaryIndex<ListIndex, iBaseValue>::begin();
               it != orig.DictionaryIndex<ListIndex, iBaseValue>::end(); ++it ) {
         if( *it ) {
             insert_item( clone_as<AbstractParameter, AbstractParameter>( *it ) );
         }
     }
+    # endif
 }
 
 Dictionary::~Dictionary() {
+    _TODO_
+    # if 0
     for( auto it = Parent::begin();
              it != Parent::end(); ++it ) {
         if( *it ) {
             delete *it;
         }
     }
+    # endif
 }
 
-/** Dictionary class design emplies that lifetime of parameters inserted with
+/** Dictionary class design implies that lifetime of parameters inserted with
  * this method is controlled by dictionary instance. User routines must take
  * this into account: parameter instance inserted by ptr with this method will
  * be deleted by dictionary destructor. */
 void
-Dictionary::insert_parameter( iSingularParameter * instPtr ) {
+Dictionary::acquire_parameter_ptr( iSingularParameter * instPtr ) {
     bool wasIndexed = false;
     if( instPtr->has_shortcut() ) {
-        auto insertionResult = _parametersIndexByShortcut
-                                    .emplace( instPtr->shortcut(), instPtr );
+        auto insertionResult = SingsByShortcut::insert_item( instPtr->shortcut(), instPtr );
         if( !insertionResult.second ) {
             emraise( nonUniq, "Duplicated option shortcut insertion: "
                 "'%c' character was previously associated within parameter %p "
@@ -73,8 +78,7 @@ Dictionary::insert_parameter( iSingularParameter * instPtr ) {
         wasIndexed = true;
     }
     if( instPtr->name() ) {
-        auto insertionResult = _parametersIndexByName
-                                        .emplace( instPtr->name(), instPtr );
+        auto insertionResult = SingsByName::insert_item( instPtr->name(), instPtr );
         if( !insertionResult.second ) {
             emraise( nonUniq, "Duplicated option name insertion: "
                 "'%s' name was previously associated within parameter %p. "
@@ -87,7 +91,7 @@ Dictionary::insert_parameter( iSingularParameter * instPtr ) {
         emraise( badArchitect, "Got %p parameter without name and shortcut.",
                                                                     instPtr );
     }
-    SingularsContainer::push_back( instPtr );
+    //SingularsContainer::push_back( instPtr );  // xxx
 }
 
 /** Dictionary class design emplies that lifetime of sub-dictionaries inserted
@@ -96,8 +100,8 @@ Dictionary::insert_parameter( iSingularParameter * instPtr ) {
  * instances inserted by ptr with this method will be deleted by owning
  * dictionary destructor. */
 void
-Dictionary::insert_section( DictionaryParameter * instPtr ) {
-    auto insertionResult = DictionariesContainer::emplace( instPtr->name(), instPtr );
+Dictionary::acquire_subsection_ptr( DictionaryParameter * instPtr ) {
+    auto insertionResult = DictionariesContainer::insert_item( instPtr->name(), instPtr );
     if( !insertionResult.second ) {
         emraise( nonUniq, "Duplicated subsection name on insertion: "
                 "'%s' name was previously associated within subsection %p. "
@@ -131,51 +135,9 @@ Dictionary::_append_configuration_caches(
 }
 # endif
 
-int
-Dictionary::pull_opt_path_token( char *& path
-                               , char *& current
-                               , long & idx ) {
-    // if first char is digit, we'll interpret token as integer index:
-    int rc = 0;
-    if( '#' == *path ) {
-        rc |= 0x1;
-        ++path;
-    }
-    current = path;
-    for( ; *path != '\0'; ++path ) {
-        if( '.' == *path ) {
-            *path =  '\0';
-            ++path;
-            rc |= 0x2;
-            break;
-        }
-        if( !isalnum(*path)
-            && '-' != *path
-            && '_' != *path ) {
-            fprintf( stderr, "Path specification invalid: contains "
-                    "character %#x which is not allowed.\n", *path );
-            abort();
-        }
-    }
-    if( 0x1 & rc ) {
-        // Parse index and check its validity
-        char * endPtr;
-        idx = strtol( current, &endPtr, 0 );
-        if( endPtr != ('\0' != *path ? path-1 : path) ) {
-            fprintf( stderr, "Path specification invalid: bad"
-                            " token: \"%s\" while parsing digits.\n",
-                    current );
-            abort();
-        }
-        if( errno ) {
-            fprintf( stderr, "Path specification invalid: strol()"
-                    "has set errno=%d: %s\n", errno, strerror(errno) );
-            abort();
-        }
-    }
-    return rc;
-}
 
+
+# if 0
 const iSingularParameter *
 Dictionary::_get_parameter( char path[], bool noThrow ) const {
     // TODO: recursive part must be a dedicated method.
@@ -439,6 +401,8 @@ DictionaryParameter::DictionaryParameter( const char * name_,
 
 DictionaryParameter::DictionaryParameter( const DictionaryParameter & o ) :
         DuplicableParent(o), Dictionary(o) {}
+
+# endif
 
 }  // namespace dict
 }  // namespace dict

@@ -51,7 +51,7 @@ namespace dict {
  * name argument when only short option is given.
  * */
 template<>
-class Parameter<std::string> : public mixins::iDuplicable< AbstractParameter,
+class Parameter<std::string> : public mixins::iDuplicable< iBaseValue,
                                                            Parameter<std::string>,
                                                            iParameter<std::string> > {
 public:

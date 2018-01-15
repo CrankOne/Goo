@@ -33,6 +33,8 @@
 namespace goo {
 namespace dict {
 
+/**@brief Type traits template defining general properties of parameter mapping.
+ * */
 template< typename KeyT
         , typename ValueT> struct IndexingTraits {
     typedef KeyT Key;
@@ -42,121 +44,185 @@ template< typename KeyT
     typedef Hash<Key, ValueHandle> IndexingContainer;
     typedef typename IndexingContainer::iterator Iterator;
     typedef typename IndexingContainer::const_iterator ConstIterator;
+    typedef std::pair<Iterator, bool> InsertionResult;
 
     static ValueHandle dereference_iterator( Iterator it )
         { return it->second; }
     static ConstValueHandle dereference_iterator( ConstIterator it )
         { return it->second; }
+    static InsertionResult insert_item( const Key & k, ValueHandle v, IndexingContainer & c) {
+        return c.emplace( k, v );
+    }
 };
 
-
-template<> struct IndexingTraits<ListIndex, iBaseValue> {
-    typedef ListIndex Key;
+template<> struct IndexingTraits<void, iBaseValue> {
+    typedef iBaseValue * Key;
     typedef iBaseValue Value;
-    typedef iBaseValue * ValueHandle;
-    typedef const iBaseValue * ConstValueHandle;
-    typedef List<Value *> IndexingContainer;
+    typedef Value * ValueHandle;
+    typedef const Value * ConstValueHandle;
+    typedef Set<ValueHandle> IndexingContainer;
     typedef typename IndexingContainer::iterator Iterator;
     typedef typename IndexingContainer::const_iterator ConstIterator;
+    typedef std::pair<Iterator, bool> InsertionResult;
 
     static ValueHandle dereference_iterator( Iterator it )
         { return *it; }
     static ConstValueHandle dereference_iterator( ConstIterator it )
         { return *it; }
+    static InsertionResult insert_item( const Key & k, ValueHandle v, IndexingContainer & c) {
+        return c.emplace( v );
+    }
 };
 
 template< typename KeyT
         , typename ValueT>
-class iDictionaryIndex {
+class iDictionaryIndex : private IndexingTraits<KeyT, ValueT>::IndexingContainer {
 public:
-    typedef KeyT Key;
-    typedef ValueT Value;
-    typedef iDictionaryIndex<Key, Value> Self;
-    typedef IndexingTraits<Key, Value> Traits;
+    typedef iDictionaryIndex<KeyT, ValueT> Self;
+    typedef IndexingTraits<KeyT, ValueT> Traits;
+    typedef typename Traits::Key Key;
+    typedef typename Traits::Value Value;
 
     typedef typename Traits::ValueHandle ValueHandle;
     typedef typename Traits::ConstValueHandle ConstValueHandle;
     typedef typename Traits::IndexingContainer IndexingContainer;
     typedef typename Traits::Iterator Iterator;
     typedef typename Traits::ConstIterator ConstIterator;
+    typedef typename Traits::InsertionResult InsertionResult;
 protected:
-    virtual Iterator _V_find_item( const Key & ) = 0;
-    virtual ConstIterator _V_find_item( const Key & ) const = 0;
-    virtual bool _V_iterator_valid( Iterator ) const = 0;
-    virtual bool _V_iterator_valid( ConstIterator ) const = 0;
-    virtual Iterator _V_insert_item( const Key &, ValueHandle ) = 0;
-    virtual void _V_remove_item( Iterator ) = 0;
-
-    virtual ConstValueHandle _V_get_item( const Key & k ) const {
-        auto it = find_item( k );
-        if( iterator_valid( it ) ) {
-            return Traits::dereference_iterator(it);
-        }
-        _TODO_   // TODO: emraise( notFound )
+    virtual Iterator _V_find_item( const Key & k ) {
+        return IndexingContainer::find( k );
     }
-    virtual ValueHandle _V_get_item( const Key & k ) {
-        const Self * cThis = this;
-        return const_cast<Value *>(cThis->_V_get_item(k));
+    virtual ConstIterator _V_find_item( const Key & k ) const {
+        return IndexingContainer::find( k );
+    }
+    virtual bool _V_iterator_valid( Iterator it ) const {
+        return it != IndexingContainer::end();
+    }
+    virtual bool _V_iterator_valid( ConstIterator it ) const {
+        return it != IndexingContainer::end();
+    }
+    virtual InsertionResult _V_insert_item( const Key & k, ValueHandle v ) {
+        return Traits::insert_item( k, v, *this );
+    }
+    virtual void _V_remove_item( Iterator it ) {
+        IndexingContainer::erase( it );
     }
 public:
     virtual ~iDictionaryIndex() {}
-    virtual ValueT & item( const KeyT & k )
-                { return *_V_get_item( k ); }
-    virtual const ValueT & item( const KeyT & k ) const
-                { return *_V_get_item( k ); }
-    virtual Iterator insert_item( const Key & k, Value * vPtr )
-                { return _V_insert_item(k, vPtr); }
-    virtual void remove_item( Iterator it ) 
-                { _V_remove_item( it ); }
-    virtual Iterator find_item( const Key & k )
-                { return _V_find_item(k); }
-    virtual ConstIterator find_item( const Key & k ) const
-                { return _V_find_item(k); }
-    virtual bool has_item( const Key & k ) const
-                { return !! _V_get_item( k ); }
-    virtual bool iterator_valid( Iterator it ) const
-                { return _V_iterator_valid( it ); }
-    virtual bool iterator_valid( ConstIterator it ) const
-                { return _V_iterator_valid( it ); }
+
+    /// Returns a pointer to an item indexed by given key (const variant).
+    /// Returns nullptr if item does not exist.
+    virtual ConstValueHandle item_ptr( const Key & k ) const {
+        ConstIterator it = find_item( k );
+        if( !iterator_valid( it ) ) {
+            return nullptr;
+        }
+        return Traits::dereference_iterator( it );
+    }
+
+    /// Returns a pointer to an item indexed by given key. Returns nullptr
+    /// if item does not exist.
+    virtual ValueHandle item_ptr( const Key & k ) {
+        const Self * cThis = this;
+        return const_cast<ValueHandle>(cThis->item_ptr(k));
+    }
+
+    /// Inserts new entry with given indexing key.
+    virtual InsertionResult insert_item( const Key & k, ValueHandle vPtr ) {
+        return _V_insert_item( k, vPtr );
+    }
+
+    /// Removes entry (referenced by given iterator) from index.
+    virtual void remove_item( Iterator it ) {
+        _V_remove_item( it );
+    }
+
+    /// Returns iterator to an item within given key. If no entry found,
+    /// returned iterator will be "invalid" (check with iterator_valid()
+    /// method).
+    virtual Iterator find_item( const Key & k ) {
+        return _V_find_item(k);
+    }
+
+    /// Returns iterator to an item within given key. If no entry found,
+    /// returned iterator will be "invalid" (check with iterator_valid()
+    /// method) (const variant).
+    virtual ConstIterator find_item( const Key & k ) const {
+        return _V_find_item(k);
+    }
+
+    /// Returns true if entry by given key exists.
+    virtual bool has_item( const Key & k ) const {
+        return (bool) item_ptr( k );
+    }
+
+    /// Returns true if iterator refers to an existing entry.
+    virtual bool iterator_valid( Iterator it ) const {
+        return _V_iterator_valid( it );
+    }
+
+    /// Returns true if const iterator refers to an existing entry.
+    virtual bool iterator_valid( ConstIterator it ) const {
+        return _V_iterator_valid( it );
+    }
+
+    /// Abstract base data pointer querying method implementation. Intended
+    /// for debug use only.
+    virtual typename IndexingTraits<KeyT, ValueT>::IndexingContainer & container_ref() {
+        return *static_cast<typename IndexingTraits<KeyT, ValueT>::IndexingContainer *>(this);
+    };
+
+    /// Abstract base data pointer querying method implementation. Intended
+    /// for debug use only (const version).
+    virtual const typename IndexingTraits<KeyT, ValueT>::IndexingContainer & container_const_ref() const {
+        return *static_cast<const typename IndexingTraits<KeyT, ValueT>::IndexingContainer *>(this);
+    };
 };  // class iDictionaryIndex
 
 template<typename KeyT, typename ValueT>
 class DictionaryIndex;
 
-/// A special case --- integral index.
-template<>
-class DictionaryIndex<ListIndex, iBaseValue> : public iDictionaryIndex<ListIndex, iBaseValue>
-                                             , public List<iBaseValue *> {
-protected:
-    virtual Iterator _V_find_item( const Key & ) override;
-    virtual ConstIterator _V_find_item( const Key & ) const override;
-    virtual bool _V_iterator_valid( Iterator ) const override;
-    virtual bool _V_iterator_valid( ConstIterator ) const override;
-    virtual Iterator _V_insert_item( const Key &, ValueHandle ) override;
-    virtual void _V_remove_item( Iterator ) override;
-};
+# define _Goo_m_for_each_index_method( m ) \
+    m( item_ptr )       \
+    m( insert_item )    \
+    m( remove_item )    \
+    m( find_item )      \
+    m( has_item )       \
+    m( iterator_valid )
 
 template<typename KeyT, typename ValueT>
-class DictionaryIndex : protected virtual DictionaryIndex<ListIndex, iBaseValue>
-                      , public iDictionaryIndex<KeyT, ValueT>
-                      , public Hash<KeyT, ValueT *> {
+class DictionaryIndex : public iDictionaryIndex<KeyT, ValueT>
+                      , protected virtual iDictionaryIndex<void, iBaseValue> {
 public:
-    typedef KeyT Key;
-    typedef ValueT Value;
-    typedef iDictionaryIndex<Key, Value> Parent;
-    typedef typename Parent::Traits Traits;
+    typedef iDictionaryIndex<void, iBaseValue> PhysicalContainer;
+    typedef iDictionaryIndex<KeyT, ValueT> Parent;
 
-    typedef typename Traits::ValueHandle ValueHandle;
-    typedef typename Traits::ConstValueHandle ConstValueHandle;
-    typedef typename Traits::IndexingContainer IndexingContainer;
-    typedef typename Traits::Iterator Iterator;
-    typedef typename Traits::ConstIterator ConstIterator;
+    using Parent::Traits;
+
+    # define _Goo_m_import_parent_methods( mNameM ) using Parent:: mNameM;
+    _Goo_m_for_each_index_method( _Goo_m_import_parent_methods )
+    # undef _Goo_m_import_parent_methods
 protected:
-    virtual const Value * _V_get_item( const Key & ) const override;
-    virtual Value * _V_get_item( const Key & k ) override;
-    virtual Iterator _V_insert_item( const Key &, Value * ) override;
-    virtual void _V_remove_item( Iterator ) override;
+    virtual typename Parent::InsertionResult
+                _V_insert_item( const typename Parent::Key & k
+                              , typename Parent::ValueHandle v ) override {
+        typename Parent::InsertionResult ir = Parent::insert_item( k, v );
+        if( ir.second ) {
+            auto it = PhysicalContainer::find_item( v );
+            if( !PhysicalContainer::iterator_valid(it) ) {
+                PhysicalContainer::insert_item( v, v );
+            }
+        }
+        return ir;
+    }
+    virtual void _V_remove_item( typename Parent::Iterator it ) override {
+        _TODO_  // TODO: attempt to remove from physical container as well
+        Parent::remove_item( it );
+    }
 };
+
+# undef _Goo_m_for_each_index_method
 
 }  // namespace dict
 }  // namespace goo

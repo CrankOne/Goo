@@ -6,6 +6,7 @@
 #define GOO_PARAMETERS_VALUES_HPP
 
 # include "goo_dict/types.hpp"
+# include "goo_mixins/vcopy.tcc"
 
 namespace goo {
 namespace dict {
@@ -16,7 +17,7 @@ namespace dict {
  * instance providing generic methods accessing the data memory address and
  * C++ RTTI information.
  * */
-class iBaseValue {
+class iBaseValue : public mixins::iDuplicable<iBaseValue, iBaseValue, iBaseValue> {
 protected:
     /// Shall return untyped data pointer.
     virtual void * _V_data_addr() = 0;

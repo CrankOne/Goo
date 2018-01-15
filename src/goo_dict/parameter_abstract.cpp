@@ -1,7 +1,8 @@
-# include "goo_dict/abstract_parameter.tcc"
+# include "goo_dict/parameter_abstract.hpp"
 # include "goo_exception.hpp"
 
 # include <cstring>
+# include <cassert>
 
 namespace goo {
 namespace dict {
@@ -209,16 +210,6 @@ void
 AbstractParameter::set_is_argument_required_flag() {
     _flags |= required;
 }
-
-//
-// Singular parameter
-////////////////////
-
-iSingularParameter::iSingularParameter( const char * name_,
-                                        const char * description_,
-                                        ParameterEntryFlag flags_,
-                                        char shortcut_ ) :
-        AbstractParameter( name_, description_, flags_, shortcut_ ) {}
 
 }  // namespace dict
 }  // namespace goo

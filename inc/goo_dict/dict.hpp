@@ -100,13 +100,14 @@ class DictInsertionProxy;
 class Configuration;
 class DictionaryParameter;
 
-# define _Goo_m_for_each_dict_index( m )        \
-    m(        char, iSingularParameter )        \
-    m( std::string, iSingularParameter )        \
-    m( std::string, Dictionary )                \
-    m(        char, ListOfStructures )          \
-    m( std::string, ListOfStructures )          \
+# define _Goo_m_for_each_dict_index( m )                        \
+    m(        char, iSingularParameter, SingsByShortcut )       \
+    m( std::string, iSingularParameter, SingsByName )           \
+    m( std::string, Dictionary,         DictionariesContainer ) \
     /* ... */
+
+//    m(        char, ListOfStructures,   ListsByShortcut )
+//    m( std::string, ListOfStructures,   ListsByName )
 
 /**@brief Parameters container with basic querying support.
  * @class Dictionary
@@ -121,25 +122,53 @@ class DictionaryParameter;
  * intermediate functionality is used in AoS sequences as well.
  * */
 class Dictionary :
-        # define _Goo_m_dict_base( KeyM, ValM ) protected DictionaryIndex<KeyM, ValM *>,
+        # define _Goo_m_dict_base( KeyM, ValM, nmM ) protected DictionaryIndex<KeyM, ValM>,
         _Goo_m_for_each_dict_index( _Goo_m_dict_base )
         # undef _Goo_m_dict_base
-        public mixins::iDuplicable< Dictionary
-                                  , Dictionary
-                                  , Dictionary > {
-    friend class DictInsertionProxy;
-protected:
-    /// Marks last inserted parameter as required one.
-    void _mark_last_inserted_as_required();
-public:
-    /// Public copy ctr for virtual copy ctr.
-    Dictionary( const Dictionary & );
-    Dictionary() {}
-    virtual ~Dictionary();
+        public mixins::iDuplicable< iBaseValue, Dictionary > {
+
+    // TODO: https://en.wikibooks.org/wiki/More_C++_Idioms/Friendship_and_the_Attorney-Client
+    friend class DictInsertionAttorney;
 
     virtual void acquire_parameter_ptr( iSingularParameter * );
     virtual void acquire_subsection_ptr( DictionaryParameter * );
+    virtual void acquire_list_ptr( ListOfStructures * );
+public:
+    # define _Goo_m_declare_dict_idx_typedef( KeyM, valM, nmM ) \
+        typedef DictionaryIndex<KeyM, valM> nmM;
+    _Goo_m_for_each_dict_index(_Goo_m_declare_dict_idx_typedef)
+    # undef _Goo_m_declare_dict_idx_typedef
+protected:
+    /// Marks last inserted parameter as required one.
+    void _mark_last_inserted_as_required();
+
+    virtual void * _V_data_addr() override {
+        return &(static_cast<iDictionaryIndex<void, iBaseValue> *>(this)->container_ref());
+    }
+
+    virtual const void * _V_data_addr() const override {
+        return &(static_cast<const iDictionaryIndex<void, iBaseValue> *>(this)->container_const_ref());
+    }
+
+    virtual const std::type_info & _V_target_type_info() const override {
+        return typeid(Dictionary);
+    }
+public:
+    /// Public copy ctr for virtual copy ctr.
+    Dictionary( const Dictionary & );
+    Dictionary() = default;
+    ~Dictionary() override;
 };  // class Dictionary
+
+/// Interim class, an attorney for insertion proxy to access dictionary
+/// insertion methods.
+class DictInsertionAttorney {
+    static void push_parameter( iSingularParameter *, Dictionary & );
+    static void push_subsection( DictionaryParameter *, Dictionary & );
+    static void push_list_parameter( ListOfStructures *, Dictionary & );
+
+    friend class DictInsertionProxy;
+};
 
 }  // namespace dict
 /** @} */  // end of appParameters group

@@ -67,7 +67,7 @@ class DictInsertionProxy;
  *
  * @ingroup appParameters
  */
-class AbstractParameter : public mixins::iDuplicable<AbstractParameter> {
+class AbstractParameter {
 public:
     typedef UByte ParameterEntryFlag;
     static const ParameterEntryFlag

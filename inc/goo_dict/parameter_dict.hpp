@@ -38,10 +38,10 @@ namespace dict {
  * It is implied that user code will utilize InsertionProxy methods to fill
  * this container instances with particular parameters and sub-dictionaries.
  * */
-class DictionaryParameter : public mixins::iDuplicable< AbstractParameter
+class DictionaryParameter : public mixins::iDuplicable< iBaseValue
                                                       , DictionaryParameter
-                                                      , AbstractParameter>
-                          , public Dictionary {
+                                                      , Dictionary>
+                          , public AbstractParameter {
     friend class DictInsertionProxy;
     friend class Configuration;
 public:
