@@ -28,12 +28,8 @@ namespace dict {
  */
 class InsertionProxyBase {
 public:
-    /// Named list-of-structures type.
-    typedef Parameter< List<iBaseValue *> > NamedLoS;
     /// Anonymous list-of-structures type.
     typedef ListOfStructures LoS;
-    /// Named parameters dictionary type.
-    typedef DictionaryParameter NamedDict;
     /// Anonymous dictionary type.
     typedef Dictionary Dict;
     /// Wrapper type keeping pointers to the named and anonymous list or
@@ -41,23 +37,14 @@ public:
     class InsertionTarget {
     private:
         union {
-            NamedDict * _namedDPtr;
-             NamedLoS * _namedLoSPtr;
                   LoS * _LoSPtr;
                  Dict * _dictPtr;
         };
-        bool _isDict, _isNamed;
-        void _assert_is( bool named, bool isDict, bool forceRequireNamed=true );
+        bool _isDict;
     public:
-        InsertionTarget( NamedDict * dPtr ) : _namedDPtr(dPtr),   _isDict(true),  _isNamed(true)  {}
-        InsertionTarget( Dict * dPtr )      : _dictPtr(dPtr),     _isDict(true),  _isNamed(false) {}
-        InsertionTarget( NamedLoS * lPtr )  : _namedLoSPtr(lPtr), _isDict(false), _isNamed(true)  {}
-        InsertionTarget( LoS * lPtr )       : _LoSPtr(lPtr),      _isDict(false), _isNamed(false) {}
-        template<typename T> T & as(bool);
-        /// Returns name, if target entity is of named type. If target has no
-        /// name, returns dft string. Raises badState, if target is anonymous
-        /// and dft is nullptr.
-        std::string get_name( const char * dft=nullptr );
+        InsertionTarget( Dict * dPtr )      : _dictPtr(dPtr),     _isDict(true) {}
+        InsertionTarget( LoS * lPtr )       : _LoSPtr(lPtr),      _isDict(false) {}
+        template<typename T> T & as();
     };
     /// Materialized path --- insertion targets stack type keeping history of
     /// insertions.
@@ -106,9 +93,9 @@ public:
     /// textual path string to insertion proxy referencing particular instance
     /// within the parameters dictionary or list.
     static MaterializedPath combine_path( InsertionTargetsStack & mpath
-                                        , char * path
-                                        , bool extend=false
-                                        , const std::string extensionDescr="");
+                                       , aux::DictPath & path
+                                       , bool extend=false
+                                       , const std::string extensionDescr="");
 };  // class InsertionProxyBase
 
 class LoDInsertionProxy;
@@ -280,43 +267,20 @@ public:
     LoDInsertionProxy end_sublist();
 };
 
-template<> inline InsertionProxyBase::NamedDict &
-InsertionProxyBase::InsertionTarget::as<InsertionProxyBase::NamedDict>(bool) {
-    _assert_is( true, true, true );
-    return *_namedDPtr;
-}
-
-template<> inline InsertionProxyBase::NamedLoS &
-InsertionProxyBase::InsertionTarget::as<InsertionProxyBase::NamedLoS>(bool) {
-    _assert_is( true, false, true );
-    return *_namedLoSPtr;
-}
-
 template<> inline InsertionProxyBase::Dict &
-InsertionProxyBase::InsertionTarget::as<InsertionProxyBase::Dict>(bool fn) {
-    _assert_is( true, true, fn );
-    return *(_isNamed ? static_cast<Dict*>( _namedDPtr ) : _dictPtr );
+InsertionProxyBase::InsertionTarget::as<InsertionProxyBase::Dict>() {
+    if( !_isDict ) {
+        _TODO_  // TODO: representative exception here
+    }
+    return *_dictPtr;
 }
 
 template<> inline InsertionProxyBase::LoS &
-InsertionProxyBase::InsertionTarget::as<InsertionProxyBase::LoS>(bool fn) {
-    _assert_is( true, false, fn );
-    return *(_isNamed ? static_cast<LoS*>( _namedLoSPtr ) : _LoSPtr );
-}
-
-inline std::string
-InsertionProxyBase::InsertionTarget::get_name( const char * dft ) {
-    if( !_isNamed ) {
-        if( !dft ) {
-            emraise( badState, "Diagnostic getter failure: target is anonymous and"
-                    " no default name given for insertion target %p.", this );
-        }
-        return dft;
-    }
+InsertionProxyBase::InsertionTarget::as<InsertionProxyBase::LoS>() {
     if( _isDict ) {
-        return _namedDPtr->name();
+        _TODO_  // TODO: representative exception here
     }
-    return _namedLoSPtr->name();
+    return *_LoSPtr;
 }
 
 }  // namespace goo

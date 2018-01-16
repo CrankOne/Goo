@@ -8,43 +8,6 @@
 namespace goo {
 namespace dict {
 
-void
-InsertionProxyBase::InsertionTarget::_assert_is( bool requireNamed
-                                               , bool requireIsDict
-                                               , bool forceRequireNamed ) {
-    bool errOccured = false;
-    char errbf1[32]
-       , errbf2[32]
-       ;
-    if( requireNamed && !_isNamed ) {
-        snprintf( errbf1, sizeof( errbf1 ), "anonymous" );
-        errOccured |= true;
-    } else if( !requireNamed && _isNamed && forceRequireNamed ) {
-        snprintf( errbf1, sizeof( errbf1 ), "named" );
-        errOccured |= true;
-    }
-    if( requireIsDict && !_isDict ) {
-        snprintf( errbf1, sizeof( errbf2 ), "list" );
-        errOccured |= true;
-    } else if( !requireIsDict && _isDict ) {
-        snprintf( errbf1, sizeof( errbf2 ), "dictionary" );
-        errOccured |= true;
-    }
-    if( errOccured ) {
-        emraise( assertFailed, "Insertion target refers to %s %s object,"
-                 " while user code tries to retrieve %s %s (%s). Type "
-                 "conflict: target is %s %s."
-               , _isNamed ? "named" : "anonymous"
-               , _isDict ? "dictionary" : "list"
-               , requireNamed ? "named" : "anonymous"
-               , requireIsDict ? "dictionary" : "list"
-               , forceRequireNamed ? "strictly expecting name" : "allowing anonymous"
-               , errbf1
-               , errbf2
-               );
-    }
-}
-
 /**This routine serves few use cases, but basically it is designed to perform
  * recursive evaluation according to textual path specified, within given
  * goo::pdict data structure. Few major use-cases are:
@@ -76,27 +39,20 @@ InsertionProxyBase::InsertionTarget::_assert_is( bool requireNamed
  * */
 InsertionProxyBase::MaterializedPath
 InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
-                                , char * path
+                                , aux::DictPath & path
                                 , bool extend
                                 , const std::string ed ) {
     // This macro defines finishing block. Depending on whether the last token
     // was extracted from path, the routine will terminate itself, or invoke
     // itself further.
-    # define CONTINUE_RECURSIVELY                        \
-    if( !lastToken ) {                                   \
-        return combine_path( mpath, path, extend, ed );  \
+    # define CONTINUE_RECURSIVELY                               \
+    if( path.next ) {                                           \
+        return combine_path( mpath, *(path.next), extend, ed );  \
     } else { return mpath; }
-
-    InsertionTarget & start = mpath.top();
-    char * current = NULL;
-    long index;
-
-    // Pull token from left
-    int rc = aux::pull_opt_path_token(path, current, index);
 
     const bool emptyToken = !strlen(current)
              , lastToken = !! (0x2 & rc)
-             , isDict = !! (0x1 & rc)
+             , isIndex = !! (0x1 & rc)
              ;
 
     if( emptyToken && (!extend || lastToken) ) {
@@ -104,22 +60,26 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
                 " non-extending call." );
     }
 
-    if( isDict ) {
+    if( !isIndex ) {
+        Dict & startDctRef = mpath.top().as<Dict>();
         // Token is a string. Consider start as (at least) of type Dict
         // and try to retrieve parameter or subsection named as `current'
         // refers.
-        Dict & startDctRef = start.as<Dict>(false);
         {
-            NamedDict * newStart = startDctRef.probe_subsection( current );
+
+            Dict * newStart = DictInsertionAttorney::probe_subsection(current, startDctRef);
             if( newStart ) {
                 // That's a dict indeed. Continue recursively.
                 mpath.push( newStart );
                 CONTINUE_RECURSIVELY;
             }
         }
-        // Token apparently refers to a parameter
         {
-            iSingularParameter * pPtr = startDctRef.probe_parameter( current );
+            LoS * newStart = DictInsertionAttorney::probe_list(current, startDctRef);
+        }
+        // Check whether token refers to parameter
+        {
+            iSingularParameter * pPtr = DictInsertionAttorney::probe_parameter( current );
             if( pPtr ) {
                 // Parameter found. Try to downcast it to dict and consider
                 // next token in a path as an index.

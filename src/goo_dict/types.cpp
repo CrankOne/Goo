@@ -21,6 +21,7 @@
  */
 
 # include "goo_dict/types.hpp"
+# include "goo_exception.hpp"
 
 namespace goo {
 namespace dict {
@@ -28,8 +29,8 @@ namespace aux {
 
 int
 pull_opt_path_token( char *& path
-                                 , char *& current
-                                 , long & idx ) {
+                  , const char *& current
+                  , ListIndex & idx ) {
     // if first char is digit, we'll interpret token as integer index:
     int rc = 0;
     if( '#' == *path ) {
@@ -47,9 +48,10 @@ pull_opt_path_token( char *& path
         if( !isalnum(*path)
             && '-' != *path
             && '_' != *path ) {
-            fprintf( stderr, "Path specification invalid: contains "
-                    "character %#x which is not allowed.\n", *path );
-            abort();
+            _TODO_  // TODO: meaningful exception
+            //fprintf( stderr, "Path specification invalid: contains "
+            //        "character %#x which is not allowed.\n", *path );
+            //abort();
         }
     }
     if( 0x1 & rc ) {
@@ -57,20 +59,35 @@ pull_opt_path_token( char *& path
         char * endPtr;
         idx = strtol( current, &endPtr, 0 );
         if( endPtr != ('\0' != *path ? path-1 : path) ) {
-            fprintf( stderr, "Path specification invalid: bad"
-                            " token: \"%s\" while parsing digits.\n",
-                    current );
-            abort();
+            _TODO_  // TODO: meaningful exception
+            //fprintf( stderr, "Path specification invalid: bad"
+            //                " token: \"%s\" while parsing digits.\n",
+            //        current );
+            //abort();
         }
         if( errno ) {
-            fprintf( stderr, "Path specification invalid: strol()"
-                    "has set errno=%d: %s\n", errno, strerror(errno) );
-            abort();
+            _TODO_  // TODO: meaningful exception
+            //fprintf( stderr, "Path specification invalid: strol()"
+            //        "has set errno=%d: %s\n", errno, strerror(errno) );
+            //abort();
         }
     }
     return rc;
 }
 
+size_t
+parse_dict_path( char * pathString, DictPath * pToks, size_t nPToks ) {
+    int rc;
+    size_t nPTok = 0;
+    do {
+        rc = pull_opt_path_token( pathString, pToks->id.name, pToks->id.index );
+        pToks->isIndex = 0x1 & rc;
+        pToks->next = 0x2 & rc ? pToks + 1: nullptr;
+        ++pToks;
+    } while( 0x2 & rc && ++nPTok < nPToks );
+    return nPToks;
 }
-}
-}
+
+}  // namespace aux
+}  // namespace dict
+}  // namespace goo

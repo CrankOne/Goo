@@ -163,10 +163,14 @@ public:
 /// Interim class, an attorney for insertion proxy to access dictionary
 /// insertion methods.
 class DictInsertionAttorney {
+    static Dictionary * probe_subsection( const std::string &, Dictionary & );
+    static iSingularParameter * probe_parameter( const std::string &, Dictionary & );
+
     static void push_parameter( iSingularParameter *, Dictionary & );
     static void push_subsection( DictionaryParameter *, Dictionary & );
     static void push_list_parameter( ListOfStructures *, Dictionary & );
 
+    friend class InsertionProxyBase;
     friend class DictInsertionProxy;
 };
 
