@@ -5,6 +5,8 @@
 # include "goo_dict/parameters/enum_parameter.tcc"
 # include "goo_dict/parameters/los.hpp"
 
+# if 0
+
 /**@file pdict.cpp
  * @brief Parameters dictionary test.
  *
@@ -76,10 +78,10 @@ enum TestingEnum {
 }  // namespace other
 
 # define for_all_TestingEnum_enum_entries( m, ... )   \
-    m( zero,  __VA_ARGS__ ) \
-    m( one,  __VA_ARGS__  ) \
-    m( two,  __VA_ARGS__  ) \
-    m( ten,  __VA_ARGS__  )
+    m( zero,  __VA_ARGS__  ) \
+    m( one,   __VA_ARGS__  ) \
+    m( two,   __VA_ARGS__  ) \
+    m( ten,   __VA_ARGS__  )
 GOO_ENUM_PARAMETER_DEFINE( other::another:: , TestingEnum,
                             for_all_TestingEnum_enum_entries )
 # undef for_all_TestingEnum_enum_entries
@@ -598,3 +600,4 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
 } GOO_UT_END( PDICT, "VCtr" )
 
+# endif

@@ -12,6 +12,7 @@
 # include "goo_dict/parameters/string.hpp"
 # include "goo_dict/parameters/los.hpp"
 # include "goo_dict/parameter_dict.hpp"
+# include "goo_dict/dpath.hpp"
 
 namespace goo {
 namespace dict {
@@ -51,10 +52,10 @@ public:
     typedef std::stack<InsertionTarget> InsertionTargetsStack;
     struct MaterializedPath {
         InsertionTargetsStack stack;
-        iStringConvertibleParameter * parameterPtr;
+        iBaseValue * parameterPtr;
         MaterializedPath( InsertionTargetsStack s ) : \
                                         stack(s), parameterPtr(nullptr) {}
-        MaterializedPath( InsertionTargetsStack s, iStringConvertibleParameter * p ) : \
+        MaterializedPath( InsertionTargetsStack s, iBaseValue * p ) : \
                                         stack(s), parameterPtr(p) {}
     };
 private:
@@ -79,7 +80,7 @@ protected:
     /// @param fn controls whether to emit exception if requested object is
     ///     anonymous while "named" type is required (see NamedLoS/LoS,
     ///     NamedDict/dict).
-    template<typename T> T & _top_as(bool fn=true) { return _stack.top().as<T>(fn); }
+    template<typename T> T & _top_as() { return _stack.top().as<T>(); }
     /// Pops stack top.
     void _pop() { _stack.pop(); }
     /// Inserts dict to internal insertion targets stack top.
@@ -88,14 +89,42 @@ protected:
     void _push_list( LoS * l ) { _stack.push( InsertionTarget(l) ); }
     /// Returns const reference to insertion target stack.
     const InsertionTargetsStack & stack() const { return _stack; }
+    /// Template recursive versatile items getter.
+    template<typename T>
+    static MaterializedPath _apply_path( InsertionTargetsStack & mpath
+                                        , aux::DictPath & path
+                                        , bool raise=true
+                                        , const std::string extensionDescr="");
+    # if 0
+    {
+        T & c = mpath.top().as<T>();
+        Dict * newTopDict = nullptr;
+        LoS * newTopLoS = nullptr;
+        const bool emptyToken = path.isIndex ? 0 == path.id.index : !strlen( path.id.name )
+             , lastToken = !( path.next )
+             , isIndex = !(path.isIndex)
+             ;
+        if( lastToken ) {
+            // Last token probably refers to parameter
+            iSingularParameter * isp \
+                = T::InsertionAttorney::probe<iSingularParameter>( path.key_for<T>(), c );
+            // Otherwise we have to consider last token as key referencing to
+            // a dictionary or a list instance.
+            newTopDict = T::InsertionAttorney::probe<Dictionary>( path.key_for<T>(), c );
+            newTopLoS = T::InsertionAttorney::probe<LoS>( path.key_for<T>(), c );
+            uint32_t check = !isp ? 0x0 : 0x0
+                         | !newTopDict ? 0x0 : 0x0
+                         | !newTopLoS ? 0x0 : 0x0
+                         ;
+        }
+    }
+    # endif
 public:
     /// Multi-purpose path processing routine performing translation of
     /// textual path string to insertion proxy referencing particular instance
     /// within the parameters dictionary or list.
-    static MaterializedPath combine_path( InsertionTargetsStack & mpath
-                                       , aux::DictPath & path
-                                       , bool extend=false
-                                       , const std::string extensionDescr="");
+    // ...
+    template<typename T> 
 };  // class InsertionProxyBase
 
 class LoDInsertionProxy;
@@ -150,7 +179,7 @@ public:
     p( Types ... args ) {
         auto * p = new InsertableParameter<ParameterT>( args ... );
         p->_check_initial_validity();
-        _top_as<Dict>(false).acquire_parameter_ptr( p );
+        _top_as<Dict>().acquire_parameter_ptr( p );
         return *this;
     }
 
@@ -159,7 +188,7 @@ public:
         Parameter<bool> * newParameterPtr = new Parameter<bool>( args ... );
         newParameterPtr->reset_flag();
         newParameterPtr->_check_initial_validity();
-        _top_as<Dict>(false).acquire_parameter_ptr( newParameterPtr );
+        _top_as<Dict>().acquire_parameter_ptr( newParameterPtr );
         return *this;
     }
 
@@ -172,7 +201,7 @@ public:
          , const char * name
          , const char * description
          , const std::initializer_list<ParameterT> & dfts ) {
-        _top_as<Dict>(false).acquire_parameter_ptr(
+        _top_as<Dict>().acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( dfts, shortcut, name, description )
             );
         return *this;
@@ -182,7 +211,7 @@ public:
     array( const char * name
          , const char * description
          , const std::initializer_list<ParameterT> & dfts ) {
-        _top_as<Dict>(false).acquire_parameter_ptr(
+        _top_as<Dict>().acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( dfts, name, description )
             );
         return *this;
@@ -192,7 +221,7 @@ public:
     array( char shortcut
          , const char * description
          , const std::initializer_list<ParameterT> & dfts ) {
-        _top_as<Dict>(false).acquire_parameter_ptr(
+        _top_as<Dict>().acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( dfts, shortcut, description )
             );
         return *this;
@@ -202,7 +231,7 @@ public:
     array( char shortcut
          , const char *name
          , const char *description ) {
-        _top_as<Dict>(false).acquire_parameter_ptr(
+        _top_as<Dict>().acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( shortcut, name, description )
             );
         return *this;
@@ -211,7 +240,7 @@ public:
     template<typename ParameterT> DictInsertionProxy &
     array( const char *name
          , const char *description ) {
-        _top_as<Dict>(false).acquire_parameter_ptr(
+        _top_as<Dict>().acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( name, description )
             );
         return *this;
@@ -220,7 +249,7 @@ public:
     template<typename ParameterT> DictInsertionProxy &
     array( char shortcut
          , const char *description ) {
-        _top_as<Dict>(false).acquire_parameter_ptr(
+        _top_as<Dict>().acquire_parameter_ptr(
                 new Parameter<Array<ParameterT> >( shortcut, description )
             );
         return *this;
@@ -256,7 +285,7 @@ public:
     /// Insert (anonymous) parameter in list.
     template<typename T> LoDInsertionProxy & v( const T & v ) {
         auto p = new iTStringConvertibleParameter<T>( v );
-        _top_as<LoS>(false)._mutable_value().push_back( p );
+        _top_as<LoS>()._mutable_value().push_back( p );
         return *this;
     }
 

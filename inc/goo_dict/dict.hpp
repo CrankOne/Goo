@@ -100,15 +100,6 @@ class DictInsertionProxy;
 class Configuration;
 class DictionaryParameter;
 
-# define _Goo_m_for_each_dict_index( m )                        \
-    m(        char, iSingularParameter, SingsByShortcut )       \
-    m( std::string, iSingularParameter, SingsByName )           \
-    m( std::string, Dictionary,         DictionariesContainer ) \
-    /* ... */
-
-//    m(        char, ListOfStructures,   ListsByShortcut )
-//    m( std::string, ListOfStructures,   ListsByName )
-
 /**@brief Parameters container with basic querying support.
  * @class Dictionary
  *
@@ -121,11 +112,12 @@ class DictionaryParameter;
  * DictionaryParameter for actual parameter dictionary representation. Its
  * intermediate functionality is used in AoS sequences as well.
  * */
-class Dictionary :
-        # define _Goo_m_dict_base( KeyM, ValM, nmM ) protected DictionaryIndex<KeyM, ValM>,
-        _Goo_m_for_each_dict_index( _Goo_m_dict_base )
-        # undef _Goo_m_dict_base
-        public mixins::iDuplicable< iBaseValue, Dictionary > {
+class Dictionary : public mixins::iDuplicable< iBaseValue, Dictionary >
+                 , protected DictionaryIndex<char,         iSingularParameter>
+                 , protected DictionaryIndex<std::string,  iSingularParameter>
+                 , protected DictionaryIndex<std::string,  DictionaryParameter, true>
+                 , protected DictionaryIndex<char,         LoSParameter>
+                 , protected DictionaryIndex<std::string,  LoSParameter> {
 
     // TODO: https://en.wikibooks.org/wiki/More_C++_Idioms/Friendship_and_the_Attorney-Client
     friend class DictInsertionAttorney;
@@ -134,10 +126,16 @@ class Dictionary :
     virtual void acquire_subsection_ptr( DictionaryParameter * );
     virtual void acquire_list_ptr( ListOfStructures * );
 public:
-    # define _Goo_m_declare_dict_idx_typedef( KeyM, valM, nmM ) \
-        typedef DictionaryIndex<KeyM, valM> nmM;
-    _Goo_m_for_each_dict_index(_Goo_m_declare_dict_idx_typedef)
-    # undef _Goo_m_declare_dict_idx_typedef
+    /// We define std::string to be key type for dictionary here, but it is only
+    /// for compatibility with other template routines --- user code may still
+    /// reference parameters by single-char shortcut (of type char).
+    typedef std::string Key;
+
+    typedef DictionaryIndex<char,         iSingularParameter> SingsByShortcut;
+    typedef DictionaryIndex<std::string,  iSingularParameter> SingsByName;
+    typedef DictionaryIndex<std::string,  DictionaryParameter, true> DictionariesContainer;
+    typedef DictionaryIndex<char,         LoSParameter> ListsByShortcut;
+    typedef DictionaryIndex<std::string,  LoSParameter> ListsByName;
 protected:
     /// Marks last inserted parameter as required one.
     void _mark_last_inserted_as_required();
@@ -163,8 +161,17 @@ public:
 /// Interim class, an attorney for insertion proxy to access dictionary
 /// insertion methods.
 class DictInsertionAttorney {
-    static Dictionary * probe_subsection( const std::string &, Dictionary & );
-    static iSingularParameter * probe_parameter( const std::string &, Dictionary & );
+    static void mark_last_inserted_as_required( Dictionary & d ) {
+        d._mark_last_inserted_as_required();
+    }
+
+    template<typename T> static const T * probe( const std::string & k, const Dictionary & d) {
+        return d.DictionaryIndex<std::string, T>::item_ptr( k );
+    }
+    template<typename T> static T * probe( const std::string & k, Dictionary & d ) {
+        const Dictionary & cd = d;
+        return const_cast<T*>( probe<T>(k, cd) );
+    }
 
     static void push_parameter( iSingularParameter *, Dictionary & );
     static void push_subsection( DictionaryParameter *, Dictionary & );

@@ -404,8 +404,44 @@ DictionaryParameter::DictionaryParameter( const DictionaryParameter & o ) :
 
 # endif
 
+template<>
+const iSingularParameter * DictInsertionAttorney::probe<iSingularParameter>(
+        const std::string & k, const Dictionary & d ) {
+    return d.Dictionary::SingsByName::item_ptr( k );
+}
+
+template<>
+iSingularParameter * DictInsertionAttorney::probe<iSingularParameter>(
+        const std::string & k, Dictionary & d ) {
+    return d.Dictionary::SingsByName::item_ptr( k );
+}
+
+template<>
+const DictionaryParameter * DictInsertionAttorney::probe<DictionaryParameter>(
+        const std::string & k, const Dictionary & d ) {
+    return d.Dictionary::DictionariesContainer::item_ptr( k );
+}
+
+template<>
+DictionaryParameter * DictInsertionAttorney::probe<DictionaryParameter>(
+        const std::string & k, Dictionary & d ) {
+    return d.Dictionary::DictionariesContainer::item_ptr( k );
+}
+
+template<>
+const LoSParameter * DictInsertionAttorney::probe<LoSParameter>(
+        const std::string & k, const Dictionary & d) {
+    return d.Dictionary::ListsByName::item_ptr( k );
+}
+
+template<>
+LoSParameter * DictInsertionAttorney::probe<LoSParameter>(
+        const std::string & k, Dictionary & d) {
+    return d.Dictionary::ListsByName::item_ptr( k );
+}
+
 }  // namespace dict
-}  // namespace dict
+}  // namespace goo
 
 # endif
 

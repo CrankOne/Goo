@@ -23,6 +23,11 @@
 # ifndef H_GOO_PARAMETERS_PLURAL_H
 # define H_GOO_PARAMETERS_PLURAL_H
 
+# include <typeindex>
+# include <functional>
+# include <unordered_map>
+# include <cstring>
+
 # include "goo_exception.hpp"
 
 # include "goo_dict/types.hpp"
@@ -36,7 +41,8 @@ namespace dict {
 /**@brief Type traits template defining general properties of parameter mapping.
  * */
 template< typename KeyT
-        , typename ValueT> struct IndexingTraits {
+        , typename ValueT
+        , bool hasNameFieldT=std::is_base_of<AbstractParameter, ValueT>::value > struct IndexingTraits {
     typedef KeyT Key;
     typedef ValueT Value;
     typedef Value * ValueHandle;
@@ -50,12 +56,18 @@ template< typename KeyT
         { return it->second; }
     static ConstValueHandle dereference_iterator( ConstIterator it )
         { return it->second; }
+    static Iterator find_item( const Key & k, IndexingContainer & c ) {
+        return c.find( k );
+    }
+    static ConstIterator find_item( const Key & k, const IndexingContainer & c ) {
+        return c.find( k );
+    }
     static InsertionResult insert_item( const Key & k, ValueHandle v, IndexingContainer & c) {
         return c.emplace( k, v );
     }
 };
 
-template<> struct IndexingTraits<void, iBaseValue> {
+template<> struct IndexingTraits<void, iBaseValue, false> {
     typedef iBaseValue * Key;
     typedef iBaseValue Value;
     typedef Value * ValueHandle;
@@ -65,21 +77,82 @@ template<> struct IndexingTraits<void, iBaseValue> {
     typedef typename IndexingContainer::const_iterator ConstIterator;
     typedef std::pair<Iterator, bool> InsertionResult;
 
-    static ValueHandle dereference_iterator( Iterator it )
-        { return *it; }
-    static ConstValueHandle dereference_iterator( ConstIterator it )
-        { return *it; }
+    static ValueHandle dereference_iterator( Iterator it ) {
+        return *it;
+    }
+    static ConstValueHandle dereference_iterator( ConstIterator it ) {
+        return *it;
+    }
+    static Iterator find_item( const Key & k, IndexingContainer & c ) {
+        return c.find( k );
+    }
+    static ConstIterator find_item( const Key & k, const IndexingContainer & c ) {
+        return c.find( k );
+    }
     static InsertionResult insert_item( const Key & k, ValueHandle v, IndexingContainer & c) {
         return c.emplace( v );
     }
 };
 
+/// In order to avoid duplication of the string name data, the indexing traits
+/// provides customized key-hashing behaviour.
+template<typename ValueT> struct IndexingTraits<std::string, ValueT, true> {
+    typedef std::string Key;
+    typedef ValueT Value;
+    typedef Value * ValueHandle;
+    typedef const Value * ConstValueHandle;
+    typedef std::unordered_multimap<std::hash<std::string>::result_type, ValueHandle> IndexingContainer;
+    typedef typename IndexingContainer::iterator Iterator;
+    typedef typename IndexingContainer::const_iterator ConstIterator;
+    typedef std::pair<Iterator, bool> InsertionResult;
+
+    static ValueHandle dereference_iterator( Iterator it )
+        { return it->second; }
+    static ConstValueHandle dereference_iterator( ConstIterator it )
+        { return it->second; }
+    static Iterator find_item( const Key & k, IndexingContainer & c ) {
+        auto cIt = find_item(k, (const IndexingContainer &) c );
+        // Iterator const-cast trick:
+        // https://stackoverflow.com/a/10669041/1734499
+        return c.erase( cIt );
+    }
+    static ConstIterator find_item( const Key & k, const IndexingContainer & c ) {
+        std::hash<std::string> hash_fn;
+        std::hash<std::string>::result_type hashCode = hash_fn(k);
+        auto collidingEls = c.equal_range(hashCode);
+        for( auto it = collidingEls.first; it != collidingEls.second; ++it ) {
+            if( !strcmp( it->second->name(), k.c_str() ) ) {
+                return it;
+            }
+        }
+        return c.end();
+    }
+    static InsertionResult insert_item( const Key & k, ValueHandle v, IndexingContainer & c) {
+        std::hash<std::string> hash_fn;
+        std::hash<std::string>::result_type hashCode = hash_fn(k);
+        if( !c.count( hashCode ) ) {
+            return std::make_pair(c.emplace(hashCode, v), true);
+        } else {
+            auto collidingEls = c.equal_range(hashCode);
+            // Check colliding elements:
+            for( auto it = collidingEls.first; it != collidingEls.second; ++it ) {
+                if( !strcmp( it->second->name(), k.c_str() ) ) {
+                    emraise( nonUniq, "Duplicating key insertion: \"%s\"."
+                           , k.c_str() );
+                }
+            }
+            return std::make_pair(c.emplace(hashCode, v), true);
+        }
+    }
+};
+
 template< typename KeyT
-        , typename ValueT>
-class iDictionaryIndex : private IndexingTraits<KeyT, ValueT>::IndexingContainer {
+        , typename ValueT
+        , bool hasNameFieldT=std::is_base_of<AbstractParameter, ValueT>::value>
+class iDictionaryIndex : private IndexingTraits<KeyT, ValueT, hasNameFieldT>::IndexingContainer {
 public:
-    typedef iDictionaryIndex<KeyT, ValueT> Self;
-    typedef IndexingTraits<KeyT, ValueT> Traits;
+    typedef iDictionaryIndex<KeyT, ValueT, hasNameFieldT> Self;
+    typedef IndexingTraits<KeyT, ValueT, hasNameFieldT> Traits;
     typedef typename Traits::Key Key;
     typedef typename Traits::Value Value;
 
@@ -91,10 +164,10 @@ public:
     typedef typename Traits::InsertionResult InsertionResult;
 protected:
     virtual Iterator _V_find_item( const Key & k ) {
-        return IndexingContainer::find( k );
+        return Traits::find_item( k, *this );
     }
     virtual ConstIterator _V_find_item( const Key & k ) const {
-        return IndexingContainer::find( k );
+        return Traits::find_item( k, *this );
     }
     virtual bool _V_iterator_valid( Iterator it ) const {
         return it != IndexingContainer::end();
@@ -169,18 +242,18 @@ public:
 
     /// Abstract base data pointer querying method implementation. Intended
     /// for debug use only.
-    virtual typename IndexingTraits<KeyT, ValueT>::IndexingContainer & container_ref() {
-        return *static_cast<typename IndexingTraits<KeyT, ValueT>::IndexingContainer *>(this);
+    virtual typename Traits::IndexingContainer & container_ref() {
+        return *static_cast<typename Traits::IndexingContainer *>(this);
     };
 
     /// Abstract base data pointer querying method implementation. Intended
     /// for debug use only (const version).
-    virtual const typename IndexingTraits<KeyT, ValueT>::IndexingContainer & container_const_ref() const {
-        return *static_cast<const typename IndexingTraits<KeyT, ValueT>::IndexingContainer *>(this);
+    virtual const typename Traits::IndexingContainer & container_const_ref() const {
+        return *static_cast<const typename Traits::IndexingContainer *>(this);
     };
 };  // class iDictionaryIndex
 
-template<typename KeyT, typename ValueT>
+template<typename KeyT, typename ValueT, bool hasNameFieldT=std::is_base_of<AbstractParameter, ValueT>::value>
 class DictionaryIndex;
 
 # define _Goo_m_for_each_index_method( m ) \
@@ -191,12 +264,12 @@ class DictionaryIndex;
     m( has_item )       \
     m( iterator_valid )
 
-template<typename KeyT, typename ValueT>
-class DictionaryIndex : public iDictionaryIndex<KeyT, ValueT>
-                      , protected virtual iDictionaryIndex<void, iBaseValue> {
+template<typename KeyT, typename ValueT, bool hasNameFieldT>
+class DictionaryIndex : public iDictionaryIndex<KeyT, ValueT, hasNameFieldT>
+                      , protected virtual iDictionaryIndex<void, iBaseValue, false> {
 public:
-    typedef iDictionaryIndex<void, iBaseValue> PhysicalContainer;
-    typedef iDictionaryIndex<KeyT, ValueT> Parent;
+    typedef iDictionaryIndex<void, iBaseValue, false> PhysicalContainer;
+    typedef iDictionaryIndex<KeyT, ValueT, hasNameFieldT> Parent;
 
     using Parent::Traits;
 

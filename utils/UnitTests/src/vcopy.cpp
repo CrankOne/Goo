@@ -31,7 +31,7 @@
  * */
 
 # include "utest.hpp"
-# include "goo_vcopy.tcc"
+# include "goo_mixins/vcopy.tcc"
 
 # include <climits>
 

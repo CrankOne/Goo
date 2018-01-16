@@ -1,4 +1,5 @@
 # include <cstring>
+#include <goo_dict/types.hpp>
 
 # include "goo_dict/insertion_proxy.tcc"
 # include "goo_dict/dict.hpp"
@@ -8,6 +9,8 @@
 namespace goo {
 namespace dict {
 
+
+# if 0
 /**This routine serves few use cases, but basically it is designed to perform
  * recursive evaluation according to textual path specified, within given
  * goo::pdict data structure. Few major use-cases are:
@@ -50,16 +53,50 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
         return combine_path( mpath, *(path.next), extend, ed );  \
     } else { return mpath; }
 
-    const bool emptyToken = !strlen(current)
-             , lastToken = !! (0x2 & rc)
-             , isIndex = !! (0x1 & rc)
+    const bool /*emptyToken = path.isIndex ? 0 == path.id.index : !strlen( path.id.name )
+             ,*/ lastToken = !( path.next )
+             , isIndex = !(path.isIndex)
              ;
 
-    if( emptyToken && (!extend || lastToken) ) {
-        emraise( badParameter, "Empty token met in path specification within"
-                " non-extending call." );
+    //// Routine allows empty token to be the the only last one index identifier.
+    //if( emptyToken && (!extend || !lastToken) ) {
+    //    emraise( badParameter, "Empty token met in path specification within"
+    //            " non-extending call." );
+    //}  // TODO: ^^^
+
+    if( lastToken ) {
+        // Last token probably refers to a parameter.
+        iSingularParameter * isp \
+                = DictInsertionAttorney::probe<iSingularParameter>( path.id.name
+                                                        , mpath.top().as<Dict>() );
+        if( isp ) {
+            return MaterializedPath( mpath, isp );
+        }
+        // Otherwise we have to consider this last token as one referencing to
+        // a dictionary or a list instance.
+    }
+    if( !isIndex ) {
+        if( lastToken || (!lastToken && !(path.next->isIndex) ) ) {
+            Dict * newStart = DictInsertionAttorney::probe<DictionaryParameter>(
+                            path.id.name, mpath.top().as<Dict>() );
+            if( newStart ) {
+                // That's a dict indeed. Continue recursively.
+                mpath.push( newStart );
+                CONTINUE_RECURSIVELY;
+            } else if( !lastToken ) {
+                // TODO: dedicated notFound subclass for dict look-up procedure
+                emraise( notFound, "No subsection named \"%s\".", path.id.name );
+            }
+        }
+
+    } else {
+        _TODO_
+        //LoS * newStart = ListInsertionAttorney::probe_list( path.id.index
+        //                                                  , mpath.top().as<LoS>() );
+        //
     }
 
+    # if 0
     if( !isIndex ) {
         Dict & startDctRef = mpath.top().as<Dict>();
         // Token is a string. Consider start as (at least) of type Dict
@@ -67,7 +104,8 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
         // refers.
         {
 
-            Dict * newStart = DictInsertionAttorney::probe_subsection(current, startDctRef);
+            Dict * newStart = DictInsertionAttorney::probe_subsection(
+                        path.id.name, startDctRef);
             if( newStart ) {
                 // That's a dict indeed. Continue recursively.
                 mpath.push( newStart );
@@ -179,6 +217,7 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
         }
          */
     }
+    # endif
 
     _TODO_
 
@@ -229,6 +268,7 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
     # endif
     # undef CONTINUE_RECURSIVELY
 }
+# endif
 
 //
 // Dictionary Insertion Proxy
@@ -242,27 +282,35 @@ DictInsertionProxy::DictInsertionProxy( DictionaryParameter * root ) :
 void
 DictInsertionProxy::insert_copy_of( const iSingularParameter & sp
                                   , const char * newName ) {
+    _TODO_  // TODO
+    # if 0
     iSingularParameter * isp =
                     clone_as<AbstractParameter, iSingularParameter>( &sp );
     if( !! newName ) {
         isp->name( newName );
     }
     _top_as<Dict>(false).insert_parameter( isp );
+    # endif
 }
 
 DictInsertionProxy &
 DictInsertionProxy::required_argument() {
-    _top_as<Dict>(false)._mark_last_inserted_as_required();
+    DictInsertionAttorney::mark_last_inserted_as_required( _top_as<Dict>() );
     return *this;
 }
 
 DictInsertionProxy &
-DictInsertionProxy::bgn_sect( const char * name, const char * descr) {
-    _TODO_
+DictInsertionProxy::bgn_sect( const char * name
+                            , const char * descr) {
+    auto newD = new DictionaryParameter( name, descr );
+
+    DictInsertionAttorney::push_subsection( newD, _top_as<DictionaryParameter>() )
 }
 
 DictInsertionProxy &
 DictInsertionProxy::end_sect( const char * name ) {
+    _TODO_  // TODO
+    # if 0
     long index;
     if( name ) {
         char * path = strdupa( name ),
@@ -287,10 +335,13 @@ DictInsertionProxy::end_sect( const char * name ) {
         _pop();  // TODO: this line wasn't here... But it shall be, isn't it?
     }
     return *this;
+    # endif
 }
 
 LoDInsertionProxy
 DictInsertionProxy::end_dict( const char * name ) {
+    _TODO_  // TODO
+    # if 0
     if( name && strcmp(name, _top_as<NamedDict>(true).name() ) ) {
         emraise( assertFailed
                , "Insertion proxy state check failed: current list is"
@@ -299,10 +350,13 @@ DictInsertionProxy::end_dict( const char * name ) {
     }
     _pop();
     return stack();
+    # endif
 }
 
 LoDInsertionProxy
 DictInsertionProxy::bgn_list( const char * name, const char * description) {
+    _TODO_  // TODO
+    # if 0
     std::stack<InsertionTarget> s(stack());
     if( NULL != strchr(name, '.')
      || NULL != strchr(name, '[') || NULL != strchr(name, ']') ) {
@@ -317,6 +371,7 @@ DictInsertionProxy::bgn_list( const char * name, const char * description) {
     //s.top().dict().insert_parameter( los );
     //s.push( los );
     //return LoDInsertionProxy(s);
+    # endif
 }
 
 //
@@ -347,17 +402,17 @@ LoDInsertionProxy::end_list( const char * listName ) {
 
 DictInsertionProxy
 LoDInsertionProxy::bgn_dict() {
-    _TODO_
+    _TODO_  // TODO
 }
 
 LoDInsertionProxy
 LoDInsertionProxy::bgn_sublist() {
-    _TODO_
+    _TODO_  // TODO
 }
 
 LoDInsertionProxy
 LoDInsertionProxy::end_sublist() {
-    _TODO_
+    _TODO_  // TODO
 }
 
 # if 0

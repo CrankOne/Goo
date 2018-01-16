@@ -45,6 +45,7 @@ class DictionaryParameter : public mixins::iDuplicable< iBaseValue
     friend class DictInsertionProxy;
     friend class Configuration;
 public:
+    typedef std::string Key;
     typedef mixins::iDuplicable< AbstractParameter
                                , DictionaryParameter
                                , AbstractParameter> DuplicableParent;

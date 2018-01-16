@@ -31,6 +31,9 @@ namespace dict {
 
 class ListOfStructures : public iTValue<List<iBaseValue *> >
                        , public DictionaryIndex<ListIndex, iBaseValue> {
+public:
+    /// The type traits compat typedef.
+    typedef ListIndex Key;
     // ...
 };
 
@@ -68,6 +71,8 @@ public:
     Parameter( const char *
              , const char * );
 };  // class LoS
+
+typedef Parameter< List<iBaseValue *> > LoSParameter;
 
 }  // namespace dict
 }  // namespace goo
