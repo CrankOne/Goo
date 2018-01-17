@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
  * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Bogdan Vasilishin <togetherwithra@gmail.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -67,7 +68,30 @@ namespace goo {
 template<typename ConfigObjectT,
          typename LogStreamT> class App;
 
+namespace dict {
+class Configuration;  // fwd
+}
+
+template<typename ConfigObjectT,
+        typename LogStreamT>
+class GOO_DLL_PUBLIC App;  // fwd
+
 namespace aux {
+
+template< typename ConfT
+        , typename LogStreamT>
+struct AppCfgAutoCompleteTraits {
+    static bool do_generate_completion() { return false; }
+    static int return_autocompletion_list( const App<ConfT, LogStreamT> & ) {
+        return EXIT_FAILURE;
+    }
+};
+
+template<>
+struct AppCfgAutoCompleteTraits<goo::dict::Configuration, std::ostream> {
+    static bool do_generate_completion();
+    static int return_autocompletion_list( const App<goo::dict::Configuration, std::ostream> & );
+};
 
 /// Abstract application base class.
 class GOO_DLL_PUBLIC iApp {
@@ -271,9 +295,23 @@ public:
     }
 
     /// Configured application entry point.
-    static int run() { int rc = _self->_V_run();
-                       delete _self; _self = nullptr;
-                       return rc; }
+    static int run() {
+        if ( aux::AppCfgAutoCompleteTraits<
+                ConfigObjectT,
+                LogStreamT>::do_generate_completion() ) {
+            // std::getenv("GOO_PDICT_AUTOCOMPLETE")
+            return aux::AppCfgAutoCompleteTraits<
+                      ConfigObjectT,
+                      LogStreamT> \
+                    ::return_autocompletion_list(
+                        goo::app<App<ConfigObjectT, LogStreamT> >());
+        } else {
+            int rc = _self->_V_run();
+            delete _self;
+            _self = nullptr;
+            return rc;
+        }
+    };
 
     // methods
 

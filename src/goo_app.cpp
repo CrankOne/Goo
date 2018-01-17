@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
  * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Bogdan Vasilishin <togetherwithra@gmail.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -22,9 +23,13 @@
 
 # include <cerrno>
 # include <cstring>
+# include <cstdlib>
 # include <regex>
+
 # include "goo_utility.h"
 # include "goo_app.hpp"
+# include "goo_dict/configuration.hpp"
+# include "goo_dict/parameter.tcc"
 
 namespace goo {
 
@@ -366,12 +371,35 @@ iApp::dump_envvars( std::ostream & os ) {
     }
 }
 
+//
+// Autocompletion traits
+
+bool
+AppCfgAutoCompleteTraits<goo::dict::Configuration, std::ostream>::do_generate_completion() {
+    if ( getenv("GOO_PDICT_AUTOCOMPLETE") ) {
+        return !strcmp("yes", getenv("GOO_PDICT_AUTOCOMPLETE"));
+    } else {
+        return false;
+    }
+}
+
+int
+AppCfgAutoCompleteTraits<goo::dict::Configuration, std::ostream>
+    ::return_autocompletion_list(const App<dict::Configuration, std::ostream> & app_) {
+    // XXX goo::dict::Configuration conf = app_.co();
+    std::list<goo::dict::iSingularParameter *> parameters = app_.co().parameters();
+    if ( getenv("GOO_PDICT_AUTOCOMPLETE_OPTS") ) {
+        for ( auto it = parameters.begin();
+                   it != parameters.end();
+                   it++ ) {
+            std::cout << (*it)->shortcut();
+        }
+    }
+    std::cout << "alpha amma betta bramma" << std::endl;
+    return EXIT_SUCCESS;
+}
+
 }  // namespace goo::aux
-
-
-//
-// App
-//
 
 };  // namespace goo
 
