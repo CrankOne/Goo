@@ -52,9 +52,6 @@ public:
 public:
     DictionaryParameter( const char *, const char * );
     DictionaryParameter( const DictionaryParameter & ) = default;
-    /// Constructs a bound insertion proxy instance object.
-    DictInsertionProxy insertion_proxy();
-
     // ...
 };
 

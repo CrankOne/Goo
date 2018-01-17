@@ -2,9 +2,7 @@
 #include <goo_dict/types.hpp>
 
 # include "goo_dict/insertion_proxy.tcc"
-# include "goo_dict/dict.hpp"
-
-# include "goo_dict/parameters/los.hpp"
+# include "goo_dict/configuration.hpp"
 
 namespace goo {
 namespace dict {
@@ -270,6 +268,27 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
 }
 # endif
 
+void
+InsertionProxyBase::_insert_shortened( iSingularParameter * isp ) {
+    _TODO_  // TODO: append Configuration with insert_shortened_parameter() mtd
+    //_bottom_as<Configuration>().insert_shortened_parameter( _lastInsertedParameter );
+}
+
+template<> inline Configuration &
+InsertionProxyBase::InsertionTarget::as<Configuration>() {
+    if( !_isDict ) {
+        emraise( badCast, "Mismatched types on insertion:"
+            " targets stack's top is list, while app configuration context"
+            " demanded." );
+    }
+    Configuration * cfg = dynamic_cast<Configuration *>(_dictPtr);
+    if( !cfg ) {
+        emraise( badCast, "Unable to cast insertion element %p to Configuration"
+            " type.", _dictPtr );
+    }
+    return *cfg;
+}
+
 //
 // Dictionary Insertion Proxy
 // /////////////////////////
@@ -309,7 +328,7 @@ InsertionProxy<Dictionary> &
 InsertionProxy<Dictionary>::bgn_sect( const char * name
                            , const char * descr) {
     auto newD = new DictionaryParameter( name, descr );
-    _put( newD, _top_as<Dict>() );
+    _put( newD );
     _push_dict( newD );
     _lastInsertedParameter = nullptr;
     return *this;
@@ -340,6 +359,12 @@ InsertionProxy<Dictionary>::end_sect( const char * name ) {
     }
     _pop();
     return *this;
+}
+
+InsertionProxy<ListOfStructures>
+InsertionProxy<Dictionary>::end_dict() {
+    _pop();
+    return InsertionProxy<ListOfStructures>(stack());
 }
 
 //

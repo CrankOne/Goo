@@ -97,6 +97,7 @@ namespace goo {
 namespace dict {
 
 template<typename T> class TInsertionProxyCommon;
+template<typename T> class InsertionProxy;
 
 class DictionaryParameter;
 
@@ -113,11 +114,9 @@ class DictionaryParameter;
  * intermediate functionality is used in AoS sequences as well.
  * */
 class Dictionary : public mixins::iDuplicable< iBaseValue, Dictionary >
-                 , protected DictionaryIndex<char,         iSingularParameter>
-                 , protected DictionaryIndex<std::string,  iSingularParameter>
-                 , protected DictionaryIndex<std::string,  DictionaryParameter, true>
-                 , protected DictionaryIndex<char,         LoSParameter>
-                 , protected DictionaryIndex<std::string,  LoSParameter> {
+                 , protected DictionaryIndex<std::string, iSingularParameter>
+                 , protected DictionaryIndex<std::string, DictionaryParameter, true>
+                 , protected DictionaryIndex<std::string, LoSParameter> {
 
     // TODO: https://en.wikibooks.org/wiki/More_C++_Idioms/Friendship_and_the_Attorney-Client
     friend class DictInsertionAttorney;
@@ -131,11 +130,9 @@ public:
     /// reference parameters by single-char shortcut (of type char).
     typedef std::string Key;
 
-    typedef DictionaryIndex<char,         iSingularParameter> SingsByShortcut;
-    typedef DictionaryIndex<std::string,  iSingularParameter> SingsByName;
-    typedef DictionaryIndex<std::string,  DictionaryParameter, true> DictionariesContainer;
-    typedef DictionaryIndex<char,         LoSParameter> ListsByShortcut;
-    typedef DictionaryIndex<std::string,  LoSParameter> ListsByName;
+    typedef DictionaryIndex<std::string, iSingularParameter> SingsByName;
+    typedef DictionaryIndex<std::string, DictionaryParameter, true> DictionariesContainer;
+    typedef DictionaryIndex<std::string, LoSParameter> ListsByName;
 protected:
     virtual void * _V_data_addr() override {
         return &(static_cast<iDictionaryIndex<void, iBaseValue> *>(this)->container_ref());
@@ -153,6 +150,9 @@ public:
     Dictionary( const Dictionary & );
     Dictionary() = default;
     ~Dictionary() override;
+
+    /// Constructs a bound insertion proxy instance object.
+    InsertionProxy<Dictionary> insertion_proxy();
 
     //template<typename T> const T & operator[](const std::string &) const;
     //template<typename T>       T & operator[](const std::string &)

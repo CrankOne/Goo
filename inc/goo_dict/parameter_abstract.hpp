@@ -32,8 +32,6 @@
 namespace goo {
 namespace dict {
 
-class DictInsertionProxy;
-
 /**@class AbstractParameter
  * @brief An abstract parameter is a base class for Goo's
  * dictionary entires.
@@ -175,8 +173,6 @@ public:
 
     /// Sets the "required" flag marking a mandatory parameter.
     void set_is_argument_required_flag();
-
-    friend class ::goo::dict::DictInsertionProxy;
 }; // class AbstractParameter
 
 }  // namespace dict

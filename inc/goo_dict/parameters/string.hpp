@@ -80,8 +80,6 @@ public:
             Parameter( shortcut_, name_, description_, default_.c_str() ) {}
 
     Parameter( const Parameter<std::string> & o ) : DuplicableParent( o ) {}
-
-    friend class ::goo::dict::DictInsertionProxy;
 };
 
 template<>

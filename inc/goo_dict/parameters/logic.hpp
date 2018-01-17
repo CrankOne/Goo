@@ -110,7 +110,6 @@ public:
     /// This method is used mostly by Configuration class.
     virtual void set_option( bool );
 
-    friend class ::goo::dict::DictInsertionProxy;
 # if 0
 protected:
     /// Sets parameter value from string. Following strings are acceptable

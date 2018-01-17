@@ -29,8 +29,11 @@
 namespace goo {
 namespace dict {
 
+template<typename T> class TInsertionProxyCommon;
+
 class ListOfStructures : public iTValue<List<iBaseValue *> >
                        , public DictionaryIndex<ListIndex, iBaseValue> {
+    friend class ListInsertionAttorney;
 public:
     /// The type traits compat typedef.
     typedef ListIndex Key;
@@ -39,7 +42,7 @@ public:
 
 template<>
 class iParameter<List<iBaseValue *> > : public AbstractParameter
-                                      , public ListOfStructures {
+                                     , public ListOfStructures {
 public:
     //typedef iTStringConvertibleParameter<Array<iStringConvertibleParameter *> > ValueStoringType;
     typedef List<iBaseValue *> Value;
@@ -73,6 +76,22 @@ public:
 };  // class LoS
 
 typedef Parameter< List<iBaseValue *> > LoSParameter;
+
+class ListInsertionAttorney {
+    template<typename T> static const T * probe( ListIndex i, const ListOfStructures & l ) {
+        return l.item_ptr( i );
+    }
+
+    template<typename T> static T * probe( ListIndex i, ListOfStructures & l ) {
+        return l.item_ptr( i );
+    }
+
+    static void push_parameter( iBaseValue *, ListOfStructures & );
+    static void push_subsection( Dictionary *, ListOfStructures & );
+    static void push_list_parameter( ListOfStructures *, ListOfStructures & );
+
+    friend class TInsertionProxyCommon<ListOfStructures>;
+};
 
 }  // namespace dict
 }  // namespace goo

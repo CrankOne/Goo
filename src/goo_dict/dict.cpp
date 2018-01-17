@@ -62,34 +62,16 @@ Dictionary::~Dictionary() {
  * be deleted by dictionary destructor. */
 void
 Dictionary::acquire_parameter_ptr( iSingularParameter * instPtr ) {
-    bool wasIndexed = false;
-    if( instPtr->has_shortcut() ) {
-        auto insertionResult = SingsByShortcut::insert_item( instPtr->shortcut(), instPtr );
-        if( !insertionResult.second ) {
-            emraise( nonUniq, "Duplicated option shortcut insertion: "
-                "'%c' character was previously associated within parameter %p "
-                "(%s). Unable to index parameter %p (%s).", instPtr->shortcut(),
-                insertionResult.first->second,
-                (insertionResult.first->second->name() ? insertionResult.first->second->name() :
-                                                            "<no-long-name>"),
-                instPtr,
-                (instPtr->name() ? instPtr->name() : "<no-long-name>") );
-        }
-        wasIndexed = true;
+    if( !instPtr->name() ) {
+        emraise( badArchitect, "Dictionary %p got nameless parameter %p"
+                " for insertion.", this, instPtr );
     }
-    if( instPtr->name() ) {
-        auto insertionResult = SingsByName::insert_item( instPtr->name(), instPtr );
-        if( !insertionResult.second ) {
-            emraise( nonUniq, "Duplicated option name insertion: "
-                "'%s' name was previously associated within parameter %p. "
-                "Unable to index parameter %p.", instPtr->name(),
-                insertionResult.first->second, instPtr );
-        }
-        wasIndexed = true;
-    }
-    if(!wasIndexed) {
-        emraise( badArchitect, "Got %p parameter without name and shortcut.",
-                                                                    instPtr );
+    auto insertionResult = SingsByName::insert_item( instPtr->name(), instPtr );
+    if( !insertionResult.second ) {
+        emraise( nonUniq, "Duplicated option name insertion: "
+            "'%s' name was previously associated within parameter %p. "
+            "Unable to index parameter %p.", instPtr->name(),
+            insertionResult.first->second, instPtr );
     }
     //SingularsContainer::push_back( instPtr );  // xxx
 }
@@ -117,27 +99,17 @@ Dictionary::acquire_subsection_ptr( DictionaryParameter * instPtr ) {
  * dictionary destructor. */
 void
 Dictionary::acquire_list_ptr( LoSParameter * instPtr ) {
-    if( instPtr->name() ){
-        auto insertionResult = ListsByName::insert_item( instPtr->name()
-                                                     , instPtr );
-        if( !insertionResult.second ) {
-            emraise( nonUniq, "Duplicated list name on insertion: "
-                    "'%s' name was previously associated within list %p. "
-                    "Unable to index new subsection %p with same name.",
-                    instPtr->name(), insertionResult.first->second, instPtr );
-        }
+    if( !instPtr->name() ) {
+        emraise( badArchitect, "Dictionary %p got nameless list parameter %p"
+                " for insertion.", this, instPtr );
     }
-    // TODO: dunno, whether we have to support shortcuts for LoSs, but there
-    // will be no harm currently to envisage it here
-    if( instPtr->has_shortcut() ) {
-        auto insertionResult = ListsByShortcut::insert_item( instPtr->shortcut()
-                                                         , instPtr );
-        if( !insertionResult.second ) {
-            emraise( nonUniq, "Duplicated list shortcut on insertion: "
-                    "'%c' shortcut was previously associated within list %p. "
-                    "Unable to index new subsection %p with same name.",
-                    instPtr->shortcut(), insertionResult.first->second, instPtr );
-        }
+    auto insertionResult = ListsByName::insert_item( instPtr->name()
+                                                 , instPtr );
+    if( !insertionResult.second ) {
+        emraise( nonUniq, "Duplicated list name on insertion: "
+                "'%s' name was previously associated within list %p. "
+                "Unable to index new subsection %p with same name.",
+                instPtr->name(), insertionResult.first->second, instPtr );
     }
 }
 
@@ -424,6 +396,11 @@ DictionaryParameter::DictionaryParameter( const DictionaryParameter & o ) :
         DuplicableParent(o), Dictionary(o) {}
 
 # endif
+
+InsertionProxy<Dictionary>
+DictionaryParameter::insertion_proxy() {
+    return DictInsertionProxy( this );
+}
 
 //
 // Dictionary insertion attorney idiom. Restricts insertion operations to few

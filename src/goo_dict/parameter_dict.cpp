@@ -14,10 +14,5 @@ DictionaryParameter::DictionaryParameter( const char * name
 //    // xxx?
 //}
 
-DictInsertionProxy
-DictionaryParameter::insertion_proxy() {
-    return DictInsertionProxy( this );
-}
-
 }  // namespace dict
 }  // namespace goo
