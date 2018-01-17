@@ -96,8 +96,8 @@ namespace goo {
 
 namespace dict {
 
-class DictInsertionProxy;
-class Configuration;
+template<typename T> class TInsertionProxyCommon;
+
 class DictionaryParameter;
 
 /**@brief Parameters container with basic querying support.
@@ -124,7 +124,7 @@ class Dictionary : public mixins::iDuplicable< iBaseValue, Dictionary >
 
     virtual void acquire_parameter_ptr( iSingularParameter * );
     virtual void acquire_subsection_ptr( DictionaryParameter * );
-    virtual void acquire_list_ptr( ListOfStructures * );
+    virtual void acquire_list_ptr( LoSParameter * );
 public:
     /// We define std::string to be key type for dictionary here, but it is only
     /// for compatibility with other template routines --- user code may still
@@ -137,9 +137,6 @@ public:
     typedef DictionaryIndex<char,         LoSParameter> ListsByShortcut;
     typedef DictionaryIndex<std::string,  LoSParameter> ListsByName;
 protected:
-    /// Marks last inserted parameter as required one.
-    void _mark_last_inserted_as_required();
-
     virtual void * _V_data_addr() override {
         return &(static_cast<iDictionaryIndex<void, iBaseValue> *>(this)->container_ref());
     }
@@ -156,15 +153,16 @@ public:
     Dictionary( const Dictionary & );
     Dictionary() = default;
     ~Dictionary() override;
+
+    //template<typename T> const T & operator[](const std::string &) const;
+    //template<typename T>       T & operator[](const std::string &)
+    const iBaseValue & operator[](const std::string &) const;
+    iBaseValue & operator[](const std::string &);
 };  // class Dictionary
 
 /// Interim class, an attorney for insertion proxy to access dictionary
 /// insertion methods.
 class DictInsertionAttorney {
-    static void mark_last_inserted_as_required( Dictionary & d ) {
-        d._mark_last_inserted_as_required();
-    }
-
     template<typename T> static const T * probe( const std::string & k, const Dictionary & d) {
         return d.DictionaryIndex<std::string, T>::item_ptr( k );
     }
@@ -175,10 +173,9 @@ class DictInsertionAttorney {
 
     static void push_parameter( iSingularParameter *, Dictionary & );
     static void push_subsection( DictionaryParameter *, Dictionary & );
-    static void push_list_parameter( ListOfStructures *, Dictionary & );
+    static void push_list_parameter( LoSParameter *, Dictionary & );
 
-    friend class InsertionProxyBase;
-    friend class DictInsertionProxy;
+    friend class TInsertionProxyCommon<Dictionary>;
 };
 
 }  // namespace dict

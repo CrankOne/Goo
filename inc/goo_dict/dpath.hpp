@@ -74,7 +74,7 @@ namespace aux {
  *        start.
  */
 int pull_opt_path_token( char *& path
-                      , char *& current
+                      , const char *& current
                       , ListIndex & idx );
 
 /// Intermediate representation of dictionary/list index referencing an element.
@@ -93,7 +93,7 @@ struct DictPath {
     template<typename T> typename T::Key key_for();
 };
 
-template<> Dictionary::Key
+template<> inline Dictionary::Key
 DictPath::key_for<Dictionary>() {
     if( isIndex ) {
         emraise( badCast, "Path token is an integer index =%ld while"
@@ -102,12 +102,12 @@ DictPath::key_for<Dictionary>() {
     return id.name;
 }
 
-template<> typename DictionaryParameter::Key
+template<> inline typename DictionaryParameter::Key
 DictPath::key_for<DictionaryParameter>() {
     return key_for<Dictionary>();
 }
 
-template<> ListOfStructures::Key
+template<> inline typename ListOfStructures::Key
 DictPath::key_for<ListOfStructures>() {
     if( !isIndex ) {
         emraise( badCast, "Path token is a string key =\"%s\" while"
@@ -116,7 +116,7 @@ DictPath::key_for<ListOfStructures>() {
     return id.index;
 }
 
-template<> LoSParameter::Key
+template<> inline typename LoSParameter::Key
 DictPath::key_for<LoSParameter>() {
     return key_for<ListOfStructures>();
 }

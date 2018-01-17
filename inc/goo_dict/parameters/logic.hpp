@@ -56,9 +56,9 @@ namespace dict {
  * This aspect affects generated help message.
  * */
 template<>
-class Parameter<bool> : public mixins::iDuplicable< iBaseValue,
-                                                    Parameter<bool>,
-                                                    iParameter<bool> > {
+class Parameter<bool> : public mixins::iDuplicable< iSingularParameter
+                                                 , Parameter<bool>
+                                                 , iParameter<bool> > {
 public:
     typedef typename DuplicableParent::Parent::Value Value;
 protected:

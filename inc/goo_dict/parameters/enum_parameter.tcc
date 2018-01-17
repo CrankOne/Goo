@@ -39,9 +39,9 @@ namespace dict {
  * use them for short static enumerations defined at compile time.
  * */
 template<typename EnumT>
-class EnumParameter : public mixins::iDuplicable< AbstractParameter,
-                                                    EnumParameter<EnumT>,
-                                                    iParameter<EnumT> > {
+class EnumParameter : public mixins::iDuplicable< iSingularParameter,
+                                                EnumParameter<EnumT>,
+                                                iParameter<EnumT> > {
 public:
     typedef EnumT Enum;
     typedef mixins::iDuplicable< AbstractParameter,

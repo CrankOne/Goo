@@ -5,7 +5,16 @@
 # include "goo_dict/parameters/enum_parameter.tcc"
 # include "goo_dict/parameters/los.hpp"
 
-# if 0
+# ifndef NO_PDICT_TEST
+
+//# define NO_BASIC_SPLITTING_TEST
+//# define NO_BASIC_PARSING_TEST
+# define NO_BASIC_ERRORS_TEST
+# define NO_ARRAY_PARAMETERS_TEST
+# define NO_CONSISTENCY_TESTS
+# define NO_SUBSECTION_PARAMETER_RETRIEVING_TEST
+# define NO_ADVANCED_CONFIGURATION_TEST
+# define NO_AOS_TEST
 
 /**@file pdict.cpp
  * @brief Parameters dictionary test.
@@ -23,6 +32,7 @@ struct MalformedArgs {
     ErrCode expectedErrorCode;
 };
 
+# ifndef NO_BASIC_ERRORS_TEST
 static void expected_argv_parsing_error(
             const char * str,
             ErrCode ec,
@@ -65,7 +75,9 @@ static void expected_argv_parsing_error(
     }
     goo::dict::Configuration::free_tokens( argc, argv );
 }
+# endif  // NO_BASIC_ERRORS_TEST
 
+# ifndef NO_BASIC_PARSING_TEST
 namespace other {
 struct another {
 enum TestingEnum {
@@ -85,21 +97,22 @@ enum TestingEnum {
 GOO_ENUM_PARAMETER_DEFINE( other::another:: , TestingEnum,
                             for_all_TestingEnum_enum_entries )
 # undef for_all_TestingEnum_enum_entries
+# endif  // NO_BASIC_PARSING_TEST
 
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
-    # if 1
+    # ifndef NO_BASIC_SPLITTING_TEST
     {
         os << "Path splitting test : {" << std::endl;
         int rc;
         char    one[] = "one.three-4.five.six-seven",
                 two[] = "v",
               three[] = "12one-7.1",
-            * path,
-            * current ;
-        long index;
+            * path;
+        const char * current ;
+        goo::dict::ListIndex index;
         {
             os << "Splitting \"" << one << "\" (common case):" << std::endl;
-            _ASSERT( 0x2 == (rc = goo::dict::DictionaryParameter::pull_opt_path_token( path = one, current, index )),
+            _ASSERT( 0x2 == (rc = goo::dict::aux::pull_opt_path_token( path = one, current, index )),
                         "Wrong path subtoken #1: %d.", rc );
             _ASSERT( !strcmp("one", current) && !strcmp("three-4.five.six-seven", path),
                      "#1 was splitted to \"%s\" and \"%s\"",
@@ -109,7 +122,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         {
             os << "Splitting \"" << two << "\" (single-char option remained):" << std::endl;
-            _ASSERT( 0 == (rc = goo::dict::DictionaryParameter::pull_opt_path_token( path = two, current, index )),
+            _ASSERT( 0 == (rc = goo::dict::aux::pull_opt_path_token( path = two, current, index )),
                         "Wrong path subtoken #2: %d.", rc  );
             _ASSERT( !strcmp("v", current) && 0 == strlen(path) && 1 == (path - current),
                      "#2 was splitted to \"%s\" and string of length %d; path - current = %d",
@@ -119,7 +132,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         {
             os << "Splitting \"" << three << "\" (dictionary short name):" << std::endl;
-            _ASSERT( 0x2 == (rc = goo::dict::DictionaryParameter::pull_opt_path_token( path = three, current, index )),
+            _ASSERT( 0x2 == (rc = goo::dict::aux::pull_opt_path_token( path = three, current, index )),
                         "Wrong path subtoken #3: %d.", rc  );
             _ASSERT( !strcmp("12one-7", current) && !strcmp("1", path) && 1 != (path - current),
                      "#3 was splitted to \"%s\" and string of length %d",
@@ -130,7 +143,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Path splitting test done." << std::endl;
     }
     # endif
-    # if 1
+    # ifndef NO_BASIC_PARSING_TEST
     {
         os << "Basic parsing tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication1", "Testing parameter set #1." );
@@ -202,7 +215,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Basic parsing tests done." << std::endl;
     }
     # endif
-    # if 1
+    # ifndef NO_BASIC_ERRORS_TEST
     {
         os << "Basic parsing errors checks: {" << std::endl;
         goo::dict::Configuration conf( "theApplication2", "Testing parameter set #1." );
@@ -234,7 +247,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Basic parsing errors checks." << std::endl;
     }
     # endif
-    # if 1
+    # ifndef NO_ARRAY_PARAMETERS_TEST
     {
         os << "Array parameters tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication3", "Testing parameter set #2." );
@@ -364,10 +377,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Array parameters done." << std::endl;
     }
     # endif
-    // todo:
-    // ✔ need floating point parser to perform these tests as is;
-    // ✔ has to implement throw/catch mechanics here for consistensy checks.
-    # if 1
+    # ifndef NO_CONSISTENCY_TESTS
     {
         os << "Consistency tests : {" << std::endl;
         goo::dict::Configuration conf( "theApplication4", "Testing parameter set #3." );
@@ -412,7 +422,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Consistency tests done." << std::endl;
     }
     # endif
-    # if 1
+    # ifndef NO_SUBSECTION_PARAMETER_RETRIEVING_TEST
     {
         os << "Subsection parameter retrieving : {" << std::endl;
         goo::dict::Configuration conf( "theApplication5", "Testing parameter set #3." );
@@ -461,7 +471,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                     "\"subsect3.imaflag\" set wrong")
     }
     # endif
-    # if 1
+    # ifndef NO_ADVANCED_CONFIGURATION_TEST
     // See http://unix.stackexchange.com/questions/147143/when-and-how-was-the-double-dash-introduced-as-an-end-of-options-delimiter
     // for historical details about useful `--` special token that initially
     // appeared as a kludge to further become a standard.
@@ -555,7 +565,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} End-of-options test done." << std::endl;
     }
     # endif
-    # if 1
+    # ifndef NO_AOS_TEST
     // There is no way to define application configuration in a way that allows
     // construction of AoS-like structures. However goo::dict allows it in a
     // peculiar way. Here is a test case of constructing such structure and

@@ -94,7 +94,7 @@ Dictionary::acquire_parameter_ptr( iSingularParameter * instPtr ) {
     //SingularsContainer::push_back( instPtr );  // xxx
 }
 
-/** Dictionary class design emplies that lifetime of sub-dictionaries inserted
+/** Dictionary class design implies that lifetime of sub-dictionaries inserted
  * with this method is controlled by this (their parent) dictionary instance.
  * User routines must take this into account: dictionaries (sections)
  * instances inserted by ptr with this method will be deleted by owning
@@ -107,6 +107,37 @@ Dictionary::acquire_subsection_ptr( DictionaryParameter * instPtr ) {
                 "'%s' name was previously associated within subsection %p. "
                 "Unable to index new subsection %p with same name.",
                 instPtr->name(), insertionResult.first->second, instPtr );
+    }
+}
+
+/** Dictionary class design emplies that lifetime of sub-dictionaries inserted
+ * with this method is controlled by this (their parent) dictionary instance.
+ * User routines must take this into account: dictionaries (sections)
+ * instances inserted by ptr with this method will be deleted by owning
+ * dictionary destructor. */
+void
+Dictionary::acquire_list_ptr( LoSParameter * instPtr ) {
+    if( instPtr->name() ){
+        auto insertionResult = ListsByName::insert_item( instPtr->name()
+                                                     , instPtr );
+        if( !insertionResult.second ) {
+            emraise( nonUniq, "Duplicated list name on insertion: "
+                    "'%s' name was previously associated within list %p. "
+                    "Unable to index new subsection %p with same name.",
+                    instPtr->name(), insertionResult.first->second, instPtr );
+        }
+    }
+    // TODO: dunno, whether we have to support shortcuts for LoSs, but there
+    // will be no harm currently to envisage it here
+    if( instPtr->has_shortcut() ) {
+        auto insertionResult = ListsByShortcut::insert_item( instPtr->shortcut()
+                                                         , instPtr );
+        if( !insertionResult.second ) {
+            emraise( nonUniq, "Duplicated list shortcut on insertion: "
+                    "'%c' shortcut was previously associated within list %p. "
+                    "Unable to index new subsection %p with same name.",
+                    instPtr->shortcut(), insertionResult.first->second, instPtr );
+        }
     }
 }
 
@@ -375,16 +406,6 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
     }
 }
 
-void
-Dictionary::_mark_last_inserted_as_required() {
-    if( SingularsContainer::empty() ) {
-        emraise( badState,
-            "None parameters were set to dictionary, but marking last as "
-            "required was requested." );
-    }
-    SingularsContainer::back()->set_is_argument_required_flag();
-}
-
 // ---
 
 DictInsertionProxy
@@ -403,6 +424,10 @@ DictionaryParameter::DictionaryParameter( const DictionaryParameter & o ) :
         DuplicableParent(o), Dictionary(o) {}
 
 # endif
+
+//
+// Dictionary insertion attorney idiom. Restricts insertion operations to few
+// medium classes only (e.g. InsertionProxy).
 
 template<>
 const iSingularParameter * DictInsertionAttorney::probe<iSingularParameter>(
@@ -438,6 +463,24 @@ template<>
 LoSParameter * DictInsertionAttorney::probe<LoSParameter>(
         const std::string & k, Dictionary & d) {
     return d.Dictionary::ListsByName::item_ptr( k );
+}
+
+void
+DictInsertionAttorney::push_parameter( iSingularParameter * pPtr
+                                   , Dictionary & d ) {
+    d.acquire_parameter_ptr( pPtr );
+}
+
+void
+DictInsertionAttorney::push_subsection( DictionaryParameter * dPtr
+                                    , Dictionary & d ) {
+    d.acquire_subsection_ptr( dPtr );
+}
+
+void
+DictInsertionAttorney::push_list_parameter( LoSParameter * lPtr
+                                        , Dictionary & d ) {
+    d.acquire_list_ptr( lPtr );
 }
 
 }  // namespace dict

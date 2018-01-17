@@ -274,13 +274,14 @@ InsertionProxyBase::combine_path( InsertionTargetsStack & mpath
 // Dictionary Insertion Proxy
 // /////////////////////////
 
-DictInsertionProxy::DictInsertionProxy( DictionaryParameter * root ) :
-                    InsertionProxyBase(root) {
+InsertionProxy<Dictionary>::InsertionProxy( DictionaryParameter * root )
+                    : Parent(root)
+                    , _lastInsertedParameter( nullptr ) {
     _push_dict( root );
 }
 
 void
-DictInsertionProxy::insert_copy_of( const iSingularParameter & sp
+InsertionProxy<Dictionary>::insert_copy_of( const iSingularParameter & sp
                                   , const char * newName ) {
     _TODO_  // TODO
     # if 0
@@ -293,126 +294,103 @@ DictInsertionProxy::insert_copy_of( const iSingularParameter & sp
     # endif
 }
 
-DictInsertionProxy &
-DictInsertionProxy::required_argument() {
-    DictInsertionAttorney::mark_last_inserted_as_required( _top_as<Dict>() );
-    return *this;
-}
-
-DictInsertionProxy &
-DictInsertionProxy::bgn_sect( const char * name
-                            , const char * descr) {
-    auto newD = new DictionaryParameter( name, descr );
-
-    DictInsertionAttorney::push_subsection( newD, _top_as<DictionaryParameter>() )
-}
-
-DictInsertionProxy &
-DictInsertionProxy::end_sect( const char * name ) {
-    _TODO_  // TODO
-    # if 0
-    long index;
-    if( name ) {
-        char * path = strdupa( name ),
-             * current = NULL;
-        std::vector<std::string> tokens;
-        _TODO_  // TODO: has to handle not only the string path tokens
-        while( DictionaryParameter::pull_opt_path_token( path, current, index ) ) {
-            tokens.push_back( current );
-        }
-        tokens.push_back( current );
-
-        for( auto it = tokens.rbegin(); tokens.rend() != it; ++it ) {
-            if( strcmp( it->c_str(), _top_as<NamedDict>(true).name() ) ) {
-                emraise( assertFailed,
-                        "Insertion proxy state check failed: current section is "
-                        "named \"%s\" while \"%s\" expected (full path is %s).",
-                        _top_as<NamedDict>(true).name(), current, name );
-            }
-            _pop();
-        }
-    } else {
-        _pop();  // TODO: this line wasn't here... But it shall be, isn't it?
+InsertionProxy<Dictionary> &
+InsertionProxy<Dictionary>::required_argument() {
+    if( !_lastInsertedParameter ) {
+        emraise( badState, "Insertion proxy unable to mark previously inserted"
+            " argument as required one." );
     }
+    _lastInsertedParameter->set_is_argument_required_flag();
+    //DictInsertionAttorney::mark_last_inserted_as_required( _top_as<Dict>() );  // XXX
     return *this;
-    # endif
 }
 
-LoDInsertionProxy
-DictInsertionProxy::end_dict( const char * name ) {
-    _TODO_  // TODO
-    # if 0
-    if( name && strcmp(name, _top_as<NamedDict>(true).name() ) ) {
-        emraise( assertFailed
-               , "Insertion proxy state check failed: current list is"
-                 " named \"%s\" while \"%s\" expected."
-               , _top_as<NamedDict>(true).name(), name );
+InsertionProxy<Dictionary> &
+InsertionProxy<Dictionary>::bgn_sect( const char * name
+                           , const char * descr) {
+    auto newD = new DictionaryParameter( name, descr );
+    _put( newD, _top_as<Dict>() );
+    _push_dict( newD );
+    _lastInsertedParameter = nullptr;
+    return *this;
+}
+
+InsertionProxy<Dictionary> &
+InsertionProxy<Dictionary>::end_sect( const char * name ) {
+    DictionaryParameter * nd = dynamic_cast<DictionaryParameter *>(
+            &(_top_as<Dict>()) );
+    if( !nd ) {
+        // This case may happen when insertion targets stack contains a valid Dict
+        // pointer, but it refers not to the DictionaryParameter subclass instance.
+        // Such situation may occur when user code invokes end_sect() within
+        // insertion proxy previously constructed with LoS::bgn_dict() that shall
+        // be closed with end_dict() instead of end_sect(). Unfortunately, we can
+        // not treat it as a tolerable mistake printing warning since methods have
+        // different return types.
+        emraise( badState, "Dictionary composition error. end_sect(\"%s\") method"
+                         " invoked instead of end_dict().",
+                name ? name : "" );
+    }
+    _lastInsertedParameter = nullptr;
+    if( name && strcmp( name, nd->name() ) ) {
+        emraise( assertFailed,
+                "Insertion proxy state check failed: current section is "
+                "\"%s\" while \"%s\" expected.",
+                nd->name(), name );
     }
     _pop();
-    return stack();
-    # endif
-}
-
-LoDInsertionProxy
-DictInsertionProxy::bgn_list( const char * name, const char * description) {
-    _TODO_  // TODO
-    # if 0
-    std::stack<InsertionTarget> s(stack());
-    if( NULL != strchr(name, '.')
-     || NULL != strchr(name, '[') || NULL != strchr(name, ']') ) {
-        _DETAILED_TODO_( "Array argument name specification \"%s\""
-                " given to insertion object contains path separator symbol"
-                " (\".\") or array indexing expression (\"[\", \"]\"). Array"
-                " insertion proxy does not provide"
-                " automatic dictionary creation.", name );
-    }
-    _TODO_  // TODO: further insertion code
-    //InsertionProxyBase::LoS * los = new InsertionProxyBase::LoS( name, description );
-    //s.top().dict().insert_parameter( los );
-    //s.push( los );
-    //return LoDInsertionProxy(s);
-    # endif
+    return *this;
 }
 
 //
-// Array insertion proxy
-// ///////////////////
+// List-of-Structures Insertion Proxy
+// ////////////////////////////////
 
-DictInsertionProxy
-LoDInsertionProxy::end_list( const char * listName ) {
-    _TODO_  // TODO: further insertion code
-    # if 0
-    _stack.pop();
-    if( _stack.top().is_list() ) {
-        emraise( assertFailed
-               , "Insertion proxy state check failed: stack top is not a dict"
-                 " while en_list(name=\"%s\") invoked."
-               , listName ? listName : "<null>" );
+InsertionProxy<Dictionary>
+InsertionProxy<ListOfStructures>::end_list( const char * listName ) {
+    LoSParameter * p = dynamic_cast<LoSParameter *>(&(_top_as<ListOfStructures>()));
+    if( !p ) {
+        emraise( badCast, "Unable to enclose the list insertion as list"
+                " parameter since it is not a named entry (mismatched"
+                " end_list()/end_sublist()?)." );
     }
-    const char * realDictName = _stack.top().dict().name();
-    if( listName && !strcmp(listName, realDictName ) ) {
-        emraise( assertFailed
-               , "bgn_list(name=\"%s\") doesn't match to enclosing"
-                 " end_list(name=\"%s\")."
-               , realDictName, listName );
+    if( listName && strcmp(listName, p->name()) ) {
+        emraise( assertFailed, "end_list() name mismatch: stack top refers to "
+                "list parameter named \"%s\" while enclosing \"%s\".",
+                p->name(), listName );
     }
-    return _stack;
-    # endif
+    _pop();
+    return stack();
 }
 
-DictInsertionProxy
-LoDInsertionProxy::bgn_dict() {
-    _TODO_  // TODO
+InsertionProxy<Dictionary>
+InsertionProxy<ListOfStructures>::bgn_dict() {
+    auto d = new Dictionary();
+    _put( d );
+    _push_dict( d );
+    return stack();
 }
 
-LoDInsertionProxy
-LoDInsertionProxy::bgn_sublist() {
-    _TODO_  // TODO
+InsertionProxy<ListOfStructures>
+InsertionProxy<ListOfStructures>::bgn_sublist() {
+    auto l = new ListOfStructures();
+    _put( l );
+    _push_list( l );
+    return stack();
 }
 
-LoDInsertionProxy
-LoDInsertionProxy::end_sublist() {
-    _TODO_  // TODO
+InsertionProxy<ListOfStructures>
+InsertionProxy<ListOfStructures>::end_sublist() {
+    // this cast must fail normally, unless user code is not enclosing bgn_list()
+    // with end_sublist().
+    LoSParameter * l = dynamic_cast<LoSParameter *>(&(_top_as<ListOfStructures>()));
+    if( l ) {
+        emraise( badCast, "Unable to enclose the list insertion as sublist"
+                " element since it is a named entry (mismatched"
+                " end_list()/end_sublist()?)." );
+    }
+    _pop();
+    return stack();
 }
 
 # if 0
