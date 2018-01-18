@@ -388,14 +388,33 @@ AppCfgAutoCompleteTraits<goo::dict::Configuration, std::ostream>
     ::return_autocompletion_list(const App<dict::Configuration, std::ostream> & app_) {
     // XXX goo::dict::Configuration conf = app_.co();
     std::list<goo::dict::iSingularParameter *> parameters = app_.co().parameters();
-    if ( getenv("GOO_PDICT_AUTOCOMPLETE_OPTS") ) {
+    if ( getenv("GOO_PDICT_AUTOCOMPLETE") &&
+         getenv("GOO_PDICT_AUTOCOMPLETE_SHORT_OPTS") &&
+         !strcmp("yes", getenv("GOO_PDICT_AUTOCOMPLETE")) &&
+         !strcmp("yes", getenv("GOO_PDICT_AUTOCOMPLETE_SHORT_OPTS")) ) {
         for ( auto it = parameters.begin();
                    it != parameters.end();
                    it++ ) {
-            std::cout << (*it)->shortcut();
+            if ( (*it)->has_shortcut() ) {
+                std::cout << "-" << (*it)->shortcut() << " ";
+            }
         }
+        std::cout << std::endl;
+        //std::cout << "-q -v" << std::endl;
+    } else if ( getenv("GOO_PDICT_AUTOCOMPLETE") &&
+                getenv("GOO_PDICT_AUTOCOMPLETE_LONG_OPTS") &&
+                !strcmp("yes", getenv("GOO_PDICT_AUTOCOMPLETE")) &&
+                !strcmp("yes", getenv("GOO_PDICT_AUTOCOMPLETE_LONG_OPTS")) ) {
+        for ( auto it = parameters.begin();
+              it != parameters.end();
+              it++ ) {
+            std::cout << "--" << (*it)->name() << " ";
+        }
+        std::cout << std::endl;
+        //std::cout << "-q -v" << std::endl;
+    } else {
+        std::cout << "alpha amma betta bramma" << std::endl;
     }
-    std::cout << "alpha amma betta bramma" << std::endl;
     return EXIT_SUCCESS;
 }
 

@@ -1,0 +1,13 @@
+_testGoo() {
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    if [[ "$cur" == -* ]]
+    then
+        COMPREPLY=( $(compgen -W "$(export GOO_PDICT_AUTOCOMPLETE=yes && export GOO_PDICT_AUTOCOMPLETE_SHORT_OPTS=yes && ./testGoo)" -- $cur) )
+    elif [[ "$cur" == --* ]]
+    then
+        COMPREPLY=( $(compgen -W "$(export GOO_PDICT_AUTOCOMPLETE=yes && export GOO_PDICT_AUTOCOMPLETE_LONG_OPTS=yes && ./testGoo)" -- $cur) )
+    else
+        COMPREPLY=( $(compgen -W "$(export GOO_PDICT_AUTOCOMPLETE=yes && ./testGoo)" -- $cur) )
+    fi
+}
+complete -F _testGoo testGoo
