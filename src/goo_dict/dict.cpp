@@ -44,17 +44,7 @@ Dictionary::Dictionary( const Dictionary & orig ) {
     # endif
 }
 
-Dictionary::~Dictionary() {
-    _TODO_
-    # if 0
-    for( auto it = Parent::begin();
-             it != Parent::end(); ++it ) {
-        if( *it ) {
-            delete *it;
-        }
-    }
-    # endif
-}
+Dictionary::~Dictionary() {}
 
 /** Dictionary class design implies that lifetime of parameters inserted with
  * this method is controlled by dictionary instance. User routines must take
@@ -396,11 +386,6 @@ DictionaryParameter::DictionaryParameter( const DictionaryParameter & o ) :
         DuplicableParent(o), Dictionary(o) {}
 
 # endif
-
-InsertionProxy<Dictionary>
-DictionaryParameter::insertion_proxy() {
-    return DictInsertionProxy( this );
-}
 
 //
 // Dictionary insertion attorney idiom. Restricts insertion operations to few

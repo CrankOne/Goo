@@ -32,7 +32,8 @@ namespace dict {
 template<typename T> class TInsertionProxyCommon;
 
 class ListOfStructures : public iTValue<List<iBaseValue *> >
-                       , public DictionaryIndex<ListIndex, iBaseValue> {
+                       , public DictionaryIndex<ListIndex, iBaseValue>
+                       , public mixins::iDuplicable<iBaseValue, ListOfStructures> {
     friend class ListInsertionAttorney;
 public:
     /// The type traits compat typedef.

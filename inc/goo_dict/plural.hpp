@@ -38,35 +38,109 @@
 namespace goo {
 namespace dict {
 
+# if 0
+# include <map>
+# include <set>
+
+struct iBaseValue {
+    // ...
+};
+
+struct DictEntry {
+    enum EntryType {
+        tcDict = 0x2,
+        tcList = 0x1,
+        tcSngl = 0x0,
+    } typeCode;
+    union {
+        Dictionary<std::string> * dictPtr;
+        Dictionary<ListIndex>   * listPtr;
+        iBaseValue * snglPtr;
+    } pointer;
+};
+
+template< typename KeyT
+        , typename CustomPropsT >
+class Dictionary : protected std::set<iBaseValue *>
+                 , protected std::unordered_map<KeyT, DictEntry> {
+    // ...
+};
+
+DictTraits<KeyT, CustomPropsT>::Dictcontainer
+DictTraits<KeyT, CustomPropsT>::ListContainer
+DictTraits<KeyT, CustomPropsT>::SingularsContainer
+
+struct A {
+    typedef std::map<std::string, iBaseValue *> Container;
+};
+
+
+int
+main(int argc, char * argv[]) {
+
+    Dictionary<A> a;
+
+    return 0;
+}
+
+
+# endif
+
 /**@brief Type traits template defining general properties of parameter mapping.
+ * @tparam KeyT Mapping key type.
+ * @tparam ValueT Mapping value type.
+ * @tparam hasNameFieldT Parameter used to infer specialized key-hashing logic.
+ *
+ * This traits abstraction defines some features raising on the indexing
+ * containers within goo::dict framework. General case is pretty strightforward:
+ * just defines usual key/value mapping.
+ *
+ * The special hasNameFieldT parameter is used to introduce template
+ * specialization for AbstractParameter subclasses that keep their names within
+ * value structure, to avoid unnecessary name duplication.
  * */
 template< typename KeyT
         , typename ValueT
         , bool hasNameFieldT=std::is_base_of<AbstractParameter, ValueT>::value > struct IndexingTraits {
+    /// Indexing key type.
     typedef KeyT Key;
+    /// Type of value formally kept in container.
     typedef ValueT Value;
+    /// Type of value physically kept in container.
     typedef Value * ValueHandle;
+    /// Type of value physically kept in container (const variant).
     typedef const Value * ConstValueHandle;
+    /// Type of container performing actual mapping.
     typedef Hash<Key, ValueHandle> IndexingContainer;
+    /// Element iterator type.
     typedef typename IndexingContainer::iterator Iterator;
+    /// Element iterator type (const variant).
     typedef typename IndexingContainer::const_iterator ConstIterator;
+    /// Insertion result type. Must obey the usual STL map-insertion std::pair<>
+    /// struct.
     typedef std::pair<Iterator, bool> InsertionResult;
-
+    /// Iterator dereferencing action.
     static ValueHandle dereference_iterator( Iterator it )
         { return it->second; }
+    /// Const iterator dereferencing action.
     static ConstValueHandle dereference_iterator( ConstIterator it )
         { return it->second; }
+    /// Element look-up action.
     static Iterator find_item( const Key & k, IndexingContainer & c ) {
         return c.find( k );
     }
+    /// Element look-up action (const variant).
     static ConstIterator find_item( const Key & k, const IndexingContainer & c ) {
         return c.find( k );
     }
+    /// Element insertion action.
     static InsertionResult insert_item( const Key & k, ValueHandle v, IndexingContainer & c) {
         return c.emplace( k, v );
     }
 };
 
+/// Specialization for a special case: traits of container maintaining lifetime
+/// of allocated parameter instances.
 template<> struct IndexingTraits<void, iBaseValue, false> {
     typedef iBaseValue * Key;
     typedef iBaseValue Value;
@@ -146,6 +220,13 @@ template<typename ValueT> struct IndexingTraits<std::string, ValueT, true> {
     }
 };
 
+/**@class iDictionaryIndex
+ *
+ * This class implements insertion and retrieval procedures for mapping
+ * containers. Except for special case of
+ * iDictionaryIndex<void, iBaseValue, false>, it does not physically delete
+ * values kept.
+ * */
 template< typename KeyT
         , typename ValueT
         , bool hasNameFieldT=std::is_base_of<AbstractParameter, ValueT>::value>

@@ -192,9 +192,9 @@ class InsertionProxy;
  * */
 template<>
 class InsertionProxy<Dictionary> : public TInsertionProxyCommon<Dictionary> {
-    friend class Configuration;
-    friend class DictionaryParameter;
-    friend class LoDInsertionProxy;
+    // Who is allowed to construct this proxy type:
+    friend class Dictionary;
+    friend class InsertionProxy<ListOfStructures>;
 public:
     typedef TInsertionProxyCommon<Dictionary> Parent;
 private:
@@ -324,9 +324,8 @@ public:
 
 template<>
 class InsertionProxy<ListOfStructures> : public TInsertionProxyCommon<ListOfStructures> {
-    friend class Configuration;
-    friend class DictionaryParameter;
-    friend class DictInsertionProxy;
+    // Who is allowed to construct this proxy type:
+    friend class InsertionProxy<Dictionary>;
 public:
     typedef TInsertionProxyCommon<ListOfStructures> Parent;
 private:
