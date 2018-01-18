@@ -29,9 +29,11 @@
 
 # include <iostream>
 # include <list>
+
 # include "goo_dict/plural.hpp"
 # include "goo_dict/parameters/los.hpp"
 # include "goo_dict/parameter_singular.tcc"
+# include "goo_utility.hpp"
 
 namespace goo {
 
@@ -101,6 +103,70 @@ template<typename T> class InsertionProxy;
 
 class DictionaryParameter;
 
+/// Indexing traits defines, for given value-keeper base and supplementary info
+/// type, the particular indexing features.
+template< typename BVlT
+        , class ... SuppInfoTs > struct IndexingTraits;
+
+template< typename KeyT
+        , typename BVlT
+        , class ... SuppInfoTs > class GenericDictionary;
+
+template< typename BVlT
+        , class ... SuppInfoTs > struct IndexingTraits {
+    /// Template container type used to store entries indexed by name or index.
+    template<typename KT, typename VT> TIndex = std::unordered_map<KT, VT>;
+    /// Template container type used to store supplementary information entries
+    /// indexed by pointers of dictionary entries.
+    template<typename KT, typename VT> TPHash = std::unordered_map<KT, VT>;
+
+    typedef GenericDictionary<std::string, BVlT, SuppInfoTs...> Dictionary;
+    typedef GenericDictionary<ListIndex, BVlT> ListOfStructures;
+};
+
+/// A dictionary entry representation. Keeps basic introspection info allowing
+/// one quickly find out, whether the
+template< typename BaseValueT
+        , class ... SuppInfoTs >
+struct DictEntry {
+    typedef IndexingTraits<BaseValueT, SuppInfoTs...> Traits;
+    union {
+        typename Traits::Dictionary * toDict;
+        typename Traits::ListOfStructures * toList;
+        BaseValueT * toSngl;
+    } pointer;
+    enum : unsigned char {
+        isSngl = 0x0,
+        isList = 0x1,
+        isDict = 0x2
+    } code;
+};
+
+template< typename KeyT
+        , typename BVlT
+        , class ... SuppInfoTs >
+class GenericDictionary : public typename IndexingTraits<BVlT, SuppInfoTs...>::TIndex<KeyT, DictEntry<BVlT, SuppInfoTs...> *>
+                       , public typename IndexingTraits<BVlT, SuppInfoTs...>::TPHash<DictEntry<BVlT, SuppInfoTs...> *, SuppInfoTs>... {
+public:
+    typedef IndexingTraits<BVlT, SuppInfoTs...> Traits;
+public:
+    DictEntry<BVlT, SuppInfoTs...> * entry( const KeyT & key ) {
+        auto it = std::unordered_map<KeyT, DictEntry<BVlT, SuppInfoTs...> *>::find( key );
+        if( Traits::TIndex<KeyT, DictEntry<BVlT, SuppInfoTs...> *>::end() == it ) {
+            emraise( notFound, "" );  // TODO <<
+        }
+        return it->second;
+    }
+
+    template<typename SuppInfoT>
+        typename std::enable_if<stdE::is_one_of<SuppInfoT, SuppInfoTs...>::value, SuppInfoT * >::type
+    info( const KeyT & key ) {
+        auto ePtr = entry( key ) ;
+        auto it = Traits::TPHash<DictEntry<BVlT, SuppInfoT> *, SuppInfoT>::find( ePtr );
+        return it->second;
+    }
+};
+
 /**@brief Parameters container with basic querying support.
  * @class Dictionary
  *
@@ -114,9 +180,9 @@ class DictionaryParameter;
  * intermediate functionality is used in AoS sequences as well.
  * */
 class Dictionary : public mixins::iDuplicable< iBaseValue, Dictionary >
-                 , protected DictionaryIndex<std::string, iSingularParameter>
-                 , protected DictionaryIndex<std::string, DictionaryParameter, true>
-                 , protected DictionaryIndex<std::string, LoSParameter> {
+                , protected DictionaryIndex<std::string, iSingularParameter>
+                , protected DictionaryIndex<std::string, DictionaryParameter, true>
+                , protected DictionaryIndex<std::string, LoSParameter> {
 
     // TODO: https://en.wikibooks.org/wiki/More_C++_Idioms/Friendship_and_the_Attorney-Client
     friend class DictInsertionAttorney;

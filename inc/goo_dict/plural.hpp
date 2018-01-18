@@ -83,8 +83,9 @@ main(int argc, char * argv[]) {
     return 0;
 }
 
-
 # endif
+
+# if 0
 
 /**@brief Type traits template defining general properties of parameter mapping.
  * @tparam KeyT Mapping key type.
@@ -377,6 +378,8 @@ protected:
 };
 
 # undef _Goo_m_for_each_index_method
+
+# endif
 
 }  // namespace dict
 }  // namespace goo

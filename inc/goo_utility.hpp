@@ -203,6 +203,18 @@ struct ptr_rank<volatile T[]> : public std::integral_constant<size_t, ptr_rank<T
 template<class T, size_t N>
 struct ptr_rank<volatile T[N]> : public std::integral_constant<size_t, ptr_rank<T>::value + 1> {};
 
+template <typename...>
+struct is_one_of {
+    static constexpr bool value = false;
+};
+
+/// Has value=true, if first given type is one of the rest.
+template <typename F, typename S, typename... T>
+struct is_one_of<F, S, T...> {
+    static constexpr bool value =
+            std::is_same<F, S>::value || is_one_of<F, T...>::value;
+};
+
 } // namespace stdE
 
 namespace goo {
@@ -220,7 +232,7 @@ void cf_read( FILE *, Size, void * );
 /// Uses printf()-like syntax to produce std::string in one-line expr.
 std::string strfmt( const char * fmt, ... );
 
-/// A logging stream class, convinient for parallel applications.
+/// A logging stream class, convenient for parallel applications.
 class ParStream {
 protected:
     typedef std::chrono::high_resolution_clock::time_point TP;
