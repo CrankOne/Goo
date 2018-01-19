@@ -25,11 +25,13 @@
 namespace goo {
 namespace dict {
 
+# if 0
 iSingularParameter::iSingularParameter( const char * name_,
                                         const char * description_,
                                         ParameterEntryFlag flags_,
                                         char shortcut_ ) :
         AbstractParameter( name_, description_, flags_, shortcut_ ) {}
+# endif
 
 }  // namespace dict
 }  // namespace goo

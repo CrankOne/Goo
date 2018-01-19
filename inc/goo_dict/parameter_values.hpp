@@ -86,7 +86,7 @@ public:
  * Represents a value-keeping aspect of the parameter classes.
  * */
 template<typename ValueT>
-class iTValue : public virtual iBaseValue {
+class TValue : public virtual iBaseValue {
     friend class LoDInsertionProxy;
 public:
     typedef ValueT Value;
@@ -105,12 +105,12 @@ protected:
     /// Returns kept value address (const).
     virtual const void * _V_data_addr() const override { return &_value; }
     /// Potentially dangerous ctr leaving the value uninitialized.
-    iTValue() : _value() {}
+    TValue() : _value() {}
 public:
     /// Const value getter (public).
     virtual const ValueT & value() const { return _value; }
-    explicit iTValue( const ValueT & v ) : _value(v) {}
-    iTValue( const iTValue<Value> & o ) : _value(o._value) {}
+    explicit TValue( const ValueT & v ) : _value(v) {}
+    TValue( const TValue<Value> & o ) : _value(o._value) {}
 };
 
 }  // namespace dict

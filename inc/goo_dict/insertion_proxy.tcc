@@ -6,37 +6,19 @@
 # include "goo_exception.hpp"
 # include "goo_dict/parameter.tcc"
 # include "goo_dict/dict.hpp"
-# include "goo_dict/parameters/logic.hpp"
-# include "goo_dict/parameters/integral.tcc"
-# include "goo_dict/parameters/floating_point.tcc"
-# include "goo_dict/parameters/string.hpp"
-# include "goo_dict/parameters/los.hpp"
-# include "goo_dict/parameter_dict.hpp"
 # include "goo_dict/dpath.hpp"
 
 namespace goo {
 namespace dict {
 
 class Configuration;  // fwd
-template<typename T>  struct InsertionTraits;  // fwd
 
-template<>
-struct InsertionTraits<Dictionary> {
-    typedef DictInsertionAttorney Attorney;
-
-    typedef iSingularParameter SingularTarget;
-    typedef DictionaryParameter StructureTarget;
-    typedef LoSParameter ListTarget;
-};
-
-template<>
-struct InsertionTraits<ListOfStructures> {
-    typedef ListInsertionAttorney Attorney;
-
-    typedef iBaseValue SingularTarget;
-    typedef Dictionary StructureTarget;
-    typedef ListOfStructures ListTarget;
-};
+template< typename KeyT
+        , typename BVlT
+        , template <class> class TVlT
+        , template <class> class ParameterT
+        , class ... SuppInfoTs >
+class InsertionProxy;  // fwd
 
 /**@brief Base class for insertion proxies.
  * @class InsertionProxyBase
@@ -48,25 +30,29 @@ struct InsertionTraits<ListOfStructures> {
  * This class holds common functions for both types of insertion proxies (for
  * dictionaries and lists).
  */
+template< typename BVlT
+        , template <class> class TVlT
+        , template <class> class ParameterT
+        , class ... SuppInfoTs >
 class InsertionProxyBase {
 public:
-    /// Anonymous list-of-structures type.
-    typedef ListOfStructures LoS;
-    /// Anonymous dictionary type.
-    typedef Dictionary Dict;
-    /// Named dictionary type.
+    typedef IndexingTraits<BVlT, TVlT, SuppInfoTs...> Traits;
+    /// Frequently used list-of-structures type shortcut.
+    typedef typename Traits::ListOfStructures LoS;
+    /// Frequently used dictionary type shortcut.
+    typedef typename Traits::Dictionary Dict;
     /// Wrapper type keeping pointers to the named and anonymous list or
     /// dictionary.
     class InsertionTarget {
     private:
         union {
-                  LoS * _LoSPtr;
-                 Dict * _dictPtr;
+            LoS * _LoSPtr;
+            Dict * _dictPtr;
         };
         bool _isDict;
     public:
-        InsertionTarget( Dict * dPtr )      : _dictPtr(dPtr),     _isDict(true) {}
-        InsertionTarget( LoS * lPtr )       : _LoSPtr(lPtr),      _isDict(false) {}
+        InsertionTarget( Dict * dPtr ) : _dictPtr(dPtr), _isDict(true) {}
+        InsertionTarget( LoS * lPtr )  : _LoSPtr(lPtr),  _isDict(false) {}
         template<typename T> T & as();
     };
     /// Materialized path --- insertion targets stack type keeping history of
@@ -80,6 +66,18 @@ public:
         MaterializedPath( InsertionTargetsStack s, iBaseValue * p ) : \
                                         stack(s), parameterPtr(p) {}
     };
+    typedef InsertionProxy< ListIndex
+                    , BVlT
+                    , TVlT
+                    , ParameterT
+                    , SuppInfoTs ...
+                    > ListInsertionProxy;
+    typedef InsertionProxy< std::string
+                    , BVlT
+                    , TVlT
+                    , ParameterT
+                    , SuppInfoTs ...
+                    > DictInsertionProxy;
 private:
     /// Insertion history for insertion proxy instance. Controls validity of
     /// chaining insertions.
@@ -90,7 +88,7 @@ protected:
     /// Copy ctr.
     InsertionProxyBase( const InsertionProxyBase & o ) : _stack(o._stack) {}
     /// Ctr for dict-rooted inserters.
-    InsertionProxyBase( DictionaryParameter * d ) {
+    InsertionProxyBase( Dict * d ) {
         _stack.push( InsertionTarget(d) );
     }
     /// Ctr for list-rooted inserters.
@@ -99,10 +97,10 @@ protected:
     }
     /// Returns stack top as reference of required type. Raises
     /// assertFailed exception if top refers to list instance instead of dict.
-    template<typename T> T & _top_as() { return _stack.top().as<T>(); }
-    /// Returns stack bottom element (root) as a reference of required type.
-    /// Raises badCast if type cast fails.
-    template<typename T> T & _bottom_as() { return _stack.top().as<T>(); }
+    template<typename T> T & _top_as() { return _stack.top().template as<T>(); }
+    // Returns stack bottom element (root) as a reference of required type.
+    // Raises badCast if type cast fails.
+    //template<typename T> T & _bottom_as() { return _stack.top().as<T>(); }
     /// Pops stack top.
     void _pop() { _stack.pop(); }
     /// Inserts dict to internal insertion targets stack top.
@@ -111,68 +109,22 @@ protected:
     void _push_list( LoS * l ) { _stack.push( InsertionTarget(l) ); }
     /// Returns const reference to insertion target stack.
     const InsertionTargetsStack & stack() const { return _stack; }
+    /// Inserts item of any allowed type (dict, list, singular) with appropriate
+    /// supp information into the top stack object.
+    template<typename KeyT, typename ItemT, typename ... ArgsTs>
+            void insert_item( typename IndexingKeyTraits<KeyT>::KeyHandle key, ItemT * e, ArgsTs ... suppInfos ) {
+        _stack.top().template as< GenericDictionary<KeyT, BVlT, TVlT, SuppInfoTs...> >().acquire_item( key, e, suppInfos... );
+    }
+
+    # if 0
     /// Template recursive versatile items getter.
     template<typename T>
     static MaterializedPath _apply_path( InsertionTargetsStack & mpath
                                         , aux::DictPath & path
                                         , bool raise=true
                                         , const std::string extensionDescr="");
-    # if 0
-    {
-        T & c = mpath.top().as<T>();
-        Dict * newTopDict = nullptr;
-        LoS * newTopLoS = nullptr;
-        const bool emptyToken = path.isIndex ? 0 == path.id.index : !strlen( path.id.name )
-             , lastToken = !( path.next )
-             , isIndex = !(path.isIndex)
-             ;
-        if( lastToken ) {
-            // Last token probably refers to parameter
-            iSingularParameter * isp \
-                = T::InsertionAttorney::probe<iSingularParameter>( path.key_for<T>(), c );
-            // Otherwise we have to consider last token as key referencing to
-            // a dictionary or a list instance.
-            newTopDict = T::InsertionAttorney::probe<Dictionary>( path.key_for<T>(), c );
-            newTopLoS = T::InsertionAttorney::probe<LoS>( path.key_for<T>(), c );
-            uint32_t check = !isp ? 0x0 : 0x0
-                         | !newTopDict ? 0x0 : 0x0
-                         | !newTopLoS ? 0x0 : 0x0
-                         ;
-        }
-    }
     # endif
-    void _insert_shortened( iSingularParameter * );
-public:
-    /// Multi-purpose path processing routine performing translation of
-    /// textual path string to insertion proxy referencing particular instance
-    /// within the parameters dictionary or list.
-    // ...
-    //template<typename T>
 };  // class InsertionProxyBase
-
-template<typename T>
-class TInsertionProxyCommon : public InsertionProxyBase {
-public:
-    typedef InsertionTraits<T> IT;
-protected:
-    void _put( typename IT::SingularTarget * ptr ) {
-        IT::Attorney::push_parameter( ptr, _top_as<T>() );
-    }
-    void _put( typename IT::StructureTarget * ptr ) {
-        IT::Attorney::push_subsection( ptr, _top_as<T>() );
-    }
-    void _put( typename IT::ListTarget * ptr ) {
-        IT::Attorney::push_list_parameter( ptr, _top_as<T>() );
-    }
-    /// Constructs new insertion proxy insance.
-    TInsertionProxyCommon( T * root ) : InsertionProxyBase(root) {}
-    /// Protected ctr used by list insertion proxy.
-    TInsertionProxyCommon( const std::stack<InsertionTarget> & los)
-            : InsertionProxyBase(los) {}
-};
-
-template<typename T>
-class InsertionProxy;
 
 /**@brief Helper class for parameter insertion.
  *
@@ -190,156 +142,97 @@ class InsertionProxy;
  * have to be added with own `Configuration` setter method
  * `positional_arguments()`.
  * */
-template<>
-class InsertionProxy<Dictionary> : public TInsertionProxyCommon<Dictionary> {
-    // Who is allowed to construct this proxy type:
-    friend class Dictionary;
-    friend class InsertionProxy<ListOfStructures>;
+template< typename BVlT
+        , template <class> class TVlT
+        , template <class> class ParameterT
+        , class ... SuppInfoTs >
+class InsertionProxy< std::string
+                    , BVlT
+                    , TVlT
+                    , ParameterT
+                    , SuppInfoTs ...
+                    > : public InsertionProxyBase< BVlT
+                                                 , TVlT
+                                                 , ParameterT
+                                                 , SuppInfoTs...> {
+    friend class InsertionProxy< ListIndex
+                    , BVlT
+                    , TVlT
+                    , ParameterT
+                    , SuppInfoTs ...
+                    >;
 public:
-    typedef TInsertionProxyCommon<Dictionary> Parent;
-private:
-    iSingularParameter * _lastInsertedParameter;
+    //template<typename TheValueT> using Parameter = typename Traits::ParameterT<TheValueT>;
+    typedef InsertionProxyBase< BVlT
+                              , TVlT
+                              , ParameterT
+                              , SuppInfoTs...> Parent;
+    typedef InsertionProxy< std::string
+                          , BVlT
+                          , TVlT
+                          , ParameterT
+                          , SuppInfoTs ...
+                          > Self;
+    typedef typename Parent::Traits Traits;
 protected:
     /// Constructs new insertion proxy insance.
     InsertionProxy( DictionaryParameter * );
     /// Protected ctr used by list insertion proxy.
-    InsertionProxy( const InsertionTargetsStack & los)
-                    : Parent(los)
-                    , _lastInsertedParameter(nullptr) {}
+    InsertionProxy( const typename Parent::InsertionTargetsStack & los)
+                  : Parent(los) {}
 public:
-    /// Marks the last inserted parameter as mandatory one.
-    InsertionProxy & required_argument();
-
     /// Copy ctr. Similar to default implementation generated by GCC.
-    InsertionProxy( const InsertionProxy<Dictionary> & o ) : Parent( o.stack() ) {}
+    InsertionProxy( const Self & o ) : Parent( o.stack() ) {}
 
-    /// Opens new section.
-    InsertionProxy & bgn_sect( const char *, const char * );
-
-    /// Closes most recent section and switches to its previous
-    /// (or finalizes last). Argument is optional and useful for self-check.
-    InsertionProxy & end_sect( const char * = nullptr );
-
-    /// Used to "close" dictionary insertion within list parent.
-    InsertionProxy<ListOfStructures> end_dict( const char * = nullptr );
-
-    /// newName may be null if name has to be preserved.
-    void insert_copy_of( const iSingularParameter &, const char * newName=nullptr );
-
-    //
-    // Parameter inserters
-
-    // TODO: restrict method for
-    template<typename ParameterT, class ... Types> InsertionProxy &
-    p( Types ... args ) {
-        _lastInsertedParameter = new InsertableParameter<ParameterT>( args ... );
-        _lastInsertedParameter->_check_initial_validity();
-        if( !(_lastInsertedParameter->name())
-         && !(_lastInsertedParameter->has_shortcut()) ) {
-            // redundant check, todo: make it active only in Debug cfg
-            emraise( malformedArguments
-                   , "Unable to insert anonymous parameter in dictionary." );
-        }
-        if( _lastInsertedParameter->name() ) {
-            _put( _lastInsertedParameter );
-        }
-        if( _lastInsertedParameter->has_shortcut() ) {
-            _insert_shortened( _lastInsertedParameter );
-        }
+    template<typename T, typename ... CtrArgs> Self &
+            p( const IndexingKeyTraits<std::string>::KeyHandle & key, CtrArgs ... args ) {
+        ParameterT<T> p = new ParameterT<T>( args ... );
+        Parent::template _top_as<Parent::Dict>().acquire_item( key, p, p->template as<SuppInfoTs>()... );
         return *this;
     }
-
-    template<class ... Types> InsertionProxy &
-    flag( Types ... args ) {
-        Parameter<bool> * newParameterPtr = new Parameter<bool>( args ... );
-        newParameterPtr->reset_flag();
-        newParameterPtr->_check_initial_validity();
-        _put( _lastInsertedParameter = newParameterPtr );
-        return *this;
-    }
-
-    //
-    // Array inserters
-    //
-
-    template<typename ParameterT> InsertionProxy &
-    array( char shortcut
-         , const char * name
-         , const char * description
-         , const std::initializer_list<ParameterT> & dfts ) {
-        _put( _lastInsertedParameter =
-                new Parameter<Array<ParameterT> >( dfts, shortcut, name, description ) );
-        return *this;
-    }
-
-    template<typename ParameterT> InsertionProxy &
-    array( const char * name
-         , const char * description
-         , const std::initializer_list<ParameterT> & dfts ) {
-        _put( _lastInsertedParameter =
-                new Parameter<Array<ParameterT> >( dfts, name, description ) );
-        return *this;
-    }
-
-    template<typename ParameterT> InsertionProxy &
-    array( char shortcut
-         , const char * description
-         , const std::initializer_list<ParameterT> & dfts ) {
-        _put( _lastInsertedParameter =
-                new Parameter<Array<ParameterT> >( dfts, shortcut, description ) );
-        return *this;
-    }
-
-    template<typename ParameterT> InsertionProxy &
-    array( char shortcut
-         , const char *name
-         , const char *description ) {
-        _put( _lastInsertedParameter =
-                new Parameter<Array<ParameterT> >( shortcut, name, description ) );
-        return *this;
-    }
-
-    template<typename ParameterT> InsertionProxy &
-    array( const char *name
-         , const char *description ) {
-        _put( _lastInsertedParameter =
-                new Parameter<Array<ParameterT> >( name, description ) );
-        return *this;
-    }
-
-    template<typename ParameterT> InsertionProxy &
-    array( char shortcut
-         , const char *description ) {
-        _put( _lastInsertedParameter =
-                new Parameter<Array<ParameterT> >( shortcut, description ) );
-        return *this;
-    }
-
-    /// Inserts the named list of dictionaries parameter and returns its
-    /// insertion proxy object.
-    template<class ... Types>
-    InsertionProxy<ListOfStructures> bgn_list( Types ... args );
-    InsertionProxy<ListOfStructures> end_dict();
 };  // class InsertionProxy<Dictionary>
 
-template<>
-class InsertionProxy<ListOfStructures> : public TInsertionProxyCommon<ListOfStructures> {
-    // Who is allowed to construct this proxy type:
-    friend class InsertionProxy<Dictionary>;
+template< typename BVlT
+        , template <class> class TVlT
+        , template <class> class ParameterT
+        , class ... SuppInfoTs >
+class InsertionProxy< ListIndex
+                    , BVlT
+                    , TVlT
+                    , ParameterT
+                    , SuppInfoTs ...
+                    > : public InsertionProxyBase< BVlT
+                                                 , TVlT
+                                                 , ParameterT
+                                                 , SuppInfoTs...> {
+    friend class InsertionProxy< std::string
+                               , BVlT
+                               , TVlT
+                               , ParameterT
+                               , SuppInfoTs ...
+                               >;
 public:
-    typedef TInsertionProxyCommon<ListOfStructures> Parent;
-private:
-    std::stack<InsertionTarget> _stack;
+    typedef InsertionProxyBase< BVlT
+                              , TVlT
+                              , ParameterT
+                              , SuppInfoTs...> Parent;
+    typedef InsertionProxy< ListIndex
+                          , BVlT
+                          , TVlT
+                          , ParameterT
+                          , SuppInfoTs ...
+                          > Self;
+
 protected:
-    InsertionProxy( ListOfStructures * root ) : Parent( root ) {}
-    InsertionProxy( const InsertionTargetsStack & st ) : Parent( st ) {}
+    InsertionProxy( typename Parent::LoS * root ) : Parent( root ) {}
+    InsertionProxy( const typename Parent::InsertionTargetsStack & st ) : Parent( st ) {}
 public:
     /// Closes the LoD and pops insertion targets stack when LoD was created
     /// within dictionary.
-    InsertionProxy<Dictionary> end_list( const char * = nullptr );
+    InsertionProxy<Parent::Dict> end_list( const char * = nullptr );
 
     /// Inserts a dictionary and returns an insertion proxy for on it.
-    InsertionProxy<Dictionary> bgn_dict();
+    InsertionProxy<Pa> bgn_dict();
 
     /// Insert (anonymous) element in list.
     template<typename T> InsertionProxy<ListOfStructures> & e( const T & v ) {

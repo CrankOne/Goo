@@ -31,9 +31,7 @@
 # include <list>
 
 # include "goo_dict/plural.hpp"
-# include "goo_dict/parameters/los.hpp"
-# include "goo_dict/parameter_singular.tcc"
-# include "goo_utility.hpp"
+# include "goo_dict/app_conf_info.hpp"
 
 namespace goo {
 
@@ -98,74 +96,41 @@ namespace goo {
 
 namespace dict {
 
+/// Specialization for application configuration parameters. Each dictionary
+/// and singular parameter have a description. Singular parameters may have
+/// a shortcuts, while list entries are anonymous and have no additional info.
+template<> struct IndexingTraits< iBaseValue, TValue
+                         , pInfos::DescriptionInfo
+                         , pInfos::RequiredParameterInfo
+                         , pInfos::IsSetInfo
+                         > {
+    /// Keeps generic traits' types.
+    typedef IndexingTraits<iBaseValue, TValue> BareTraits;
+    /// Preserve library-defined container.
+    template<typename KT, typename VT> using TIndex = BareTraits::TIndex<KT, VT>;
+    /// Preserve library-defined container.
+    template<typename KT, typename VT> using TPHash = BareTraits::TPHash<KT, VT>;
+    /// Dictionary with string keys type keeps all the types of information.
+    typedef GenericDictionary<std::string, iBaseValue, TValue
+                             , pInfos::DescriptionInfo
+                             , pInfos::RequiredParameterInfo
+                             , pInfos::IsSetInfo
+                             > Dictionary;
+    /// Dictionary with integer keys keeps no auxilliary information.
+    typedef GenericDictionary<ListIndex, iBaseValue, TValue> ListOfStructures;
+};
+
+typedef IndexingTraits< iBaseValue, TValue
+                         , pInfos::DescriptionInfo
+                         , pInfos::RequiredParameterInfo
+                         , pInfos::IsSetInfo
+                         > AppCfgTraits;
+
+# if 0
 template<typename T> class TInsertionProxyCommon;
 template<typename T> class InsertionProxy;
 
 class DictionaryParameter;
-
-/// Indexing traits defines, for given value-keeper base and supplementary info
-/// type, the particular indexing features.
-template< typename BVlT
-        , class ... SuppInfoTs > struct IndexingTraits;
-
-template< typename KeyT
-        , typename BVlT
-        , class ... SuppInfoTs > class GenericDictionary;
-
-template< typename BVlT
-        , class ... SuppInfoTs > struct IndexingTraits {
-    /// Template container type used to store entries indexed by name or index.
-    template<typename KT, typename VT> TIndex = std::unordered_map<KT, VT>;
-    /// Template container type used to store supplementary information entries
-    /// indexed by pointers of dictionary entries.
-    template<typename KT, typename VT> TPHash = std::unordered_map<KT, VT>;
-
-    typedef GenericDictionary<std::string, BVlT, SuppInfoTs...> Dictionary;
-    typedef GenericDictionary<ListIndex, BVlT> ListOfStructures;
-};
-
-/// A dictionary entry representation. Keeps basic introspection info allowing
-/// one quickly find out, whether the
-template< typename BaseValueT
-        , class ... SuppInfoTs >
-struct DictEntry {
-    typedef IndexingTraits<BaseValueT, SuppInfoTs...> Traits;
-    union {
-        typename Traits::Dictionary * toDict;
-        typename Traits::ListOfStructures * toList;
-        BaseValueT * toSngl;
-    } pointer;
-    enum : unsigned char {
-        isSngl = 0x0,
-        isList = 0x1,
-        isDict = 0x2
-    } code;
-};
-
-template< typename KeyT
-        , typename BVlT
-        , class ... SuppInfoTs >
-class GenericDictionary : public typename IndexingTraits<BVlT, SuppInfoTs...>::TIndex<KeyT, DictEntry<BVlT, SuppInfoTs...> *>
-                       , public typename IndexingTraits<BVlT, SuppInfoTs...>::TPHash<DictEntry<BVlT, SuppInfoTs...> *, SuppInfoTs>... {
-public:
-    typedef IndexingTraits<BVlT, SuppInfoTs...> Traits;
-public:
-    DictEntry<BVlT, SuppInfoTs...> * entry( const KeyT & key ) {
-        auto it = std::unordered_map<KeyT, DictEntry<BVlT, SuppInfoTs...> *>::find( key );
-        if( Traits::TIndex<KeyT, DictEntry<BVlT, SuppInfoTs...> *>::end() == it ) {
-            emraise( notFound, "" );  // TODO <<
-        }
-        return it->second;
-    }
-
-    template<typename SuppInfoT>
-        typename std::enable_if<stdE::is_one_of<SuppInfoT, SuppInfoTs...>::value, SuppInfoT * >::type
-    info( const KeyT & key ) {
-        auto ePtr = entry( key ) ;
-        auto it = Traits::TPHash<DictEntry<BVlT, SuppInfoT> *, SuppInfoT>::find( ePtr );
-        return it->second;
-    }
-};
 
 /**@brief Parameters container with basic querying support.
  * @class Dictionary
@@ -243,6 +208,7 @@ class DictInsertionAttorney {
 
     friend class TInsertionProxyCommon<Dictionary>;
 };
+# endif
 
 }  // namespace dict
 /** @} */  // end of appParameters group

@@ -37,6 +37,8 @@
 namespace goo {
 namespace dict {
 
+# if 0
+
 //class iSingularParameter;
 
 //template<typename ValueT>
@@ -232,6 +234,7 @@ iBaseValue::as() const {
     return ptr->value();
 }
 
+# endif
 
 }  // namespace dict
 }  // namespace goo

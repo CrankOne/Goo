@@ -20,19 +20,30 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*
- * Created by crank on 12.01.18.
- */
+#ifndef H_GOO_PARAMETERS_APP_CONF_INFO_H
+#define H_GOO_PARAMETERS_APP_CONF_INFO_H
 
-# ifndef H_GOO_ABSTRACT_PARAMETER_H
-# define H_GOO_ABSTRACT_PARAMETER_H
-
-# include "goo_mixins/vcopy.tcc"
+# include "goo_types.h"
 
 namespace goo {
 namespace dict {
+namespace pInfos {
 
-/**@class AbstractParameter
+struct DescriptionInfo {
+    // ...
+};
+
+struct RequiredParameterInfo {
+    // ...
+};
+
+struct IsSetInfo {
+    // ...
+};
+
+}  // namespace pInfos
+
+/**@class AppConfParameter
  * @brief An abstract parameter is a base class for Goo's
  * dictionary entires.
  *
@@ -65,8 +76,9 @@ namespace dict {
  *
  * @ingroup appParameters
  */
-class AbstractParameter {
-public:
+class AppConfParameter {
+    # if 0
+ public:
     typedef UByte ParameterEntryFlag;
     static const ParameterEntryFlag
             set,            ///< Value is set (=false on init for required/flag/dict).
@@ -96,13 +108,13 @@ protected:
     void _unset_singular();
 
     /// Single ctr can be only invoked by descendants.
-    AbstractParameter( const char * name,
+    AppConfParameter( const char * name,
             const char * description,
             ParameterEntryFlag flags,
             char shortcut = '\0');
 
     /// Copy ctr.
-    AbstractParameter( const AbstractParameter & );
+    AppConfParameter( const AppConfParameter & );
 
     /// Raises an exception if contradictory states are set for parameter
     /// on initial stage.
@@ -173,9 +185,10 @@ public:
 
     /// Sets the "required" flag marking a mandatory parameter.
     void set_is_argument_required_flag();
-}; // class AbstractParameter
+    # endif
+};  // class AppConfParameter
 
 }  // namespace dict
 }  // namespace goo
 
-# endif  // GOO_ABSTRACT_PARAMETER_HPP
+#endif  // H_GOO_PARAMETERS_APP_CONF_INFO_H

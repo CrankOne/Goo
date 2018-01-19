@@ -1,4 +1,30 @@
-# include "goo_dict/parameter_abstract.hpp"
+/*
+ * Copyright (c) 2017 Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/*
+ * Created by crank on 19.01.18.
+ */
+
+# include "goo_dict/app_conf_info.hpp"
 # include "goo_exception.hpp"
 
 # include <cstring>
@@ -7,7 +33,8 @@
 namespace goo {
 namespace dict {
 
-const AbstractParameter::ParameterEntryFlag
+# if 0
+const AppConfParameter::ParameterEntryFlag
     AbstractParameter::set         = 0x1,      // otherwise --- uninitialized still
     AbstractParameter::flag        = 0x2,      // otherwise --- requires an argument
     AbstractParameter::positional  = 0x4,      // otherwise --- has name or shortcut
@@ -16,7 +43,7 @@ const AbstractParameter::ParameterEntryFlag
     AbstractParameter::required    = 0x20,     // otherwise --- is optional
     AbstractParameter::shortened   = 0x40;     // otherwise --- has not one-char shortcut
 
-AbstractParameter::AbstractParameter( const char * name_,
+AppConfParameter::AppConfParameter( const char * name_,
                                         const char * description_,
                                         ParameterEntryFlag flags,
                                         char shortcut_ ) :
@@ -69,7 +96,7 @@ AbstractParameter::AbstractParameter( const char * name_,
     }
 }
 
-AbstractParameter::AbstractParameter( const AbstractParameter & o ) {
+AppConfParameter::AppConfParameter( const AppConfParameter & o ) {
     //memcpy( this, &o, sizeof(o) );  // TODO: find a better solution b'cause overwriting
     //                                // zee vtable can be dangerous!
     this->_flags = o._flags;
@@ -93,7 +120,7 @@ AbstractParameter::AbstractParameter( const AbstractParameter & o ) {
     }
 }
 
-AbstractParameter::~AbstractParameter() {
+AppConfParameter::~AppConfParameter() {
     if( _name ) {
         delete [] _name;
     }
@@ -103,7 +130,7 @@ AbstractParameter::~AbstractParameter() {
 }
 
 void
-AbstractParameter::name( const char * name_ ) {
+AppConfParameter::name( const char * name_ ) {
     size_t nLen = strlen( name_ ) + 1;
     if( _name ) {
         delete [] _name;
@@ -113,7 +140,7 @@ AbstractParameter::name( const char * name_ ) {
 }
 
 void
-AbstractParameter::_check_initial_validity() {
+AppConfParameter::_check_initial_validity() {
     if( '\0' != _shortcut && 'W' == _shortcut ) {
         // See Guideline 3 of POSIX convention; 12.2 "Utility Syntax Guidelines".
         emraise( malformedArguments,
@@ -167,17 +194,17 @@ AbstractParameter::_check_initial_validity() {
 }
 
 const char *
-AbstractParameter::name() const {
+AppConfParameter::name() const {
     return _name;
 }
 
 const char *
-AbstractParameter::description() const {
+AppConfParameter::description() const {
     return _description;
 }
 
 void
-AbstractParameter::_append_description( const char * d ) {
+AppConfParameter::_append_description( const char * d ) {
     assert( d );
     size_t newDLength = strlen( d );
     if( _description ) {
@@ -192,25 +219,25 @@ AbstractParameter::_append_description( const char * d ) {
 }
 
 void
-AbstractParameter::_set_is_set_flag() {
+AppConfParameter::_set_is_set_flag() {
     _flags |= set;
 }
 
 void
-AbstractParameter::_set_is_flag_flag() {
+AppConfParameter::_set_is_flag_flag() {
     _flags |= flag;
 }
 
 void
-AbstractParameter::_unset_singular() {
+AppConfParameter::_unset_singular() {
     _flags &= ~singular;
 }
 
 void
-AbstractParameter::set_is_argument_required_flag() {
+AppConfParameter::set_is_argument_required_flag() {
     _flags |= required;
 }
+# endif
 
 }  // namespace dict
 }  // namespace goo
-

@@ -29,10 +29,10 @@
 namespace goo {
 namespace dict {
 
+# if 0
 template<typename T> class TInsertionProxyCommon;
 
-class ListOfStructures : public iTValue<List<iBaseValue *> >
-                       , public DictionaryIndex<ListIndex, iBaseValue>
+class ListOfStructures : public GenericDictionary<ListIndex, iBaseValue>
                        , public mixins::iDuplicable<iBaseValue, ListOfStructures> {
     friend class ListInsertionAttorney;
 public:
@@ -93,6 +93,7 @@ class ListInsertionAttorney {
 
     friend class TInsertionProxyCommon<ListOfStructures>;
 };
+# endif
 
 }  // namespace dict
 }  // namespace goo

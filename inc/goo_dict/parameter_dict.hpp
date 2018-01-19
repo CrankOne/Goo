@@ -28,6 +28,7 @@
 namespace goo {
 namespace dict {
 
+# if 0
 /**
  *
  * This class represents a node in a "Configuration" tree-like structure.
@@ -54,6 +55,7 @@ public:
     DictionaryParameter( const DictionaryParameter & ) = default;
     // ...
 };
+# endif
 
 }  // namespace dict
 }  // namespace goo

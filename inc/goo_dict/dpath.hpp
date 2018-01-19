@@ -93,8 +93,8 @@ struct DictPath {
     template<typename T> typename T::Key key_for();
 };
 
-template<> inline Dictionary::Key
-DictPath::key_for<Dictionary>() {
+template<> inline AppCfgTraits::Dictionary::Key
+DictPath::key_for<AppCfgTraits::Dictionary>() {
     if( isIndex ) {
         emraise( badCast, "Path token is an integer index =%ld while"
             " string key requested.", id.index );
@@ -102,13 +102,13 @@ DictPath::key_for<Dictionary>() {
     return id.name;
 }
 
-template<> inline typename DictionaryParameter::Key
-DictPath::key_for<DictionaryParameter>() {
-    return key_for<Dictionary>();
-}
+//template<> inline typename AppCfgTraits::ListOfStructures::Key
+//DictPath::key_for<DictionaryParameter>() {
+//    return key_for<Dictionary>();
+//}
 
-template<> inline typename ListOfStructures::Key
-DictPath::key_for<ListOfStructures>() {
+template<> inline typename AppCfgTraits::ListOfStructures::Key
+DictPath::key_for<AppCfgTraits::ListOfStructures>() {
     if( !isIndex ) {
         emraise( badCast, "Path token is a string key =\"%s\" while"
             " integer index requested.", id.name );
@@ -116,10 +116,10 @@ DictPath::key_for<ListOfStructures>() {
     return id.index;
 }
 
-template<> inline typename LoSParameter::Key
-DictPath::key_for<LoSParameter>() {
-    return key_for<ListOfStructures>();
-}
+//template<> inline typename LoSParameter::Key
+//DictPath::key_for<LoSParameter>() {
+//    return key_for<ListOfStructures>();
+//}
 
 /** @brief System dict-path parsing routine.
  *

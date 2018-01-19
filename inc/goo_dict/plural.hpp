@@ -27,16 +27,155 @@
 # include <functional>
 # include <unordered_map>
 # include <cstring>
+# include <sstream>
 
 # include "goo_exception.hpp"
 
 # include "goo_dict/types.hpp"
-# include "goo_dict/parameter_abstract.hpp"
 # include "goo_dict/parameter_values.hpp"
 # include "goo_mixins/vcopy.tcc"
+# include "goo_utility.hpp"
 
 namespace goo {
 namespace dict {
+
+/// Indexing traits defines, for given value-keeper base and supplementary info
+/// type, the particular indexing features.
+template< typename BVlT
+        , template <class> class TVlT
+        , class ... SuppInfoTs > struct IndexingTraits;
+
+template< typename KeyT
+        , typename BVlT
+        , template <class> class TVlT
+        , class ... SuppInfoTs > class GenericDictionary;
+
+template< typename BVlT
+        , template <class> class TVlT
+        , class ... SuppInfoTs > struct IndexingTraits {
+    /// Template container type used to store entries indexed by name or index.
+    template<typename KT, typename VT> using TIndex = std::unordered_map<KT, VT>;
+    /// Template container type used to store supplementary information entries
+    /// indexed by pointers of dictionary entries.
+    template<typename KT, typename VT> using TPHash = std::unordered_map<KT, VT>;
+
+    typedef GenericDictionary<std::string, BVlT, TVlT, SuppInfoTs...> Dictionary;
+    typedef GenericDictionary<ListIndex, BVlT, TVlT, SuppInfoTs...> ListOfStructures;
+
+    // One probably has to re-define this templated template class for
+    // every SuppInfo set.
+    //template<typename T> struct ParameterT : public SuppInfoTs ... {};
+};
+
+/// A dictionary entry representation. Keeps basic introspection info allowing
+/// one quickly find out, whether the
+template< typename BaseValueT
+        , template <class> class TVlT
+        , class ... SuppInfoTs >
+class DictEntry {
+public:
+    typedef IndexingTraits<BaseValueT, TVlT, SuppInfoTs...> Traits;
+private:
+    union {
+        typename Traits::Dictionary * toDict;
+        typename Traits::ListOfStructures * toList;
+        BaseValueT * toSngl;
+    };
+    enum : unsigned char {
+        isSngl = 0x0,
+        isList = 0x1,
+        isDict = 0x2
+    } code;
+public:
+    DictEntry( typename Traits::Dictionary * d ) : toDict( d ), code(isDict) {}
+    DictEntry( typename Traits::ListOfStructures * l ) : toList( l ), code(isList) {}
+    DictEntry( BaseValueT * v ) : toSngl( v ), code(isSngl) {}
+    // ...
+    //template<typename T> T * as_ptr();
+};
+
+template<typename T>
+struct IndexingKeyTraits {
+    typedef const T & KeyHandle;
+    static inline std::string to_str( KeyHandle k ) {
+        std::stringstream ss;
+        ss << k;
+        return ss.str();
+    }
+};
+
+/**@brief Generic entry dictionary class.
+ *
+ * This template claims the basic logic for dealing with basic entries with
+ * supplementary information composed from arbitrary set of types.
+ **/
+template< typename KeyT
+        , typename BVlT
+        , template <class> class TVlT
+        , class ... SuppInfoTs >
+class GenericDictionary : public mixins::iDuplicable< BVlT
+                                                    , GenericDictionary<KeyT, BVlT, TVlT>
+                                                    , TVlT< typename IndexingTraits<BVlT, TVlT, SuppInfoTs...> \
+                                                                ::template TIndex<KeyT, DictEntry<BVlT, TVlT, SuppInfoTs...> > >
+                                                    >
+                        , public IndexingTraits<BVlT, TVlT, SuppInfoTs...> \
+                                    ::template TPHash<DictEntry<BVlT, TVlT, SuppInfoTs...> *, SuppInfoTs>... {
+public:
+    typedef KeyT Key;
+    typedef IndexingKeyTraits<KeyT> KeyTraits;
+    typedef IndexingTraits<BVlT, TVlT, SuppInfoTs...> Traits;
+    typedef GenericDictionary<KeyT, BVlT, TVlT, SuppInfoTs...> Self;
+    typedef DictEntry<BVlT, TVlT, SuppInfoTs...> Entry;
+    typedef typename Traits::template TIndex<KeyT, DictEntry<BVlT, TVlT, SuppInfoTs...> *> Index;
+    typedef TVlT<Index> Parent;
+private:
+    template<typename SuppInfoT>
+        typename std::enable_if<stdE::is_one_of<SuppInfoT, SuppInfoTs...>::value, bool >::type
+    insert_info( Entry * e, SuppInfoT * i ) {
+        auto ir = Traits::template TPHash<Entry *, SuppInfoT>::emplace( e, i );
+        return ir.second;
+    }
+protected:
+    /// Const variant of entry pointer retrieving function.
+    const Entry * entry( typename KeyTraits::KeyHandle key ) const {
+        auto it = Parent::value().find( key );
+        if( Parent::value().end() == it ) {
+            emraise( notFound, "Has no entry indexed by key \"%s\"."
+                   , KeyTraits::to_str(key).c_str() );
+        }
+        return it->second;
+    }
+
+    /// Const version of supplementary information getter.
+    template<typename SuppInfoT>
+        typename std::enable_if<stdE::is_one_of<SuppInfoT, SuppInfoTs...>::value, const SuppInfoT * >::type
+    info( typename KeyTraits::KeyHandle key ) const {
+        auto ePtr = entry( key ) ;
+        auto it = Traits::template TPHash<Entry *, SuppInfoT>::find( ePtr );
+        return it->second;
+    }
+
+    /// Generic insertion method, dynamically supporting any set of subtypes.
+    template<class ... EntrySuppInfoTs> void
+    acquire_item( typename KeyTraits::KeyHandle key, Entry e, EntrySuppInfoTs ... ts ) {
+        auto nameIR = Parent::_mutable_value().emplace( key, e );
+        if( !nameIR.second ) {
+            emraise( nonUniq, "Generic dictionary instance %p has entry with"
+                    " index \"%s\": %p. Unable to insert parameter instance"
+                    " referred by the same index."
+                   , this, KeyTraits::to_str(key).c_str(), nameIR.first->second );
+        }
+        auto ePtr = &(*(nameIR.first));
+        //bool eIRs[] = { (Traits::template TPHash<Entry *, EntrySuppInfoTs>::emplace( e, ts )) ... };
+        bool eIRs[] = { nameIR.second, (insert_info(ePtr, ts)) ... };
+        for( bool eIR : eIRs ) {
+            if( !eIR ) {
+                emraise( nonUniq, "Unable to associate supp info ? with"
+                        " entry %p.", ePtr );
+            }
+        }
+    }
+};
 
 # if 0
 # include <map>

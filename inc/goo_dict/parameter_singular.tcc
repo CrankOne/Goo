@@ -5,6 +5,7 @@
 #ifndef GOO_PARAMETERS_SINGULAR_PARAMETER_TCC
 #define GOO_PARAMETERS_SINGULAR_PARAMETER_TCC
 
+# if 0
 # include "goo_exception.hpp"
 # include "goo_dict/parameter_values.hpp"
 # include "goo_dict/parameter_abstract.hpp"
@@ -184,8 +185,8 @@ iParameter<ValueT>::_set_value( const ValueT & val ) {
     iTValue<ValueT>::_set_value(val);
 }
 
-
 }  // namespace dict
 }  // namespace goo
+# endif
 
-#endif  // GOO_PARAMETERS_SINGULAR_PARAMETER_TCC
+# endif  // GOO_PARAMETERS_SINGULAR_PARAMETER_TCC
