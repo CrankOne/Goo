@@ -50,44 +50,25 @@ namespace dict {
  * In order to avoid collisions, use empty string ("") or nullptr instead of
  * name argument when only short option is given.
  * */
-template<>
-class Parameter<std::string> : public mixins::iDuplicable< iBaseValue,
-                                                           Parameter<std::string>,
-                                                           iParameter<std::string> > {
+template<typename ... AspectTs>
+class Parameter<std::string, AspectTs...> : public mixins::iDuplicable< iBaseValue
+                                                                   , Parameter<std::string, AspectTs... > > {
 public:
-    typedef typename DuplicableParent::Parent::Value Value;
+    typedef mixins::iDuplicable< iBaseValue, Parameter<std::string, AspectTs... > > DuplicableParent;
 public:
-    /// Only long option ctr.
-    Parameter( const char * name_,
-               const char * description_,
-               const char * default_=nullptr );
-
-    /// Long option with shortcut.
-    Parameter( char shortcut_,
-               const char * name_,
-               const char * description_,
-               const char * default_=nullptr );
-
-    Parameter( const char * name_,
-               const char * description_,
-               const std::string & default_ ) :
-            Parameter( name_, description_, default_.c_str() ) {}
-
-    Parameter( char shortcut_,
-               const char * name_,
-               const char * description_,
-               const std::string & default_ ) :
-            Parameter( shortcut_, name_, description_, default_.c_str() ) {}
-
     Parameter( const Parameter<std::string> & o ) : DuplicableParent( o ) {}
 };
 
+namespace aspects {
 template<>
-struct iStringConvertibleParameter::ConversionTraits<std::string> {
+struct iStringConvertible::ConversionTraits<std::string> {
     typedef std::string Value;
-    static std::string parse_string_expression( const char * stv );
-    static std::string to_string_expression( const std::string & v );
+
+    static std::string parse_string_expression(const char *stv);
+
+    static std::string to_string_expression(const std::string &v);
 };
+}  // namespace aspects
 
 }  // namespace dict
 }  // namespace goo

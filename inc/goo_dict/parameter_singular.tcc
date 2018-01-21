@@ -5,14 +5,14 @@
 #ifndef GOO_PARAMETERS_SINGULAR_PARAMETER_TCC
 #define GOO_PARAMETERS_SINGULAR_PARAMETER_TCC
 
-# if 0
 # include "goo_exception.hpp"
 # include "goo_dict/parameter_values.hpp"
-# include "goo_dict/parameter_abstract.hpp"
+# include "goo_dict/app_conf_info.hpp"
 
 namespace goo {
 namespace dict {
 
+# if 0
 /**@class iSingularParameter
  * @brief Generic parameter features interface.
  *
@@ -21,8 +21,8 @@ namespace dict {
  *
  * @ingroup appParameters
  */
-class iSingularParameter : public AbstractParameter
-                         , virtual public iStringConvertibleParameter {
+class iSingularParameter : public iBaseValue
+                        , virtual public iStringConvertibleParameter {
 protected:
     virtual void _V_assign( const iSingularParameter & ) = 0;
 public:
@@ -40,12 +40,14 @@ public:
         return *this;
     }
 };  // class iSingularParameter
+# endif
 
 
 //
 // Known type-handling abstraction layer
 // ////////////////////////////////////
 
+namespace aspects {
 /**@brief Default template implementating value parameters that may be converted
  * to string.
  *
@@ -53,28 +55,30 @@ public:
  * various formatting modifiers.
  * */
 template<typename ValueT>
-class iTStringConvertibleParameter : virtual public iStringConvertibleParameter
-                                   , public iTValue<ValueT> {
+class TStringConvertible : public iStringConvertible {
 public:
     typedef ValueT Value;
-    typedef typename iStringConvertibleParameter::ConversionTraits<Value> ValueTraits;
-    typedef iTStringConvertibleParameter<ValueT> Self;
+    typedef typename iStringConvertible::ConversionTraits<Value> ValueTraits;
+    typedef TStringConvertible<ValueT> Self;
 protected:
     /// Sets the value kept by current instance from string expression.
-    virtual void _V_parse_argument( const char * strval ) override {
-        this->_set_value( ValueTraits::parse_string_expression( strval ) );
+    virtual void _V_parse_argument(const char *strval) override {
+        static_cast<TValue<ValueT>*>(this)->value(ValueTraits::parse_string_expression(strval));
     }
+
     /// Expresses the value kept by current instance as a string.
-    virtual std::string _V_to_string( ) const override {
-        return ValueTraits::to_string_expression( this->value() );
+    virtual std::string _V_to_string() const override {
+        return ValueTraits::to_string_expression(*static_cast<TValue<ValueT>*>(this));
     }
-    /// Potentially dangerous ctr leaving the value uninitialized.
-    iTStringConvertibleParameter() : iTValue<Value>() {}
 public:
-    iTStringConvertibleParameter( const ValueT & v ) : iTValue<Value>(v) {}
-    iTStringConvertibleParameter( const Self & o ) : iTValue<Value>( o ) {}
+    TStringConvertible() {}
+    explicit TStringConvertible(const ValueT &v) : TValue<Value>(v) {}
+    explicit TStringConvertible(const Self &o) : TValue<Value>(o) {}
 };
 
+}  // namespace aspects
+
+# if 0
 /**@class iParameter
  * @brief A valued intermediate class representing dictionary entry with
  *        value of certain type.
@@ -184,9 +188,9 @@ iParameter<ValueT>::_set_value( const ValueT & val ) {
     iSingularParameter::_set_is_set_flag();
     iTValue<ValueT>::_set_value(val);
 }
+# endif
 
 }  // namespace dict
 }  // namespace goo
-# endif
 
 # endif  // GOO_PARAMETERS_SINGULAR_PARAMETER_TCC

@@ -24,25 +24,98 @@
 #define H_GOO_PARAMETERS_APP_CONF_INFO_H
 
 # include "goo_types.h"
+# include "goo_dict/plural.hpp"
 
 namespace goo {
 namespace dict {
-namespace pInfos {
 
-struct DescriptionInfo {
-    // ...
+namespace aspects {
+
+/// Defines presence of the the textual attribute that should contain
+/// human-readable description for parameter or dictionary.
+class Description {
+private:
+     std::string _d;
+public:
+    explicit Description( const std::string & t ) : _d(t) {}
+    virtual const std::string & description() { return _d; }
+    virtual void description( const std::string & t ) { _d = t; }
 };
 
-struct RequiredParameterInfo {
-    // ...
+/// Defines the "is required" flag for parameters.
+struct Required {
+private:
+    bool _isRequired;
+public:
+    explicit Required( bool v ) : _isRequired(v) {}
+    Required() : _isRequired(false) {}
+    virtual bool is_required() const { return _isRequired; }
+    virtual void set_required(bool v) { _isRequired = true; }
 };
 
-struct IsSetInfo {
-    // ...
+/// Defines "is set" flag for parameters.
+struct IsSet {
+private:
+    bool _isSet;
+public:
+    explicit IsSet( bool v ) : _isSet(v) {}
+    IsSet() : _isSet(false) {}
+    virtual bool is_set() const { return _isSet; }
+    virtual void set_is_set(bool v) { _isSet = true; }
 };
 
-}  // namespace pInfos
+/// Defines "shortcut" attribute, used for application configuration
+/// dictionaries.
+struct CharShortcut {
+private:
+    char _shortcut;
+public:
+    explicit CharShortcut(char c) : _shortcut(c) {}
+    CharShortcut( ) : _shortcut('\0') {}
+    char shortcut( ) const { return _shortcut; }
+    virtual char shortcut( char c_ ) {
+        char c = _shortcut;
+        _shortcut = c_;
+        return c;
+    }
+};
 
+/**@class iStringConvertibleParameter
+ * @brief Generic interface for parameter instance that may be converted to str.
+ *
+ * This is a data type-agnostic part of the string-convertible parameters.
+ */
+class iStringConvertible {
+protected:
+    /// Shall translate string expression to C++ value.
+    virtual void _V_parse_argument( const char * ) = 0;
+    /// Shall render C++ value to string.
+    virtual std::string _V_to_string() const = 0;
+public:
+    /// Translates value from string representation.
+    void parse_argument( const char * strval ) {  _V_parse_argument( strval ); }
+    /// Renders string from C++ value.
+    std::string to_string() const { return _V_to_string(); }
+    template<typename ValueT, typename EnableT=void> struct ConversionTraits;
+    //{
+    //    typedef ValueT Value;
+    //    static Value parse_string_expression( const char * stv ) {
+    //        Value v;
+    //        std::ostringstream ss(stv);
+    //        ss >> v;
+    //        return v;
+    //    }
+    //    static std::string to_string_expression( const Value & v ) {
+    //        std::stringstream ss;
+    //        ss << v;
+    //        return ss.str();
+    //    }
+    //};
+};  // class iStringConvertibleParameter
+
+}  // namespace aspects
+
+# if 0
 /**@class AppConfParameter
  * @brief An abstract parameter is a base class for Goo's
  * dictionary entires.
@@ -77,7 +150,6 @@ struct IsSetInfo {
  * @ingroup appParameters
  */
 class AppConfParameter {
-    # if 0
  public:
     typedef UByte ParameterEntryFlag;
     static const ParameterEntryFlag
@@ -185,8 +257,8 @@ public:
 
     /// Sets the "required" flag marking a mandatory parameter.
     void set_is_argument_required_flag();
-    # endif
 };  // class AppConfParameter
+# endif
 
 }  // namespace dict
 }  // namespace goo

@@ -29,6 +29,9 @@
 namespace goo {
 namespace dict {
 
+// TODO
+
+# if 0
 /**@brief Path parameter.
  *
  * TODO: doc
@@ -83,6 +86,7 @@ struct iStringConvertibleParameter::ConversionTraits<filesystem::Path> {
     static Value parse_string_expression( const char * stv );
     static std::string to_string_expression( const Value & v );
 };
+# endif
 
 }  // namespace dict
 }  // namespace goo

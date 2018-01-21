@@ -90,129 +90,33 @@ integral_safe_parse<unsigned long long int>( const char * str, int base );
 # endif
 
 
-template<typename T>
+template<typename T, typename ... AspTs>
 class IntegralParameter : public mixins::iDuplicable<
-                                    AbstractParameter,
-                                    IntegralParameter<T>,
-                                    iParameter<T> > {
+                                    iBaseValue,
+                                    IntegralParameter<T, AspTs...>,
+                                    Parameter<T, AspTs...> > {
 public:
     typedef T Integral;
-    typedef mixins::iDuplicable< AbstractParameter,
+    typedef mixins::iDuplicable< iBaseValue,
                                  IntegralParameter<T>,
-                                 iParameter<T> > DuplicableParent;
-
-    /// Only long option ctr.
-    IntegralParameter(  const char * name_,
-                        const char * description_ );
-    /// Long option with shortcut.
-    IntegralParameter(  char shortcut_,
-                        const char * name_,
-                        const char * description_ );
-    /// Only short option.
-    IntegralParameter(  char shortcut_,
-                        const char * description_ );
-    /// Only long option ctr.
-    IntegralParameter(  const char * name_,
-                        const char * description_,
-                        Integral default_ );
-    /// Long option with shortcut.
-    IntegralParameter(  char shortcut_,
-                        const char * name_,
-                        const char * description_,
-                        Integral default_ );
-    /// Only short option.
-    IntegralParameter(  char shortcut_,
-                        const char * description_,
-                        Integral default_ );
-
-    IntegralParameter( const IntegralParameter<Integral> & o ) : DuplicableParent( o ) {}
+                                 Parameter<T, AspTs...> > DuplicableParent;
+    IntegralParameter( AspTs * ... asps ) : DuplicableParent( asps ... ) {}
 };
 
-template< typename T >
-struct iStringConvertibleParameter::ConversionTraits<T, typename std::enable_if<std::is_integral<T>::value>::type> {
+namespace aspects {
+template<typename T>
+struct iStringConvertible::ConversionTraits<T, typename std::enable_if<std::is_integral<T>::value>::type> {
     typedef T Value;
-    static Value parse_string_expression( const char * stv )
-            { return integral_safe_parse<T>(stv); }
-    static std::string to_string_expression( const Value & v ) {
+
+    static Value parse_string_expression(const char *stv) { return integral_safe_parse<T>(stv); }
+
+    static std::string to_string_expression(const Value &v) {
         std::stringstream ss;
         ss << v;
         return ss.str();
     }
 };
-
-template<typename T>
-IntegralParameter<T>::IntegralParameter( const char * name_,
-                                         const char * description_ ) :
-            DuplicableParent( name_,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular
-                            ) {}
-
-template<typename T>
-IntegralParameter<T>::IntegralParameter(  char shortcut_,
-                                          const char * name_,
-                                          const char * description_ ) :
-            DuplicableParent( name_,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular
-                                | AbstractParameter::shortened,
-                              shortcut_
-                            ) {}
-
-template<typename T>
-IntegralParameter<T>::IntegralParameter( char shortcut_,
-                                         const char * description_ ) :
-            DuplicableParent( nullptr,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular
-                                | AbstractParameter::shortened,
-                              shortcut_
-                            ) {}
-
-template<typename T>
-IntegralParameter<T>::IntegralParameter( const char * name_,
-                                         const char * description_,
-                                         Integral default_ ) :
-            DuplicableParent( name_,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular
-                                | AbstractParameter::set,
-                              '\0',
-                              default_
-                            ) {}
-
-template<typename T>
-IntegralParameter<T>::IntegralParameter( char shortcut_,
-                                           const char * name_,
-                                           const char * description_,
-                                           Integral default_ ) :
-            DuplicableParent( name_,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular
-                                | AbstractParameter::set
-                                | AbstractParameter::shortened,
-                              shortcut_,
-                              default_
-                            ) {}
-
-template<typename T>
-IntegralParameter<T>::IntegralParameter( char shortcut_,
-                                           const char * description_,
-                                           Integral default_ ) :
-            DuplicableParent( nullptr,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular
-                                | AbstractParameter::set
-                                | AbstractParameter::shortened,
-                              shortcut_,
-                              default_
-                            ) {}
+}  // namespace aspects
 
 }  // namespace dict
 }  // namespace goo

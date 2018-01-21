@@ -90,9 +90,10 @@ struct DictPath {
     DictPath( const char * strID ) : next(nullptr) { id.name = strID; isIndex = false; }
     DictPath( ListIndex idx ) : next(nullptr) { id.index = idx; isIndex = true; }
 
-    template<typename T> typename T::Key key_for();
+    //template<typename T> typename T::Key key_for();
 };
 
+# if 0
 template<> inline AppCfgTraits::Dictionary::Key
 DictPath::key_for<AppCfgTraits::Dictionary>() {
     if( isIndex ) {
@@ -115,6 +116,7 @@ DictPath::key_for<AppCfgTraits::ListOfStructures>() {
     }
     return id.index;
 }
+# endif
 
 //template<> inline typename LoSParameter::Key
 //DictPath::key_for<LoSParameter>() {

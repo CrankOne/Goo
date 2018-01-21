@@ -30,109 +30,28 @@ static const std::regex
 
 namespace goo {
 namespace dict {
-
-Parameter<bool>::Parameter( const char * name_,
-                            const char * description_ ) :
-            DuplicableParent( name_,
-                              description_,
-                              0x0 | AbstractParameter::set
-                                  | AbstractParameter::atomic
-                                  | AbstractParameter::singular
-                            ) {}
-
-
-Parameter<bool>::Parameter( char shortcut_,
-                            const char * name_,
-                            const char * description_ ) :
-            DuplicableParent( name_,
-                              description_,
-                              0x0 | AbstractParameter::set
-                                  | AbstractParameter::atomic
-                                  | AbstractParameter::singular
-                                  | AbstractParameter::shortened,
-                              shortcut_
-                            ) {}
-
-Parameter<bool>::Parameter( char shortcut_,
-                            const char * description_ ) :
-            DuplicableParent( nullptr,
-                              description_,
-                              0x0 | AbstractParameter::set
-                                  | AbstractParameter::atomic
-                                  | AbstractParameter::singular
-                                  | AbstractParameter::shortened,
-                              shortcut_
-                            ) {}
-
-
-Parameter<bool>::Parameter( const char * name_,
-                            const char * description_,
-                            bool default_ )  :
-            DuplicableParent( name_,
-                              description_,
-                              0x0 | AbstractParameter::set
-                                  | AbstractParameter::atomic
-                                  | AbstractParameter::singular,
-                              '\0',
-                              default_
-                            ) {}
-
-
-Parameter<bool>::Parameter( char shortcut_,
-                            const char * name_,
-                            const char * description_,
-                            bool default_ ) :
-            DuplicableParent( name_,
-                              description_,
-                              0x0 | AbstractParameter::set
-                                  | AbstractParameter::atomic
-                                  | AbstractParameter::singular
-                                  | AbstractParameter::shortened,
-                              shortcut_,
-                              default_
-                            ) {}
-
-Parameter<bool>::Parameter( char shortcut_,
-                            const char * description_,
-                            bool default_ ) :
-            DuplicableParent( nullptr,
-                              description_,
-                              0x0 | AbstractParameter::set
-                                  | AbstractParameter::atomic
-                                  | AbstractParameter::singular
-                                  | AbstractParameter::shortened,
-                              shortcut_,
-                              default_
-                            ) {}
-
-void
-Parameter<bool>::set_option( bool a ) {
-    _set_value( true );
-}
-
+namespace aspects {
 bool
-iStringConvertibleParameter::ConversionTraits<bool>::parse_string_expression( const char * stv ) {
-     // _static_logicalTermRegex_True
-    if( std::regex_match( stv, _static_logicalTermRegex_True ) ) {
+iStringConvertible::ConversionTraits<bool>::parse_string_expression(const char *stv) {
+    // _static_logicalTermRegex_True
+    if (std::regex_match(stv, _static_logicalTermRegex_True)) {
         return true;
-    } else if( std::regex_match( stv, _static_logicalTermRegex_False) ) {
+    } else if (std::regex_match(stv, _static_logicalTermRegex_False)) {
         return false;
     } else {
-        emraise( parserFailure,
-                 "Could not interpret \"%s\" as a logical option.",
-                 stv );
+        emraise(parserFailure, "Could not interpret \"%s\" as a logical option.", stv);
     }
 }
 
 std::string
-iStringConvertibleParameter::ConversionTraits<bool>::to_string_expression( const bool & val ) {
-    if( val ) {
+iStringConvertible::ConversionTraits<bool>::to_string_expression(const bool &val) {
+    if (val) {
         return "True";
     } else {
         return "False";
     }
 }
-
+}  // namespace aspects
 }  // namespace dict
 }  // namespace goo
 

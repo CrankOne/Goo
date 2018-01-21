@@ -13,30 +13,176 @@ namespace dict {
 
 class Configuration;  // fwd
 
-template< typename KeyT
-        , typename BVlT
-        , template <class> class TVlT
-        , template <class> class ParameterT
-        , class ... SuppInfoTs >
-class InsertionProxy;  // fwd
-
-/**@brief Base class for insertion proxies.
- * @class InsertionProxyBase
+/**@brief Common insertion proxy template
+ * @class InsertionProxy
  *
- * Insertion proxies provides a convinient way to describe your configuration
+ * Insertion proxies provides a convenient way to describe your configuration
  * structures (parameters dictionaries and parameters lists) using lexical
  * chaining.
  *
- * This class holds common functions for both types of insertion proxies (for
- * dictionaries and lists).
+ * @tparam KeyT Dictionary index type.
+ * @tparam ParameterT A template class representing lowest class in parameter
+ *         class hierarchy designed to represent particular parameter together
+ *         with all aspects.
+ * @tparam AspectTs A set of aspects defined for particular parameters fixture.
  */
-template< typename BVlT
-        , template <class> class TVlT
-        , template <class> class ParameterT
-        , class ... SuppInfoTs >
-class InsertionProxyBase {
+template< typename KeyT
+        , template <class, class...> class ParameterT
+        , class ... AspectTs >
+class InsertionProxy;
+
+template< typename KeyT
+        , template <class, class...> class ParameterT
+        , class ... AspectTs >
+class BaseInsertionProxy {
+private:
+    // TODO: ptr to current dict/allocator instance
+protected:
+    template<typename T, typename ... CtrArgTs> T * _alloc( CtrArgTs ... args  ) {
+        // TODO: allocation shall be bound to configuration (root) instance and use the pool within
+        return new T(args...);
+    };
+    template<typename T> T * _alloc_parameter( AspectTs * ... args ) {
+        // TODO: dict alloc
+        return new ParameterT<T, AspectTs ...>( args ... );
+    };
+    template<typename T> T * _alloc_parameter( const T & v, AspectTs * ... args ) {
+        // TODO: dict alloc
+        return new ParameterT<T, AspectTs ...>( v, args ... );
+    };
+};
+
+
+/// Insertion proxy specialization for application configuration traits. Supports
+/// Only textual sub-dictionaries (named here '[sub]section'). The bottom dictionary
+/// is always a Configution instance where shortcut parameters and positional
+/// parameter are indexed.
+template<>
+class InsertionProxy< std::string
+                   , InsertableParameter
+                   , aspects::Description
+                   , aspects::iStringConvertible
+                   , aspects::CharShortcut
+                   , aspects::Required
+                   , aspects::IsSet > : BaseInsertionProxy<  std::string
+                                                         , InsertableParameter
+                                                         , aspects::Description
+                                                         , aspects::iStringConvertible
+                                                         , aspects::CharShortcut
+                                                         , aspects::Required
+                                                         , aspects::IsSet > {
 public:
-    typedef IndexingTraits<BVlT, TVlT, SuppInfoTs...> Traits;
+    typedef InsertionProxy< std::string
+                   , InsertableParameter
+                   , aspects::Description
+                   , aspects::iStringConvertible
+                   , aspects::CharShortcut
+                   , aspects::Required
+                   , aspects::IsSet > Self;
+    typedef AppConfNameIndex Subsection;
+    typedef std::stack< std::pair<std::string, Subsection *> > InsertionTargetsStack;
+private:
+    Configuration * _root;
+    InsertionTargetsStack _stack;
+    aspects::Required * _latestInsertedRequired;  // TODO: set to null in ctr
+protected:
+    Subsection & _top();
+    void _index_by_shortcut( char, iBaseValue * );
+public:
+
+    /// Insert new parameter with shortcut and name, no default value.
+    template<typename PT> Self &
+    p( char shortcut, const std::string & name, const std::string & description ) {
+        // TODO: InsertibleParameter instead of Patameter<>
+        auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
+                                       , _alloc<aspects::TStringConvertible<PT>>()
+                                       , _alloc<aspects::CharShortcut>(shortcut)
+                                       , _latestInsertedRequired = _alloc<aspects::Required>()
+                                       , _alloc<aspects::IsSet>()
+                                       );
+        _top().insert_parameter( name, pPtr );
+        _latestInsertedRequired = pPtr;
+        _index_by_shortcut( shortcut, pPtr );
+        return *this;
+    }
+
+    /// Insert new parameter with name only, no default value.
+    template<typename PT> Self &
+    p( const std::string & name, const std::string & description ) {
+        auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
+                                       , _alloc<aspects::TStringConvertible<PT>>()
+                                       , _alloc<aspects::CharShortcut>()  // no shortcut
+                                       , _latestInsertedRequired = _alloc<aspects::Required>()
+                                       , _alloc<aspects::IsSet>()
+                                       );
+        _top().insert_parameter( name, pPtr );
+        _latestInsertedRequired = pPtr;
+        return *this;
+    }
+
+    /// Insert new parameter with shortcut and name, with default value.
+    template<typename PT> Self &
+    p( char shortcut
+     , const std::string & name
+     , const std::string & description
+     , const PT & dft ) {
+        // TODO: InsertibleParameter instead of Patameter<>
+        auto pPtr = _alloc_parameter<PT>( dft
+                                       , _alloc<aspects::Description>(description)
+                                       , _alloc<aspects::TStringConvertible<PT>>()
+                                       , _alloc<aspects::CharShortcut>(shortcut)
+                                       , _latestInsertedRequired = _alloc<aspects::Required>()
+                                       , _alloc<aspects::IsSet>(true)
+                                       );
+        _top().insert_parameter( name, pPtr );
+        _latestInsertedRequired = pPtr;
+        _index_by_shortcut( shortcut, pPtr );
+        return *this;
+    }
+
+    /// Insert new parameter with name only, with default value.
+    template<typename PT> Self &
+    p( const std::string & name
+     , const std::string & description
+     , const PT & dft ) {
+        auto pPtr = _alloc_parameter<PT>( dft
+                                       , _alloc<aspects::Description>(description)
+                                       , _alloc<aspects::TStringConvertible<PT>>()
+                                       , _alloc<aspects::CharShortcut>()  // no shortcut
+                                       , _latestInsertedRequired = _alloc<aspects::Required>()
+                                       , _alloc<aspects::IsSet>(true)
+                                       );
+        _top().insert_parameter( name, pPtr );
+        _latestInsertedRequired = pPtr;
+        return *this;
+    }
+
+    /// Inserts the new parameters section with given name and description.
+    Self & bgn_sect( const std::string &, const std::string & );
+
+    /// Encloses insertion of the new parameters section. Provide section name
+    /// to check yourself.
+    Self & end_sect( const std::string & name="" );
+};
+
+typedef InsertionProxy< std::string
+                      , InsertableParameter
+                      , aspects::Description
+                      , aspects::iStringConvertible
+                      , aspects::CharShortcut
+                      , aspects::Required
+                      , aspects::IsSet > AppConfInsertionProxy;
+
+# if 0
+/**@brief Base class for generic configuration insertion proxies.
+ * @class GenericConfInsertionProxyBase
+ *
+ * This class provides goo::dict::
+ */
+template< typename KeyT>
+class GenericConfInsertionProxyBase {
+public:
+    typedef Traits<BVlT, TVlT, SuppInfoTs...> Traits;
     /// Frequently used list-of-structures type shortcut.
     typedef typename Traits::ListOfStructures LoS;
     /// Frequently used dictionary type shortcut.
@@ -145,7 +291,7 @@ protected:
 template< typename BVlT
         , template <class> class TVlT
         , template <class> class ParameterT
-        , class ... SuppInfoTs >
+        , template<typename> class ... SuppInfoTs >
 class InsertionProxy< std::string
                     , BVlT
                     , TVlT
@@ -186,8 +332,10 @@ public:
 
     template<typename T, typename ... CtrArgs> Self &
             p( const IndexingKeyTraits<std::string>::KeyHandle & key, CtrArgs ... args ) {
-        ParameterT<T> p = new ParameterT<T>( args ... );
-        Parent::template _top_as<Parent::Dict>().acquire_item( key, p, p->template as<SuppInfoTs>()... );
+        ParameterT<T> p( args ... );
+        Parent::template _top_as<Parent::Dict>().acquire_item( key
+                                                            , p
+                                                            , p.template as<SuppInfoTs>()... );
         return *this;
     }
 };  // class InsertionProxy<Dictionary>
@@ -195,7 +343,7 @@ public:
 template< typename BVlT
         , template <class> class TVlT
         , template <class> class ParameterT
-        , class ... SuppInfoTs >
+        , template<typename> class ... SuppInfoTs >
 class InsertionProxy< ListIndex
                     , BVlT
                     , TVlT
@@ -227,6 +375,7 @@ protected:
     InsertionProxy( typename Parent::LoS * root ) : Parent( root ) {}
     InsertionProxy( const typename Parent::InsertionTargetsStack & st ) : Parent( st ) {}
 public:
+    # if 0
     /// Closes the LoD and pops insertion targets stack when LoD was created
     /// within dictionary.
     InsertionProxy<Parent::Dict> end_list( const char * = nullptr );
@@ -246,8 +395,10 @@ public:
 
     /// Used to "close" list insertion within other list.
     InsertionProxy<ListOfStructures> end_sublist();
+    # endif
 };
 
+# if 0
 template<> inline InsertionProxyBase::Dict &
 InsertionProxyBase::InsertionTarget::as<InsertionProxyBase::Dict>() {
     if( !_isDict ) {
@@ -282,6 +433,9 @@ InsertionProxy<Dictionary>::bgn_list( Types ... args ) {
     _lastInsertedParameter = nullptr;
     return nullptr;
 }
+# endif
+
+# endif
 
 }  // namespace goo
 }  // namespace dict

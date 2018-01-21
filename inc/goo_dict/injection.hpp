@@ -25,6 +25,8 @@
 
 # include "goo_dict/parameter_dict.hpp"
 
+# if 0
+
 namespace goo {
 namespace dict {
 
@@ -82,6 +84,8 @@ public:
 
 }  // namespace dict
 }  // namespace goo
+
+# endif
 
 # endif  // H_GOO_PARAMETERS_DICTIONARY_INJECTION_MAPPING_H
 

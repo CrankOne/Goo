@@ -29,6 +29,9 @@
 namespace goo {
 namespace dict {
 
+template<>
+class AppConfTraits::DictionaryAspect<char> {};
+
 /**@brief Class representing dictionaries root instance.
  * @class Configuration
  *
@@ -44,16 +47,28 @@ namespace dict {
  * `invalidate_getopt_caches()` just before `extract()` invokation if inserted
  * sub-sections were modified.
  * */
-class Configuration : public DictionaryParameter {
+class Configuration : public mixins::iDuplicable< iBaseValue
+                                              , Configuration
+                                              , AppConfNameIndex> {
 public:
+    typedef mixins::iDuplicable<iBaseValue, Configuration, AppConfNameIndex> DuplicableParent;
+    typedef GenericDictionary< char
+                             , aspects::Description
+                             , aspects::iStringConvertible
+                             , aspects::CharShortcut
+                             , aspects::Required
+                             , aspects::IsSet > ShortcutsIndex;
     typedef std::list<char> ShortOptString;
     typedef std::list<void*> LongOptionEntries;
+    typedef iBaseValue* BaseArgHandle;
 protected:
     /// Indicator of long option with mandatory argument.
     static const int longOptNoShortcutRequiresArgument;
     /// Indicator of a kind of long option (logical parameter without argument).
     static const int longOptKey;
 private:
+    ShortcutsIndex _shortcutsIndex;
+
     /// `getopt_long()` aux cache for long options structure.
     mutable void * _cache_longOptionsPtr;
     /// `getopt_long()` aux cache for short options structure (just a string).
@@ -66,33 +81,33 @@ private:
     /// Controls, whether to automatically generate -h|--help [subsect] interface.
     bool _dftHelpIFace;
 
-    /// Access cache for short options. This index includes recursively all the
-    /// shortcuts provided in sub-sections. Filled by overrided
-    /// insert_parameter() method.
-    mutable std::unordered_map<char, iSingularParameter *>      _confShortcuts;
+    // Access cache for short options. This index includes recursively all the
+    // shortcuts provided in sub-sections. Filled by overrided
+    // insert_parameter() method.
+    //mutable std::unordered_map<char, iSingularParameter *> _confShortcuts;  // use ShortcutsIndex
     /// Access cache for long options (?).
     //mutable std::unordered_map<std::string, iSingularParameter *>   _longOptions;
 
-    /// Positional parameters. Ptr may be null if positional argument is
-    /// disallowed.
-    iSingularParameter * _positionalArgument;
+    // Positional parameters. Ptr may be null if positional argument is
+    // disallowed.
+    BaseArgHandle _positionalArgument;
 
     void _free_caches_if_need() const;
 protected:
     /// Recursively iterates through all the options and section producing getopt()-strings.
     void _recache_getopt_arguments() const;
 
-    /// Inserts parameter instance created by insertion proxy with caches invalidation.
-    virtual void acquire_parameter_ptr( iSingularParameter * ) override;
+    // Inserts parameter instance created by insertion proxy with caches invalidation.
+    //virtual void acquire_parameter_ptr( iSingularParameter * ) override;
 
-    /// Inserts dictionary instance created by insertion proxy with caches invalidation.
-    virtual void acquire_subsection_ptr( DictionaryParameter * ) override;
+    // Inserts dictionary instance created by insertion proxy with caches invalidation.
+    //virtual void acquire_subsection_ptr( DictionaryParameter * ) override;
 
     // Inserts shortcut inside hashing container for quick access.
-    virtual void _cache_parameter_by_shortcut( iSingularParameter * );
+    virtual void _cache_parameter_by_shortcut( char, BaseArgHandle );
 
     /// Inserts fully-qualified name inside hashing container for quick access.
-    virtual void _cache_parameter_by_full_name( const std::string &, iSingularParameter * );
+    virtual void _cache_parameter_by_full_name( const std::string &, BaseArgHandle );
 
     /// Internal procedure that composes access caches.
     //virtual void _append_configuration_caches(
@@ -101,33 +116,31 @@ protected:
     //        ) const final;
 
     /// Sets argument depending on multiplicity.
-    static void _set_argument_parameter( iSingularParameter &,
+    static void _set_argument_parameter( BaseArgHandle,
                                          const char *,
                                          std::ostream * );
 
     /// Internal procedure --- composes short & long options data structures.
-    static void _cache_append_options(
-                                    const DictionaryParameter &,
-                                    const std::string & nameprefix,
-                                    ShortOptString &,
-                                    std::unordered_map<char, std::string> &,
-                                    LongOptionEntries & );
+    static void _cache_append_options( const AppConfNameIndex &
+                                     , const std::string & nameprefix
+                                     , ShortOptString &
+                                     , std::unordered_map<char, std::string> &
+                                     , LongOptionEntries & );
 
     /// Aux insertion method for long options (reentrant routine).
-    static void _cache_insert_long_option( const std::string &,
-                                     LongOptionEntries &,
-                                     const iSingularParameter & );
+    static void _cache_insert_long_option( const std::string &
+                                         , LongOptionEntries &
+                                         , const BaseArgHandle );
 
     ///  Collects shortcutted flags and required options.
-    static void _collect_first_level_options(
-                        const DictionaryParameter & d,
-                        const std::string & nameprefix,
-                        std::unordered_map<std::string, iSingularParameter *> & rqs,
-                        std::unordered_map<char, iSingularParameter *> & shrt );
+    static void _collect_first_level_options( const AppConfNameIndex & d
+                                           , const std::string & nameprefix
+                                           , std::unordered_map<std::string, BaseArgHandle> & rqs
+                                           , std::unordered_map<char, BaseArgHandle> & shrt );
 
     /// Used for usage/help print.
-    static void _print_dict_usage( const DictionaryParameter & d,
-                                   const std::string & omitShortcuts );
+    static void _print_dict_usage( const DictionaryParameter & d
+                                , const std::string & omitShortcuts );
 
     /// Helper function setting/appending given token as a positional argument.
     void _append_positional_arg( const char * );
@@ -135,9 +148,10 @@ protected:
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
-    Configuration( const char * name,
-                   const char * description,
-                   bool defaultHelpIFace=true );
+    /// @param defaultHelpIFace controls, whether the -h/--help/-? flags will
+    ///        be automatically inserted.
+    Configuration( const char * description
+                , bool defaultHelpIFace=true );
 
     ~Configuration();
 
@@ -194,27 +208,29 @@ public:
     /// This is not an incremental procedure and has to be used rarely: if
     /// user's code has to treat multiple positional arguments, the
     /// `positional_arguments()` has to be used instead.
-    template<typename T> iParameter<T> &
+    template<typename T> void
     single_positional_argument( const char name[], const char description[] ) {
+        _TODO_  // todo: as InsertionProxy does.
+        # if 0
         auto * p = new InsertableParameter<T>( name, description );
         p->_check_initial_validity();
         _positionalArgument = p;
-        return *p;
+        # endif
     }
 
     /// Makes configuration instace be able to acquire a list of positional
     /// arguments of the specific type.
-    template<typename T> Parameter<Array<T> > &
+    template<typename T> void
     positional_arguments( const char name[], const char description[] ) {
+        _TODO_  // todo: as InsertionProxy does.
+        # if 0
         auto p = new InsertableParameter<Array<T> >( name, description );
         _positionalArgument = p;
-        return *p;
+        # endif
     }
 
     /// Returns forwarded arguments (if they were set).
     const Array<std::string> & forwarded_argv() const;
-
-    friend class DictionaryParameter;
 };  // class Configuration
 
 }  // namespace dict

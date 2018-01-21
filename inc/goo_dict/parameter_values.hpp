@@ -46,40 +46,6 @@ public:
 };  // class iBaseValue
 
 
-/**@class iStringConvertibleParameter
- * @brief Generic interface for parameter instance that may be converted to str.
- *
- * This is a data type-agnostic part of the string-convertible parameter class.
- */
-class iStringConvertibleParameter : virtual public iBaseValue {
-protected:
-    /// Shall translate string expression to C++ value.
-    virtual void _V_parse_argument( const char * ) = 0;
-    /// Shall render C++ value to string.
-    virtual std::string _V_to_string() const = 0;
-public:
-    /// Translates value from string representation.
-    void parse_argument( const char * strval ) {  _V_parse_argument( strval ); }
-    /// Renders string from C++ value.
-    std::string to_string() const { return _V_to_string(); }
-    template<typename ValueT, typename EnableT=void> struct ConversionTraits;
-    //{
-    //    typedef ValueT Value;
-    //    static Value parse_string_expression( const char * stv ) {
-    //        Value v;
-    //        std::ostringstream ss(stv);
-    //        ss >> v;
-    //        return v;
-    //    }
-    //    static std::string to_string_expression( const Value & v ) {
-    //        std::stringstream ss;
-    //        ss << v;
-    //        return ss.str();
-    //    }
-    //};
-};  // class iStringConvertibleParameter
-
-
 /**@brief Template container for a value.
  * @class iTValue
  *
@@ -109,6 +75,7 @@ protected:
 public:
     /// Const value getter (public).
     virtual const ValueT & value() const { return _value; }
+    virtual void value(const Value & v) { _set_value(v); }
     explicit TValue( const ValueT & v ) : _value(v) {}
     TValue( const TValue<Value> & o ) : _value(o._value) {}
 };

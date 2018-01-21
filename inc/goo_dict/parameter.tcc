@@ -37,7 +37,7 @@
 namespace goo {
 namespace dict {
 
-# if 0
+# if 1
 
 //class iSingularParameter;
 
@@ -45,42 +45,48 @@ namespace dict {
 //class iParameter;
 
 /**@class Parameter
- * @brief User-side implementation class. Extension point for user parameters type.
+ * @brief User-side implementation class. Extension point for user parameters type
  *
  * There is no default implementation of this class --- only standard C classes
  * are implemented in Goo library.
  */
-template<typename ValueT>
-class Parameter;  // Default implementation is empty.
+template< typename ValueT
+        , typename ... AspectTs>
+class Parameter : public mixins::iDuplicable< iBaseValue, TValue<ValueT> > {
+public:
+    typedef mixins::iDuplicable< iBaseValue, TValue<ValueT> > DuplicableParent;
+    std::tuple<AspectTs * ...> aspects;
+    Parameter(AspectTs * ... a) : aspects(a...) {}
+    Parameter(const ValueT & v, AspectTs * ... a) : DuplicableParent(v), aspects(a...) {}
+};
 
-template <typename T> class IntegralParameter;
-template <typename T> class FloatingPointParameter;
-template <typename T> class EnumParameter;
-template <typename T> class PointerParameter;
+template <typename T, typename ... AspectTs> class IntegralParameter;
+template <typename T, typename ... AspectTs> class FloatingPointParameter;
+template <typename T, typename ... AspectTs> class EnumParameter;
+template <typename T, typename ... AspectTs> class PointerParameter;
 
-# ifndef SWIG
-template<typename T>
+template< typename T
+        , typename ... AspectTs >
 using InsertableParameter = typename
     std::conditional< std::is_arithmetic<T>::value,
         typename std::conditional< std::is_same<T, bool>::value,
-            Parameter<bool>,
+            Parameter<bool, AspectTs...>,
             typename std::conditional< std::is_integral<T>::value,
-                IntegralParameter<T>,
+                IntegralParameter<T, AspectTs...>,
                 typename std::conditional< std::is_floating_point<T>::value,
-                    FloatingPointParameter<T>,
-                    Parameter<T>
+                    FloatingPointParameter<T, AspectTs...>,
+                    Parameter<T, AspectTs...>
                     >::type
             >::type
         >::type,
         typename std::conditional< std::is_enum<T>::value,
-            EnumParameter<T>,
+            EnumParameter<T, AspectTs...>,
             typename std::conditional< std::is_pointer<T>::value,
-                PointerParameter<T>,
-                Parameter<T>
+                PointerParameter<T, AspectTs...>,
+                Parameter<T, AspectTs...>
                 >::type
             >::type
     >::type;
-# endif
 
 /**@brief A parameter list class.
  * 
@@ -97,15 +103,16 @@ using InsertableParameter = typename
  * be useful not only with the initial configuration, but also for overriding
  * or appending variables set in config files.
  */
-template<typename ValueT>
-class Parameter<Array<ValueT> > :
-            public mixins::iDuplicable< AbstractParameter,
-                                        Parameter< Array<ValueT> >,
-                                        /*protected?*/ InsertableParameter< ValueT > > {
+template< typename ValueT
+        , typename ... AspectTs>
+class Parameter<Array<ValueT>, AspectTs... > :
+            public mixins::iDuplicable< iBaseValue,
+                                        Parameter< Array<ValueT>, AspectTs ... >,
+                                        /*protected?*/ InsertableParameter< ValueT, AspectTs ... > > {
 public:
-    typedef mixins::iDuplicable<AbstractParameter,
-                                Parameter< Array<ValueT> >,
-                                InsertableParameter<ValueT> > DuplicableParent;
+    typedef mixins::iDuplicable<iBaseValue,
+                                Parameter< Array<ValueT>, AspectTs ... >,
+                                InsertableParameter<ValueT, AspectTs ...> > DuplicableParent;
 private:
     bool _setToDefault;
     Array<ValueT> _values;
@@ -182,9 +189,9 @@ public:
 
     friend class DictInsertionProxy;
 
-    using AbstractParameter::name;
-    using AbstractParameter::description;
-    using AbstractParameter::shortcut;
+    //using AbstractParameter::name;
+    //using AbstractParameter::description;
+    //using AbstractParameter::shortcut;
     // ... whatever?
 };
 
@@ -195,6 +202,8 @@ template<> class Parameter<List<iBaseValue*> >;
 
 template<typename T> const Array<T> &
 iBaseValue::as_array_of() const {
+    _TODO_  // TODO: iSingularPArameter -> ???
+    # if 0
     typedef Parameter<Array<T> > const * CastTarget;
     auto ptr = dynamic_cast<CastTarget>(this);
     if( !ptr ) {
@@ -212,10 +221,13 @@ iBaseValue::as_array_of() const {
         goo_badcast( DECLTYPE(this), CastTarget, this, "Anonymous parameter." );
     }
     return ptr->values();
+    # endif
 }
 
 template<typename T> const T &
 iBaseValue::as() const {
+    _TODO_  // TODO: iSingularParameter -> ???
+    # if 0
     typedef iParameter<T> const * CastTarget;
     auto ptr = dynamic_cast<CastTarget>(this);
     if( !ptr ) {
@@ -232,6 +244,7 @@ iBaseValue::as() const {
         goo_badcast( DECLTYPE(this), CastTarget, this, "Anonymous parameter." );
     }
     return ptr->value();
+    # endif
 }
 
 # endif

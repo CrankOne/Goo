@@ -215,6 +215,31 @@ struct is_one_of<F, S, T...> {
             std::is_same<F, S>::value || is_one_of<F, T...>::value;
 };
 
+// Filters parameters pack
+
+template <typename, typename> struct Cons;
+
+template <typename  T, typename ...Args>
+struct Cons<T, std::tuple<Args...> > {
+    using type = std::tuple<T, Args...>;
+};
+
+template <template <typename> class Predicate, typename...> struct filter;
+
+template <template <typename> class Predicate> struct filter<Predicate> {
+    using type = std::tuple<>;
+};
+
+template< template <typename> class Predicate
+        , typename Head
+        , typename ...Tail>
+struct filter<Predicate, Head, Tail...> {
+    using type = typename std::conditional< Predicate<Head>::value
+                                          , typename Cons<Head, typename filter<Predicate, Tail...>::type>::type
+                                          , typename filter<Predicate, Tail...>::type
+                                          >::type;
+};
+
 } // namespace stdE
 
 namespace goo {

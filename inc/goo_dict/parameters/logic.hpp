@@ -24,6 +24,7 @@
 # define H_GOO_PARAMETERS_DICTIONARY_PARAMETER_LOGICAL_H
 
 # include "goo_dict/parameter.tcc"
+# include "goo_dict/app_conf_info.hpp"
 
 namespace goo {
 namespace dict {
@@ -35,7 +36,7 @@ namespace dict {
  *      $ do_something -v
  * Or, with equivalent meaning:
  *      $ do_something --verbose=true
- * Besides of true/false values, the following synonims are accepted:
+ * Besides of true/false values, the following synonyms are accepted:
  *      true : True, TRUE, yes, Yes, YES, enable, Enable, ENABLE, on, On, ON
  *      false: False, FALSE, no, No, NO, disable, Disable, DISABLE, off, Off, OFF
  * 
@@ -55,80 +56,40 @@ namespace dict {
  *      $ myprogram -q false
  * This aspect affects generated help message.
  * */
-template<>
-class Parameter<bool> : public mixins::iDuplicable< iSingularParameter
-                                                 , Parameter<bool>
-                                                 , iParameter<bool> > {
+template<typename ... AspectTs>
+class Parameter<bool, AspectTs...> : public mixins::iDuplicable< iBaseValue
+                                                             , Parameter<bool, AspectTs...> > {
 public:
-    typedef typename DuplicableParent::Parent::Value Value;
-protected:
-    /// Insertion proxy has access to protected members and can invoke this
-    /// method to make the parameter a flag;
-    void reset_flag() {
-        _set_is_flag_flag();
-        _set_value(false);
-    }
+    typedef mixins::iDuplicable< iBaseValue, Parameter<bool, AspectTs...> > DuplicableParent;
+private:
+    bool _isFlag;
 public:
     //using Parameter<bool>::Value;
-
-    /// Only long option ctr.
-    Parameter( const char * name_,
-               const char * description_ );
-    /// Long option with shortcut.
-    Parameter( char shortcut_,
-               const char * name_,
-               const char * description_ );
-    /// Only short option.
-    Parameter( char shortcut_,
-               const char * description_ );
-    /// Only long option ctr.
-    Parameter( const char * name_,
-               const char * description_,
-               bool default_ );
-    /// Long option with shortcut.
-    Parameter( char shortcut_,
-               const char * name_,
-               const char * description_,
-               bool default_ );
-    /// Only short option.
-    Parameter( char shortcut_,
-               const char * description_,
-               bool default_ );
-
-    // This is to prevent implicit conversion from char * to bool --- fails at compile time.
-    Parameter( const char *,
-               const char *,
-               const char * );
-    // This is to prevent implicit conversion from char * to bool --- fails at compile time.
-    Parameter( char,
-               const char *,
-               const char *,
-               const char * );
-
-    Parameter( const Parameter<bool> & o ) : DuplicableParent( o ) {}
-
     /// This method is used mostly by Configuration class.
     virtual void set_option( bool );
 
-# if 0
-protected:
+    /// Insertion proxy has access to protected members and can invoke this
+    /// method to make the parameter a flag;
+    void set_is_flag() {
+        _isFlag = true;
+    }
+};
+
+namespace aspects {
+template<>
+struct iStringConvertible::ConversionTraits<bool> {
+    typedef bool Value;
+
     /// Sets parameter value from string. Following strings are acceptable
     /// with appropriate meaning (case insensitive):
     /// (true|enable|on|yes|1)    logically corresponds to `true';
     /// (false|disable|off|no|0)  logically corresponds to `false'.
-    virtual Value _V_parse( const char * ) const override;
+    static Value parse_string_expression(const char *stv);
 
     /// Returns 'True' or 'False' depending on current value.
-    virtual std::string _V_stringify_value( const Value & ) const override;
-# endif
+    static std::string to_string_expression(const Value &v);
 };
-
-template<>
-struct iStringConvertibleParameter::ConversionTraits<bool> {
-    typedef bool Value;
-    static Value parse_string_expression( const char * stv );
-    static std::string to_string_expression( const Value & v );
-};
+}  // namespace aspects
 
 }  // namespace dict
 }  // namespace goo

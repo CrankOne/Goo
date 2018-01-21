@@ -39,32 +39,24 @@
 namespace goo {
 namespace dict {
 
-# if 0
-
 const int Configuration::longOptKey = 2;
 const int Configuration::longOptNoShortcutRequiresArgument = 3;
 
-Configuration::Configuration( const char * name_,
-                              const char * descr_,
-                              bool defaultHelpIFace ) : DictionaryParameter(name_, descr_),
+Configuration::Configuration( const char * descr_
+                           , bool defaultHelpIFace ) : DuplicableParent(descr_),
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
                                                       _getoptCachesValid( false ),
-                                                      _dftHelpIFace(defaultHelpIFace),
-                                                      _positionalArgument( nullptr ) {}
+                                                      _dftHelpIFace(defaultHelpIFace) {}
 
-Configuration::Configuration( const Configuration & orig ) : DictionaryParameter( orig ),
+Configuration::Configuration( const Configuration & orig ) : DuplicableParent( orig ),
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
                                                       _getoptCachesValid( false ),
-                                                      _dftHelpIFace(orig._dftHelpIFace),
-                                                      _positionalArgument( nullptr ) {}
+                                                      _dftHelpIFace(orig._dftHelpIFace) {}
 
 Configuration::~Configuration() {
     _free_caches_if_need();
-    if( _positionalArgument ) {
-        delete _positionalArgument;
-    }
 }
 
 void
@@ -125,10 +117,10 @@ Configuration::_recache_getopt_arguments() const {
 }
 
 void
-Configuration::_set_argument_parameter( iSingularParameter & p,
-                                        const char * strval,
-                                        std::ostream * verbose ) {
-    p.parse_argument( strval );
+Configuration::_set_argument_parameter( BaseArgHandle p
+                                    , const char * strval
+                                    , std::ostream * verbose ) {
+    static_cast<aspects::iStringConvertible *>(p)->parse_argument( strval );
     if( verbose ) {
         if( p.is_singular() ) {
                 *verbose << strfmt( "    ...set to \"%s\".", p.to_string().c_str() )
@@ -630,9 +622,8 @@ Configuration::_append_configuration_caches(
 # endif
 
 void
-Configuration::_cache_parameter_by_shortcut( iSingularParameter * p_ ) {
-    assert( p_->has_shortcut() );
-    auto ir = parameters_by_shortcut().emplace( p_->shortcut(), p_ );
+Configuration::_cache_parameter_by_shortcut( char shrt, iBaseValue * p ) {
+    auto ir = parameters_by_shortcut().emplace( shrt, p );
     if( !ir.second ) {
         emraise( nonUniq, "Configuration \"%s\":%p already has parameter "
                           "referenced by '%c': %p \"%s\". "
@@ -684,8 +675,6 @@ Configuration::print_ASCII_tree( std::list<std::string> & output ) const {
     }
     output.push_front( std::string("╔═ << " ESC_BLDGREEN) + name() + ESC_CLRCLEAR " >>" );
 }
-
-# endif
 
 }  // namespace dict
 }  // namespace goo

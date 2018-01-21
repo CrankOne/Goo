@@ -27,6 +27,7 @@
 // be performed on _set_value, not just within safe_parse procedure.
 
 # include "goo_dict/parameter.tcc"
+# include "goo_dict/app_conf_info.hpp"
 
 namespace goo {
 namespace dict {
@@ -64,128 +65,32 @@ template<> long double _floating_point_parse( const char *, char ** );
 // template<> __float128 _floating_point_safe_parse( const char * ); // TODO?
 
 
-template<typename T>
-class FloatingPointParameter : public mixins::iDuplicable<
-                                    AbstractParameter,
-                                    FloatingPointParameter<T>,
-                                    iParameter<T> > {
+template< typename T
+        , typename ... AspectTs>
+class FloatingPointParameter : public mixins::iDuplicable< iBaseValue
+                                                       , FloatingPointParameter<T, AspectTs ...> > {
 public:
     typedef T Float;
-    typedef mixins::iDuplicable< AbstractParameter,
-                                 FloatingPointParameter<T>,
-                                 iParameter<T> > DuplicableParent;
-
-    /// Only long option ctr.
-    FloatingPointParameter(  const char * name_,
-                        const char * description_ );
-    /// Long option with shortcut.
-    FloatingPointParameter(  char shortcut_,
-                        const char * name_,
-                        const char * description_ );
-    /// Only short option.
-    FloatingPointParameter(  char shortcut_,
-                        const char * description_ );
-    /// Only long option ctr.
-    FloatingPointParameter(  const char * name_,
-                        const char * description_,
-                        Float default_ );
-    /// Long option with shortcut.
-    FloatingPointParameter(  char shortcut_,
-                        const char * name_,
-                        const char * description_,
-                        Float default_ );
-    /// Only short option.
-    FloatingPointParameter(  char shortcut_,
-                        const char * description_,
-                        Float default_ );
+    typedef mixins::iDuplicable< iBaseValue,
+                                 FloatingPointParameter<T, AspectTs ...> > DuplicableParent;
 
     FloatingPointParameter( const FloatingPointParameter<Float> & o ) : DuplicableParent( o ) {}
 };
 
-template< typename T >
-struct iStringConvertibleParameter::ConversionTraits<T, typename std::enable_if<std::is_floating_point<T>::value>::type> {
+namespace aspects {
+template<typename T>
+struct iStringConvertible::ConversionTraits<T, typename std::enable_if<std::is_floating_point<T>::value>::type> {
     typedef T Value;
-    static Value parse_string_expression( const char * stv )
-            { return floating_point_safe_parse<T>(stv); }
-    static std::string to_string_expression( const Value & v ) {
+
+    static Value parse_string_expression(const char *stv) { return floating_point_safe_parse<T>(stv); }
+
+    static std::string to_string_expression(const Value &v) {
         std::stringstream ss;
         ss << v;
         return ss.str();
     }
 };
-
-template<typename T>
-FloatingPointParameter<T>::FloatingPointParameter( const char * name_,
-                                         const char * description_ ) :
-            DuplicableParent( name_,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular
-                            ) {}
-
-template<typename T>
-FloatingPointParameter<T>::FloatingPointParameter(  char shortcut_,
-                                          const char * name_,
-                                          const char * description_ ) :
-            DuplicableParent( name_,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular
-                                | AbstractParameter::shortened,
-                              shortcut_
-                            ) {}
-
-template<typename T>
-FloatingPointParameter<T>::FloatingPointParameter( char shortcut_,
-                                         const char * description_ ) :
-            DuplicableParent( nullptr,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular,
-                              shortcut_
-                            ) {}
-
-template<typename T>
-FloatingPointParameter<T>::FloatingPointParameter( const char * name_,
-                                         const char * description_,
-                                         Float default_ ) :
-            DuplicableParent( name_,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular
-                                | AbstractParameter::set,
-                              '\0',
-                              default_
-                            ) {}
-
-template<typename T>
-FloatingPointParameter<T>::FloatingPointParameter( char shortcut_,
-                                           const char * name_,
-                                           const char * description_,
-                                           Float default_ ) :
-            DuplicableParent( name_,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular
-                                | AbstractParameter::set
-                                | AbstractParameter::shortened,
-                              shortcut_,
-                              default_
-                            ) {}
-
-template<typename T>
-FloatingPointParameter<T>::FloatingPointParameter( char shortcut_,
-                                           const char * description_,
-                                           Float default_ ) :
-            DuplicableParent( nullptr,
-                              description_,
-                              AbstractParameter::atomic
-                                | AbstractParameter::singular
-                                | AbstractParameter::set
-                                | AbstractParameter::shortened,
-                              shortcut_,
-                              default_
-                            ) {}
+}  // namespace aspects
 
 }  // namespace dict
 }  // namespace goo

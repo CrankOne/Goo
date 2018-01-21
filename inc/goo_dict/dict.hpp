@@ -23,13 +23,6 @@
 # ifndef H_GOO_PARAMETERS_DICTIONARY_H
 # define H_GOO_PARAMETERS_DICTIONARY_H
 
-# include <map>
-# include <unordered_map>
-# include <vector>
-
-# include <iostream>
-# include <list>
-
 # include "goo_dict/plural.hpp"
 # include "goo_dict/app_conf_info.hpp"
 
@@ -90,125 +83,117 @@ namespace goo {
  *  - A *flag* is an option that does not require an argument. According to POSIX
  *  convention a tri-state parameters are not supported, so logical parameter
  *  have to be either a flag either a logical option with required argument
- *  (see PArameter<bool> template specification for details).
+ *  (see Parameter<bool> template specification for details).
  *
  * @{*/
 
 namespace dict {
 
-/// Specialization for application configuration parameters. Each dictionary
-/// and singular parameter have a description. Singular parameters may have
-/// a shortcuts, while list entries are anonymous and have no additional info.
-template<> struct IndexingTraits< iBaseValue, TValue
-                         , pInfos::DescriptionInfo
-                         , pInfos::RequiredParameterInfo
-                         , pInfos::IsSetInfo
-                         > {
-    /// Keeps generic traits' types.
-    typedef IndexingTraits<iBaseValue, TValue> BareTraits;
-    /// Preserve library-defined container.
-    template<typename KT, typename VT> using TIndex = BareTraits::TIndex<KT, VT>;
-    /// Preserve library-defined container.
-    template<typename KT, typename VT> using TPHash = BareTraits::TPHash<KT, VT>;
-    /// Dictionary with string keys type keeps all the types of information.
-    typedef GenericDictionary<std::string, iBaseValue, TValue
-                             , pInfos::DescriptionInfo
-                             , pInfos::RequiredParameterInfo
-                             , pInfos::IsSetInfo
-                             > Dictionary;
-    /// Dictionary with integer keys keeps no auxilliary information.
-    typedef GenericDictionary<ListIndex, iBaseValue, TValue> ListOfStructures;
+/// Specialization for common name-indexed dictionary structure used for
+/// application configuration. Does not provide list-like structures.
+template<>
+struct Traits< aspects::Description
+            , aspects::iStringConvertible
+            , aspects::CharShortcut
+            , aspects::Required
+            , aspects::IsSet
+            > {
+    template<typename KeyT> class DictionaryAspect;
 };
 
-typedef IndexingTraits< iBaseValue, TValue
-                         , pInfos::DescriptionInfo
-                         , pInfos::RequiredParameterInfo
-                         , pInfos::IsSetInfo
-                         > AppCfgTraits;
+typedef Traits< aspects::Description
+              , aspects::iStringConvertible
+              , aspects::CharShortcut
+              , aspects::Required
+              , aspects::IsSet
+              > AppConfTraits;
 
-# if 0
-template<typename T> class TInsertionProxyCommon;
-template<typename T> class InsertionProxy;
-
-class DictionaryParameter;
-
-/**@brief Parameters container with basic querying support.
- * @class Dictionary
- *
- * The basic container for parameter instances providing basic querying support.
- * Stores auxiliary indexes for efficient retrieval of a particular parameter
- * instance by its name or single-char shortcuts.
- *
- * Albeit this container is embedded into goo::dict facility, it does not yet
- * act as a standalone parameter and is used in subsequent class
- * DictionaryParameter for actual parameter dictionary representation. Its
- * intermediate functionality is used in AoS sequences as well.
- * */
-class Dictionary : public mixins::iDuplicable< iBaseValue, Dictionary >
-                , protected DictionaryIndex<std::string, iSingularParameter>
-                , protected DictionaryIndex<std::string, DictionaryParameter, true>
-                , protected DictionaryIndex<std::string, LoSParameter> {
-
-    // TODO: https://en.wikibooks.org/wiki/More_C++_Idioms/Friendship_and_the_Attorney-Client
-    friend class DictInsertionAttorney;
-
-    virtual void acquire_parameter_ptr( iSingularParameter * );
-    virtual void acquire_subsection_ptr( DictionaryParameter * );
-    virtual void acquire_list_ptr( LoSParameter * );
+/// Named dictionary config template specialization.
+template<>
+class AppConfTraits::DictionaryAspect<std::string>
+        : public Hash< std::string
+                     , GenericDictionary< std::string
+                                       , aspects::Description
+                                       , aspects::iStringConvertible
+                                       , aspects::CharShortcut
+                                       , aspects::Required
+                                       , aspects::IsSet
+                                       > *
+                     >
+        , public aspects::Description {
 public:
-    /// We define std::string to be key type for dictionary here, but it is only
-    /// for compatibility with other template routines --- user code may still
-    /// reference parameters by single-char shortcut (of type char).
-    typedef std::string Key;
-
-    typedef DictionaryIndex<std::string, iSingularParameter> SingsByName;
-    typedef DictionaryIndex<std::string, DictionaryParameter, true> DictionariesContainer;
-    typedef DictionaryIndex<std::string, LoSParameter> ListsByName;
-protected:
-    virtual void * _V_data_addr() override {
-        return &(static_cast<iDictionaryIndex<void, iBaseValue> *>(this)->container_ref());
-    }
-
-    virtual const void * _V_data_addr() const override {
-        return &(static_cast<const iDictionaryIndex<void, iBaseValue> *>(this)->container_const_ref());
-    }
-
-    virtual const std::type_info & _V_target_type_info() const override {
-        return typeid(Dictionary);
-    }
-public:
-    /// Public copy ctr for virtual copy ctr.
-    Dictionary( const Dictionary & );
-    Dictionary() = default;
-    ~Dictionary() override;
-
-    /// Constructs a bound insertion proxy instance object.
-    InsertionProxy<Dictionary> insertion_proxy();
-
-    //template<typename T> const T & operator[](const std::string &) const;
-    //template<typename T>       T & operator[](const std::string &)
-    const iBaseValue & operator[](const std::string &) const;
-    iBaseValue & operator[](const std::string &);
-};  // class Dictionary
-
-/// Interim class, an attorney for insertion proxy to access dictionary
-/// insertion methods.
-class DictInsertionAttorney {
-    template<typename T> static const T * probe( const std::string & k, const Dictionary & d) {
-        return d.DictionaryIndex<std::string, T>::item_ptr( k );
-    }
-    template<typename T> static T * probe( const std::string & k, Dictionary & d ) {
-        const Dictionary & cd = d;
-        return const_cast<T*>( probe<T>(k, cd) );
-    }
-
-    static void push_parameter( iSingularParameter *, Dictionary & );
-    static void push_subsection( DictionaryParameter *, Dictionary & );
-    static void push_list_parameter( LoSParameter *, Dictionary & );
-
-    friend class TInsertionProxyCommon<Dictionary>;
+    explicit DictionaryAspect( const std::string & d ) : aspects::Description( d ) {}
 };
-# endif
+
+typedef GenericDictionary< std::string
+                         , aspects::Description
+                         , aspects::iStringConvertible
+                         , aspects::CharShortcut
+                         , aspects::Required
+                         , aspects::IsSet
+                         > AppConfNameIndex;
+
+// Note: the char-indexing dictionary aspect is declared ath the configuration.hpp
+// header.
+
+// ---
+
+/// Specialization for common name-indexed dictionary structure used for
+/// generic configurations. Provides list-like structures, but is not supposed
+/// to store shortcuts.
+template<>
+struct Traits< aspects::Description
+            , aspects::iStringConvertible
+            , aspects::IsSet
+            > {
+    template<typename KeyT> class DictionaryAspect;
+};
+
+typedef Traits< aspects::Description
+              , aspects::iStringConvertible
+              , aspects::IsSet
+              > GenericConfTraits;
+
+/// Named dictionary config template specialization.
+template<>
+class GenericConfTraits::DictionaryAspect<std::string>
+        : public Hash< std::string
+                     , GenericDictionary< std::string
+                                       , aspects::Description
+                                       , aspects::iStringConvertible
+                                       , aspects::IsSet
+                                       > *
+                     >
+        , public Hash< std::string
+                     , GenericDictionary< ListIndex
+                                       , aspects::Description
+                                       , aspects::iStringConvertible
+                                       , aspects::IsSet
+                                       > *
+                     >
+        , public aspects::Description {
+public:
+    explicit DictionaryAspect( const std::string & d ) : aspects::Description( d ) {}
+};
+
+/// Integer-indexed (List-of-Structures) dictionary config template
+/// specialization.
+template<>
+class GenericConfTraits::DictionaryAspect<ListIndex>
+        : public Hash< ListIndex
+                     , GenericDictionary< std::string
+                                       , aspects::Description
+                                       , aspects::iStringConvertible
+                                       , aspects::IsSet
+                                       > *
+                     >
+        , public Hash< ListIndex
+                     , GenericDictionary< ListIndex > *  // (!) has no aspects
+                     >
+        , public aspects::Description {
+public:
+    DictionaryAspect( const std::string & d ) : aspects::Description(d) {}
+};
 
 }  // namespace dict
 /** @} */  // end of appParameters group

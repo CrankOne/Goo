@@ -27,7 +27,7 @@
 # include <getopt.h>
 # include <cstring>
 
-# if 1
+# if 0
 
 namespace goo {
 namespace dict {

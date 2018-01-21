@@ -24,48 +24,18 @@
 
 namespace goo {
 namespace dict {
-
-Parameter<std::string>::Parameter( char shortcut_,
-                                   const char * name_,
-                                   const char * description_,
-                                   const char * default_ ) :
-                        DuplicableParent( (name_ ? ('\0' == name_[0] ?
-                                                nullptr : name_) : nullptr),
-                                          description_,
-                              0x0 | AbstractParameter::atomic
-                                  | AbstractParameter::singular
-                                  | AbstractParameter::shortened,
-                              shortcut_
-                            ) {
-    if( default_ && '\0' != default_[0] ) {
-        _set_value( default_ );
-    }
-}
-
-Parameter<std::string>::Parameter( const char * name_,
-                                   const char * description_,
-                                   const char * default_ ) :
-                        DuplicableParent( name_,
-                              description_,
-                              0x0 | AbstractParameter::set
-                                  | AbstractParameter::atomic
-                                  | AbstractParameter::singular,
-                              '\0' ) {
-    if( default_ && '\0' != default_[0] ) {
-        _set_value( default_ );
-    }
-}
+namespace aspects {
 
 std::string
-iStringConvertibleParameter::ConversionTraits<std::string>::parse_string_expression( const char * stv ) {
+iStringConvertible::ConversionTraits<std::string>::parse_string_expression(const char *stv) {
     return stv;
 }
 
 std::string
-iStringConvertibleParameter::ConversionTraits<std::string>::to_string_expression( const Value & val ) {
+iStringConvertible::ConversionTraits<std::string>::to_string_expression(const Value &val) {
     return val;
 }
-
+}  // namespace aspects
 }  // namespace dict
 }  // namespace goo
 
