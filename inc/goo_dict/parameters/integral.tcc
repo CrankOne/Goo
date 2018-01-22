@@ -91,15 +91,14 @@ integral_safe_parse<unsigned long long int>( const char * str, int base );
 
 
 template<typename T, typename ... AspTs>
-class IntegralParameter : public mixins::iDuplicable<
-                                    iBaseValue,
-                                    IntegralParameter<T, AspTs...>,
-                                    Parameter<T, AspTs...> > {
+class IntegralParameter : public mixins::iDuplicable< iBaseValue<AspTs...>
+                                                    , IntegralParameter<T, AspTs...>
+                                                    , Parameter<T, AspTs...> > {
 public:
     typedef T Integral;
-    typedef mixins::iDuplicable< iBaseValue,
-                                 IntegralParameter<T>,
-                                 Parameter<T, AspTs...> > DuplicableParent;
+    typedef mixins::iDuplicable< iBaseValue<AspTs...>
+                               , IntegralParameter<T, AspTs...>
+                               , Parameter<T, AspTs...> > DuplicableParent;
     IntegralParameter( AspTs * ... asps ) : DuplicableParent( asps ... ) {}
 };
 

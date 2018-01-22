@@ -8,6 +8,8 @@
 # include "goo_dict/dict.hpp"
 # include "goo_dict/dpath.hpp"
 
+# include "goo_dict/parameters/logic.hpp"
+
 namespace goo {
 namespace dict {
 

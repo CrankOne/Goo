@@ -53,6 +53,7 @@ struct GenericDictionary : public mixins::iDuplicable< iBaseValue<AspectTs...>
                                                    , TValue< Hash<KeyT, iBaseValue<AspectTs...> * >, AspectTs... >
                                                    >
                         , public Traits<AspectTs...>::template DictionaryAspect<KeyT> {
+
     //template< typename
     //        , template <class> class
     //        , class ... > friend class InsertionProxy;

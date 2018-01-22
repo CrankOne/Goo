@@ -51,10 +51,13 @@ namespace dict {
  * name argument when only short option is given.
  * */
 template<typename ... AspectTs>
-class Parameter<std::string, AspectTs...> : public mixins::iDuplicable< iBaseValue
-                                                                   , Parameter<std::string, AspectTs... > > {
+class Parameter<std::string, AspectTs...> : public mixins::iDuplicable< iBaseValue<AspectTs...>
+                                                                      , Parameter<std::string, AspectTs... >
+                                                                      > {
 public:
-    typedef mixins::iDuplicable< iBaseValue, Parameter<std::string, AspectTs... > > DuplicableParent;
+    typedef mixins::iDuplicable< iBaseValue<AspectTs...>
+                               , Parameter<std::string, AspectTs... >
+                               > DuplicableParent;
 public:
     Parameter( const Parameter<std::string> & o ) : DuplicableParent( o ) {}
 };

@@ -42,9 +42,6 @@
 namespace goo {
 namespace dict {
 
-class Dictionary;
-class DictionaryParameter;
-
 /// Type referencing element position in a List.
 typedef unsigned long ListIndex;
 

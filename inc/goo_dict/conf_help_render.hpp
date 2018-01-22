@@ -32,9 +32,9 @@
 namespace goo {
 namespace dict {
 
+# if 0
+
 class Configuration;
-class DictionaryParameter;
-class iSingularParameter;
 
 /**@class iHelpRenderer
  * @brief Aux class defining how to generate help reference text from
@@ -121,6 +121,8 @@ public:
  * TODO: enum
  * */
 //class LineListRenderer;
+
+# endif
 
 }  // namespace dict
 }  // namespace goo

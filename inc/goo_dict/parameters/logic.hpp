@@ -57,22 +57,15 @@ namespace dict {
  * This aspect affects generated help message.
  * */
 template<typename ... AspectTs>
-class Parameter<bool, AspectTs...> : public mixins::iDuplicable< iBaseValue
-                                                             , Parameter<bool, AspectTs...> > {
+class Parameter<bool, AspectTs...> : public mixins::iDuplicable< iBaseValue<AspectTs...>
+                                                               , Parameter<bool, AspectTs...>
+                                                               , TValue<bool, AspectTs...> > {
 public:
-    typedef mixins::iDuplicable< iBaseValue, Parameter<bool, AspectTs...> > DuplicableParent;
-private:
-    bool _isFlag;
-public:
-    //using Parameter<bool>::Value;
-    /// This method is used mostly by Configuration class.
-    virtual void set_option( bool );
-
-    /// Insertion proxy has access to protected members and can invoke this
-    /// method to make the parameter a flag;
-    void set_is_flag() {
-        _isFlag = true;
-    }
+    typedef mixins::iDuplicable< iBaseValue<AspectTs...>
+                               , Parameter<bool, AspectTs...>
+                               , TValue<bool, AspectTs...>
+                               > DuplicableParent;
+    // ...
 };
 
 namespace aspects {

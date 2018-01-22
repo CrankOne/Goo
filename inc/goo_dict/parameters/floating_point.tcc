@@ -67,11 +67,11 @@ template<> long double _floating_point_parse( const char *, char ** );
 
 template< typename T
         , typename ... AspectTs>
-class FloatingPointParameter : public mixins::iDuplicable< iBaseValue
-                                                       , FloatingPointParameter<T, AspectTs ...> > {
+class FloatingPointParameter : public mixins::iDuplicable< iBaseValue<AspectTs...>
+                                                         , FloatingPointParameter<T, AspectTs ...> > {
 public:
     typedef T Float;
-    typedef mixins::iDuplicable< iBaseValue,
+    typedef mixins::iDuplicable< iBaseValue<AspectTs...>,
                                  FloatingPointParameter<T, AspectTs ...> > DuplicableParent;
 
     FloatingPointParameter( const FloatingPointParameter<Float> & o ) : DuplicableParent( o ) {}

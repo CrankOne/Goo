@@ -42,15 +42,21 @@ public:
     virtual void description( const std::string & t ) { _d = t; }
 };
 
-/// Defines the "is required" flag for parameters.
+/// Defines the "is required" and "requires argument" flags for parameters.
+/// The "requires argument"=false state is usually possible for command-line
+/// arguments --- POSIX standard defines such flags. The "is required" flag
+/// makes sense only with composition of the IsSet() aspect.
 struct Required {
 private:
-    bool _isRequired;
+    bool _isRequired
+       , _requiresValue;
 public:
-    explicit Required( bool v ) : _isRequired(v) {}
-    Required() : _isRequired(false) {}
-    virtual bool is_required() const { return _isRequired; }
+    explicit Required( bool v=true
+                     , bool requiresValue=true ) : _isRequired(v), _requiresValue(requiresValue) {}
+    bool is_required() const { return _isRequired; }
     virtual void set_required(bool v) { _isRequired = true; }
+    bool requires_argument() const { return _requiresValue; }
+    virtual void set_requires_argument( bool v ) { _requiresValue = v; }
 };
 
 /// Defines "is set" flag for parameters.
