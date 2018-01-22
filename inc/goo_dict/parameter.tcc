@@ -52,12 +52,11 @@ namespace dict {
  */
 template< typename ValueT
         , typename ... AspectTs>
-class Parameter : public mixins::iDuplicable< iBaseValue, TValue<ValueT> > {
+class Parameter : public mixins::iDuplicable< iBaseValue<AspectTs...>, TValue<ValueT, AspectTs...> > {
 public:
-    typedef mixins::iDuplicable< iBaseValue, TValue<ValueT> > DuplicableParent;
-    std::tuple<AspectTs * ...> aspects;
-    Parameter(AspectTs * ... a) : aspects(a...) {}
-    Parameter(const ValueT & v, AspectTs * ... a) : DuplicableParent(v), aspects(a...) {}
+    typedef mixins::iDuplicable< iBaseValue<AspectTs...>, TValue<ValueT> > DuplicableParent;
+    Parameter() = default;
+    Parameter(const ValueT & v) : DuplicableParent(v) {}
 };
 
 template <typename T, typename ... AspectTs> class IntegralParameter;
@@ -106,11 +105,11 @@ using InsertableParameter = typename
 template< typename ValueT
         , typename ... AspectTs>
 class Parameter<Array<ValueT>, AspectTs... > :
-            public mixins::iDuplicable< iBaseValue,
+            public mixins::iDuplicable< iBaseValue<AspectTs...>,
                                         Parameter< Array<ValueT>, AspectTs ... >,
                                         /*protected?*/ InsertableParameter< ValueT, AspectTs ... > > {
 public:
-    typedef mixins::iDuplicable<iBaseValue,
+    typedef mixins::iDuplicable<iBaseValue<AspectTs...>,
                                 Parameter< Array<ValueT>, AspectTs ... >,
                                 InsertableParameter<ValueT, AspectTs ...> > DuplicableParent;
 private:
@@ -198,10 +197,11 @@ public:
 /// This specification has to be treated in the special manner, in a similar way
 /// to dicitonary.
 /// Include "goo_dict/los.hpp" header for full declaration.
-template<> class Parameter<List<iBaseValue*> >;
+template<typename ... AspectTs> class Parameter<List<iBaseValue<AspectTs...>*> >;
 
+template<typename ... AspectTs>
 template<typename T> const Array<T> &
-iBaseValue::as_array_of() const {
+iBaseValue<AspectTs...>::as_array_of() const {
     _TODO_  // TODO: iSingularPArameter -> ???
     # if 0
     typedef Parameter<Array<T> > const * CastTarget;
@@ -224,8 +224,9 @@ iBaseValue::as_array_of() const {
     # endif
 }
 
+template<typename ... AspectTs>
 template<typename T> const T &
-iBaseValue::as() const {
+iBaseValue<AspectTs...>::as() const {
     _TODO_  // TODO: iSingularParameter -> ???
     # if 0
     typedef iParameter<T> const * CastTarget;

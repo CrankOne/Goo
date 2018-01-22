@@ -120,13 +120,14 @@ void
 Configuration::_set_argument_parameter( BaseArgHandle p
                                     , const char * strval
                                     , std::ostream * verbose ) {
-    static_cast<aspects::iStringConvertible *>(p)->parse_argument( strval );
+    p->aspect_cast<aspects::iStringConvertible>().parse_argument( strval );
     if( verbose ) {
-        if( p.is_singular() ) {
-                *verbose << strfmt( "    ...set to \"%s\".", p.to_string().c_str() )
+        std::string s = p->aspect_cast<aspects::iStringConvertible>().to_string().c_str();
+        if( ! p->aspect_cast<aspects::Array>().is_array() ) {
+                *verbose << strfmt( "    ...set to \"%s\".", s.c_str())
                          << std::endl;
         } else {
-               *verbose << strfmt( "    ...appended with \"%s\".", p.to_string().c_str() )
+               *verbose << strfmt( "    ...appended with \"%s\".", s.c_str() )
                         << std::endl;
         }
     }
@@ -148,7 +149,7 @@ Configuration::_set_argument_parameter( BaseArgHandle p
  * */
 void
 Configuration::_cache_insert_long_option( const std::string & nameprefix,
-                                          DictionaryParameter::LongOptionEntries & q,
+                                          Configuration::LongOptionEntries & q,
                                           const iSingularParameter & p ) {
     assert( p.name() );
     struct ::option o = {

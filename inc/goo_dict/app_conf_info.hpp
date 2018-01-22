@@ -80,6 +80,14 @@ public:
     }
 };
 
+struct Array {
+private:
+    bool _isArray;
+public:
+    explicit Array(bool isArray) : _isArray(isArray) {}
+    virtual bool is_array() const { return _isArray; }
+};
+
 /**@class iStringConvertibleParameter
  * @brief Generic interface for parameter instance that may be converted to str.
  *

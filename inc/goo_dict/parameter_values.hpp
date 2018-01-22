@@ -17,7 +17,15 @@ namespace dict {
  * instance providing generic methods accessing the data memory address and
  * C++ RTTI information.
  * */
-class iBaseValue : public mixins::iDuplicable<iBaseValue, iBaseValue, iBaseValue> {
+template<typename ... AspectTs>
+class iBaseValue : public mixins::iDuplicable< iBaseValue<AspectTs...>
+                                            , iBaseValue<AspectTs...>
+                                            , iBaseValue<AspectTs...>
+                                            > {
+public:
+    typedef iBaseValue<AspectTs ...> Self;
+private:
+    // ...
 protected:
     /// Shall return untyped data pointer.
     virtual void * _V_data_addr() = 0;
@@ -26,6 +34,8 @@ protected:
     /// Shall return C++ RTTI type info.
     virtual const std::type_info & _V_target_type_info() const = 0;
 public:
+    iBaseValue() = default;
+    iBaseValue( const Self & o ) = default;
     /// Returns untyped data pointer.
     void * data_addr() { return _V_data_addr(); }
     /// Returns untyped (const) data pointer.
@@ -33,6 +43,10 @@ public:
     /// Returns C++ RTTI value type info.
     virtual const std::type_info & target_type_info() const
                 { return _V_target_type_info(); }
+
+    template<typename T> T & aspect_cast() {
+        return dynamic_cast<T&>(*this);  // TODO: cache cast
+    }
 
     // note: for this two methods see implementation at the end of the header.
     // They use downcast operations with types that are incomplete at the
@@ -51,8 +65,8 @@ public:
  *
  * Represents a value-keeping aspect of the parameter classes.
  * */
-template<typename ValueT>
-class TValue : public virtual iBaseValue {
+template<typename ValueT, typename ... AspectTs>
+class TValue : public virtual iBaseValue<AspectTs...> {
     friend class LoDInsertionProxy;
 public:
     typedef ValueT Value;

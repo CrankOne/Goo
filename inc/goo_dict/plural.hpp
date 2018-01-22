@@ -48,16 +48,16 @@ struct Traits {
 
 template< typename KeyT
         , typename ... AspectTs>
-struct GenericDictionary : public mixins::iDuplicable< iBaseValue
+struct GenericDictionary : public mixins::iDuplicable< iBaseValue<AspectTs...>
                                                    , GenericDictionary<KeyT, AspectTs ...>
-                                                   , TValue< Hash<KeyT, iBaseValue * > >
+                                                   , TValue< Hash<KeyT, iBaseValue<AspectTs...> * >, AspectTs... >
                                                    >
                         , public Traits<AspectTs...>::template DictionaryAspect<KeyT> {
     //template< typename
     //        , template <class> class
     //        , class ... > friend class InsertionProxy;
-    std::pair<typename Hash<KeyT, iBaseValue *>::iterator, bool>
-    insert_parameter( const KeyT & k, iBaseValue * p ) {
+    std::pair<typename Hash<KeyT, iBaseValue<AspectTs...> *>::iterator, bool>
+    insert_parameter( const KeyT & k, iBaseValue<AspectTs...> * p ) {
         return this->_mutable_value().emplace(k, p);
     }
 

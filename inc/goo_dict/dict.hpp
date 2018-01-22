@@ -97,8 +97,16 @@ struct Traits< aspects::Description
             , aspects::CharShortcut
             , aspects::Required
             , aspects::IsSet
+            , aspects::Array
             > {
     template<typename KeyT> class DictionaryAspect;
+    typedef iBaseValue< aspects::Description
+                      , aspects::iStringConvertible
+                      , aspects::CharShortcut
+                      , aspects::Required
+                      , aspects::IsSet
+                      , aspects::Array
+                      > VBase;
 };
 
 typedef Traits< aspects::Description
@@ -106,6 +114,7 @@ typedef Traits< aspects::Description
               , aspects::CharShortcut
               , aspects::Required
               , aspects::IsSet
+              , aspects::Array
               > AppConfTraits;
 
 /// Named dictionary config template specialization.
@@ -118,6 +127,7 @@ class AppConfTraits::DictionaryAspect<std::string>
                                        , aspects::CharShortcut
                                        , aspects::Required
                                        , aspects::IsSet
+                                       , aspects::Array
                                        > *
                      >
         , public aspects::Description {
@@ -131,6 +141,7 @@ typedef GenericDictionary< std::string
                          , aspects::CharShortcut
                          , aspects::Required
                          , aspects::IsSet
+                         , aspects::Array
                          > AppConfNameIndex;
 
 // Note: the char-indexing dictionary aspect is declared ath the configuration.hpp
@@ -145,6 +156,7 @@ template<>
 struct Traits< aspects::Description
             , aspects::iStringConvertible
             , aspects::IsSet
+            , aspects::Array
             > {
     template<typename KeyT> class DictionaryAspect;
 };
@@ -152,6 +164,7 @@ struct Traits< aspects::Description
 typedef Traits< aspects::Description
               , aspects::iStringConvertible
               , aspects::IsSet
+              , aspects::Array
               > GenericConfTraits;
 
 /// Named dictionary config template specialization.
@@ -162,6 +175,7 @@ class GenericConfTraits::DictionaryAspect<std::string>
                                        , aspects::Description
                                        , aspects::iStringConvertible
                                        , aspects::IsSet
+                                       , aspects::Array
                                        > *
                      >
         , public Hash< std::string
@@ -169,6 +183,7 @@ class GenericConfTraits::DictionaryAspect<std::string>
                                        , aspects::Description
                                        , aspects::iStringConvertible
                                        , aspects::IsSet
+                                       , aspects::Array
                                        > *
                      >
         , public aspects::Description {
@@ -185,6 +200,7 @@ class GenericConfTraits::DictionaryAspect<ListIndex>
                                        , aspects::Description
                                        , aspects::iStringConvertible
                                        , aspects::IsSet
+                                       , aspects::Array
                                        > *
                      >
         , public Hash< ListIndex

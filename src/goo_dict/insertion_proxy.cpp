@@ -19,7 +19,7 @@ AppConfInsertionProxy::_top() {
 }
 
 void
-AppConfInsertionProxy::_index_by_shortcut( char shrtc, iBaseValue * p ) {
+AppConfInsertionProxy::_index_by_shortcut( char shrtc, VBase * p ) {
     if( !_root ) {
         emraise( badState, "Unable to index parameter %p by shortcut %c with"
                 " the insertion proxy object %p since proxy has no associated"

@@ -64,13 +64,15 @@ class InsertionProxy< std::string
                    , aspects::iStringConvertible
                    , aspects::CharShortcut
                    , aspects::Required
-                   , aspects::IsSet > : BaseInsertionProxy<  std::string
-                                                         , InsertableParameter
-                                                         , aspects::Description
-                                                         , aspects::iStringConvertible
-                                                         , aspects::CharShortcut
-                                                         , aspects::Required
-                                                         , aspects::IsSet > {
+                   , aspects::IsSet
+                   , aspects::Array
+                   > : BaseInsertionProxy< std::string
+                                        , InsertableParameter
+                                        , aspects::Description
+                                        , aspects::iStringConvertible
+                                        , aspects::CharShortcut
+                                        , aspects::Required
+                                        , aspects::IsSet > {
 public:
     typedef InsertionProxy< std::string
                    , InsertableParameter
@@ -78,16 +80,23 @@ public:
                    , aspects::iStringConvertible
                    , aspects::CharShortcut
                    , aspects::Required
-                   , aspects::IsSet > Self;
+                   , aspects::IsSet
+                   , aspects::Array > Self;
     typedef AppConfNameIndex Subsection;
     typedef std::stack< std::pair<std::string, Subsection *> > InsertionTargetsStack;
+    typedef iBaseValue< aspects::Description
+                      , aspects::iStringConvertible
+                      , aspects::CharShortcut
+                      , aspects::Required
+                      , aspects::IsSet
+                      , aspects::Array > VBase;
 private:
     Configuration * _root;
     InsertionTargetsStack _stack;
     aspects::Required * _latestInsertedRequired;  // TODO: set to null in ctr
 protected:
     Subsection & _top();
-    void _index_by_shortcut( char, iBaseValue * );
+    void _index_by_shortcut( char, VBase * );
 public:
 
     /// Insert new parameter with shortcut and name, no default value.
@@ -99,6 +108,7 @@ public:
                                        , _alloc<aspects::CharShortcut>(shortcut)
                                        , _latestInsertedRequired = _alloc<aspects::Required>()
                                        , _alloc<aspects::IsSet>()
+                                       , _alloc<aspects::Array>(false)
                                        );
         _top().insert_parameter( name, pPtr );
         _latestInsertedRequired = pPtr;
@@ -114,6 +124,7 @@ public:
                                        , _alloc<aspects::CharShortcut>()  // no shortcut
                                        , _latestInsertedRequired = _alloc<aspects::Required>()
                                        , _alloc<aspects::IsSet>()
+                                       , _alloc<aspects::Array>(false)
                                        );
         _top().insert_parameter( name, pPtr );
         _latestInsertedRequired = pPtr;
@@ -133,6 +144,7 @@ public:
                                        , _alloc<aspects::CharShortcut>(shortcut)
                                        , _latestInsertedRequired = _alloc<aspects::Required>()
                                        , _alloc<aspects::IsSet>(true)
+                                       , _alloc<aspects::Array>(false)
                                        );
         _top().insert_parameter( name, pPtr );
         _latestInsertedRequired = pPtr;
@@ -151,6 +163,7 @@ public:
                                        , _alloc<aspects::CharShortcut>()  // no shortcut
                                        , _latestInsertedRequired = _alloc<aspects::Required>()
                                        , _alloc<aspects::IsSet>(true)
+                                       , _alloc<aspects::Array>(false)
                                        );
         _top().insert_parameter( name, pPtr );
         _latestInsertedRequired = pPtr;
@@ -171,7 +184,8 @@ typedef InsertionProxy< std::string
                       , aspects::iStringConvertible
                       , aspects::CharShortcut
                       , aspects::Required
-                      , aspects::IsSet > AppConfInsertionProxy;
+                      , aspects::IsSet
+                      , aspects::Array> AppConfInsertionProxy;
 
 # if 0
 /**@brief Base class for generic configuration insertion proxies.

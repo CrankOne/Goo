@@ -47,20 +47,21 @@ class AppConfTraits::DictionaryAspect<char> {};
  * `invalidate_getopt_caches()` just before `extract()` invokation if inserted
  * sub-sections were modified.
  * */
-class Configuration : public mixins::iDuplicable< iBaseValue
+class Configuration : public mixins::iDuplicable< AppConfTraits::VBase
                                               , Configuration
                                               , AppConfNameIndex> {
 public:
-    typedef mixins::iDuplicable<iBaseValue, Configuration, AppConfNameIndex> DuplicableParent;
+    typedef mixins::iDuplicable<AppConfTraits::VBase, Configuration, AppConfNameIndex> DuplicableParent;
     typedef GenericDictionary< char
                              , aspects::Description
                              , aspects::iStringConvertible
                              , aspects::CharShortcut
                              , aspects::Required
-                             , aspects::IsSet > ShortcutsIndex;
+                             , aspects::IsSet
+                             , aspects::Array> ShortcutsIndex;
     typedef std::list<char> ShortOptString;
     typedef std::list<void*> LongOptionEntries;
-    typedef iBaseValue* BaseArgHandle;
+    typedef AppConfTraits::VBase * BaseArgHandle;
 protected:
     /// Indicator of long option with mandatory argument.
     static const int longOptNoShortcutRequiresArgument;
