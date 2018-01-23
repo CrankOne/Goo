@@ -24,7 +24,7 @@
 # define H_GOO_PARAMETERS_PLURAL_H
 
 # include "goo_dict/types.hpp"
-# include "goo_dict/parameter_values.hpp"
+# include "goo_dict/value.hpp"
 # include "goo_mixins/vcopy.tcc"
 
 namespace goo {
@@ -52,7 +52,7 @@ struct GenericDictionary : public mixins::iDuplicable< iBaseValue<AspectTs...>
                                                    , GenericDictionary<KeyT, AspectTs ...>
                                                    , TValue< Hash<KeyT, iBaseValue<AspectTs...> * >, AspectTs... >
                                                    >
-                        , public Traits<AspectTs...>::template DictionaryAspect<KeyT> {
+                         , public Traits<AspectTs...>::template DictionaryAspect<KeyT> {
 
     //template< typename
     //        , template <class> class

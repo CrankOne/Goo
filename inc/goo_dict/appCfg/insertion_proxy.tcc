@@ -5,8 +5,8 @@
 
 # include "goo_exception.hpp"
 # include "goo_dict/parameter.tcc"
-# include "goo_dict/dict.hpp"
-# include "goo_dict/dpath.hpp"
+# include "goo_dict/appCfg/traits.hpp"
+# include "goo_dict/util/dpath.hpp"
 
 # include "goo_dict/parameters/logic.hpp"
 

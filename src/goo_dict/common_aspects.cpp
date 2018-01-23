@@ -24,7 +24,7 @@
  * Created by crank on 19.01.18.
  */
 
-# include "goo_dict/app_conf_info.hpp"
+# include "goo_dict/common_aspects.hpp"
 # include "goo_exception.hpp"
 
 # include <cstring>

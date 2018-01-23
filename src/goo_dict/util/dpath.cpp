@@ -25,7 +25,7 @@
  */
 
 
-# include "goo_dict/dpath.hpp"
+# include "goo_dict/util/dpath.hpp"
 
 namespace goo {
 namespace dict {

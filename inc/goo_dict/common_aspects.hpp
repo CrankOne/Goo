@@ -24,7 +24,7 @@
 #define H_GOO_PARAMETERS_APP_CONF_INFO_H
 
 # include "goo_types.h"
-# include "goo_dict/plural.hpp"
+# include "goo_dict/generic_dict.tcc"
 
 namespace goo {
 namespace dict {
@@ -126,6 +126,34 @@ public:
     //    }
     //};
 };  // class iStringConvertibleParameter
+
+/**@brief Default template implementating value parameters that may be converted
+ * to string.
+ *
+ * One may be interested in partial specialization of this class to support
+ * various formatting modifiers.
+ * */
+template<typename ValueT>
+class TStringConvertible : public iStringConvertible {
+public:
+    typedef ValueT Value;
+    typedef typename iStringConvertible::ConversionTraits<Value> ValueTraits;
+    typedef TStringConvertible<ValueT> Self;
+protected:
+    /// Sets the value kept by current instance from string expression.
+    virtual void _V_parse_argument(const char *strval) override {
+        static_cast<TValue<ValueT>*>(this)->value(ValueTraits::parse_string_expression(strval));
+    }
+
+    /// Expresses the value kept by current instance as a string.
+    virtual std::string _V_to_string() const override {
+        return ValueTraits::to_string_expression(*static_cast<TValue<ValueT>*>(this));
+    }
+public:
+    TStringConvertible() {}
+    explicit TStringConvertible(const ValueT &v) : TValue<Value>(v) {}
+    explicit TStringConvertible(const Self &o) : TValue<Value>(o) {}
+};
 
 }  // namespace aspects
 

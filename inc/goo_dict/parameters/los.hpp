@@ -24,7 +24,7 @@
  */
 
 # include "goo_dict/parameter.tcc"
-# include "goo_dict/plural.hpp"
+# include "goo_dict/generic_dict.tcc"
 
 namespace goo {
 namespace dict {

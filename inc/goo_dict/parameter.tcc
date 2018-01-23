@@ -25,8 +25,7 @@
 
 # include "goo_types.h"
 # include "goo_exception.hpp"
-
-# include "goo_dict/parameter_singular.tcc"
+# include "./value.hpp"
 
 # include <list>
 # include <vector>

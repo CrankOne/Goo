@@ -20,18 +20,38 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-# include "goo_dict/parameter_singular.tcc"
+# include "goo_dict/util/injection.hpp"
 
 namespace goo {
 namespace dict {
 
 # if 0
-iSingularParameter::iSingularParameter( const char * name_,
-                                        const char * description_,
-                                        ParameterEntryFlag flags_,
-                                        char shortcut_ ) :
-        AbstractParameter( name_, description_, flags_, shortcut_ ) {}
+
+std::pair<DictionaryInjectionMap::Injection::iterator, bool>
+DictionaryInjectionMap::add_mapping( const std::string & fromPath,
+                                     const std::string & toPath,
+                                     DictionaryInjectionMap::Transformation t ) {
+    return _mappings.emplace( fromPath, MappedEntry{toPath, t} );
+}
+
+void
+DictionaryInjectionMap::inject_parameters( const DictionaryParameter & source,
+                                                 DictionaryParameter & target ) const {
+    for( const auto & mp : _mappings ) {
+        const iSingularParameter & fromP = source.parameter( mp.first );
+        iSingularParameter & toP = target.parameter( mp.second.path );
+        const std::string & ownName = toP.name();
+        if( mp.second.transformation ) {
+            mp.second.transformation( fromP, toP );
+        } else {
+            toP = fromP;
+        }
+        toP.name( ownName.c_str() );
+    }
+}
+
 # endif
 
 }  // namespace dict
 }  // namespace goo
+

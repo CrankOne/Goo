@@ -24,7 +24,6 @@
 # define H_GOO_PARAMETERS_DICTIONARY_PARAMETER_ENUM_H
 
 # include "goo_dict/parameter.tcc"
-# include "goo_path.hpp"
 
 # include <type_traits>
 
@@ -38,15 +37,16 @@ namespace dict {
  * which permits quite restricted functionality. It is convinient, however, to
  * use them for short static enumerations defined at compile time.
  * */
-template<typename EnumT>
-class EnumParameter : public mixins::iDuplicable< iSingularParameter,
-                                                EnumParameter<EnumT>,
-                                                iParameter<EnumT> > {
+template< typename EnumT
+        , typename ... AspectTs>
+class EnumParameter : public mixins::iDuplicable< iBaseValue<AspectTs...>
+                                                , EnumParameter<EnumT, AspectTs...>
+                                                , Parameter<EnumT, AspectTs...> > {
 public:
     typedef EnumT Enum;
-    typedef mixins::iDuplicable< AbstractParameter,
-                                 EnumParameter<Enum>,
-                                 iParameter<Enum> > DuplicableParent;
+    typedef mixins::iDuplicable< iBaseValue<AspectTs...>,
+                                 EnumParameter<Enum, AspectTs...>,
+                                 Parameter<Enum, AspectTs...> > DuplicableParent;
     typedef std::unordered_map<std::string, Enum> Entries;
 private:
     static Entries * _entriesPtr;
@@ -57,56 +57,33 @@ public:
     static void add_entry( const std::string & strVal, Enum eVal );
     static std::vector<std::string> available_values();
 public:
-    /// Long option with shortcut.
-    EnumParameter( char shortcut_,
-               const char * name_,
-               const char * description_,
-               Enum default_ ) : DuplicableParent( (name_ ? ('\0' == name_[0] ?
-                                                nullptr : name_) : nullptr),
-                                          description_,
-                              0x0 | AbstractParameter::atomic
-                                  | AbstractParameter::singular
-                                  | AbstractParameter::shortened,
-                              shortcut_
-                            ) {
-        DuplicableParent::_set_value( default_ );
-    }
-
-    /// Only long option ctr.
-    EnumParameter( const char * name_,
-               const char * description_,
-               Enum default_ ) : EnumParameter( '\0', name_, description_, default_ ) {}
-
-    /// Only shortcut option ctr.
-    EnumParameter( char shortcut_,
-               const char * description_,
-               Enum default_ ) : EnumParameter( shortcut_, nullptr, description_, default_ ) {}
-
     EnumParameter( const EnumParameter<Enum> & o ) : DuplicableParent( o ) {}
 
     operator const Enum&() const { return DuplicableParent::value(); }
 
-    friend class ::goo::dict::DictInsertionProxy;
 };
 
+namespace aspects {
 template< typename EnumT >
-struct iStringConvertibleParameter::ConversionTraits<EnumT, typename std::enable_if<std::is_enum<EnumT>::value>::type> {
+struct iStringConvertible::ConversionTraits<EnumT, typename std::enable_if<std::is_enum<EnumT>::value>::type> {
     typedef EnumT Value;
-    static Value parse_string_expression( const char * stv )
-            { return EnumParameter<Value>::str_to_enum(stv); }
-    static std::string to_string_expression( const Value & v )
-            { return EnumParameter<Value>::enum_to_str(v); }
+
+    static Value parse_string_expression( const char *stv ) { return EnumParameter<Value>::str_to_enum( stv ); }
+
+    static std::string to_string_expression( const Value &v ) { return EnumParameter<Value>::enum_to_str( v ); }
 };
+}
 
 
 //
 // Implementation
 
-template<typename EnumT>
-typename EnumParameter<EnumT>::Entries * EnumParameter<EnumT>::_entriesPtr = nullptr;
+template<typename EnumT, typename ... AspectTs>
+typename EnumParameter<EnumT, AspectTs...>::Entries *
+        EnumParameter<EnumT, AspectTs...>::_entriesPtr = nullptr;
 
-template<typename EnumT> void
-EnumParameter<EnumT>::_assert_entries_initialized() {
+template<typename EnumT, typename ... AspectTs> void
+EnumParameter<EnumT, AspectTs...>::_assert_entries_initialized() {
     if( !_entriesPtr ) {
         emraise( badArchitect, "String-to-enum mapping wasn't defined. "
             "Consider usage of GOO_ENUM_PARAMETER_DEFINE macro to fill "
@@ -115,8 +92,8 @@ EnumParameter<EnumT>::_assert_entries_initialized() {
     }
 }
 
-template<typename EnumT> EnumT
-EnumParameter<EnumT>::str_to_enum( const std::string & str ) {
+template<typename EnumT, typename ... AspectTs> EnumT
+EnumParameter<EnumT, AspectTs...>::str_to_enum( const std::string & str ) {
     _assert_entries_initialized();
     auto it = _entriesPtr->find( str );
     if( _entriesPtr->end() == it ) {
@@ -127,8 +104,8 @@ EnumParameter<EnumT>::str_to_enum( const std::string & str ) {
 }
 
 
-template<typename EnumT> std::string
-EnumParameter<EnumT>::enum_to_str( EnumT eVal ) {
+template<typename EnumT, typename ... AspectTs> std::string
+EnumParameter<EnumT, AspectTs...>::enum_to_str( EnumT eVal ) {
     _assert_entries_initialized();
     for( auto p : *_entriesPtr ) {
         if( p.second == eVal ) {
@@ -139,8 +116,8 @@ EnumParameter<EnumT>::enum_to_str( EnumT eVal ) {
         "\"%s\".", (int) eVal, typeid(Enum).name() );
 }
 
-template<typename EnumT> void
-EnumParameter<EnumT>::add_entry( const std::string & strVal, EnumT eVal ) {
+template<typename EnumT, typename ... AspectTs> void
+EnumParameter<EnumT, AspectTs...>::add_entry( const std::string & strVal, EnumT eVal ) {
     if( !_entriesPtr ) {
         _entriesPtr = new Entries();
     }
@@ -151,8 +128,8 @@ EnumParameter<EnumT>::add_entry( const std::string & strVal, EnumT eVal ) {
     }
 }
 
-template<typename EnumT> std::vector<std::string>
-EnumParameter<EnumT>::available_values() {
+template<typename EnumT, typename ... AspectTs> std::vector<std::string>
+EnumParameter<EnumT, AspectTs...>::available_values() {
     _assert_entries_initialized();
     std::vector<std::string> ret;
     for( auto p : *_entriesPtr ) {

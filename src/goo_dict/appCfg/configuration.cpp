@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
+ * Copyright (c) 2017 Renat R. Dusaev <crank@qcrypt.org>
  * Author: Renat R. Dusaev <crank@qcrypt.org>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -20,10 +20,31 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-# include "goo_dict/plural.hpp"
+# include "goo_dict/appCfg/configuration.hpp"
+# include "goo_dict/appCfg/insertion_proxy.tcc"
+# include "goo_exception.hpp"
+# include "goo_utility.hpp"
+# include "goo_dict/util/conf_help_render.hpp"
+
+# include <algorithm>
+# include <cstring>
+# include <unistd.h>
+# include <getopt.h>
+# include <wordexp.h>
+# include <list>
+# include <cassert>
+# include <sstream>
+# include <climits>
+# include <iostream>
 
 namespace goo {
 namespace dict {
+
+Configuration::Configuration( const char * descr_) : DuplicableParent(descr_) {}
+
+Configuration::Configuration( const Configuration & orig ) : DuplicableParent( orig ) {}
+
+Configuration::~Configuration() {}
 
 }  // namespace dict
 }  // namespace goo

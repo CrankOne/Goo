@@ -1,14 +1,14 @@
 # include <cstring>
 # include <wordexp.h>
 # include "utest.hpp"
-# include "goo_dict/configuration.hpp"
+# include "goo_dict/appCfg/configuration.hpp"
 # include "goo_dict/parameters/enum_parameter.tcc"
 # include "goo_dict/parameters/los.hpp"
 
 # ifndef NO_PDICT_TEST
 
-//# define NO_BASIC_SPLITTING_TEST
-//# define NO_BASIC_PARSING_TEST
+# define NO_BASIC_SPLITTING_TEST
+# define NO_BASIC_PARSING_TEST
 # define NO_BASIC_ERRORS_TEST
 # define NO_ARRAY_PARAMETERS_TEST
 # define NO_CONSISTENCY_TESTS

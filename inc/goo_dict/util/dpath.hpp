@@ -27,9 +27,9 @@
 #ifndef GOO_PARAMETERS_DPATH_HPP
 #define GOO_PARAMETERS_DPATH_HPP
 
-# include "goo_dict/dict.hpp"
+# include "goo_dict/appCfg/traits.hpp"
 # include "goo_dict/parameters/los.hpp"
-# include "goo_dict/parameter_dict.hpp"
+# include "goo_dict/generic_dict.tcc"
 
 namespace goo {
 namespace dict {

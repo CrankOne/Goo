@@ -27,6 +27,7 @@
 // be performed on _set_value, not just within safe_parse procedure.
 
 # include "goo_dict/parameter.tcc"
+# include "goo_dict/common_aspects.hpp"
 # include <climits>
 
 namespace goo {

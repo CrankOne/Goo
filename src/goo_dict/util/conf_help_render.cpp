@@ -20,9 +20,9 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-# include "goo_dict/conf_help_render.hpp"
+# include "goo_dict/util/conf_help_render.hpp"
 
-# include "goo_dict/configuration.hpp"
+# include "goo_dict/appCfg/configuration.hpp"
 
 # include <algorithm>
 

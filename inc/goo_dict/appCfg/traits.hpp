@@ -23,8 +23,8 @@
 # ifndef H_GOO_PARAMETERS_DICTIONARY_H
 # define H_GOO_PARAMETERS_DICTIONARY_H
 
-# include "goo_dict/plural.hpp"
-# include "goo_dict/app_conf_info.hpp"
+# include "goo_dict/generic_dict.tcc"
+# include "goo_dict/common_aspects.hpp"
 
 namespace goo {
 
@@ -93,12 +93,12 @@ namespace dict {
 /// application configuration. Does not provide list-like structures.
 template<>
 struct Traits< aspects::Description
-            , aspects::iStringConvertible
-            , aspects::CharShortcut
-            , aspects::Required
-            , aspects::IsSet
-            , aspects::Array
-            > {
+             , aspects::iStringConvertible
+             , aspects::CharShortcut
+             , aspects::Required
+             , aspects::IsSet
+             , aspects::Array
+             > {
     template<typename KeyT> class DictionaryAspect;
     typedef iBaseValue< aspects::Description
                       , aspects::iStringConvertible
@@ -146,70 +146,6 @@ typedef GenericDictionary< std::string
 
 // Note: the char-indexing dictionary aspect is declared ath the configuration.hpp
 // header.
-
-// ---
-
-/// Specialization for common name-indexed dictionary structure used for
-/// generic configurations. Provides list-like structures, but is not supposed
-/// to store shortcuts.
-template<>
-struct Traits< aspects::Description
-            , aspects::iStringConvertible
-            , aspects::IsSet
-            , aspects::Array
-            > {
-    template<typename KeyT> class DictionaryAspect;
-};
-
-typedef Traits< aspects::Description
-              , aspects::iStringConvertible
-              , aspects::IsSet
-              , aspects::Array
-              > GenericConfTraits;
-
-/// Named dictionary config template specialization.
-template<>
-class GenericConfTraits::DictionaryAspect<std::string>
-        : public Hash< std::string
-                     , GenericDictionary< std::string
-                                       , aspects::Description
-                                       , aspects::iStringConvertible
-                                       , aspects::IsSet
-                                       , aspects::Array
-                                       > *
-                     >
-        , public Hash< std::string
-                     , GenericDictionary< ListIndex
-                                       , aspects::Description
-                                       , aspects::iStringConvertible
-                                       , aspects::IsSet
-                                       , aspects::Array
-                                       > *
-                     >
-        , public aspects::Description {
-public:
-    explicit DictionaryAspect( const std::string & d ) : aspects::Description( d ) {}
-};
-
-/// Integer-indexed (List-of-Structures) dictionary config template
-/// specialization.
-template<>
-class GenericConfTraits::DictionaryAspect<ListIndex>
-        : public Hash< ListIndex
-                     , GenericDictionary< std::string
-                                       , aspects::Description
-                                       , aspects::iStringConvertible
-                                       , aspects::IsSet
-                                       , aspects::Array
-                                       > *
-                     >
-        , public Hash< ListIndex
-                     , GenericDictionary< ListIndex > *  // (!) has no aspects
-                     >
-        , public aspects::Description {
-public:
-    DictionaryAspect( const std::string & d ) : aspects::Description(d) {}
-};
 
 }  // namespace dict
 /** @} */  // end of appParameters group
