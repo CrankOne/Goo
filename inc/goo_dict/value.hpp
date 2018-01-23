@@ -5,8 +5,11 @@
 #ifndef GOO_PARAMETERS_VALUES_HPP
 #define GOO_PARAMETERS_VALUES_HPP
 
+# include <tuple>
+
 # include "goo_dict/types.hpp"
 # include "goo_mixins/vcopy.tcc"
+# include "goo_utility.hpp"
 
 namespace goo {
 namespace dict {
@@ -19,13 +22,14 @@ namespace dict {
  * */
 template<typename ... AspectTs>
 class iBaseValue : public mixins::iDuplicable< iBaseValue<AspectTs...>
-                                            , iBaseValue<AspectTs...>
-                                            , iBaseValue<AspectTs...>
-                                            > {
+                                             , iBaseValue<AspectTs...>
+                                             , iBaseValue<AspectTs...>
+                                             >
+                 , public std::tuple<AspectTs * ...> {
 public:
     typedef iBaseValue<AspectTs ...> Self;
 private:
-    // ...
+    std::tuple<AspectTs * ...> _aspects;
 protected:
     /// Shall return untyped data pointer.
     virtual void * _V_data_addr() = 0;
@@ -34,8 +38,9 @@ protected:
     /// Shall return C++ RTTI type info.
     virtual const std::type_info & _V_target_type_info() const = 0;
 public:
-    iBaseValue() = default;
-    iBaseValue( const Self & o ) = default;
+    iBaseValue(AspectTs * ... aspects) : _aspects(aspects ...) {}
+    //iBaseValue() = default;
+    //iBaseValue( const Self & o ) = default; // TODO: copy aspect values instead of just their ptrs
     /// Returns untyped data pointer.
     void * data_addr() { return _V_data_addr(); }
     /// Returns untyped (const) data pointer.
@@ -44,15 +49,21 @@ public:
     virtual const std::type_info & target_type_info() const
                 { return _V_target_type_info(); }
 
-    template<typename T> T & aspect_cast() {
-        return dynamic_cast<T&>(*this);  // TODO: cache cast
+    template<typename T> T * aspect_cast() {
+        return std::get<stdE::get_type_index<T, AspectTs...>::value>(_aspects);
+    }
+
+    template<typename T> const T * aspect_cast() const {
+        return std::get<stdE::get_type_index<T, AspectTs...>::value>(_aspects);
     }
 
     // note: for this two methods see implementation at the end of the header.
     // They use downcast operations with types that are incomplete at the
     // moment.
     /// Getter method (convinience, implemented in parameter.tcc).
-    template<typename T> const T & as() const;
+    template<typename T>
+    std::conditional<stdE::is_one_of<T, AspectTs...>::value, const T &, void>
+    as() const { return aspect_cast<T>(); };
     /// Getter method (convinience, implemented in parameter.tcc) for array
     /// parameters.
     template<typename T> const Array<T> & as_array_of() const;

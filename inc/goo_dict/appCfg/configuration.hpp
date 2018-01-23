@@ -32,7 +32,19 @@ namespace goo {
 namespace dict {
 
 template<>
-class AppConfTraits::DictionaryAspect<char> {};
+class AppConfTraits::DictionaryAspect<char> : public std::unordered_set<AppConfTraits::VBase *> {
+public:
+    //void emplace
+    virtual ~DictionaryAspect() {
+        for( auto p : *this ) {
+            delete p;
+        }
+    }
+};
+
+//}  // namespace dict
+
+//namespace app {
 
 /**@brief Class representing dictionaries root instance.
  * @class Configuration
@@ -76,13 +88,7 @@ public:
                      , aspects::IsSet
                      , aspects::Array> LogicOption;
 
-    typedef std::list<char> ShortOptString;
-
-    typedef AppConfTraits::VBase * BaseArgHandle;
-    /// Indicator of long option with mandatory argument.
-    static const int longOptNoShortcutRequiresArgument;
-    /// Indicator of a kind of long option (logical parameter without argument).
-    static const int longOptKey;
+    typedef AppConfTraits::VBase VBase;
 private:
     /// Dictionary for shortcut-only parameters. This container is bound with
     /// Configuration instance meaning that its entries lifetime is restricted
@@ -90,13 +96,13 @@ private:
     ShortcutsIndex _shortcutsIndex;
     /// Positional parameter. Ptr may be null if positional argument is
     /// disallowed.
-    BaseArgHandle _positionalArgument;
+    std::pair<std::string, VBase *> _positionalArgument;
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
     /// @param defaultHelpIFace controls, whether the -h/--help/-? flags will
     ///        be automatically inserted.
-    Configuration( const char * description );
+    explicit Configuration( const char * description );
     ~Configuration();
 
     /// Copy ctr.
@@ -133,7 +139,7 @@ public:
     /// Returns forwarded arguments (if they were set).
     const Array<std::string> & forwarded_argv() const;
 
-    bool is_consistent( Hash<std::string, const BaseArgHandle> & ) const;
+    bool is_consistent( Hash<std::string, const VBase *> & ) const;
 };  // class Configuration
 
 }  // namespace dict

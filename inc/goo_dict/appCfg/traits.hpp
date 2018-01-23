@@ -89,33 +89,24 @@ namespace goo {
 
 namespace dict {
 
+
+# define _Goo_m_VART_LIST_APP_CONF aspects::Description \
+                                 , aspects::iStringConvertible \
+                                 , aspects::CharShortcut \
+                                 , aspects::Required \
+                                 , aspects::IsSet \
+                                 , aspects::Array
+
 /// Specialization for common name-indexed dictionary structure used for
 /// application configuration. Does not provide list-like structures.
 template<>
-struct Traits< aspects::Description
-             , aspects::iStringConvertible
-             , aspects::CharShortcut
-             , aspects::Required
-             , aspects::IsSet
-             , aspects::Array
-             > {
+struct Traits<_Goo_m_VART_LIST_APP_CONF> {
     template<typename KeyT> class DictionaryAspect;
-    typedef iBaseValue< aspects::Description
-                      , aspects::iStringConvertible
-                      , aspects::CharShortcut
-                      , aspects::Required
-                      , aspects::IsSet
-                      , aspects::Array
-                      > VBase;
+    typedef iBaseValue< _Goo_m_VART_LIST_APP_CONF > VBase;
+    template<typename KeyT> using Dictionary = GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF>;
 };
 
-typedef Traits< aspects::Description
-              , aspects::iStringConvertible
-              , aspects::CharShortcut
-              , aspects::Required
-              , aspects::IsSet
-              , aspects::Array
-              > AppConfTraits;
+typedef Traits<_Goo_m_VART_LIST_APP_CONF> AppConfTraits;
 
 /// Named dictionary config template specialization.
 template<>

@@ -240,6 +240,33 @@ struct filter<Predicate, Head, Tail...> {
                                           >::type;
 };
 
+template<typename T, size_t n, typename fT, typename ... Ts>
+struct _get_type_index;
+
+template<typename T, size_t n, typename fT>
+struct _get_type_index<T, n, fT> {
+    struct true_keeper {
+        constexpr static int value = n;
+    };
+    constexpr static int value = std::conditional<std::is_same<T, fT>::value, true_keeper, void>::type::value;
+};
+
+template<typename T, size_t n, typename fT, typename ... Ts>
+struct _get_type_index {
+    struct keeper {
+        constexpr static int value = n;
+    };
+    constexpr static int value = std::conditional< std::is_same<T, fT>::value
+                                                 , keeper
+                                                 , _get_type_index<T, n+1, Ts...>
+                                                 >::type::value;
+};
+
+template<typename T, typename ... Ts>
+struct get_type_index {
+    constexpr static int value = _get_type_index<T, 0, Ts...>::value;
+};
+
 } // namespace stdE
 
 namespace goo {
