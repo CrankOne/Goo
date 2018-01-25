@@ -58,35 +58,23 @@ public:
  * Warning: subsections have no back-populate effect, so modifying them after
  * they were added to Configuration instance will not cause chaches to be
  * invalidated. Thus, it is mandatory to manually invalidate caches with
- * `invalidate_getopt_caches()` just before `extract()` invokation if inserted
+ * `invalidate_getopt_caches()` just before `extract()` invocation if inserted
  * sub-sections were modified.
  * */
-class Configuration : public mixins::iDuplicable< AppConfTraits::VBase
-                                              , Configuration
-                                              , AppConfNameIndex> {
+class Configuration : public mixins::iDuplicable< typename AppConfTraits::template TDictValue<std::string>::Base
+                                                , Configuration
+                                                , AppConfNameIndex> {
 public:
-    typedef mixins::iDuplicable< AppConfTraits::VBase
+    typedef mixins::iDuplicable< typename AppConfTraits::template TDictValue<std::string>::Base
                                , Configuration
                                , AppConfNameIndex
                                > DuplicableParent;
-    typedef GenericDictionary< char
-                             , aspects::Description
-                             , aspects::iStringConvertible
-                             , aspects::CharShortcut
-                             , aspects::Required
-                             , aspects::IsSet
-                             , aspects::Array> ShortcutsIndex;
+    typedef GenericDictionary< char, _Goo_m_VART_LIST_APP_CONF > ShortcutsIndex;
     /// The logic parameter may be defined as option without a value (flag)
     /// according to POSIX convention, thus this type has to be treated
     /// differently. This important case is checked with expensive
-    /// dynamic_cast<>.
-    typedef Parameter< bool
-                     , aspects::Description
-                     , aspects::iStringConvertible
-                     , aspects::CharShortcut
-                     , aspects::Required
-                     , aspects::IsSet
-                     , aspects::Array> LogicOption;
+    /// dynamic_cast<>. TODO: implicit arguments?
+    typedef Parameter< bool, _Goo_m_VART_LIST_APP_CONF > LogicOption;
 
     typedef AppConfTraits::VBase VBase;
 private:
@@ -102,7 +90,7 @@ public:
     /// to be an application description.
     /// @param defaultHelpIFace controls, whether the -h/--help/-? flags will
     ///        be automatically inserted.
-    explicit Configuration( const char * description );
+    explicit Configuration( const std::string & description );
     ~Configuration();
 
     /// Copy ctr.

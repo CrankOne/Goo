@@ -42,30 +42,46 @@ class BaseInsertionProxy;  // fwd
 template< typename KeyT
         , class ... AspectTs > struct InsertionAttorney;
 
-// Common traits (pretty basic ones)
+/**@brief Common traits (pretty basic ones)
+ *
+ * The goo::dict traits are defined for every unique set of simple structures
+ * called "aspects". By the language limitation, we can not define the set of
+ * aspects as an actual "set" (i.e. unordered)
+ * */
 template< typename ... AspectTs >
 struct Traits {
     /// Type of general value kept by dictionaries with the fixed aspects set.
     typedef iBaseValue<AspectTs ...> VBase;
-    // One probably will want to append the dictionary traits (within partial
-    // specialization). By default, each dictionary aspect keeps a map
-    // indexing a set of self-typed instance pointers by same key.
-    /// Additional behaviour may be mixed in the GenericDictionary<> by the mean
-    /// of partial specialization of this type. By default its an empty struct.
-    template<typename KeyT> struct DictionaryAspect :
-            public TValue< Hash<KeyT, GenericDictionary<KeyT, AspectTs...>* > >
-            // ... public Value< Map< otherKeyT , Dictionary<KeyT, AspectTs...>* > >
-    { };
+    /// The index (dictionary) traits may be re-defined within partial
+    /// specialization for certain key type (whithin every unique aspects set).
+    template<typename KeyT> struct IndexByf {
+        // One probably will want to append the dictionary traits (within partial
+        // specialization). By default, each dictionary aspect keeps a map
+        // indexing a set of self-typed instance pointers by same key.
+        /// Additional behaviour may be mixed in the GenericDictionary<> by the mean
+        /// of partial specialization of this type. By default its an empty struct.
+        template<typename KeyT> struct Aspect :
+                public TValue< Hash<KeyT, GenericDictionary<KeyT, AspectTs...>* > >
+                // ... public Value< Map< otherKeyT , Dictionary<KeyT, AspectTs...>* > >
+        { };
 
-    template<typename KeyT> using Dictionary = GenericDictionary<KeyT, AspectTs...>;
+        template<typename KeyT> using Dictionary = GenericDictionary<KeyT, AspectTs...>;
+
+        /// Key-value pairs container, the mandatory part of any generic dictionary.
+        /// One probably will wand to re-define the second AspectTs... pack in order
+        /// to restrict the aspects set included at the dictionary within particular
+        /// traits.
+        template<typename KeyT> using TDictValue = TValue< Hash<KeyT, iBaseValue<AspectTs...>*>
+                                                         , AspectTs ... // < this pack
+                                                         >;
+    };
 };
 
 template< typename KeyT
         , typename ... AspectTs>
-class GenericDictionary : public mixins::iDuplicable< iBaseValue<AspectTs...>
+class GenericDictionary : public mixins::iDuplicable< typename Traits<AspectTs ...>::template TDictValue<KeyT>::Base
                                                     , GenericDictionary<KeyT, AspectTs ...>
-                                                    , TValue< Hash<KeyT, iBaseValue<AspectTs...> * >
-                                                            , AspectTs... >
+                                                    , typename Traits<AspectTs ...>::template TDictValue<KeyT>
                                                     >
                          , public Traits<AspectTs...>::template DictionaryAspect<KeyT> {
 public:
@@ -94,6 +110,10 @@ public:
             return _target._alloc< P<T> >(args...);
         };
     };
+    typedef mixins::iDuplicable< typename Traits<AspectTs ...>::template TDictValue<KeyT>::Base
+                                                    , GenericDictionary<KeyT, AspectTs ...>
+                                                    , typename Traits<AspectTs ...>::template TDictValue<KeyT>
+                                                    > DuplicableParent;
 protected:
     /// Called by insertion proxies to allocate data of various types, including
     /// instances of particular parameter types.
@@ -112,9 +132,11 @@ protected:
     }
 public:
     /// Common ctr, that barely forwards arguments to aspect ctr.
-    template<typename ... CtrArgTs>
-    explicit GenericDictionary( CtrArgTs ... ctrArgs ) : Traits<AspectTs...> \
-                                ::template DictionaryAspect<KeyT>(ctrArgs ...) {}
+    template<typename TT, typename ... CtrArgTs>
+    GenericDictionary( TT ownAspectsInitializer
+                     , CtrArgTs ... ctrArgs ) \
+            : DuplicableParent( ownAspectsInitializer )
+            , Traits<AspectTs...>::template DictionaryAspect<KeyT>( ctrArgs ... ) {}
 
     virtual ~GenericDictionary() {
         for( auto p : this->_mutable_value() ) {

@@ -30,8 +30,9 @@ AppConfInsertionProxy::_index_by_shortcut( char shrtc, VBase * p ) {
 
 AppConfInsertionProxy::Self &
 AppConfInsertionProxy::bgn_sect( const std::string & name
-                              , const std::string & description ) {
-    auto sPtr = new AppConfNameIndex( description );
+                               , const std::string & description ) {
+    // TODO: use _alloc instead of new
+    auto sPtr = new AppConfNameIndex( std::make_tuple( new aspects::Description(description)) );
     auto ir = _stack.top().second->emplace( name, sPtr );
     if( !ir.second ) {
         emraise( nonUniq, "Unable to insert new section named \"%s\" since"

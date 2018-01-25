@@ -103,37 +103,25 @@ template<>
 struct Traits<_Goo_m_VART_LIST_APP_CONF> {
     template<typename KeyT> class DictionaryAspect;
     typedef iBaseValue< _Goo_m_VART_LIST_APP_CONF > VBase;
-    template<typename KeyT> using Dictionary = GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF>;
+    template<typename KeyT> struct IndexBy {
+        template<typename KeyT> using Type = GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF>;
+        template<typename KeyT> using ValueTemplate = TValue< Hash<KeyT, iBaseValue<_Goo_m_VART_LIST_APP_CONF>*>
+                                                            , aspects::Description >;
+    };
 };
 
 typedef Traits<_Goo_m_VART_LIST_APP_CONF> AppConfTraits;
+
+typedef AppConfTraits::Dictionary<std::string> AppConfNameIndex;
 
 /// Named dictionary config template specialization.
 template<>
 class AppConfTraits::DictionaryAspect<std::string>
         : public Hash< std::string
-                     , GenericDictionary< std::string
-                                       , aspects::Description
-                                       , aspects::iStringConvertible
-                                       , aspects::CharShortcut
-                                       , aspects::Required
-                                       , aspects::IsSet
-                                       , aspects::Array
-                                       > *
-                     >
-        , public aspects::Description {
+                     , AppConfNameIndex * > {
 public:
-    explicit DictionaryAspect( const std::string & d ) : aspects::Description( d ) {}
+    explicit DictionaryAspect() {}
 };
-
-typedef GenericDictionary< std::string
-                         , aspects::Description
-                         , aspects::iStringConvertible
-                         , aspects::CharShortcut
-                         , aspects::Required
-                         , aspects::IsSet
-                         , aspects::Array
-                         > AppConfNameIndex;
 
 // Note: the char-indexing dictionary aspect is declared ath the configuration.hpp
 // header.

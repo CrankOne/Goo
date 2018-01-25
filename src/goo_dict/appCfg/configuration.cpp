@@ -40,7 +40,10 @@
 namespace goo {
 namespace dict {
 
-Configuration::Configuration( const char * descr_) : DuplicableParent(descr_) {}
+// TODO: use own _alloc instead of new for allocating description aspect.
+Configuration::Configuration( const std::string & descr_) \
+        : DuplicableParent( std::make_tuple(new aspects::Description(descr_) ) )
+        , _shortcutsIndex() {}  // TODO< GenericDictionary<char, ...> has all entries aspects within
 
 Configuration::Configuration( const Configuration & orig ) : DuplicableParent( orig ) {}
 

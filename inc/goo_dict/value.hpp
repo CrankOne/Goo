@@ -38,7 +38,8 @@ protected:
     /// Shall return C++ RTTI type info.
     virtual const std::type_info & _V_target_type_info() const = 0;
 public:
-    iBaseValue(AspectTs * ... aspects) : _aspects(aspects ...) {}
+    explicit iBaseValue( AspectTs * ... aspects ) : _aspects(aspects ...) {}
+    explicit iBaseValue( std::tuple<AspectTs * ...> t ) : _aspects(t) {}
     //iBaseValue() = default;
     //iBaseValue( const Self & o ) = default; // TODO: copy aspect values instead of just their ptrs
     /// Returns untyped data pointer.
@@ -62,8 +63,13 @@ public:
     // moment.
     /// Getter method (convinience, implemented in parameter.tcc).
     template<typename T>
-    std::conditional<stdE::is_one_of<T, AspectTs...>::value, const T &, void>
-    as() const { return aspect_cast<T>(); };
+    typename std::enable_if<stdE::is_one_of<T, AspectTs...>::value, const T &>::type
+    as() const { return *aspect_cast<T>(); };
+
+    template<typename T>
+    typename std::enable_if< ! stdE::is_one_of<T, AspectTs...>::value, const T &>::type
+    as() const;
+
     /// Getter method (convinience, implemented in parameter.tcc) for array
     /// parameters.
     template<typename T> const Array<T> & as_array_of() const;
@@ -77,10 +83,12 @@ public:
  * Represents a value-keeping aspect of the parameter classes.
  * */
 template<typename ValueT, typename ... AspectTs>
-class TValue : public virtual iBaseValue<AspectTs...> {
-    friend class LoDInsertionProxy;
+class TValue : public mixins::iDuplicable< iBaseValue<AspectTs...>
+                                         , TValue<ValueT, AspectTs...> > {
 public:
+    typedef iBaseValue<AspectTs...> Base;
     typedef ValueT Value;
+    typedef mixins::iDuplicable<Base, TValue<ValueT, AspectTs...>> DuplicableParent;
 private:
     Value _value;
 protected:
@@ -98,6 +106,7 @@ protected:
     /// Potentially dangerous ctr leaving the value uninitialized.
     TValue() : _value() {}
 public:
+    template<typename ... ArgTs> TValue(ArgTs...args) : DuplicableParent(args ... ) {}
     /// Const value getter (public).
     virtual const ValueT & value() const { return _value; }
     virtual void value(const Value & v) { _set_value(v); }

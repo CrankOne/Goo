@@ -224,7 +224,8 @@ iBaseValue<AspectTs...>::as_array_of() const {
 }
 
 template<typename ... AspectTs>
-template<typename T> const T &
+template<typename T>
+typename std::enable_if< ! stdE::is_one_of<T, AspectTs...>::value, const T &>::type
 iBaseValue<AspectTs...>::as() const {
     _TODO_  // TODO: iSingularParameter -> ???
     # if 0
