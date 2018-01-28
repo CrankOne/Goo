@@ -58,13 +58,14 @@ namespace dict {
  * */
 template<typename ... AspectTs>
 class Parameter<bool, AspectTs...> : public mixins::iDuplicable< iBaseValue<AspectTs...>
-                                                               , Parameter<bool, AspectTs...>
-                                                               , TValue<bool, AspectTs...> > {
+                                                             , Parameter<bool, AspectTs...>
+                                                             , TValue<bool, AspectTs...> > {
 public:
     typedef mixins::iDuplicable< iBaseValue<AspectTs...>
                                , Parameter<bool, AspectTs...>
                                , TValue<bool, AspectTs...>
                                > DuplicableParent;
+    template<typename ... Ts> Parameter( Ts ... ctrArgs) : DuplicableParent( ctrArgs... ) {}
     // ...
 };
 

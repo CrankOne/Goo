@@ -5,12 +5,13 @@
 # include "goo_dict/parameters/enum_parameter.tcc"
 # include "goo_dict/parameters/integral.tcc"
 # include "goo_dict/parameters/floating_point.tcc"
+# include "goo_dict/parameters/string.hpp"
 # include "goo_dict/parameters/los.hpp"
 
 # ifndef NO_PDICT_TEST
 
 //# define NO_BASIC_SPLITTING_TEST
-# define NO_BASIC_PARSING_TEST
+//# define NO_BASIC_PARSING_TEST
 # define NO_BASIC_ERRORS_TEST
 # define NO_ARRAY_PARAMETERS_TEST
 # define NO_CONSISTENCY_TESTS

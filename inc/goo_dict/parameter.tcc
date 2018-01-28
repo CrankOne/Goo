@@ -25,7 +25,7 @@
 
 # include "goo_types.h"
 # include "goo_exception.hpp"
-# include "./value.hpp"
+# include "value.hpp"
 
 # include <list>
 # include <vector>
@@ -57,9 +57,8 @@ class Parameter : public mixins::iDuplicable< iBaseValue<AspectTs...>
 public:
     typedef mixins::iDuplicable< iBaseValue<AspectTs...>
                                , Parameter<ValueT, AspectTs...>
-                               , TValue<ValueT> > DuplicableParent;
-    Parameter() = default;
-    Parameter(const ValueT & v) : DuplicableParent(v) {}
+                               , TValue<ValueT, AspectTs...> > DuplicableParent;
+    template<typename ... Ts> Parameter(Ts ... ctrArgs) : DuplicableParent(ctrArgs...) {}
 };
 
 template <typename T, typename ... AspectTs> class IntegralParameter;

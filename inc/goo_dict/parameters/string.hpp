@@ -53,14 +53,15 @@ namespace dict {
  * */
 template<typename ... AspectTs>
 class Parameter<std::string, AspectTs...> : public mixins::iDuplicable< iBaseValue<AspectTs...>
-                                                                      , Parameter<std::string, AspectTs... >
-                                                                      > {
+                                                                   , Parameter<std::string, AspectTs... >
+                                                                   , TValue<std::string, AspectTs...> > {
 public:
     typedef mixins::iDuplicable< iBaseValue<AspectTs...>
                                , Parameter<std::string, AspectTs... >
-                               > DuplicableParent;
+                               , TValue<std::string, AspectTs...> > DuplicableParent;
 public:
     Parameter( const Parameter<std::string> & o ) : DuplicableParent( o ) {}
+    template<typename ... Ts> Parameter( Ts ... ctrArgs ) : DuplicableParent(ctrArgs...) {}
 };
 
 namespace aspects {

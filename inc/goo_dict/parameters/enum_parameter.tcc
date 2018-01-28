@@ -40,8 +40,8 @@ namespace dict {
 template< typename EnumT
         , typename ... AspectTs>
 class EnumParameter : public mixins::iDuplicable< iBaseValue<AspectTs...>
-                                                , EnumParameter<EnumT, AspectTs...>
-                                                , Parameter<EnumT, AspectTs...> > {
+                                              , EnumParameter<EnumT, AspectTs...>
+                                              , Parameter<EnumT, AspectTs...> > {
 public:
     typedef EnumT Enum;
     typedef mixins::iDuplicable< iBaseValue<AspectTs...>,
@@ -58,6 +58,7 @@ public:
     static std::vector<std::string> available_values();
 public:
     EnumParameter( const EnumParameter<Enum> & o ) : DuplicableParent( o ) {}
+    template<typename ... Ts> EnumParameter( Ts ... ctrArgs ) : DuplicableParent(ctrArgs...) {}
 
     operator const Enum&() const { return DuplicableParent::value(); }
 
