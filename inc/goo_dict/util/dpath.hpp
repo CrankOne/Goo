@@ -33,7 +33,7 @@
 
 namespace goo {
 namespace dict {
-namespace aux {
+namespace utils {
 
 /** @brief This routine performs simple token extraction from head of the option
  * path.
@@ -146,7 +146,7 @@ size_t parse_dict_path( char * pathString
                      , DictPath * pToks
                      , size_t nPToks );
 
-}  // namespace aux
+}  // namespace utils
 }  // namespace dict
 }  // namespace goo
 

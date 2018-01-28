@@ -112,7 +112,8 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF> {
     template<typename KeyT> struct IndexBy {
         /// Aspect defines same-indexed subsections within the current
         /// dictionary.
-        struct Aspect : public Hash<KeyT, GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF>*> {
+        struct Aspect : protected Hash<KeyT, GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF>*> {
+            friend class InsertionProxy<KeyT>;
             /// Constructs and returns insertion proxy referencing current
             /// dictionary instance. Defined in insertion_proxy.tcc
             virtual InsertionProxy<KeyT> insertion_proxy();
@@ -122,6 +123,8 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF> {
                             , aspects::Description > DictValue;
     };
 };
+
+
 
 template<>
 template<>

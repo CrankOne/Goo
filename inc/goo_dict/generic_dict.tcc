@@ -106,6 +106,11 @@ public:
         Self & _target;
     protected:
         Self & target() { return _target; }
+        /// Protected entry-insertion method.
+        virtual std::pair<typename Hash<KeyT, iBaseValue<AspectTs...> *>::iterator, bool>
+        _insert_parameter( const KeyT & k, iBaseValue<AspectTs...> * p ) {
+            return target()._mutable_value().emplace(k, p);
+        }
     protected:
         BaseInsertionProxy( Self & t ) : _target(t) {}
 
@@ -135,11 +140,11 @@ protected:
         // TODO: use more advanced allocation logic here.
         delete p;
     }
-    /// Protected entry-insertion method.
-    virtual std::pair<typename Hash<KeyT, iBaseValue<AspectTs...> *>::iterator, bool>
-    _insert_parameter( const KeyT & k, iBaseValue<AspectTs...> * p ) {
-        return this->_mutable_value().emplace(k, p);
-    }
+    // Protected entry-insertion method.
+    //virtual std::pair<typename Hash<KeyT, iBaseValue<AspectTs...> *>::iterator, bool>
+    //_insert_parameter( const KeyT & k, iBaseValue<AspectTs...> * p ) {
+    //    return this->_mutable_value().emplace(k, p);
+    //}
 public:
     /// Common ctr, that barely forwards arguments to aspect ctr.
     template<typename TT, typename ... CtrArgTs>

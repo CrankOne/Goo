@@ -3,6 +3,8 @@
 # include "utest.hpp"
 # include "goo_dict/appCfg/configuration.hpp"
 # include "goo_dict/parameters/enum_parameter.tcc"
+# include "goo_dict/parameters/integral.tcc"
+# include "goo_dict/parameters/floating_point.tcc"
 # include "goo_dict/parameters/los.hpp"
 
 # ifndef NO_PDICT_TEST
@@ -112,7 +114,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         goo::dict::ListIndex index;
         {
             os << "Splitting \"" << one << "\" (common case):" << std::endl;
-            _ASSERT( 0x2 == (rc = goo::dict::aux::pull_opt_path_token( path = one, current, index )),
+            _ASSERT( 0x2 == (rc = goo::dict::utils::pull_opt_path_token( path = one, current, index )),
                         "Wrong path subtoken #1: %d.", rc );
             _ASSERT( !strcmp("one", current) && !strcmp("three-4.five.six-seven", path),
                      "#1 was splitted to \"%s\" and \"%s\"",
@@ -122,7 +124,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         {
             os << "Splitting \"" << two << "\" (single-char option remained):" << std::endl;
-            _ASSERT( 0 == (rc = goo::dict::aux::pull_opt_path_token( path = two, current, index )),
+            _ASSERT( 0 == (rc = goo::dict::utils::pull_opt_path_token( path = two, current, index )),
                         "Wrong path subtoken #2: %d.", rc  );
             _ASSERT( !strcmp("v", current) && 0 == strlen(path) && 1 == (path - current),
                      "#2 was splitted to \"%s\" and string of length %d; path - current = %d",
@@ -132,7 +134,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         {
             os << "Splitting \"" << three << "\" (dictionary short name):" << std::endl;
-            _ASSERT( 0x2 == (rc = goo::dict::aux::pull_opt_path_token( path = three, current, index )),
+            _ASSERT( 0x2 == (rc = goo::dict::utils::pull_opt_path_token( path = three, current, index )),
                         "Wrong path subtoken #3: %d.", rc  );
             _ASSERT( !strcmp("12one-7", current) && !strcmp("1", path) && 1 != (path - current),
                      "#3 was splitted to \"%s\" and string of length %d",
@@ -149,13 +151,13 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         goo::dict::Configuration conf( "Testing parameter set #1." );
 
         conf.insertion_proxy()
-            .flag(    '1', "parameter-one",  "First parameter" )  // TODO: use implicit aspect!
-            .flag(    'v', "Enables verbose output" )
+            .p<bool>( '1', "parameter-one", "First parameter", false ).implicit(true)
+            .p<bool>( 'v', nullptr, "Enables verbose output", false ).implicit(true)
             .p<bool>( 'q', "Be quiet", true )
             .p<bool>( "quiet", "Be quiet", true )
             .p<bool>( "verbose", "Enables verbosity" )
-            .p<short>(  "verbosity", "Sets verbosity level" )
-            .flag(    'V', "verbose2", "Enables verbose output" )
+            .p<short>("verbosity", "Sets verbosity level" )
+            .p<bool>( 'V', "verbose2", "Enables verbose output", false ).implicit(true)
             .p<bool>( 'Q', "quiet2", "Be quiet", true )
             //.p<bool>( 12, "one", "two", "three" )  // should cause failure on linkage
             //.p<bool>( "one", "two", "three" )  // should cause failure on linkage
@@ -172,15 +174,15 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             " --quiet=true -V --quiet2 false -eten --verbosity 23 --fp-num-i 1.23";
         char ** argv;
         os << "For given source string: " << ex1 << ":" << std::endl;
-        int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
+        Size argc = goo_shell_tokenize_string( ex1, &argv );
         for( int n = 0; n < argc; ++n ) {
             os << argv[n] << "|";
         }
         os << std::endl;
 
-        conf.extract( argc, argv, false, &os );
+        utils::set_app_conf( conf, argc, argv, false, &os );
 
-        goo::dict::Configuration::free_tokens( argc, argv );
+        goo_free_shell_tokens( argc, argv );
         // check options are really set to expected values
         _ASSERT(  conf["1"].as<bool>(),         "Option -1 set wrong." );
         _ASSERT(  conf["v"].as<bool>(),         "Option -v set wrong." );

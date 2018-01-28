@@ -51,9 +51,13 @@ namespace dict {
  */
 template< typename ValueT
         , typename ... AspectTs>
-class Parameter : public mixins::iDuplicable< iBaseValue<AspectTs...>, TValue<ValueT, AspectTs...> > {
+class Parameter : public mixins::iDuplicable< iBaseValue<AspectTs...>
+                                           , Parameter<ValueT, AspectTs...>
+                                           , TValue<ValueT, AspectTs...> > {
 public:
-    typedef mixins::iDuplicable< iBaseValue<AspectTs...>, TValue<ValueT> > DuplicableParent;
+    typedef mixins::iDuplicable< iBaseValue<AspectTs...>
+                               , Parameter<ValueT, AspectTs...>
+                               , TValue<ValueT> > DuplicableParent;
     Parameter() = default;
     Parameter(const ValueT & v) : DuplicableParent(v) {}
 };

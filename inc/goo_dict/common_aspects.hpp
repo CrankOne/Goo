@@ -46,17 +46,28 @@ public:
 /// The "requires argument"=false state is usually possible for command-line
 /// arguments --- POSIX standard defines such flags. The "is required" flag
 /// makes sense only with composition of the IsSet() aspect.
-struct Required {
+struct Required {  // TODO: rename this aspect to "ProgrammOption"
 private:
     bool _isRequired
-       , _requiresValue;
+       , _requiresValue
+       , _mayBeImplicit
+       ;
+protected:
+    /// Virtual function. Does nothing by default, but may be overriden by
+    /// subclass (see ImplicitValue).
+    virtual void _V_set_implicit_value() {}
 public:
     explicit Required( bool v=true
-                     , bool requiresValue=true ) : _isRequired(v), _requiresValue(requiresValue) {}
+                     , bool requiresValue=true
+                     , bool mayBeImplicit=false) : _isRequired(v)
+                                                 , _requiresValue(requiresValue)
+                                                 , _mayBeImplicit(mayBeImplicit) {}
     bool is_required() const { return _isRequired; }
     virtual void set_required(bool v) { _isRequired = true; }
     bool requires_argument() const { return _requiresValue; }
     virtual void set_requires_argument( bool v ) { _requiresValue = v; }
+    bool may_be_set_implicitly() const { return _mayBeImplicit; }
+    virtual void set_being_implicit( bool v ) { _mayBeImplicit = v; }
 };
 
 /// Defines "is set" flag for parameters.
@@ -142,6 +153,7 @@ public:
 protected:
     /// Sets the value kept by current instance from string expression.
     virtual void _V_parse_argument(const char *strval) override {
+        /// TODO: aspects?
         static_cast<TValue<ValueT>*>(this)->value(ValueTraits::parse_string_expression(strval));
     }
 
@@ -153,6 +165,27 @@ public:
     TStringConvertible() {}
     explicit TStringConvertible(const ValueT &v) : TValue<Value>(v) {}
     explicit TStringConvertible(const Self &o) : TValue<Value>(o) {}
+};
+
+template<typename ValueT>
+class ImplicitValue : public Required {
+private:
+    ValueT _implicitValue;
+protected:
+    virtual void _V_set_implicit_value() override {
+        /// TODO: aspects?
+        static_cast<TValue<ValueT>*>(this)->value(_implicitValue);
+    }
+public:
+    ImplicitValue( bool isRequired=true
+                 , bool requiresValue=true
+                 , bool mayBeImplicit=false) : Required( isRequired
+                                                      , requiresValue
+                                                      , mayBeImplicit ) {}
+    virtual void set_implicit_value( const ValueT & v ) {
+        set_being_implicit( true );
+        _implicitValue = v;
+    }
 };
 
 }  // namespace aspects

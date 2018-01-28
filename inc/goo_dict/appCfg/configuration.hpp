@@ -25,6 +25,7 @@
 
 # include "goo_dict/appCfg/traits.hpp"
 # include "insertion_proxy.tcc"
+# include "goo_dict/util/dpath.hpp"
 
 struct option;
 
@@ -124,6 +125,18 @@ public:
         # endif
     }
 
+    const VBase & operator[](const std::string & path) const {
+        _TODO_
+        //char * pDup = alloca( path.size() + 1 );
+        //
+        //utils::parse_dict_path( pDup );
+    }
+
+    VBase & operator[](const std::string & pathStr) {
+        const Configuration * cThis = this;
+        return const_cast<VBase &>(cThis->operator[](pathStr));
+    }
+
     /// Returns forwarded arguments (if they were set).
     const Array<std::string> & forwarded_argv() const;
 
@@ -131,6 +144,34 @@ public:
 };  // class Configuration
 
 }  // namespace dict
+
+namespace utils {
+
+/**@brief A utility function performing initialization of an existing
+ *        goo::dict::Configuration instance with given argc/argv expression.
+ *
+ * This function is a main procedure to initialize application configuration
+ * represented as an instance of goo::dict::Configuration with standard C/C++
+ * argc/argv data, usually provided to application by standard system invocation
+ * mechanism. By the consistency reasons, we've decided to use system POSIX
+ * getopt_long() function to perform option interpretation, so most of the
+ * standard POSIX command line options features are supported.
+ *
+ * @param cfg Configuration instance.
+ * @param argc number of argv tokens (>0)
+ * @param argv array of strings (option tokens)
+ * @param doCnstCheck wether to perform internal the consistency check for
+ *        completeness
+ * @param logStreamPtr ptr to output logging stream where internal message will
+ *        be printed
+ **/
+void set_app_conf( dict::Configuration & cfg
+                 , int argc
+                 , char * const * argv
+                 , bool doCnstCheck
+                 , std::ostream *logStreamPtr=nullptr );  // TODO: migrate impl from dev branch
+
+}  // namespace utils
 }  // namespace goo
 
 # endif  // H_GOO_PARAMETERS_CONFIGURATION_H

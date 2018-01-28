@@ -1,14 +1,37 @@
 # include <cstring>
-#include <goo_dict/types.hpp>
-
+# include "goo_dict/types.hpp"
 # include "goo_dict/appCfg/insertion_proxy.tcc"
-//# include "goo_dict/configuration.hpp"
+# include "goo_dict/appCfg/configuration.hpp"
 
 namespace goo {
 namespace dict {
 
-AppConfInsertionProxy::Subsection &
-AppConfInsertionProxy::_top() {
+//typedef  AppConfInsertionProxy;
+
+InsertionProxy<std::string>::InsertionProxy(Subsection & d, const std::string & name)
+    : AppConfTraits::IndexBy<std::string>::Dictionary::BaseInsertionProxy<InsertableParameter >(d)
+    , _root(nullptr)
+    , _latestInsertedRequired(nullptr) {
+    _stack.push( std::make_pair(name, &d) );
+}
+
+InsertionProxy<std::string>::InsertionProxy( Configuration * R )
+    : AppConfTraits::IndexBy<std::string>::Dictionary::BaseInsertionProxy<InsertableParameter >(*R)
+    , _root(R)
+    , _latestInsertedRequired(nullptr) {
+    // ...
+}
+
+InsertionProxy<std::string>::InsertionProxy( Configuration * R, InsertionTargetsStack & s )
+    : AppConfTraits::IndexBy<std::string>::Dictionary::BaseInsertionProxy<InsertableParameter >(*R)
+    , _root(R)
+    , _stack(s)
+    , _latestInsertedRequired(nullptr) {
+    // ...
+}
+
+InsertionProxy<std::string>::Subsection &
+InsertionProxy<std::string>::_top() {
     if( _stack.empty() ) {
         if( !_root ) {
             emraise( badState, "Empty insertion proxy object." );
@@ -19,7 +42,7 @@ AppConfInsertionProxy::_top() {
 }
 
 void
-AppConfInsertionProxy::_index_by_shortcut( char shrtc, VBase * p ) {
+InsertionProxy<std::string>::_index_by_shortcut( char shrtc, VBase * p ) {
     if( !_root ) {
         emraise( badState, "Unable to index parameter %p by shortcut %c with"
                 " the insertion proxy object %p since proxy has no associated"
@@ -28,8 +51,8 @@ AppConfInsertionProxy::_index_by_shortcut( char shrtc, VBase * p ) {
     _TODO_   // TODO: _root->emplace( shrtc, p );
 }
 
-AppConfInsertionProxy::Self &
-AppConfInsertionProxy::bgn_sect( const std::string & name
+InsertionProxy<std::string>::Self &
+InsertionProxy<std::string>::bgn_sect( const std::string & name
                                , const std::string & description ) {
     auto sPtr = _alloc<AppConfNameIndex>( std::make_tuple( _alloc<aspects::Description>(description) ) );
     auto ir = _stack.top().second->emplace( name, sPtr );
@@ -41,8 +64,8 @@ AppConfInsertionProxy::bgn_sect( const std::string & name
     return *this;
 }
 
-AppConfInsertionProxy::Self &
-AppConfInsertionProxy::end_sect( const std::string & name ) {
+InsertionProxy<std::string>::Self &
+InsertionProxy<std::string>::end_sect( const std::string & name ) {
     if( !name.empty() ) {
         if( name != _stack.top().first ) {
             emraise(assertFailed, "end_sect(\"%s\") does not correspond to"

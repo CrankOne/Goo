@@ -30,7 +30,7 @@
 
 namespace goo {
 namespace dict {
-namespace aux {
+namespace utils {
 
 int
 pull_opt_path_token( char *& path

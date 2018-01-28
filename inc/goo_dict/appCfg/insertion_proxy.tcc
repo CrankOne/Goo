@@ -39,37 +39,54 @@ protected:
     Subsection & _top();
     void _index_by_shortcut( char, VBase * );
 public:
-    InsertionProxy( Subsection & self );
+    InsertionProxy( Subsection & d, const std::string & name="" );
+    explicit InsertionProxy( Configuration * R );
+    InsertionProxy( Configuration * r, InsertionTargetsStack & s );
 
     /// Insert new parameter with shortcut and name, no default value.
     template<typename PT> Self &
-    p( char shortcut, const std::string & name, const std::string & description ) {
-        // TODO: InsertibleParameter instead of Patameter<>
+    p( char shortcut
+     , const std::string & name
+     , const std::string & description ) {
         auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<PT>>()
                                         , _alloc<aspects::CharShortcut>(shortcut)
-                                        , _latestInsertedRequired = _alloc<aspects::Required>()
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT>>()
                                         , _alloc<aspects::IsSet>()
                                         , _alloc<aspects::Array>(false)
                                         );
-        target()._insert_parameter( name, pPtr );
-        _latestInsertedRequired = pPtr;
+        _insert_parameter( name, pPtr );
+        _index_by_shortcut( shortcut, pPtr );
+        return *this;
+    }
+
+    /// Insert new parameter with shortcut only, no default value.
+    template<typename PT> Self &
+    p( char shortcut
+     , const std::string & description ) {
+        auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
+                                        , _alloc<aspects::TStringConvertible<PT>>()
+                                        , _alloc<aspects::CharShortcut>(shortcut)
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT>>()
+                                        , _alloc<aspects::IsSet>()
+                                        , _alloc<aspects::Array>(false)
+                                        );
         _index_by_shortcut( shortcut, pPtr );
         return *this;
     }
 
     /// Insert new parameter with name only, no default value.
     template<typename PT> Self &
-    p( const std::string & name, const std::string & description ) {
+    p( const std::string & name
+     , const std::string & description ) {
         auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<PT>>()
                                         , _alloc<aspects::CharShortcut>()  // no shortcut
-                                        , _latestInsertedRequired = _alloc<aspects::Required>()
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT>>()
                                         , _alloc<aspects::IsSet>()
                                         , _alloc<aspects::Array>(false)
                                         );
-        target()._insert_parameter( name, pPtr );
-        _latestInsertedRequired = pPtr;
+        _insert_parameter( name, pPtr );
         return *this;
     }
 
@@ -79,16 +96,15 @@ public:
      , const std::string & name
      , const std::string & description
      , const PT & dft ) {
-        auto pPtr = _alloc_parameter<PT>( dft
-                                        , _alloc<aspects::Description>(description)
+        auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<PT>>()
                                         , _alloc<aspects::CharShortcut>(shortcut)
-                                        , _latestInsertedRequired = _alloc<aspects::Required>()
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT>>()
                                         , _alloc<aspects::IsSet>(true)
                                         , _alloc<aspects::Array>(false)
                                         );
-        target()._insert_parameter( name, pPtr );
-        _latestInsertedRequired = pPtr;
+        pPtr->value( dft );
+        _insert_parameter( name, pPtr );
         _index_by_shortcut( shortcut, pPtr );
         return *this;
     }
@@ -98,16 +114,32 @@ public:
     p( const std::string & name
      , const std::string & description
      , const PT & dft ) {
-        auto pPtr = _alloc_parameter<PT>( dft
-                                        , _alloc<aspects::Description>(description)
+        auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<PT>>()
                                         , _alloc<aspects::CharShortcut>()  // no shortcut
                                         , _latestInsertedRequired = _alloc<aspects::Required>()
                                         , _alloc<aspects::IsSet>(true)
                                         , _alloc<aspects::Array>(false)
                                         );
-        target()._insert_parameter( name, pPtr );
-        _latestInsertedRequired = pPtr;
+        pPtr->value( dft );
+        _insert_parameter( name, pPtr );
+        return *this;
+    }
+
+    /// Insert new parameter with shortcut only, with default value.
+    template<typename PT> Self &
+    p( char shortcut
+     , const std::string & description
+     , const PT & dft ) {
+        auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
+                                       , _alloc<aspects::TStringConvertible<PT>>()
+                                       , _alloc<aspects::CharShortcut>(shortcut)
+                                       , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT>>()
+                                       , _alloc<aspects::IsSet>()
+                                       , _alloc<aspects::Array>(false)
+                                       );
+        pPtr->value( dft );
+        _index_by_shortcut( shortcut, pPtr );
         return *this;
     }
 
@@ -117,14 +149,36 @@ public:
     /// Encloses insertion of the new parameters section. Provide section name
     /// to check yourself.
     Self & end_sect( const std::string & name="" );
+
+    /// Operates with shell parameter aspect. Sets the "requires value" flag.
+    Self & required_argument() {
+        if( !_latestInsertedRequired ) {
+            emraise( badState, "No recent inserted parameters available known to"
+                    " current insertion proxy instance." );
+        }
+        _latestInsertedRequired->set_required( true );
+        return *this;
+    }
+
+    /// Operates with shell parameter aspect. Sets the implicit value.
+    template<typename PT> Self & implicit( const PT & iv ) {
+        aspects::ImplicitValue<PT> * p;
+        if( !_latestInsertedRequired ) {
+            emraise( badState, "No recent inserted parameters available known to"
+                    " current insertion proxy instance." );
+        }
+        if( !(p = dynamic_cast<aspects::ImplicitValue<PT>*>(_latestInsertedRequired)) ) {
+            emraise( badCast, "Type mismatch while setting implicit"
+                    " parameter value. Consider explicit type specification"
+                    " within .implicit<...>() invocation." );
+        }
+        p->set_implicit_value( iv );
+        return *this;
+    }
 };
 
-typedef InsertionProxy<std::string> AppConfInsertionProxy;
-
-template<> inline InsertionProxy<std::string>  // TODO: move it somewhere...
-Traits<_Goo_m_VART_LIST_APP_CONF>::template IndexBy<std::string>::Aspect::insertion_proxy() {
-    return InsertionProxy<std::string>(dynamic_cast<InsertionProxy<std::string>::Subsection &>(*this));
-}
+//template<> InsertionProxy<std::string>
+//Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::insertion_proxy();
 
 # if 0
 /**@brief Base class for generic configuration insertion proxies.
@@ -390,8 +444,8 @@ InsertionProxy<Dictionary>::bgn_list( Types ... args ) {
 
 # endif
 
-}  // namespace goo
 }  // namespace dict
+}  // namespace goo
 
 # endif  // H_GOO_PARAMETERS_DICTIONARY_INSERTION_PROXY_H
 

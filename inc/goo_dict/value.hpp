@@ -84,7 +84,7 @@ public:
  * */
 template<typename ValueT, typename ... AspectTs>
 class TValue : public mixins::iDuplicable< iBaseValue<AspectTs...>
-                                         , TValue<ValueT, AspectTs...> > {
+                                        , TValue<ValueT, AspectTs...> > {
 public:
     typedef iBaseValue<AspectTs...> Base;
     typedef ValueT Value;
