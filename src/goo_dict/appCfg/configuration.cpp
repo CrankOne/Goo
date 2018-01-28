@@ -43,9 +43,13 @@ namespace dict {
 // TODO: use own _alloc instead of new for allocating description aspect.
 Configuration::Configuration( const std::string & descr_) \
         : DuplicableParent( std::make_tuple(new aspects::Description(descr_) ) )
-        , _shortcutsIndex() {}  // TODO< GenericDictionary<char, ...> has all entries aspects within
+        , _shortcutsIndex( std::make_tuple<>() ) {}  // TODO< GenericDictionary<char, ...> has all entries aspects within
 
-Configuration::Configuration( const Configuration & orig ) : DuplicableParent( orig ) {}
+Configuration::Configuration( const Configuration & orig ) \
+        : DuplicableParent( orig )
+        , _shortcutsIndex( std::make_tuple<>() ) {
+    _TODO_ // TODO: fill the char index
+}
 
 Configuration::~Configuration() {}
 

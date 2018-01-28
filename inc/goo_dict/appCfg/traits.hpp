@@ -103,16 +103,34 @@ template<>
 struct Traits<_Goo_m_VART_LIST_APP_CONF> {
     template<typename KeyT> class DictionaryAspect;
     typedef iBaseValue< _Goo_m_VART_LIST_APP_CONF > VBase;
-    template<typename KeyT> struct IndexBy {
-        template<typename KeyT> using Type = GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF>;
-        template<typename KeyT> using ValueTemplate = TValue< Hash<KeyT, iBaseValue<_Goo_m_VART_LIST_APP_CONF>*>
-                                                            , aspects::Description >;
-    };
+    template<typename KeyT> struct IndexBy;
+};
+
+template<>
+template<>
+struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
+    /// Aspect defines string-indexed subsections within the current
+    /// dictionary.
+    struct Aspect : public Hash<std::string, GenericDictionary<std::string, _Goo_m_VART_LIST_APP_CONF>*> {};
+    typedef GenericDictionary<std::string, _Goo_m_VART_LIST_APP_CONF> Dictionary;
+    typedef TValue< Hash< std::string, iBaseValue<_Goo_m_VART_LIST_APP_CONF>*>
+                        , aspects::Description > DictValue;
+};
+
+template<>
+template<>
+struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char> {
+    /// Char-indexed dictionary within the application configuration does not
+    /// contain any sub-sections (within it's aspect).
+    struct Aspect {};
+    typedef GenericDictionary<char, _Goo_m_VART_LIST_APP_CONF> Dictionary;
+    /// The char-index has no description aspect as well.
+    typedef TValue< Hash<char, iBaseValue<_Goo_m_VART_LIST_APP_CONF>*> > DictValue;
 };
 
 typedef Traits<_Goo_m_VART_LIST_APP_CONF> AppConfTraits;
 
-typedef AppConfTraits::Dictionary<std::string> AppConfNameIndex;
+typedef AppConfTraits::IndexBy<std::string>::Dictionary AppConfNameIndex;
 
 /// Named dictionary config template specialization.
 template<>

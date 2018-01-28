@@ -23,7 +23,7 @@ template<typename KeyT> class InsertionProxy;
 /// parameter are indexed.
 template<>
 class InsertionProxy< std::string > : public AppConfTraits \
-                                           ::Dictionary<std::string> \
+                                           ::IndexBy<std::string>::Dictionary \
                                            ::BaseInsertionProxy< InsertableParameter > {
 public:
     typedef InsertionProxy<std::string> Self;

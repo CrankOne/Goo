@@ -61,11 +61,11 @@ public:
  * `invalidate_getopt_caches()` just before `extract()` invocation if inserted
  * sub-sections were modified.
  * */
-class Configuration : public mixins::iDuplicable< typename AppConfTraits::template TDictValue<std::string>::Base
+class Configuration : public mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
                                                 , Configuration
                                                 , AppConfNameIndex> {
 public:
-    typedef mixins::iDuplicable< typename AppConfTraits::template TDictValue<std::string>::Base
+    typedef mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
                                , Configuration
                                , AppConfNameIndex
                                > DuplicableParent;

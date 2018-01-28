@@ -54,36 +54,46 @@ struct Traits {
     typedef iBaseValue<AspectTs ...> VBase;
     /// The index (dictionary) traits may be re-defined within partial
     /// specialization for certain key type (whithin every unique aspects set).
-    template<typename KeyT> struct IndexByf {
+    template<typename KeyT> struct IndexBy {
         // One probably will want to append the dictionary traits (within partial
         // specialization). By default, each dictionary aspect keeps a map
         // indexing a set of self-typed instance pointers by same key.
         /// Additional behaviour may be mixed in the GenericDictionary<> by the mean
         /// of partial specialization of this type. By default its an empty struct.
-        template<typename KeyT> struct Aspect :
-                public TValue< Hash<KeyT, GenericDictionary<KeyT, AspectTs...>* > >
-                // ... public Value< Map< otherKeyT , Dictionary<KeyT, AspectTs...>* > >
-        { };
+        struct Aspect { /* nothing special by default */ };
+        //typedef TValue< Hash<KeyT, GenericDictionary<KeyT, AspectTs...>* > > Aspect;
+        //        // ... public Value< Map< otherKeyT , Dictionary<KeyT, AspectTs...>* > >
 
-        template<typename KeyT> using Dictionary = GenericDictionary<KeyT, AspectTs...>;
+        typedef GenericDictionary<KeyT, AspectTs...> Dictionary;
 
         /// Key-value pairs container, the mandatory part of any generic dictionary.
-        /// One probably will wand to re-define the second AspectTs... pack in order
+        /// One probably would desire to re-define the second AspectTs... pack in order
         /// to restrict the aspects set included at the dictionary within particular
         /// traits.
-        template<typename KeyT> using TDictValue = TValue< Hash<KeyT, iBaseValue<AspectTs...>*>
-                                                         , AspectTs ... // < this pack
-                                                         >;
+        typedef TValue< Hash<KeyT, iBaseValue<AspectTs...>*>
+                      , AspectTs ... // < this pack
+                      > DictValue;
     };
 };
 
+
+/**@class GenericDictionary
+ * @brief The GenericDictionary template class defines a relations between
+ *        parameters sets indexed by some key values.
+ *
+ * The dictionary instance itself, basically, holds the key-value mapping where
+ * for certain key corresponds a single parameter instance. It is possible,
+ * however to make the dictionary index other dictionaries as well (via the
+ * template specializations within Traits struct). In this case more complex
+ * structure shall be introduced via the IndexOf<KeyT>::Aspect mixin.
+ */
 template< typename KeyT
         , typename ... AspectTs>
-class GenericDictionary : public mixins::iDuplicable< typename Traits<AspectTs ...>::template TDictValue<KeyT>::Base
+class GenericDictionary : public mixins::iDuplicable< typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue::Base
                                                     , GenericDictionary<KeyT, AspectTs ...>
-                                                    , typename Traits<AspectTs ...>::template TDictValue<KeyT>
+                                                    , typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
                                                     >
-                         , public Traits<AspectTs...>::template DictionaryAspect<KeyT> {
+                        , public Traits<AspectTs...>::template IndexBy<KeyT>::Aspect {
 public:
     /// The insertion proxy is a class to which the insertion permission is
     /// granted. It has to become a base class for particular insertion proxies
@@ -110,9 +120,9 @@ public:
             return _target._alloc< P<T> >(args...);
         };
     };
-    typedef mixins::iDuplicable< typename Traits<AspectTs ...>::template TDictValue<KeyT>::Base
+    typedef mixins::iDuplicable< typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue::Base
                                                     , GenericDictionary<KeyT, AspectTs ...>
-                                                    , typename Traits<AspectTs ...>::template TDictValue<KeyT>
+                                                    , typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
                                                     > DuplicableParent;
 protected:
     /// Called by insertion proxies to allocate data of various types, including
@@ -136,7 +146,7 @@ public:
     GenericDictionary( TT ownAspectsInitializer
                      , CtrArgTs ... ctrArgs ) \
             : DuplicableParent( ownAspectsInitializer )
-            , Traits<AspectTs...>::template DictionaryAspect<KeyT>( ctrArgs ... ) {}
+            , Traits<AspectTs...>::template IndexBy<KeyT>::Aspect( ctrArgs ... ) {}
 
     virtual ~GenericDictionary() {
         for( auto p : this->_mutable_value() ) {
