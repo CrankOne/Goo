@@ -34,11 +34,9 @@
 # include <vector>
 # include <cmath>
 
-namespace std {
-template<bool B, typename T = void> using disable_if = enable_if<!B, T>;
-}
-
 namespace stdE {
+
+template<bool B, typename T = void> using disable_if = std::enable_if<!B, T>;
 
 template<typename charT, typename traits = std::char_traits<charT> >
 struct center_helper {

@@ -26,6 +26,7 @@
 # include <string.h>
 # include <stdlib.h>
 # include <assert.h>
+# include <wordexp.h>
 
 # include "goo_utility.h"
 
@@ -173,4 +174,41 @@ fancy_mem_size_stb( unsigned long toPrint ) {
     return fancy_mem_size( toPrint, __fancyMemSizeBf,
                            sizeof(__fancyMemSizeBf) );
 }
+
+Size
+goo_shell_tokenize_string( const char * str, char *** argvTokens ) {
+    wordexp_t pwords;
+    Size nWords;
+    int rc = wordexp( str, &pwords, WRDE_UNDEF | WRDE_SHOWERR | WRDE_NOCMD );
+    if( rc ) {
+        if( WRDE_BADCHAR == rc) {
+            goo_C_error( goo_e_badParameter, "Bad character met." );
+        } else if( WRDE_BADVAL == rc ) {
+            goo_C_error( goo_e_badArchitect, "Reference to undefined shell variable met." );
+        } else if( WRDE_CMDSUB == rc ) {
+            goo_C_error( goo_e_badState, "Command substitution requested." );
+        } else if( WRDE_NOSPACE == rc ) {
+            goo_C_error( goo_e_memAllocError, "Attempt to allocate memory failed." );
+        } else if( WRDE_SYNTAX == rc ) {
+            goo_C_error( goo_e_interpreter, "Shell syntax error." );
+        }
+    }
+    nWords = pwords.we_wordc;
+    (*argvTokens) = (char**) malloc( sizeof(char*)*nWords );
+    for( size_t n = 0; n < nWords; ++n ) {
+        (*argvTokens)[n] = strdup( pwords.we_wordv[n] );
+    }
+    wordfree( &pwords );
+    return nWords;
+}
+
+void
+goo_free_shell_tokens( Size argcTokens, char ** argvTokens ) {
+    Size n;
+    for( n = 0; n < argcTokens; ++n ) {
+        free( argvTokens[n] );
+    }
+    free( argvTokens );
+}
+
 

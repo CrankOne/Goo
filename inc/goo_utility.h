@@ -48,9 +48,9 @@ unsigned long factorial_16( unsigned char );
 
 /** Writes rounded memory size up to Tb into buffer and returns buffer. */
 char *
-rounded_mem_size( unsigned long toPrint,
-                  char * buffer,
-                  unsigned char bufLength );
+rounded_mem_size( unsigned long toPrint
+                , char * buffer
+                , unsigned char bufLength );
 
 /**@brief Writes fancy-formatted size string.
  *
@@ -61,9 +61,9 @@ rounded_mem_size( unsigned long toPrint,
  * convinient way to approximately estimate actual size.
  */
 char *
-fancy_mem_size( unsigned long toPrint,
-                  char * buffer,
-                  unsigned char bufLength );
+fancy_mem_size( unsigned long toPrint
+              , char * buffer
+              , unsigned char bufLength );
 
 /** A static buffer (uses own) version of rounded_mem_size(). */
 char * rounded_mem_size_stb( unsigned long toPrint );
@@ -79,6 +79,10 @@ char * fancy_mem_size_stb( unsigned long toPrint );
  * Note: implemented at goo_exception.cpp
  */
 int goo_C_error( ErrCode, const char * fmt, ... ) __attribute__ ((noreturn));
+
+Size goo_shell_tokenize_string( const char *, char *** );
+
+void goo_free_shell_tokens( Size argcTokens, char ** argvTokens );
 
 # ifdef __cplusplus
 }

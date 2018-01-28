@@ -26,6 +26,7 @@
 
 
 # include "goo_dict/util/dpath.hpp"
+# include <cstring>
 
 namespace goo {
 namespace dict {
@@ -52,10 +53,8 @@ pull_opt_path_token( char *& path
         if( !isalnum(*path)
             && '-' != *path
             && '_' != *path ) {
-            _TODO_  // TODO: meaningful exception
-            //fprintf( stderr, "Path specification invalid: contains "
-            //        "character %#x which is not allowed.\n", *path );
-            //abort();
+            emraise( badParameter, "Invalid path specification: character %#x "
+                "is not allowed.", *path; );
         }
     }
     if( 0x1 & rc ) {
@@ -63,17 +62,12 @@ pull_opt_path_token( char *& path
         char * endPtr;
         idx = strtol( current, &endPtr, 0 );
         if( endPtr != ('\0' != *path ? path-1 : path) ) {
-            _TODO_  // TODO: meaningful exception
-            //fprintf( stderr, "Path specification invalid: bad"
-            //                " token: \"%s\" while parsing digits.\n",
-            //        current );
-            //abort();
+            emraise( badParameter, "Invalid path specification: can not"
+                    " interpret \"%s\" as numerical expression.", current );
         }
         if( errno ) {
-            _TODO_  // TODO: meaningful exception
-            //fprintf( stderr, "Path specification invalid: strol()"
-            //        "has set errno=%d: %s\n", errno, strerror(errno) );
-            //abort();
+            emraise( badParameter, "Invalid path specification: strtol()"
+                    " has set errno=%d: \"%s\".", errno, strerror(errno) );
         }
     }
     return rc;
