@@ -54,7 +54,7 @@ pull_opt_path_token( char *& path
             && '-' != *path
             && '_' != *path ) {
             emraise( badParameter, "Invalid path specification: character %#x "
-                "is not allowed.", *path; );
+                "is not allowed.", *path );
         }
     }
     if( 0x1 & rc ) {

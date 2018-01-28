@@ -146,10 +146,10 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # ifndef NO_BASIC_PARSING_TEST
     {
         os << "Basic parsing tests : {" << std::endl;
-        goo::dict::Configuration conf( "theApplication1", "Testing parameter set #1." );
+        goo::dict::Configuration conf( "Testing parameter set #1." );
 
         conf.insertion_proxy()
-            .flag(    '1', "parameter-one",  "First parameter" )
+            .flag(    '1', "parameter-one",  "First parameter" )  // TODO: use implicit aspect!
             .flag(    'v', "Enables verbose output" )
             .p<bool>( 'q', "Be quiet", true )
             .p<bool>( "quiet", "Be quiet", true )

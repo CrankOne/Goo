@@ -89,6 +89,7 @@ namespace goo {
 
 namespace dict {
 
+template<typename KeyT> class InsertionProxy;
 
 # define _Goo_m_VART_LIST_APP_CONF aspects::Description \
                                  , aspects::iStringConvertible \
@@ -108,32 +109,19 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF> {
     /// available: the string-indexed recurrent structure of subsections and
     /// the char-indexed one, bound directly to the Configuration instance, that
     /// does not keep any subsections.
-    template<typename KeyT> struct IndexBy
-    # ifndef _Goo_m_DICT_STRICT
-    {
+    template<typename KeyT> struct IndexBy {
         /// Aspect defines same-indexed subsections within the current
         /// dictionary.
-        struct Aspect : public Hash<std::string, GenericDictionary<std::string, _Goo_m_VART_LIST_APP_CONF>*> {};
+        struct Aspect : public Hash<KeyT, GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF>*> {
+            /// Constructs and returns insertion proxy referencing current
+            /// dictionary instance. Defined in insertion_proxy.tcc
+            virtual InsertionProxy<KeyT> insertion_proxy();
+        };
         typedef GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF> Dictionary;
         typedef TValue< Hash< KeyT, iBaseValue<_Goo_m_VART_LIST_APP_CONF>*>
                             , aspects::Description > DictValue;
-    }
-    # endif
-    ;
+    };
 };
-
-# ifdef _Goo_m_DICT_STRICT
-template<>
-template<>
-struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
-    /// Aspect defines string-indexed subsections within the current
-    /// dictionary.
-    struct Aspect : public Hash<std::string, GenericDictionary<std::string, _Goo_m_VART_LIST_APP_CONF>*> {};
-    typedef GenericDictionary<std::string, _Goo_m_VART_LIST_APP_CONF> Dictionary;
-    typedef TValue< Hash< std::string, iBaseValue<_Goo_m_VART_LIST_APP_CONF>*>
-                        , aspects::Description > DictValue;
-};
-# endif
 
 template<>
 template<>

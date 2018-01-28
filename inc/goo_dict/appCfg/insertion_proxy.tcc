@@ -121,6 +121,11 @@ public:
 
 typedef InsertionProxy<std::string> AppConfInsertionProxy;
 
+template<> inline InsertionProxy<std::string>  // TODO: move it somewhere...
+Traits<_Goo_m_VART_LIST_APP_CONF>::template IndexBy<std::string>::Aspect::insertion_proxy() {
+    return InsertionProxy<std::string>(dynamic_cast<InsertionProxy<std::string>::Subsection &>(*this));
+}
+
 # if 0
 /**@brief Base class for generic configuration insertion proxies.
  * @class GenericConfInsertionProxyBase
