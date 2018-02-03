@@ -30,6 +30,9 @@
 struct option;
 
 namespace goo {
+namespace utils {
+class ConfDictCache;
+}
 namespace dict {
 
 template<>
@@ -65,6 +68,7 @@ public:
 class Configuration : public mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
                                                 , Configuration
                                                 , AppConfNameIndex> {
+    friend class ::goo::utils::ConfDictCache;
 public:
     typedef mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
                                , Configuration
@@ -86,6 +90,8 @@ private:
     /// Positional parameter. Ptr may be null if positional argument is
     /// disallowed.
     std::pair<std::string, VBase *> _positionalArgument;
+protected:
+    const VBase * positional_argument_ptr() const { return _positionalArgument.second; }
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
@@ -96,6 +102,10 @@ public:
 
     /// Copy ctr.
     Configuration( const Configuration & );
+
+    const ShortcutsIndex & short_opts() const {
+        return _shortcutsIndex;
+    }
 
     /// Explicit copy creation.
     //Configuration copy() const { return *this; }
@@ -147,6 +157,33 @@ public:
 
 namespace utils {
 
+struct ConfDictCache {
+public:
+    /// This two arrays keep the common prefixes for getopt() shortcuts string.
+    static const char defaultPrefix[8];
+protected:
+    void _cache_long_options( const std::string & nameprefix
+                            , const dict::AppConfNameIndex & d
+                            , ConfDictCache & self );
+private:
+    bool _dftHelpIFace;
+    std::string _shorts;
+    std::vector<struct ::option> _longs;
+    std::unordered_map<int, const dict::Configuration::VBase *> _lRefs;
+    const dict::Configuration::VBase * _posArgPtr;
+    /// This variable where option identifiers will be loaded into.
+    int _longOptKey;
+public:
+    explicit ConfDictCache( const dict::Configuration & cfg
+                          , bool dftHelpIFace=true );
+
+    const std::string & shorts() const { return _shorts; }
+    const std::vector<struct ::option> & longs() const { return _longs; };
+    bool default_help_interface() const { return _dftHelpIFace; }
+    const dict::Configuration::VBase * positional_arg_ptr() const { return _posArgPtr; }
+    const dict::Configuration::VBase * current_long_parameter( int );
+};
+
 /**@brief A utility function performing initialization of an existing
  *        goo::dict::Configuration instance with given argc/argv expression.
  *
@@ -162,14 +199,23 @@ namespace utils {
  * @param argv array of strings (option tokens)
  * @param doCnstCheck wether to perform internal the consistency check for
  *        completeness
+ * @param cachePtr Configuration-to-getopt_long()-struct cache instance ptr. Set
+ *        it to nullptr to make routine allocate temporary one.
  * @param logStreamPtr ptr to output logging stream where internal message will
  *        be printed
  **/
-void set_app_conf( dict::Configuration & cfg
-                 , int argc
-                 , char * const * argv
-                 , bool doCnstCheck
-                 , std::ostream *logStreamPtr=nullptr );  // TODO: migrate impl from dev branch
+int set_app_conf( dict::Configuration & cfg
+                , int argc
+                , char * const * argv
+                , ConfDictCache * cachePtr=nullptr
+                , std::ostream *logStreamPtr=nullptr );  // TODO: migrate impl from dev branch
+
+std::string compose_reference_text_for( const dict::Configuration & cfg
+                                    , const std::string & sect="" );
+
+void set_app_cfg_parameter( const dict::Configuration::VBase & v
+                          , const char * strExpr
+                          , std::ostream * verbose );
 
 }  // namespace utils
 }  // namespace goo

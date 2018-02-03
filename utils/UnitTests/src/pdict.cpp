@@ -181,7 +181,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         }
         os << std::endl;
 
-        utils::set_app_conf( conf, argc, argv, false, &os );
+        utils::set_app_conf( conf, argc, argv, nullptr, &os );
 
         goo_free_shell_tokens( argc, argv );
         // check options are really set to expected values

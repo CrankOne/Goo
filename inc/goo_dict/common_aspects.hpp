@@ -65,7 +65,9 @@ public:
                                                  , _mayBeImplicit(mayBeImplicit) {}
     bool is_required() const { return _isRequired; }
     virtual void set_required(bool v) { _isRequired = true; }
+    /// TODO: Rename to "expects_argument".
     bool requires_argument() const { return _requiresValue; }
+    /// TODO: Rename to "set_expects_argument".
     virtual void set_requires_argument( bool v ) { _requiresValue = v; }
     bool may_be_set_implicitly() const { return _mayBeImplicit; }
     virtual void set_being_implicit( bool v ) { _mayBeImplicit = v; }

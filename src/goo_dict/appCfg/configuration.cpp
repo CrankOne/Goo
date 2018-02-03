@@ -54,5 +54,241 @@ Configuration::Configuration( const Configuration & orig ) \
 Configuration::~Configuration() {}
 
 }  // namespace dict
+
+namespace utils {
+
+const char ConfDictCache::defaultPrefix[8] = "-:";  // "-:h::"
+
+ConfDictCache::ConfDictCache( const dict::Configuration & cfg
+                           , bool dftHelpIFace ) : _dftHelpIFace(dftHelpIFace)
+                                                 , _posArgPtr(cfg.positional_argument_ptr()) {
+    // Fill short options string ("optstring" arg for getopt()
+    _shorts = defaultPrefix;
+    for( auto & sRef : cfg.short_opts().value() ) {
+        char c = sRef.first;
+        assert( 'W' != c );
+        _shorts.push_back(c);
+        auto ra = sRef.second->aspect_cast<dict::aspects::Required>();
+        assert( !! ra );  // must be excluded upon insertion into shortcuts dict in Configuration
+        if( ra->requires_argument() ) {
+            _shorts.push_back( ':' );
+        }
+        if( ra->may_be_set_implicitly() ) {
+            if( ! ra->requires_argument() ) {
+                emraise( badState, "Option '%c' has contradictory flags:"
+                    " it may be implicitly set, but does not expects an argument"
+                    " value.", c );
+            }
+            // Two colons mean an option takes an option argument according to
+            // getopt's docs.
+            _shorts.push_back(':');
+        }
+    }
+    if( dftHelpIFace ) {
+        _shorts += "h::";
+    }
+    // Form long options cache recursively.
+    _cache_long_options( "", cfg, *this );
+    if( dftHelpIFace ) {
+        struct ::option helpO = { "help", optional_argument, NULL, 'h' };
+        _longs.push_back( helpO );
+    }
+    struct ::option sentinelO = { NULL, 0, NULL, 0 };
+    _longs.push_back( sentinelO );
+}
+
+void
+ConfDictCache::_cache_long_options( const std::string & nameprefix
+                                 , const dict::AppConfNameIndex & D
+                                 , ConfDictCache & self ) {
+    // Fill from this section
+    for( const auto & pE : D.value() ) {
+        auto * ar = pE.second->aspect_cast<dict::aspects::Required>();
+        assert(ar);
+        int hasArg = no_argument;
+        if( ar->requires_argument() ) {
+            hasArg = required_argument;
+        }
+        if( ar->may_be_set_implicitly() ) {
+            assert( ar->requires_argument() );
+            hasArg = optional_argument;
+        }
+        auto * acs = pE.second->aspect_cast<dict::aspects::CharShortcut>();
+        int cshrt = acs->shortcut();
+        if( ! cshrt ) {
+            // Parameter entry has no shortcut and, thus, has to be accessed via
+            // the fully-qualified name only.
+            cshrt = UCHAR_MAX + (int) self._lRefs.size();
+        }
+        struct ::option o = { strdup( (nameprefix + pE.first).c_str() )
+                           , hasArg
+                           , cshrt >= UCHAR_MAX ? &(self._longOptKey) : NULL
+                           , cshrt };
+        self._longs.push_back( o );
+        if( cshrt >= UCHAR_MAX ) {
+            self._lRefs.emplace( cshrt, pE.second );
+        }
+    }
+    // Recursive fill from subsections
+    for( auto it = D.subsections().begin()
+       ; D.subsections().end() != it; ++it ) {
+        _cache_long_options( nameprefix + "." + it->first
+                           , *(it->second)
+                           , self );
+    }
+}
+
+const dict::Configuration::VBase *
+ConfDictCache::current_long_parameter( int optIndex ) {
+    if( -1 == optIndex ) {
+        emraise( badState, "`getopt_long()` parser has came to the wrong"
+               " state: long option index is not being set.");
+    }
+    assert(optIndex < _longs.size());
+    // ?
+    assert( _longOptKey >= UCHAR_MAX );
+    auto it = _lRefs.find( _longOptKey );
+    assert( _lRefs.end() != it );
+    return it->second;
+}
+
+int
+set_app_conf( dict::Configuration & cfg
+            , int argc
+            , char * const * argv
+            , ConfDictCache * cachePtr
+            , std::ostream *logStreamPtr ) {
+    bool ownCacheStruct = ! cachePtr;
+    # define log_extraction( ... ) if( !!logStreamPtr ) { *logStreamPtr << strfmt( __VA_ARGS__ ); }
+    ::opterr = 0;  // prevent default `app_name : invalid option -- '%c'' message
+    ::optind = 0;  // forces rescan with each parameters vector
+    if( ownCacheStruct ) {
+        cachePtr = new ConfDictCache( cfg );
+    }
+    ConfDictCache & C = *cachePtr;
+    if( !! logStreamPtr ) {
+        log_extraction( "parserCaches:\n    shortOptions: \"%s\"\n"
+                                "    longOptions:\n",
+                C.shorts().c_str() );
+        size_t n = 0;
+        for( const struct ::option & loE : C.longs() ) {
+            if( !loE.name ) {
+                *logStreamPtr << std::string(8, ' ') << "<sentinel>" << std::endl;
+                continue;
+            }
+            *logStreamPtr << std::string(8, ' ') << loE.name << ":" << std::endl;
+            *logStreamPtr << std::string(12, ' ') << "argument: \""
+                     << (required_argument == loE.val ? "required" :
+                         (optional_argument == loE.val ? "optional" : "<none-or-shortcut>") )
+                     << "\"" << std::endl
+                     << std::string(12, ' ') << "getoptVal: "
+                     << std::hex << std::showbase << loE.val
+                     << std::endl;
+            ++n;
+        }
+    }
+    // TODO: check whether getopt_long arguments (composed caches) are empty.
+    // If they are --- shall we raise an exception? How about shortened-only
+    // case or even when only positional arguments are provided?
+    int optIndex = -1, c;
+
+    while( -1 != (c = getopt_long( argc, argv
+                                 , cachePtr->shorts().c_str()
+                                 , cachePtr->longs().data()
+                                 , &optIndex )) ) {
+        // This pointer has to be set within if-clauses below
+        const dict::Configuration::VBase * pPtr = nullptr;
+        //if ( optind == prevInd + 2 && *optarg == '-' ) {
+        //    c = ':';
+        //    -- optind;
+        //}
+        if( isalnum(c) ) {
+            if( 'h' == c && cachePtr->default_help_interface() ) {
+                if( !optarg || !strnlen(optarg, USHRT_MAX) ) {
+                    // No argument given --- print default usage text.
+                    std::cout << compose_reference_text_for( cfg );
+                    return -1;
+                } else {
+                    // Section name given --- print subsection reference.
+                    std::cout << compose_reference_text_for(cfg, optarg );
+                    return -1;
+                }
+            }
+            // indicates this is an option with shortcut (or a shortcut-only option)
+            auto pIt = cfg.short_opts().value().find( c );
+            if( cfg.short_opts().value().end() == pIt ) {
+                emraise( badState, "Shortcut option '%c' (0x%02x) unknown."
+                       , c, c );
+            }
+            pPtr = pIt->second;
+        } else if( 0 == c ) {
+            pPtr = cachePtr->current_long_parameter( optIndex );
+        } else if( '?' == c ) {
+            if( optopt ) {
+                emraise( parserFailure, "Command-line argument is not "
+                        "recognized (charcode %#02x, '%c').", (int) optopt, optopt );
+            } else {
+                emraise( parserFailure, "Command-line argument is not "
+                        "recognized (charcode %#02x). Suspicious token: \"%s\".",
+                        (int) optopt, argv[optind-1] );
+            }
+        } else if( ':' == c ) {
+            // todo: any additional info?
+            emraise( argumentExpected, "Parameter option expects an argument." );
+        } else if(  01 == c ) {
+            // this is a positional argument (because we have set the '-'
+            // character first in optstring).
+            log_extraction( "\"%s\" recognized as a positional argument.\n"
+                         , ::optarg );
+            pPtr = cachePtr->positional_arg_ptr();
+        } else {
+            emraise( badValue, "getopt_long() returned code %#02x.", c );
+        }
+        assert(pPtr);
+        // Upon now, the look-up procedure has to came up with the particular
+        // parameter entry instance that may be set (or appended) with the
+        // argument value (or may be not, depending on its internal properties
+        auto ar = pPtr->aspect_cast<dict::aspects::Required>();
+        assert( !!ar );
+        if( ar->requires_argument() ) {
+            log_extraction( "c=%c (0x%02x) considered as a (short)"
+                           " parameter with argument \"%s\".\n"
+                         , c, c, optarg );
+            if( strnlen(optarg, USHRT_MAX) > 1
+                && '-' == optarg[0]
+                && (!isdigit(optarg[1])) ) {
+                // This is, apparently, another option, not an argument. Note,
+                // that dash symbol alone (as an argv token) is allowed as it
+                // usually refers to stdout/stdin. Also we have to support
+                // negative numbers.
+                emraise( badState, "Option \"%c\" requires an argument, but "
+                        "next command-line argument seems to be another "
+                        "option: \"%s\".", c, optarg);
+            }
+            set_app_cfg_parameter( *pPtr, optarg, logStreamPtr );
+        }
+
+        optIndex = -1;
+    }
+    // appending of positional arguments, if any:
+    if( ::optind < argc ) {
+        while( optind < argc ) {
+            set_app_cfg_parameter( *(cachePtr->positional_arg_ptr())
+                                , argv[optind++]
+                                , logStreamPtr );
+            log_extraction( "\"%s\" recognized as a positional argument "
+                                    "(on argv-tail processing).\n",
+                    argv[optind-1] );
+        }
+    }
+    # undef log_extraction
+    if( ownCacheStruct ) {
+        delete cachePtr;
+    }
+    return 0;
+    // ...
+}
+
+}  // namespace utils
 }  // namespace goo
 

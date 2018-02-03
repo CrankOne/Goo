@@ -117,6 +117,10 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF> {
             /// Constructs and returns insertion proxy referencing current
             /// dictionary instance. Defined in insertion_proxy.tcc
             virtual InsertionProxy<KeyT> insertion_proxy();
+            /// Const getter for protected subsections data.
+            const Hash<KeyT, GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF>*> & subsections() const {
+                return *this;
+            };
         };
         typedef GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF> Dictionary;
         typedef TValue< Hash< KeyT, iBaseValue<_Goo_m_VART_LIST_APP_CONF>*>
