@@ -2,8 +2,8 @@
 // Created by crank on 12.01.18.
 //
 
-#ifndef GOO_PARAMETERS_VALUES_HPP
-#define GOO_PARAMETERS_VALUES_HPP
+# ifndef H_GOO_PARAMETERS_VALUES_H
+# define H_GOO_PARAMETERS_VALUES_H
 
 # include <tuple>
 
@@ -50,6 +50,9 @@ public:
     virtual const std::type_info & target_type_info() const
                 { return _V_target_type_info(); }
 
+    /// Exposes aspects tuple.
+    std::tuple<AspectTs * ...> aspects() { return _aspects; }
+
     template<typename T> T * aspect_cast() {
         return std::get<stdE::get_type_index<T, AspectTs...>::value>(_aspects);
     }
@@ -75,7 +78,6 @@ public:
     template<typename T> const Array<T> & as_array_of() const;
     // TODO: ^^^ rename to as_array_of
 };  // class iBaseValue
-
 
 /**@brief Template container for a value.
  * @class iTValue
@@ -106,7 +108,8 @@ protected:
     /// Potentially dangerous ctr leaving the value uninitialized.
     TValue() : _value() {}
 public:
-    template<typename ... ArgTs> TValue(ArgTs...args) : DuplicableParent(args ... ) {}
+    template<typename ... ArgTs> TValue(ArgTs...args);
+    //TValue( std::tuple<AspectTs * ...> t );  // xxx
     /// Const value getter (public).
     virtual const ValueT & value() const { return _value; }
     virtual void value(const Value & v) { _set_value(v); }
@@ -117,4 +120,6 @@ public:
 }  // namespace dict
 }  // namespace goo
 
-#endif //GOO_VALUES_HPP
+# endif // H_GOO_PARAMETERS_VALUES_H
+
+# include "goo_dict/common_aspects.hpp"

@@ -31,5 +31,10 @@ Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::insertion_proxy
     return InsertionProxy<std::string>(dynamic_cast<InsertionProxy<std::string>::Subsection &>(*this));
 }
 
+InsertionProxy<char>
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char>::Aspect::insertion_proxy() {
+    return InsertionProxy<char>(dynamic_cast<GenericDictionary<char, _Goo_m_VART_LIST_APP_CONF> &>(*this));
+}
+
 }  // namespace dict
 }  // namespace goo

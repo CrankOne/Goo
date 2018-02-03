@@ -53,13 +53,22 @@ Configuration::Configuration( const Configuration & orig ) \
 
 Configuration::~Configuration() {}
 
+void
+Configuration::_add_shortcut( char c, VBase * p ) {
+    auto ir = _shortcutsIndex.insertion_proxy().insert(c, p);
+    if( !ir.second ) {
+        emraise( nonUniq, "Unable to insert parameter %p by shortcut '%c'"
+            " since character is already taken by parameter %p.", p, c, ir.first->second );
+    }
+}
+
 }  // namespace dict
 
 namespace utils {
 
 const char ConfDictCache::defaultPrefix[8] = "-:";  // "-:h::"
 
-ConfDictCache::ConfDictCache( const dict::Configuration & cfg
+ConfDictCache::ConfDictCache( dict::Configuration & cfg
                            , bool dftHelpIFace ) : _dftHelpIFace(dftHelpIFace)
                                                  , _posArgPtr(cfg.positional_argument_ptr()) {
     // Fill short options string ("optstring" arg for getopt()
@@ -138,7 +147,7 @@ ConfDictCache::_cache_long_options( const std::string & nameprefix
     }
 }
 
-const dict::Configuration::VBase *
+dict::Configuration::VBase *
 ConfDictCache::current_long_parameter( int optIndex ) {
     if( -1 == optIndex ) {
         emraise( badState, "`getopt_long()` parser has came to the wrong"
@@ -197,7 +206,7 @@ set_app_conf( dict::Configuration & cfg
                                  , cachePtr->longs().data()
                                  , &optIndex )) ) {
         // This pointer has to be set within if-clauses below
-        const dict::Configuration::VBase * pPtr = nullptr;
+        dict::Configuration::VBase * pPtr = nullptr;
         //if ( optind == prevInd + 2 && *optarg == '-' ) {
         //    c = ':';
         //    -- optind;
@@ -287,6 +296,23 @@ set_app_conf( dict::Configuration & cfg
     }
     return 0;
     // ...
+}
+
+void set_app_cfg_parameter( dict::Configuration::VBase & v
+                          , const char * strExpr
+                          , std::ostream * logPtr ) {
+    auto scnv = v.aspect_cast<dict::aspects::iStringConvertible>();
+    assert( scnv );
+    scnv->parse_argument( strExpr );
+    if( logPtr ) {
+        *logPtr << (void *) &v << " set to " << scnv->to_string() << std::endl;
+    }
+}
+
+std::string
+compose_reference_text_for( const dict::Configuration & cfg
+                         , const std::string & sect ) {
+    _TODO_  // TODO
 }
 
 }  // namespace utils

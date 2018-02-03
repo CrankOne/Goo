@@ -26,6 +26,7 @@
 # include <tuple>
 # include <typeinfo>
 # include "goo_utility.hpp"
+# include "goo_exception.hpp"
 
 namespace goo {
 
@@ -173,7 +174,7 @@ template<typename BaseTypeT, typename SelfT, typename ParentT, bool ForceImplem>
 clone( const mixins::iDuplicable<BaseTypeT, SelfT, ParentT, ForceImplem> * origPtr ) {
     # ifndef NDEBUG
     if( origPtr->_V_cloning_type_id() != typeid(*origPtr) ) {
-        emraise(dbgBadArchitect,
+        emraise( badArchitect,
                 "Instance %p of class \"%s\" manifests mismatching _V_cloning_type_id() "
                 "(of class \"%s\") indicating Goo's coding style violation. Please, "
                 "refer to \"#cloning\" section of Goo standard.",

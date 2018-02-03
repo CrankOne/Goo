@@ -35,17 +35,6 @@ class ConfDictCache;
 }
 namespace dict {
 
-template<>
-class AppConfTraits::DictionaryAspect<char> : public std::unordered_set<AppConfTraits::VBase *> {
-public:
-    //void emplace
-    virtual ~DictionaryAspect() {
-        for( auto p : *this ) {
-            delete p;
-        }
-    }
-};
-
 //}  // namespace dict
 
 //namespace app {
@@ -69,6 +58,7 @@ class Configuration : public mixins::iDuplicable< typename AppConfTraits::templa
                                                 , Configuration
                                                 , AppConfNameIndex> {
     friend class ::goo::utils::ConfDictCache;
+    friend class ::goo::dict::InsertionProxy<std::string>;
 public:
     typedef mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
                                , Configuration
@@ -91,7 +81,8 @@ private:
     /// disallowed.
     std::pair<std::string, VBase *> _positionalArgument;
 protected:
-    const VBase * positional_argument_ptr() const { return _positionalArgument.second; }
+    void _add_shortcut( char, VBase * p );
+    VBase * positional_argument_ptr() { return _positionalArgument.second; }
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
@@ -102,6 +93,10 @@ public:
 
     /// Copy ctr.
     Configuration( const Configuration & );
+
+    virtual InsertionProxy<std::string> insertion_proxy() override {
+        return InsertionProxy<std::string>( this );
+    }
 
     const ShortcutsIndex & short_opts() const {
         return _shortcutsIndex;
@@ -169,19 +164,19 @@ private:
     bool _dftHelpIFace;
     std::string _shorts;
     std::vector<struct ::option> _longs;
-    std::unordered_map<int, const dict::Configuration::VBase *> _lRefs;
-    const dict::Configuration::VBase * _posArgPtr;
+    std::unordered_map<int, dict::Configuration::VBase *> _lRefs;
+    dict::Configuration::VBase * _posArgPtr;
     /// This variable where option identifiers will be loaded into.
     int _longOptKey;
 public:
-    explicit ConfDictCache( const dict::Configuration & cfg
+    explicit ConfDictCache( dict::Configuration & cfg
                           , bool dftHelpIFace=true );
 
     const std::string & shorts() const { return _shorts; }
     const std::vector<struct ::option> & longs() const { return _longs; };
     bool default_help_interface() const { return _dftHelpIFace; }
-    const dict::Configuration::VBase * positional_arg_ptr() const { return _posArgPtr; }
-    const dict::Configuration::VBase * current_long_parameter( int );
+    dict::Configuration::VBase * positional_arg_ptr() const { return _posArgPtr; }
+    dict::Configuration::VBase * current_long_parameter( int );
 };
 
 /**@brief A utility function performing initialization of an existing
@@ -213,7 +208,7 @@ int set_app_conf( dict::Configuration & cfg
 std::string compose_reference_text_for( const dict::Configuration & cfg
                                     , const std::string & sect="" );
 
-void set_app_cfg_parameter( const dict::Configuration::VBase & v
+void set_app_cfg_parameter( dict::Configuration::VBase & v
                           , const char * strExpr
                           , std::ostream * verbose );
 

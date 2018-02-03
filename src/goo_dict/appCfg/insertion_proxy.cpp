@@ -36,7 +36,7 @@ InsertionProxy<std::string>::_top() {
         if( !_root ) {
             emraise( badState, "Empty insertion proxy object." );
         }
-        _TODO_  // TODO: return *_root;
+        return *_root;
     }
     return *_stack.top().second;
 }
@@ -48,12 +48,12 @@ InsertionProxy<std::string>::_index_by_shortcut( char shrtc, VBase * p ) {
                 " the insertion proxy object %p since proxy has no associated"
                 " Configuration instance.", p, shrtc, this );
     }
-    _TODO_   // TODO: _root->emplace( shrtc, p );
+    _root->_add_shortcut( shrtc, p );
 }
 
 InsertionProxy<std::string>::Self &
 InsertionProxy<std::string>::bgn_sect( const std::string & name
-                               , const std::string & description ) {
+                                   , const std::string & description ) {
     auto sPtr = _alloc<AppConfNameIndex>( std::make_tuple( _alloc<aspects::Description>(description) ) );
     auto ir = _stack.top().second->emplace( name, sPtr );
     if( !ir.second ) {
@@ -74,6 +74,14 @@ InsertionProxy<std::string>::end_sect( const std::string & name ) {
     }
     _stack.pop();
     return *this;
+}
+
+InsertionProxy<char>::InsertionProxy( AppConfTraits::template IndexBy<char>::Dictionary & d )
+    : TheDictionary::BaseInsertionProxy<InsertableParameter >(d) {}
+
+std::pair<typename AppConfTraits::template IndexBy<char>::DictValue::Value::iterator, bool>
+InsertionProxy<char>::insert( char c, AppConfTraits::VBase * e ) {
+    return _insert_parameter( c, e );
 }
 
 }  // namespace goo

@@ -155,7 +155,7 @@ public:
 
     virtual ~GenericDictionary() {
         for( auto p : this->_mutable_value() ) {
-            _free( p.second );
+            //_free( p.second );  // TODO !!!
         }
     }
 

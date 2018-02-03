@@ -153,7 +153,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         conf.insertion_proxy()
             .p<bool>( '1', "parameter-one", "First parameter", false ).implicit(true)
-            .p<bool>( 'v', nullptr, "Enables verbose output", false ).implicit(true)
+            .p<bool>( 'v', "", "Enables verbose output", false ).implicit(true)
             .p<bool>( 'q', "Be quiet", true )
             .p<bool>( "quiet", "Be quiet", true )
             .p<bool>( "verbose", "Enables verbosity" )
@@ -165,7 +165,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .p<float>( "fp-num-i", "Some fp-number" )
             .p<double>( "fp-num-ii", "Some fp-number (double)" )
             .p<std::string>( "strval", "Some string value", "defstrval" )
-            .p<std::string>( 's', nullptr, "Another string value" ) 
+            .p<std::string>( 's', "", "Another string value" )
             // ^^^ special case: setting string parameter idenitified by
             // shortcut (one-letter string) only, WITHOUT a default valuue.
             .p<other::another::TestingEnum>( 'e', "enum parameter", other::another::zero )

@@ -102,7 +102,6 @@ template<typename KeyT> class InsertionProxy;
 /// application configuration. Does not provide list-like structures.
 template<>
 struct Traits<_Goo_m_VART_LIST_APP_CONF> {
-    template<typename KeyT> class DictionaryAspect;
     typedef iBaseValue< _Goo_m_VART_LIST_APP_CONF > VBase;
     /// The default (generic, unspecified) IndexBy structure has not be used.
     /// For application configuration only two types of dictionaries are
@@ -135,7 +134,9 @@ template<>
 struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char> {
     /// Char-indexed dictionary within the application configuration does not
     /// contain any sub-sections (within it's aspect).
-    struct Aspect {};
+    struct Aspect {
+        virtual InsertionProxy<char> insertion_proxy();
+    };
     typedef GenericDictionary<char, _Goo_m_VART_LIST_APP_CONF> Dictionary;
     /// The char-index has no description aspect as well.
     typedef TValue< Hash<char, iBaseValue<_Goo_m_VART_LIST_APP_CONF>*> > DictValue;
@@ -145,14 +146,6 @@ typedef Traits<_Goo_m_VART_LIST_APP_CONF> AppConfTraits;
 
 typedef AppConfTraits::IndexBy<std::string>::Dictionary AppConfNameIndex;
 
-/// Named dictionary config template specialization.
-template<>
-class AppConfTraits::DictionaryAspect<std::string>
-        : public Hash< std::string
-                     , AppConfNameIndex * > {
-public:
-    explicit DictionaryAspect() {}
-};
 
 // Note: the char-indexing dictionary aspect is declared ath the configuration.hpp
 // header.
