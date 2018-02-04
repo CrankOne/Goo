@@ -71,7 +71,7 @@ public:
     /// dynamic_cast<>. TODO: implicit arguments?
     typedef Parameter< bool, _Goo_m_VART_LIST_APP_CONF > LogicOption;
 
-    typedef AppConfTraits::VBase VBase;
+    typedef AppConfTraits::FeaturedBase FeaturedBase;
 private:
     /// Dictionary for shortcut-only parameters. This container is bound with
     /// Configuration instance meaning that its entries lifetime is restricted
@@ -79,10 +79,10 @@ private:
     ShortcutsIndex _shortcutsIndex;
     /// Positional parameter. Ptr may be null if positional argument is
     /// disallowed.
-    std::pair<std::string, VBase *> _positionalArgument;
+    std::pair<std::string, FeaturedBase *> _positionalArgument;
 protected:
-    void _add_shortcut( char, VBase * p );
-    VBase * positional_argument_ptr() { return _positionalArgument.second; }
+    void _add_shortcut( char, FeaturedBase * p );
+    FeaturedBase * positional_argument_ptr() { return _positionalArgument.second; }
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
@@ -130,22 +130,22 @@ public:
         # endif
     }
 
-    const VBase & operator[](const std::string & path) const {
+    const FeaturedBase & operator[](const std::string & path) const {
         _TODO_
         //char * pDup = alloca( path.size() + 1 );
         //
         //utils::parse_dict_path( pDup );
     }
 
-    VBase & operator[](const std::string & pathStr) {
+    FeaturedBase & operator[](const std::string & pathStr) {
         const Configuration * cThis = this;
-        return const_cast<VBase &>(cThis->operator[](pathStr));
+        return const_cast<FeaturedBase &>(cThis->operator[](pathStr));
     }
 
     /// Returns forwarded arguments (if they were set).
     const Array<std::string> & forwarded_argv() const;
 
-    bool is_consistent( Hash<std::string, const VBase *> & ) const;
+    bool is_consistent( Hash<std::string, const FeaturedBase *> & ) const;
 };  // class Configuration
 
 }  // namespace dict
@@ -164,8 +164,8 @@ private:
     bool _dftHelpIFace;
     std::string _shorts;
     std::vector<struct ::option> _longs;
-    std::unordered_map<int, dict::Configuration::VBase *> _lRefs;
-    dict::Configuration::VBase * _posArgPtr;
+    std::unordered_map<int, dict::Configuration::FeaturedBase *> _lRefs;
+    dict::Configuration::FeaturedBase * _posArgPtr;
     /// This variable where option identifiers will be loaded into.
     int _longOptKey;
 public:
@@ -175,8 +175,8 @@ public:
     const std::string & shorts() const { return _shorts; }
     const std::vector<struct ::option> & longs() const { return _longs; };
     bool default_help_interface() const { return _dftHelpIFace; }
-    dict::Configuration::VBase * positional_arg_ptr() const { return _posArgPtr; }
-    dict::Configuration::VBase * current_long_parameter( int );
+    dict::Configuration::FeaturedBase * positional_arg_ptr() const { return _posArgPtr; }
+    dict::Configuration::FeaturedBase * current_long_parameter( int );
 };
 
 /**@brief A utility function performing initialization of an existing
@@ -208,7 +208,7 @@ int set_app_conf( dict::Configuration & cfg
 std::string compose_reference_text_for( const dict::Configuration & cfg
                                     , const std::string & sect="" );
 
-void set_app_cfg_parameter( dict::Configuration::VBase & v
+void set_app_cfg_parameter( dict::Configuration::FeaturedBase & v
                           , const char * strExpr
                           , std::ostream * verbose );
 

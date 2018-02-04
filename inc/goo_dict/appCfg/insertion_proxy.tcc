@@ -43,6 +43,50 @@ public:
     explicit InsertionProxy( Configuration * R );
     InsertionProxy( Configuration * r, InsertionTargetsStack & s );
 
+    /// Inserts new flag (option that does not expect the argument) referenced by
+    /// shortcut only.
+    Self &
+    flag( char shortcut, const std::string & description ) {
+        assert(isalnum(shortcut));
+        return flag( shortcut, "", description );
+    }
+
+    /// Inserts new flag (option that does not expect the argument) referenced by
+    /// name only.
+    Self &
+    flag( const std::string & name, const std::string & description ) {
+        assert(!name.empty());
+        return flag( '\0', name, description );
+    }
+
+    /// Inserts new flag (option that does not expect the argument) referenced by
+    /// name or shortcut.
+    Self &
+    flag( char shortcut, const std::string & name, const std::string & description ) {
+        auto pPtr = _alloc_parameter<bool>( _alloc<aspects::Description>(description)
+                                          , _alloc<aspects::TStringConvertible<bool>>()
+                                          , _alloc<aspects::CharShortcut>(shortcut)
+                                          , _latestInsertedRequired = _alloc<aspects::ImplicitValue<bool>>()
+                                          , _alloc<aspects::IsSet>()
+                                          , _alloc<aspects::Array>(false)
+                                          );
+        if( !name.empty() ) {
+            _insert_parameter( name, pPtr );
+        }
+        if( '\0' != shortcut ) {
+            assert( isalnum(shortcut) );
+            _index_by_shortcut( shortcut, pPtr );
+        }
+        # ifndef NDEBUG
+        else { assert( !name.empty() ); }
+        # endif
+        _latestInsertedRequired->set_required(false);
+        _latestInsertedRequired->set_requires_argument(false);
+        _latestInsertedRequired->set_being_implicit(false);
+        _latestInsertedRequired = nullptr;
+        return *this;
+    }
+
     /// Insert new parameter with shortcut and name, no default value.
     template<typename PT> Self &
     p( char shortcut

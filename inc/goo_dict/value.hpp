@@ -11,25 +11,12 @@
 # include "goo_mixins/vcopy.tcc"
 # include "goo_utility.hpp"
 
+# include <cassert>
+
 namespace goo {
 namespace dict {
 
-/**@brief Type-agnostic value parameter base.
- *
- * This abstract base claims interface of type-agnostic value-bearing parameter
- * instance providing generic methods accessing the data memory address and
- * C++ RTTI information.
- * */
-template<typename ... AspectTs>
-class iBaseValue : public mixins::iDuplicable< iBaseValue<AspectTs...>
-                                             , iBaseValue<AspectTs...>
-                                             , iBaseValue<AspectTs...>
-                                             >
-                 , public std::tuple<AspectTs * ...> {
-public:
-    typedef iBaseValue<AspectTs ...> Self;
-private:
-    std::tuple<AspectTs * ...> _aspects;
+class iAbstractValue : public mixins::iDuplicable<iAbstractValue, iAbstractValue, iAbstractValue> {
 protected:
     /// Shall return untyped data pointer.
     virtual void * _V_data_addr() = 0;
@@ -38,10 +25,8 @@ protected:
     /// Shall return C++ RTTI type info.
     virtual const std::type_info & _V_target_type_info() const = 0;
 public:
-    explicit iBaseValue( AspectTs * ... aspects ) : _aspects(aspects ...) {}
-    explicit iBaseValue( std::tuple<AspectTs * ...> t ) : _aspects(t) {}
-    //iBaseValue() = default;
-    //iBaseValue( const Self & o ) = default; // TODO: copy aspect values instead of just their ptrs
+    iAbstractValue() = default;
+    iAbstractValue(const iAbstractValue &) = default;
     /// Returns untyped data pointer.
     void * data_addr() { return _V_data_addr(); }
     /// Returns untyped (const) data pointer.
@@ -49,6 +34,43 @@ public:
     /// Returns C++ RTTI value type info.
     virtual const std::type_info & target_type_info() const
                 { return _V_target_type_info(); }
+};
+
+namespace aspects {
+
+class BoundMixin {
+private:
+    iAbstractValue * _self;
+protected:
+    BoundMixin() : _self(nullptr) {}
+public:
+    void set_target( iAbstractValue * t ) { assert(!_self); _self = t; }
+    bool is_target_instance_set() const { return !!_self; }
+    iAbstractValue & target() { assert(is_target_instance_set()); return *_self; }
+    const iAbstractValue & target() const { assert(is_target_instance_set()); return *_self; }
+};
+
+}  // namespace aspects
+
+// aux::unwind_set_targets<ValueT, AspectTs...>( this );
+
+/**@brief Type-agnostic value parameter base.
+ *
+ * This abstract base claims interface of type-agnostic value-bearing parameter
+ * instance providing generic methods accessing the data memory address and
+ * C++ RTTI information.
+ * */
+template<typename ... AspectTs>
+class iBaseValue : public iAbstractValue {
+public:
+    typedef iBaseValue<AspectTs ...> Self;
+private:
+    std::tuple<AspectTs * ...> _aspects;
+public:
+    explicit iBaseValue( AspectTs * ... aspects );
+    explicit iBaseValue( std::tuple<AspectTs * ...> t );
+    //iBaseValue() = default;
+    //iBaseValue( const Self & o ) = default; // TODO: copy aspect values instead of just their ptrs
 
     /// Exposes aspects tuple.
     std::tuple<AspectTs * ...> aspects() { return _aspects; }
@@ -79,18 +101,85 @@ public:
     // TODO: ^^^ rename to as_array_of
 };  // class iBaseValue
 
+namespace aspects {
+namespace aux {
+
+template<typename HeadT>
+struct _Unwind {
+    struct Setter {
+        static int set(HeadT *i, iAbstractValue * t) { i->set_target(t); return 1; }
+    };
+
+    struct Dummy {
+        static int set(HeadT *, iAbstractValue *) { /* shall be trimmed off by optimization */ return 0; }
+    };
+
+    typedef typename std::conditional< std::is_base_of<BoundMixin, HeadT>::value
+            , Setter
+            , Dummy>::type Doer;
+};
+
+// Recursive template aspects unwinding template.
+template< int N
+        , typename HeadT
+        , typename ... TailTs>
+struct _TTUnwind {
+    template<typename ... AspectTs>
+    static void set_tuple_aspect_targets(iAbstractValue * trg, std::tuple<AspectTs * ...> t) {
+        _Unwind<HeadT>::Doer::set( std::get<N>(t), trg );
+        _TTUnwind<N+1, TailTs...>:: \
+                template set_tuple_aspect_targets<AspectTs...>( trg, t );
+        //auto rs[] = {  };
+    }
+};
+
+// Last aspect unwinding (template arguments expansion terminator).
+template< int N, typename HeadT>
+struct _TTUnwind<N, HeadT> {
+    template<typename ... AspectTs>
+    static void set_tuple_aspect_targets(iAbstractValue * trg, std::tuple<AspectTs * ...> t) {
+        _Unwind<HeadT>::Doer::set( std::get<N>(t), trg );
+    }
+    // ...
+};
+
+template<typename ... AspectTs> void
+unwind_set_targets( iBaseValue<AspectTs...> * t ) {
+    aux::_TTUnwind<0, AspectTs ... > \
+            ::set_tuple_aspect_targets( t, t->aspects() );
+}
+
+template<> inline void
+unwind_set_targets<>( iBaseValue<> * ) { /* do nothing when no aspects available */ }
+
+}  // namespace aux
+}  // namespace aspects
+
+template<typename ... AspectTs>
+iBaseValue<AspectTs ...>::iBaseValue( AspectTs * ... aspects ) : _aspects(aspects ...) {
+    aspects::aux::unwind_set_targets( this );
+}
+
+template<typename ... AspectTs>
+iBaseValue<AspectTs ...>::iBaseValue( std::tuple<AspectTs * ...> t ) : _aspects(t) {
+    aspects::aux::unwind_set_targets( this );
+}
+
 /**@brief Template container for a value.
  * @class iTValue
  *
  * Represents a value-keeping aspect of the parameter classes.
  * */
 template<typename ValueT, typename ... AspectTs>
-class TValue : public mixins::iDuplicable< iBaseValue<AspectTs...>
-                                        , TValue<ValueT, AspectTs...> > {
+class TValue : public mixins::iDuplicable< iAbstractValue
+                                        , TValue<ValueT, AspectTs...>
+                                        , iBaseValue<AspectTs...> > {
 public:
-    typedef iBaseValue<AspectTs...> Base;
+    typedef iAbstractValue Base;
     typedef ValueT Value;
-    typedef mixins::iDuplicable<Base, TValue<ValueT, AspectTs...>> DuplicableParent;
+    typedef mixins::iDuplicable< iAbstractValue
+                               , TValue<ValueT, AspectTs...>
+                               , iBaseValue<AspectTs...> > DuplicableParent;
 private:
     Value _value;
 protected:
@@ -117,9 +206,13 @@ public:
     TValue( const TValue<Value> & o ) : _value(o._value) {}
 };
 
+template<typename ValueT, typename ... AspectTs>
+template<typename ... ctrArgTs>
+TValue<ValueT, AspectTs...>::TValue( ctrArgTs ... args ) : DuplicableParent(args ... ) {
+}
+
 }  // namespace dict
 }  // namespace goo
 
 # endif // H_GOO_PARAMETERS_VALUES_H
 
-# include "goo_dict/common_aspects.hpp"

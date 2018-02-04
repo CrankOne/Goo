@@ -54,7 +54,7 @@ Configuration::Configuration( const Configuration & orig ) \
 Configuration::~Configuration() {}
 
 void
-Configuration::_add_shortcut( char c, VBase * p ) {
+Configuration::_add_shortcut( char c, FeaturedBase * p ) {
     auto ir = _shortcutsIndex.insertion_proxy().insert(c, p);
     if( !ir.second ) {
         emraise( nonUniq, "Unable to insert parameter %p by shortcut '%c'"
@@ -147,7 +147,7 @@ ConfDictCache::_cache_long_options( const std::string & nameprefix
     }
 }
 
-dict::Configuration::VBase *
+dict::Configuration::FeaturedBase *
 ConfDictCache::current_long_parameter( int optIndex ) {
     if( -1 == optIndex ) {
         emraise( badState, "`getopt_long()` parser has came to the wrong"
@@ -206,7 +206,7 @@ set_app_conf( dict::Configuration & cfg
                                  , cachePtr->longs().data()
                                  , &optIndex )) ) {
         // This pointer has to be set within if-clauses below
-        dict::Configuration::VBase * pPtr = nullptr;
+        dict::Configuration::FeaturedBase * pPtr = nullptr;
         //if ( optind == prevInd + 2 && *optarg == '-' ) {
         //    c = ':';
         //    -- optind;
@@ -298,7 +298,7 @@ set_app_conf( dict::Configuration & cfg
     // ...
 }
 
-void set_app_cfg_parameter( dict::Configuration::VBase & v
+void set_app_cfg_parameter( dict::Configuration::FeaturedBase & v
                           , const char * strExpr
                           , std::ostream * logPtr ) {
     auto scnv = v.aspect_cast<dict::aspects::iStringConvertible>();

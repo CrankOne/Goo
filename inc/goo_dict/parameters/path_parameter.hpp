@@ -38,7 +38,7 @@ namespace dict {
  * */
 template<>
 class Parameter<filesystem::Path> :
-        public mixins::iDuplicable< iBaseValue,
+        public mixins::iDuplicable< iAbstractValue,
                                     Parameter<filesystem::Path>,
                                     iParameter<filesystem::Path>
                                     # ifdef SWIG  // see iss#163

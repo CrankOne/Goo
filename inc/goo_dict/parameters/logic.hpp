@@ -57,11 +57,11 @@ namespace dict {
  * This aspect affects generated help message.
  * */
 template<typename ... AspectTs>
-class Parameter<bool, AspectTs...> : public mixins::iDuplicable< iBaseValue<AspectTs...>
+class Parameter<bool, AspectTs...> : public mixins::iDuplicable< iAbstractValue
                                                              , Parameter<bool, AspectTs...>
                                                              , TValue<bool, AspectTs...> > {
 public:
-    typedef mixins::iDuplicable< iBaseValue<AspectTs...>
+    typedef mixins::iDuplicable< iAbstractValue
                                , Parameter<bool, AspectTs...>
                                , TValue<bool, AspectTs...>
                                > DuplicableParent;

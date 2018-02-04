@@ -23,13 +23,7 @@
 # ifndef H_GOO_PARAMETERS_APP_CONF_INFO_H
 # define H_GOO_PARAMETERS_APP_CONF_INFO_H
 
-# ifndef H_GOO_PARAMETERS_VALUES_H
-#    warning "goo_dict/common_aspects.hpp header must be included after goo_dict/value.hpp"
-#    include "goo_dict/value.hpp"
-# endif  // H_GOO_PARAMETERS_VALUES_H
-
 # include "goo_types.h"
-//# include "goo_dict/generic_dict.tcc"
 # include "goo_exception.hpp"
 
 # include <tuple>
@@ -120,7 +114,7 @@ public:
  *
  * This is a data type-agnostic part of the string-convertible parameters.
  */
-class iStringConvertible {
+class iStringConvertible : public BoundMixin {
 protected:
     /// Shall translate string expression to C++ value.
     virtual void _V_parse_argument( const char * ) = 0;
@@ -148,21 +142,6 @@ public:
     //};
 };  // class iStringConvertibleParameter
 
-template< typename ValueT
-        , typename ... AspectTs>
-class TargetTypeAspect {
-public:
-    typedef TValue<ValueT, AspectTs...> Target;
-private:
-    Target * _selfPtr;
-public:
-    TargetTypeAspect() : _selfPtr(nullptr) {}
-    void set_target( Target * t ) { assert(!_selfPtr); _selfPtr = t; }
-    bool is_target_instance_set() const { return !!_selfPtr; }
-    Target & target() { assert(is_target_instance_set()); return *_selfPtr; }
-    const Target & target() const { assert(is_target_instance_set()); return *_selfPtr; }
-};
-
 /**@brief Default template implementing value parameters that may be converted
  * to string.
  *
@@ -171,23 +150,23 @@ public:
  * */
 template< typename ValueT
         , typename ... AspectTs>
-class TStringConvertible : public iStringConvertible
-                        , public TargetTypeAspect<ValueT, AspectTs...> {
+class TStringConvertible : public iStringConvertible {
 public:
     typedef ValueT Value;
     typedef typename iStringConvertible::ConversionTraits<Value> ValueTraits;
     typedef TStringConvertible<ValueT> Self;
+    typedef TValue<ValueT, AspectTs...> TypedSelf;
 protected:
     /// Sets the value kept by current instance from string expression.
     virtual void _V_parse_argument( const char *strval ) override {
-        TargetTypeAspect<ValueT, AspectTs...>::target()
+        static_cast<TypedSelf&>(BoundMixin::target())
                 .value(ValueTraits::parse_string_expression(strval));
     }
 
     /// Expresses the value kept by current instance as a string.
     virtual std::string _V_to_string() const override {
         return ValueTraits::to_string_expression(
-                TargetTypeAspect<ValueT, AspectTs...>::target().value());
+                static_cast<const TypedSelf&>(BoundMixin::target()).value());
     }
 public:
     TStringConvertible() {}
@@ -218,72 +197,6 @@ public:
 };
 
 }  // namespace aspects
-
-namespace aux {
-
-template< typename TargetT
-        , typename AspectsKeeperT
-        , typename HeadT>
-struct _Unwind {
-    struct Setter {
-        static int set(HeadT *i, TargetT *t) { i->set_target(i); return 1; }
-    };
-
-    struct Dummy {
-        static int set(HeadT *, TargetT *) { /* shall be trimmed off by optimization */ return 0; }
-    };
-
-    typedef typename std::conditional< std::is_base_of<AspectsKeeperT, HeadT>::value
-                                     , Setter
-                                     , Dummy>::type Doer;
-};
-
-template< typename TargetT
-        , typename AspectsKeeperT
-        , int N
-        , typename HeadT
-        , typename ... TailTs>
-struct _TTUnwind {
-    template<typename ... AspectTs>
-    static void set_tuple_aspect_targets(TargetT * trg, std::tuple<AspectTs * ...> t) {
-        _Unwind<TargetT, AspectsKeeperT, HeadT>::Doer::set( std::get<N>(t), trg );
-        _TTUnwind<TargetT, AspectsKeeperT, N+1, TailTs...>:: \
-                template set_tuple_aspect_targets<AspectTs...>( trg, t );
-        //auto rs[] = {  };
-    }
-};
-
-template< typename TargetT
-        , typename AspectsKeeperT
-        , int N
-        , typename HeadT>
-struct _TTUnwind<TargetT, AspectsKeeperT, N, HeadT> {
-    template<typename ... AspectTs>
-    static void set_tuple_aspect_targets(TargetT * trg, std::tuple<AspectTs * ...> t) {
-        _Unwind<TargetT, AspectsKeeperT, HeadT>::Doer::set( std::get<N>(t), trg );
-    }
-    // ...
-};
-
-template<typename ValueT, typename ... AspectTs> void
-unwind_set_targets( TValue<ValueT, AspectTs...> * t ) {
-     aux::_TTUnwind< TValue<ValueT, AspectTs...>
-                  , aspects::TargetTypeAspect<ValueT, AspectTs...>
-                  , 0
-                  , AspectTs ... > \
-            ::set_tuple_aspect_targets( t, t->aspects() );
-}
-
-template<typename ValueT> void
-unwind_set_targets( TValue<ValueT> * ) { /* do nothing when no aspects available */ }
-
-}  // namespace aux
-
-template<typename ValueT, typename ... AspectTs>
-template<typename ... ctrArgTs>
-TValue<ValueT, AspectTs...>::TValue( ctrArgTs ... args ) : DuplicableParent(args ... ) {
-    aux::unwind_set_targets<ValueT, AspectTs...>( this );
-}
 
 # if 0
 template<typename ValueT, typename ... AspectTs>

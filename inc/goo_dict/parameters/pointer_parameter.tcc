@@ -31,15 +31,15 @@ namespace dict {
 /**@brief Generic pointer parameter.
  * */
 template<typename T>
-class PointerParameter : public mixins::iDuplicable< AbstractParameter,
-                                                     PointerParameter<T>,
-                                                     iParameter<T> > {
+class PointerParameter : public mixins::iDuplicable< iAbstractValue
+                                                 , PointerParameter<T>
+                                                 , iParameter<T> > {
 public:
     typedef T PointerType;
     typedef typename std::remove_pointer<T>::type DataType;
-    typedef mixins::iDuplicable< AbstractParameter,
-                                 PointerParameter<T>,
-                                 iParameter<T> > DuplicableParent;
+    typedef mixins::iDuplicable< iAbstractValue
+                               , PointerParameter<T>
+                               , iParameter<T> > DuplicableParent;
 public:
     /// Long option with shortcut.
     PointerParameter( char shortcut_,

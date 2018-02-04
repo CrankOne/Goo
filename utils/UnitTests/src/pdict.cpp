@@ -152,13 +152,13 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         goo::dict::Configuration conf( "Testing parameter set #1." );
 
         conf.insertion_proxy()
-            .p<bool>( '1', "parameter-one", "First parameter", false ).implicit(true)
-            .p<bool>( 'v', "", "Enables verbose output", false ).implicit(true)
+            .flag( '1', "parameter-one", "First parameter" )
+            .flag( 'v', "Enables verbose output" )
             .p<bool>( 'q', "Be quiet", true )
             .p<bool>( "quiet", "Be quiet", true )
             .p<bool>( "verbose", "Enables verbosity" )
             .p<short>("verbosity", "Sets verbosity level" )
-            .p<bool>( 'V', "verbose2", "Enables verbose output", false ).implicit(true)
+            .flag( 'V', "verbose2", "Enables verbose output" )
             .p<bool>( 'Q', "quiet2", "Be quiet", true )
             //.p<bool>( 12, "one", "two", "three" )  // should cause failure on linkage
             //.p<bool>( "one", "two", "three" )  // should cause failure on linkage

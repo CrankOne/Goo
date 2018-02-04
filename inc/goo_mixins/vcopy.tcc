@@ -122,10 +122,13 @@ protected:
 
 /// An iDuplicable implementation for outern descendant with
 /// abstract base class (copy ctr is provided).
-template<typename BaseTypeT,
-         typename SelfTypeT,
-         typename ParentT>
-class iDuplicable<BaseTypeT, SelfTypeT, ParentT, false> : public ParentT {
+template< typename BaseTypeT
+        , typename SelfTypeT
+        , typename ParentT>
+class iDuplicable< BaseTypeT
+                 , SelfTypeT
+                 , ParentT
+                 , false> : public ParentT {
 public:
     typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, false> DuplicableParent;
     typedef iDuplicable<BaseTypeT, BaseTypeT> DuplicableBase;
@@ -150,7 +153,7 @@ protected:
     /// default behaviour (bug?).
     iDuplicable( const SelfTypeT & self ) : Parent( self ) {}
 
-    // Performs invokation of copy constructor.
+    /// Invoces of copy constructor.
     virtual BaseTypeT * _V_clone() const override {
         # if 0
         static_assert( std::is_base_of<DuplicableBase, Parent>::value,

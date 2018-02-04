@@ -39,12 +39,12 @@ namespace dict {
  * */
 template< typename EnumT
         , typename ... AspectTs>
-class EnumParameter : public mixins::iDuplicable< iBaseValue<AspectTs...>
+class EnumParameter : public mixins::iDuplicable< iAbstractValue
                                               , EnumParameter<EnumT, AspectTs...>
                                               , Parameter<EnumT, AspectTs...> > {
 public:
     typedef EnumT Enum;
-    typedef mixins::iDuplicable< iBaseValue<AspectTs...>,
+    typedef mixins::iDuplicable< iAbstractValue,
                                  EnumParameter<Enum, AspectTs...>,
                                  Parameter<Enum, AspectTs...> > DuplicableParent;
     typedef std::unordered_map<std::string, Enum> Entries;

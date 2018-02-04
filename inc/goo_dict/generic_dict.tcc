@@ -51,7 +51,8 @@ template< typename KeyT
 template< typename ... AspectTs >
 struct Traits {
     /// Type of general value kept by dictionaries with the fixed aspects set.
-    typedef iBaseValue<AspectTs ...> VBase;
+    typedef iAbstractValue VBase;
+    typedef iBaseValue<AspectTs...> FeaturedBase;
     /// The index (dictionary) traits may be re-defined within partial
     /// specialization for certain key type (whithin every unique aspects set).
     template<typename KeyT> struct IndexBy {
@@ -95,6 +96,7 @@ class GenericDictionary : public mixins::iDuplicable< typename Traits<AspectTs .
                                                     >
                         , public Traits<AspectTs...>::template IndexBy<KeyT>::Aspect {
 public:
+    typedef Traits<AspectTs...> OwnTraits;
     /// The insertion proxy is a class to which the insertion permission is
     /// granted. It has to become a base class for particular insertion proxies
     /// implementing various entry-construction interfaces.
@@ -108,7 +110,7 @@ public:
         Self & target() { return _target; }
         /// Protected entry-insertion method.
         virtual std::pair<typename Hash<KeyT, iBaseValue<AspectTs...> *>::iterator, bool>
-        _insert_parameter( const KeyT & k, iBaseValue<AspectTs...> * p ) {
+        _insert_parameter( const KeyT & k, typename OwnTraits::FeaturedBase * p ) {
             return target()._mutable_value().emplace(k, p);
         }
     protected:

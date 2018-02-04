@@ -48,7 +48,7 @@ InsertionProxy<std::string>::_index_by_shortcut( char shrtc, VBase * p ) {
                 " the insertion proxy object %p since proxy has no associated"
                 " Configuration instance.", p, shrtc, this );
     }
-    _root->_add_shortcut( shrtc, p );
+    _root->_add_shortcut( shrtc, static_cast<Configuration::FeaturedBase *>(p) );
 }
 
 InsertionProxy<std::string>::Self &
@@ -81,7 +81,7 @@ InsertionProxy<char>::InsertionProxy( AppConfTraits::template IndexBy<char>::Dic
 
 std::pair<typename AppConfTraits::template IndexBy<char>::DictValue::Value::iterator, bool>
 InsertionProxy<char>::insert( char c, AppConfTraits::VBase * e ) {
-    return _insert_parameter( c, e );
+    return _insert_parameter( c, static_cast<AppConfTraits::FeaturedBase *>(e) );
 }
 
 }  // namespace goo

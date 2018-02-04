@@ -51,11 +51,11 @@ namespace dict {
  */
 template< typename ValueT
         , typename ... AspectTs>
-class Parameter : public mixins::iDuplicable< iBaseValue<AspectTs...>
+class Parameter : public mixins::iDuplicable< iAbstractValue
                                            , Parameter<ValueT, AspectTs...>
                                            , TValue<ValueT, AspectTs...> > {
 public:
-    typedef mixins::iDuplicable< iBaseValue<AspectTs...>
+    typedef mixins::iDuplicable< iAbstractValue
                                , Parameter<ValueT, AspectTs...>
                                , TValue<ValueT, AspectTs...> > DuplicableParent;
     template<typename ... Ts> Parameter(Ts ... ctrArgs) : DuplicableParent(ctrArgs...) {}
@@ -107,13 +107,13 @@ using InsertableParameter = typename
 template< typename ValueT
         , typename ... AspectTs>
 class Parameter<Array<ValueT>, AspectTs... > :
-            public mixins::iDuplicable< iBaseValue<AspectTs...>,
-                                        Parameter< Array<ValueT>, AspectTs ... >,
-                                        /*protected?*/ InsertableParameter< ValueT, AspectTs ... > > {
+            public mixins::iDuplicable< iAbstractValue
+                                     ,  Parameter< Array<ValueT>, AspectTs ... >
+                                     ,  /*protected?*/ InsertableParameter< ValueT, AspectTs ... > > {
 public:
-    typedef mixins::iDuplicable<iBaseValue<AspectTs...>,
-                                Parameter< Array<ValueT>, AspectTs ... >,
-                                InsertableParameter<ValueT, AspectTs ...> > DuplicableParent;
+    typedef mixins::iDuplicable< iAbstractValue
+                               , Parameter< Array<ValueT>, AspectTs ... >
+                               , InsertableParameter<ValueT, AspectTs ...> > DuplicableParent;
 private:
     bool _setToDefault;
     Array<ValueT> _values;

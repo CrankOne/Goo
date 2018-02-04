@@ -102,7 +102,8 @@ template<typename KeyT> class InsertionProxy;
 /// application configuration. Does not provide list-like structures.
 template<>
 struct Traits<_Goo_m_VART_LIST_APP_CONF> {
-    typedef iBaseValue< _Goo_m_VART_LIST_APP_CONF > VBase;
+    typedef iAbstractValue VBase;
+    typedef iBaseValue< _Goo_m_VART_LIST_APP_CONF > FeaturedBase;
     /// The default (generic, unspecified) IndexBy structure has not be used.
     /// For application configuration only two types of dictionaries are
     /// available: the string-indexed recurrent structure of subsections and
