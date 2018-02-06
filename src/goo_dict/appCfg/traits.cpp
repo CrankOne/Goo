@@ -26,10 +26,42 @@
 namespace goo {
 namespace dict {
 
-template<> InsertionProxy<std::string>
+// generic options container
+
+InsertionProxy<std::string>
 Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::insertion_proxy() {
     return InsertionProxy<std::string>(dynamic_cast<InsertionProxy<std::string>::Subsection &>(*this));
 }
+
+/*
+const Traits<_Goo_m_VART_LIST_APP_CONF>::FeaturedBase *
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::parameter_ptr( const char * p ) const {
+    return static_cast<const Dictionary &>(*this).entry_ptr( p );
+}
+*/
+
+
+# if 0
+template<typename ... AspectTs>
+const TValue<AspectTs...> & retrieve_entry_by_str_path(
+        const GenericDictionary<std::string, AspectTs> & D
+      , const std::string & strPath ) {
+    auto path = dpath( strPath );
+    return retrieve_entry_by_path( D, path );
+}
+
+template<typename ... AspectTs>
+const TValue<AspectTs...> & retrieve_entry_by_path(
+        const GenericDictionary<std::string, AspectTs> & D
+      , const DictPath & p ) {
+    if( p.next ) {
+        return retrieve_entry_by_path( D.subsection(p), p.next );
+    }
+    //return D.value(p.);
+}
+# endif
+
+// shortcut-only options container
 
 InsertionProxy<char>
 Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char>::Aspect::insertion_proxy() {

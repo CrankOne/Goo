@@ -86,6 +86,30 @@ parse_dict_path( char * pathString, DictPath * pToks, size_t nPToks ) {
     return nPToks;
 }
 
+std::vector<DictPath>
+dpath( const std::string & path ) {  // todo: move to implem
+    // Prepare pools
+    std::vector<char> mtPath(path.size() + 1, '\0');
+    std::vector<DictPath> toksPool;
+    // Try to extract into pools
+    for( size_t nToksPool = (1 << _Goo_m_PATH_TOKENS_START_2PWR)
+       ; nToksPool < (1 << _Goo_m_MAX_PATH_TOKENS_2PWR)
+       ; nToksPool <<= 1 ) {
+        strcpy(mtPath.data(), path.c_str());
+        toksPool.clear();
+        toksPool.resize( nToksPool );
+        size_t nToks = parse_dict_path( mtPath.data(), toksPool.data(), toksPool.size() );
+        if( nToks <= nToksPool ) {
+            toksPool.resize( nToks );
+            return toksPool;
+        }
+    }
+    emraise( overflow
+           , "Unable to parse path expression of length %zu since it"
+             " exceeded available tokens pool (%d)."
+           , path.size(), (1 << _Goo_m_MAX_PATH_TOKENS_2PWR) );
+}
+
 }  // namespace aux
 }  // namespace dict
 }  // namespace goo

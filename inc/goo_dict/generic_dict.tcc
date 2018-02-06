@@ -27,6 +27,8 @@
 # include "goo_dict/value.hpp"
 # include "goo_mixins/vcopy.tcc"
 
+# include <sstream>
+
 namespace goo {
 namespace dict {
 
@@ -71,10 +73,19 @@ struct Traits {
         /// One probably would desire to re-define the second AspectTs... pack in order
         /// to restrict the aspects set included at the dictionary within particular
         /// traits.
-        typedef TValue< Hash<KeyT, iBaseValue<AspectTs...>*>
+        typedef TValue< Hash<KeyT, FeaturedBase * >
                       , AspectTs ... // < this pack
                       > DictValue;
     };
+};
+
+template<typename KeyT>
+struct KeyTraits {
+    static std::string to_str( const KeyT & k ) {
+        std::ostringstream os;
+        os << k;
+        return os.str();
+    }
 };
 
 
@@ -161,13 +172,52 @@ public:
         }
     }
 
-    /// Returns pointer to entry or nullptr (if entry not found).
-    template<typename T> T * retrieve( const KeyT & k ) {
-        auto it = this->_mutable_value().find(k);
-        if( this->_mutable_value() == it ) {
+    // First level getters --- provides basic access to entries.
+
+    /// Returns pointer to value or nullptr (if entry not found).
+    virtual const typename OwnTraits::FeaturedBase * entry_ptr( const KeyT & k ) const {
+        auto it = this->value().find(k);
+        if( this->value().end() == it ) {
             return nullptr;
         }
-        return static_cast<T *>(*(it->second));
+        return (it->second);
+    }
+
+    /// Returns pointer to value or nullptr (if entry not found).
+    virtual typename OwnTraits::FeaturedBase * entry_ptr( const KeyT & k ) {
+        auto it = this->_mutable_value().find(k);
+        if( this->_mutable_value().end() == it ) {
+            return nullptr;
+        }
+        return (it->second);
+    }
+
+    // Second level getters.
+
+    /// Returns mutable reference to value, or raises goo::notFound if not
+    /// found.
+    virtual typename OwnTraits::FeaturedBase & entry( const KeyT & k ) {
+        auto ptr = entry_ptr(k);
+        if( ! ptr ) {
+            emraise( notFound
+                   , "Dictionary %p has no entry with key \"%s\"."
+                   , this
+                   , KeyTraits<KeyT>::to_str(k).c_str() );
+        }
+        return *ptr;
+    }
+
+    /// Returns const reference to value, or raises goo::notFound if not
+    /// found.
+    virtual const typename OwnTraits::FeaturedBase & entry( const KeyT & k ) const {
+        auto ptr = entry_ptr(k);
+        if( ! ptr ) {
+            emraise( notFound
+                   , "Dictionary %p has no entry with key \"%s\"."
+                   , this
+                   , KeyTraits<KeyT>::to_str(k).c_str() );
+        }
+        return *ptr;
     }
 };
 

@@ -26,6 +26,8 @@
 # include "goo_types.h"
 # include "goo_exception.hpp"
 
+# include "goo_dict/value.hpp"
+
 # include <tuple>
 
 namespace goo {

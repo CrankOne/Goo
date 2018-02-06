@@ -27,6 +27,9 @@
 # include "insertion_proxy.tcc"
 # include "goo_dict/util/dpath.hpp"
 
+# include <alloca.h>
+
+
 struct option;
 
 namespace goo {
@@ -130,11 +133,12 @@ public:
         # endif
     }
 
+    const FeaturedBase & entry( const std::string & path ) const {
+        _TODO_  // ...
+    }
+
     const FeaturedBase & operator[](const std::string & path) const {
-        _TODO_
-        //char * pDup = alloca( path.size() + 1 );
-        //
-        //utils::parse_dict_path( pDup );
+        return entry( path );
     }
 
     FeaturedBase & operator[](const std::string & pathStr) {

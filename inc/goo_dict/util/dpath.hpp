@@ -27,9 +27,10 @@
 #ifndef GOO_PARAMETERS_DPATH_HPP
 #define GOO_PARAMETERS_DPATH_HPP
 
-# include "goo_dict/appCfg/traits.hpp"
 # include "goo_dict/parameters/los.hpp"
 # include "goo_dict/generic_dict.tcc"
+
+# include <cstring>
 
 namespace goo {
 namespace dict {
@@ -145,6 +146,66 @@ DictPath::key_for<AppCfgTraits::ListOfStructures>() {
 size_t parse_dict_path( char * pathString
                      , DictPath * pToks
                      , size_t nPToks );
+
+# ifndef _Goo_m_PATH_TOKENS_START_2PWR
+/// Macros is an integer constant, the power of two referencing the maximum number
+/// of tokens that may be used in single entry referencing invocation. See also
+/// _Goo_m_MAX_PATH_TOKENS_2PWR.
+#   define _Goo_m_PATH_TOKENS_START_2PWR 5
+# endif  // _Goo_m_PATH_TOKENS_START_2PWR
+
+# ifndef _Goo_m_MAX_PATH_TOKENS_2PWR
+/// Macro is an int constant, the power of 2 indicating maximum number of path
+/// tokens that may be used in single invocation. Has to be grater than
+/// _Goo_m_PATH_TOKENS_START_2PWR
+#   define _Goo_m_MAX_PATH_TOKENS_2PWR 10
+# endif  // _Goo_m_MAX_PATH_TOKENS_2PWR
+
+# if 0
+// NOTE: this code snippet may be usefult to significantly enhance the
+// performance of entry retrieval from the dictionaries. However, there is
+// a possible danger of stack overflow while using the alloca() within the
+// template functions since the former are always inline. See:
+//  https://stackoverflow.com/a/3410689/1734499
+// for details. Standing on the safe side, we keep the heap allocation for
+// now.
+std::pair< char *
+        , std::vector<DictPath> >
+dpath( const std::string & path ) {
+    char * pDup = alloca( path.size() + 1 );
+    utils::DictPath * toksPool;
+    std::vector<utils::DictPath> dp;
+    for( size_t nToksPool = (1 << _Goo_m_PATH_TOKENS_START_2PWR)
+       ; nToksPool < (1 << _Goo_m_MAX_PATH_TOKENS_2PWR)
+       ; nToksPool <<= 2 ) {
+        toksPool = alloca( nToksPool );
+        size_t nToks = utils::parse_dict_path( pDup, toksPool, nToksPool );
+        if( nToksPool >= (1 << _Goo_m_MAX_PATH_TOKENS_2PWR) ) {
+            emraise( badParameter
+                   , "Entry path is too long to be parsed. nToksPool=%lu exceeded"
+                     " maximum.", nToksPool );
+        }
+        if( nToks >= nToksPool ) {
+            continue;  // double the pool.
+        }
+        // We have to keep this invocation inside the for(){} scope to preserve
+        // alloca()
+        dp.reserve( nToks );
+        for( DictPath * pt = toksPool; pt; pt = pt->next ) {
+            dp.push_back( *pt );
+            _TODO_  // TODO: rewrite ->next pointer
+        }
+    }
+    _TODO_  // NOTE: all the names will be freed after leaving this scope, so
+            // consider another on-stack trickery...
+    return dp;
+}
+# endif
+
+/// Hides all the micromanagement details of parse_dict_path() within itself
+/// providing an easy interface to turning stringified paths into the DictPath
+/// list located in single contiguous memory block.
+std::vector<DictPath> dpath( const std::string & path );
 
 }  // namespace utils
 }  // namespace dict

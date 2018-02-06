@@ -23,8 +23,9 @@
 # ifndef H_GOO_PARAMETERS_DICTIONARY_H
 # define H_GOO_PARAMETERS_DICTIONARY_H
 
-# include "goo_dict/generic_dict.tcc"
+# include "goo_dict/util/dpath.hpp"
 # include "goo_dict/common_aspects.hpp"
+# include "goo_dict/util/subsections.tcc"
 
 namespace goo {
 
@@ -109,25 +110,60 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF> {
     /// available: the string-indexed recurrent structure of subsections and
     /// the char-indexed one, bound directly to the Configuration instance, that
     /// does not keep any subsections.
-    template<typename KeyT> struct IndexBy {
-        /// Aspect defines same-indexed subsections within the current
-        /// dictionary.
-        struct Aspect : protected Hash<KeyT, GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF>*> {
-            friend class InsertionProxy<KeyT>;
-            /// Constructs and returns insertion proxy referencing current
-            /// dictionary instance. Defined in insertion_proxy.tcc
-            virtual InsertionProxy<KeyT> insertion_proxy();
-            /// Const getter for protected subsections data.
-            const Hash<KeyT, GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF>*> & subsections() const {
-                return *this;
-            };
-        };
-        typedef GenericDictionary<KeyT, _Goo_m_VART_LIST_APP_CONF> Dictionary;
-        typedef TValue< Hash< KeyT, iBaseValue<_Goo_m_VART_LIST_APP_CONF>*>
-                            , aspects::Description > DictValue;
-    };
+    template<typename KeyT> struct IndexBy;
 };
 
+template<>
+template<>
+struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
+    typedef GenericDictionary< std::string
+                             , _Goo_m_VART_LIST_APP_CONF > Dictionary;
+
+    typedef TValue< Hash< std::string
+                        , iBaseValue<_Goo_m_VART_LIST_APP_CONF>*>
+                  , aspects::Description > DictValue;
+
+    /// Aspect defines same-indexed subsections within the current
+    /// dictionary.
+    struct Aspect : public aux::iSubsections< std::string
+                                            , Hash
+                                            , GenericDictionary<std::string, _Goo_m_VART_LIST_APP_CONF> > {
+        friend class InsertionProxy<std::string>;
+
+        /// Constructs and returns insertion proxy referencing current
+        /// dictionary instance. Defined in insertion_proxy.tcc
+        virtual InsertionProxy<std::string> insertion_proxy();
+
+        /// Returns a parameter entry by given path expression (const).
+        const FeaturedBase & operator[]( const std::string & path ) const {
+            return operator[]( utils::dpath( path ).front() );
+        }
+
+        /// Returns a parameter entry by given path expression (mutable).
+        FeaturedBase & operator[]( const std::string & path ) {
+            const auto * cThis = this;
+            return const_cast<FeaturedBase &>(cThis->operator[](path));
+        }
+
+        /// Returns a parameter entry by given path (const).
+        const FeaturedBase & operator[]( const utils::DictPath & dp ) const {
+            if( dp.isIndex ) {
+                emraise( badParameter, "Current path token is an integer index."
+                    " Unable to dereference it within application configuration"
+                    " context." );
+            }
+            if( dp.next ) {
+                subsection( dp.id );
+            }
+        }
+
+        /// Returns a parameter entry by given path (const).
+        FeaturedBase & operator[]( const utils::DictPath & dp ) {
+            const auto * cThis = this;
+            return const_cast<FeaturedBase &>(cThis->operator[](dp));
+        }
+    };
+};
 
 
 template<>
@@ -136,6 +172,10 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char> {
     /// Char-indexed dictionary within the application configuration does not
     /// contain any sub-sections (within it's aspect).
     struct Aspect {
+        friend class InsertionProxy<char>;
+
+        /// Constructs an auxilliary insertion proxy object, specific for the
+        /// application configuration dictionaries.
         virtual InsertionProxy<char> insertion_proxy();
     };
     typedef GenericDictionary<char, _Goo_m_VART_LIST_APP_CONF> Dictionary;
