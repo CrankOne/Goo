@@ -88,8 +88,10 @@ struct DictPath {
     DictPath * next;
 
     DictPath() : next(nullptr) { id.name = nullptr; }
-    DictPath( const char * strID ) : next(nullptr) { id.name = strID; isIndex = false; }
-    DictPath( ListIndex idx ) : next(nullptr) { id.index = idx; isIndex = true; }
+    explicit DictPath( const char * strID ) : next(nullptr)
+            { id.name = strID; isIndex = false; }
+    explicit DictPath( ListIndex idx ) : next(nullptr)
+            { id.index = idx; isIndex = true; }
 
     //template<typename T> typename T::Key key_for();
 };

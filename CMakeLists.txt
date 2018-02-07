@@ -205,16 +205,10 @@ set( GOO_LIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/inc/" )
 #
 # Configure compiler -- base flags
 # NOTE: for ASan, prepend with -fsanitize=address -fno-omit-frame-pointer
-#set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99" )
-#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++1y " )
-if( CMAKE_COMPILER_IS_GNUCXX )
-        set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -rdynamic -I/usr/include/libiberty/" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -I/usr/include/libiberty/" )
-endif( CMAKE_COMPILER_IS_GNUCXX )
 set( CMAKE_Haskell_FLAGS "-fPIC -no-hs-main" )
 
-set( CMAKE_C_FLAGS_DEBUG            "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer" )
-set( CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer" )
+set( CMAKE_C_FLAGS_DEBUG            "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer -Wall" )
+set( CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -Wall" )
 set( CMAKE_C_FLAGS_RELEASE          "${CMAKE_C_FLAGS_RELEASE}" )
 set( CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS_RELEASE}" )
 set( CMAKE_C_FLAGS_MINSIZEREL       "${CMAKE_C_FLAGS_MINSIZEREL}" )
@@ -265,6 +259,24 @@ target_include_directories( ${Goo_LIBRARY} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/inc>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:include/goo> )
+
+#set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -DHAVE_INLINE -std=c99" )
+#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fexceptions -pthread -D_FILE_OFFSET_BITS=64 -std=gnu++1y " )
+if( EM_STACK_UNWINDING )
+    # Depending on particular version of binutils, the location of libiberty.h
+    # may differ. Usually, possible variants are: /usr/include
+    # or /usr/include/libiberty.
+    find_path( LIBIBERTY_HEADER_PATH "libiberty.h" PATHS "/usr/include/" NO_DEFAULT_PATH )
+    if( LIBIBERTY_HEADER_PATH )
+        message(STATUS "Libiberty header found: ${LIBIBERTY_HEADER_PATH}")
+        target_include_directories( ${Goo_LIBRARY} PUBLIC ${LIBIBERTY_HEADER_PATH} )
+    else(LIBIBERTY_HEADER_PATH)
+        message(WARNING "libiberty.h header is NOT found at system locations.")
+    endif( LIBIBERTY_HEADER_PATH )
+    #set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -rdynamic -I/usr/include/libiberty/" )
+    #    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -I/usr/include/libiberty/" )
+endif( EM_STACK_UNWINDING )
+
 target_compile_features( ${Goo_LIBRARY} PUBLIC
             c_variadic_macros
             cxx_constexpr

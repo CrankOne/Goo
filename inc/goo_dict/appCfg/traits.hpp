@@ -135,30 +135,32 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
         virtual InsertionProxy<std::string> insertion_proxy();
 
         /// Returns a parameter entry by given path expression (const).
-        const FeaturedBase & operator[]( const std::string & path ) const {
+        virtual const FeaturedBase & operator[]( const std::string & path ) const {
             return operator[]( utils::dpath( path ).front() );
         }
 
         /// Returns a parameter entry by given path expression (mutable).
-        FeaturedBase & operator[]( const std::string & path ) {
+        virtual FeaturedBase & operator[]( const std::string & path ) {
             const auto * cThis = this;
             return const_cast<FeaturedBase &>(cThis->operator[](path));
         }
 
         /// Returns a parameter entry by given path (const).
-        const FeaturedBase & operator[]( const utils::DictPath & dp ) const {
+        virtual const FeaturedBase & operator[]( const utils::DictPath & dp ) const {
             if( dp.isIndex ) {
                 emraise( badParameter, "Current path token is an integer index."
                     " Unable to dereference it within application configuration"
                     " context." );
             }
             if( dp.next ) {
-                subsection( dp.id );
+                return subsection( dp.id.name )[*dp.next];
             }
+            // that's a terminating path token:
+            return static_cast<const Subsection *>(this)->entry(dp.id.name);
         }
 
         /// Returns a parameter entry by given path (const).
-        FeaturedBase & operator[]( const utils::DictPath & dp ) {
+        virtual FeaturedBase & operator[]( const utils::DictPath & dp ) {
             const auto * cThis = this;
             return const_cast<FeaturedBase &>(cThis->operator[](dp));
         }

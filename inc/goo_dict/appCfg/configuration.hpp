@@ -133,6 +133,7 @@ public:
         # endif
     }
 
+    /* TODO: must be overriding offering access to shortcuts, positional, etc.
     const FeaturedBase & entry( const std::string & path ) const {
         _TODO_  // ...
     }
@@ -144,7 +145,7 @@ public:
     FeaturedBase & operator[](const std::string & pathStr) {
         const Configuration * cThis = this;
         return const_cast<FeaturedBase &>(cThis->operator[](pathStr));
-    }
+    }*/
 
     /// Returns forwarded arguments (if they were set).
     const Array<std::string> & forwarded_argv() const;

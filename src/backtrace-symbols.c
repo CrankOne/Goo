@@ -77,7 +77,7 @@
 # include <stdlib.h>
 # include <execinfo.h>
 # include <bfd.h>
-# include <libiberty/libiberty.h>
+# include <libiberty.h>
 # include <dlfcn.h>
 # include <link.h>
 #if 0
