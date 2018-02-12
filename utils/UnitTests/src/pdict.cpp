@@ -184,6 +184,11 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         utils::set_app_conf( conf, argc, argv, nullptr, &os );
 
         goo_free_shell_tokens( argc, argv );
+
+        os << "*** \"quiet\" addr: " << (void *) &(conf["quiet"]) << std::endl  // XXX
+           << "*** 'q' addr: " << (void *) &(conf["q"]) << std::endl
+           ;
+
         // check options are really set to expected values
         _ASSERT(  conf["1"].as<bool>(),         "Option -1 set wrong." );
         _ASSERT(  conf["v"].as<bool>(),         "Option -v set wrong." );

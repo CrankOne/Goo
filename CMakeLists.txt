@@ -266,7 +266,13 @@ if( EM_STACK_UNWINDING )
     # Depending on particular version of binutils, the location of libiberty.h
     # may differ. Usually, possible variants are: /usr/include
     # or /usr/include/libiberty.
-    find_path( LIBIBERTY_HEADER_PATH "libiberty.h" PATHS "/usr/include/" NO_DEFAULT_PATH )
+    find_path( LIBIBERTY_HEADER_PATH "libiberty.h"
+              PATHS "/usr/include/" "/usr/include/libiberty"
+              NO_CMAKE_PATH
+              NO_CMAKE_ENVIRONMENT_PATH
+              NO_SYSTEM_ENVIRONMENT_PATH
+              NO_CMAKE_SYSTEM_PATH
+              NO_DEFAULT_PATH )
     if( LIBIBERTY_HEADER_PATH )
         message(STATUS "Libiberty header found: ${LIBIBERTY_HEADER_PATH}")
         target_include_directories( ${Goo_LIBRARY} PUBLIC ${LIBIBERTY_HEADER_PATH} )

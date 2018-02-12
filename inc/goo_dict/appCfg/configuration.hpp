@@ -133,19 +133,63 @@ public:
         # endif
     }
 
-    /* TODO: must be overriding offering access to shortcuts, positional, etc.
-    const FeaturedBase & entry( const std::string & path ) const {
-        _TODO_  // ...
+    /// Overrides the default entry getter to support positional argument and the
+    /// single character names usually referring to shortcuts (const ver).
+    virtual const FeaturedBase * entry_ptr( const std::string & name ) const override {
+        assert( !name.empty() );
+        if( _positionalArgument.second
+         && _positionalArgument.first.size()
+         && _positionalArgument.first == name ) {
+            return _positionalArgument.second;
+        }
+        if( 1 == name.size() ) {
+            auto it = _shortcutsIndex.value().find( name[0] );
+            if( _shortcutsIndex.value().end() != it ) {
+                return it->second;
+            }
+        }
+        return DuplicableParent::entry_ptr( name );
     }
 
-    const FeaturedBase & operator[](const std::string & path) const {
-        return entry( path );
+    /// Overrides the default entry getter to support positional argument and the
+    /// single character names usually referring to shortcuts (mutable ver).
+    virtual FeaturedBase * entry_ptr( const std::string & name ) override {
+        assert( !name.empty() );
+        if( _positionalArgument.second
+         && _positionalArgument.first.size()
+         && _positionalArgument.first == name ) {
+            return _positionalArgument.second;
+        }
+        if( 1 == name.size() ) {
+            auto it = _shortcutsIndex.value().find( name[0] );
+            if( _shortcutsIndex.value().end() != it ) {
+                return it->second;
+            }
+        }
+        return DuplicableParent::entry_ptr( name );
     }
 
-    FeaturedBase & operator[](const std::string & pathStr) {
-        const Configuration * cThis = this;
-        return const_cast<FeaturedBase &>(cThis->operator[](pathStr));
-    }*/
+    /*
+    const FeaturedBase & operator[](char c) const {
+        auto it = _shortcutsIndex.value().find(c);
+        if( _shortcutsIndex.value().end() == it ) {
+            emraise( notFound
+                   , "Configuration %p has no option with shortcut '%c'."
+                   , this, c );
+        }
+    }
+     */
+
+    # if 0  // does not seems that we really need non-const getter here.
+    FeaturedBase & operator[](char c) {
+        auto it = _shortcutsIndex._mutable_value().find(c);
+        if( _shortcutsIndex.value().end() == it ) {
+            emraise( notFound
+                   , "Configuration %p has no option with shortcut '%c'."
+                   , this, c );
+        }
+    }
+    # endif
 
     /// Returns forwarded arguments (if they were set).
     const Array<std::string> & forwarded_argv() const;

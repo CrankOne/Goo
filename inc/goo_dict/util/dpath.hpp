@@ -207,7 +207,8 @@ dpath( const std::string & path ) {
 /// Hides all the micromanagement details of parse_dict_path() within itself
 /// providing an easy interface to turning stringified paths into the DictPath
 /// list located in single contiguous memory block.
-std::vector<DictPath> dpath( const std::string & path );
+std::vector<DictPath> dpath( const std::string & path
+                          , std::vector<char> & namecache );
 
 }  // namespace utils
 }  // namespace dict

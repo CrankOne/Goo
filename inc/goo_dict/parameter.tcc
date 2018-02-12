@@ -230,11 +230,11 @@ template<typename ... AspectTs>
 template<typename T>
 typename std::enable_if< ! stdE::is_one_of<T, AspectTs...>::value, const T &>::type
 iBaseValue<AspectTs...>::as() const {
-    _TODO_  // TODO: iSingularParameter -> ???
-    # if 0
-    typedef iParameter<T> const * CastTarget;
+    typedef TValue<T, AspectTs...> const * CastTarget;
     auto ptr = dynamic_cast<CastTarget>(this);
     if( !ptr ) {
+        goo_badcast( typename DECLTYPE(this), CastTarget, this, "Type mismatch of parameters dictionary entry." );
+        # if 0
         const iSingularParameter * namedP = dynamic_cast<const iSingularParameter *>(this);
         if( namedP ) {
             if( namedP->name() ) {
@@ -246,9 +246,9 @@ iBaseValue<AspectTs...>::as() const {
             }
         }
         goo_badcast( DECLTYPE(this), CastTarget, this, "Anonymous parameter." );
+        # endif
     }
     return ptr->value();
-    # endif
 }
 
 # endif

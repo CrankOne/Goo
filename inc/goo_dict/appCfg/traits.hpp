@@ -136,13 +136,14 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
 
         /// Returns a parameter entry by given path expression (const).
         virtual const FeaturedBase & operator[]( const std::string & path ) const {
-            return operator[]( utils::dpath( path ).front() );
+            std::vector<char> namecache;
+            return operator[]( utils::dpath( path, namecache ).front() );
         }
 
         /// Returns a parameter entry by given path expression (mutable).
         virtual FeaturedBase & operator[]( const std::string & path ) {
-            const auto * cThis = this;
-            return const_cast<FeaturedBase &>(cThis->operator[](path));
+            std::vector<char> namecache;
+            return operator[]( utils::dpath( path, namecache ).front() );
         }
 
         /// Returns a parameter entry by given path (const).
@@ -156,13 +157,33 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
                 return subsection( dp.id.name )[*dp.next];
             }
             // that's a terminating path token:
+            # ifdef NDEBUG
             return static_cast<const Subsection *>(this)->entry(dp.id.name);
+            # else
+            auto downCastedPtr = dynamic_cast<const Subsection *>(this);
+            assert( downCastedPtr );  // failed, indicates broken inheritance
+            return downCastedPtr->entry(dp.id.name);
+            # endif
         }
 
         /// Returns a parameter entry by given path (const).
         virtual FeaturedBase & operator[]( const utils::DictPath & dp ) {
-            const auto * cThis = this;
-            return const_cast<FeaturedBase &>(cThis->operator[](dp));
+            if( dp.isIndex ) {
+                emraise( badParameter, "Current path token is an integer index."
+                    " Unable to dereference it within application configuration"
+                    " context." );
+            }
+            if( dp.next ) {
+                return subsection( dp.id.name )[*dp.next];
+            }
+            // that's a terminating path token:
+            # ifdef NDEBUG
+            return static_cast<Subsection *>(this)->entry(dp.id.name);
+            # else
+            auto downCastedPtr = dynamic_cast<Subsection *>(this);
+            assert( downCastedPtr );  // failed, indicates broken inheritance
+            return downCastedPtr->entry(dp.id.name);
+            # endif
         }
     };
 };

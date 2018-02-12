@@ -50,7 +50,7 @@ public:
 /// The "requires argument"=false state is usually possible for command-line
 /// arguments --- POSIX standard defines such flags. The "is required" flag
 /// makes sense only with composition of the IsSet() aspect.
-struct Required {  // TODO: rename this aspect to "ProgrammOption"
+struct Required : public BoundMixin {  // TODO: rename this aspect to "ProgrammOption"
 private:
     bool _isRequired
        , _requiresValue
@@ -59,7 +59,9 @@ private:
 protected:
     /// Virtual function. Does nothing by default, but may be overriden by
     /// subclass (see ImplicitValue).
-    virtual void _V_set_implicit_value() {}
+    virtual void _V_assign_implicit_value() {
+        wprintf( "Default _V_set_implicit_value() has no side effects.\n" );
+    }
 public:
     explicit Required( bool v=true
                      , bool requiresValue=true
@@ -74,6 +76,7 @@ public:
     virtual void set_requires_argument( bool v ) { _requiresValue = v; }
     bool may_be_set_implicitly() const { return _mayBeImplicit; }
     virtual void set_being_implicit( bool v ) { _mayBeImplicit = v; }
+    virtual void assign_implicit_value() { _V_assign_implicit_value(); }
 };
 
 /// Defines "is set" flag for parameters.
@@ -176,15 +179,18 @@ public:
     explicit TStringConvertible(const Self &o) : TValue<Value>(o) {}
 };
 
-template<typename ValueT>
+template< typename ValueT
+        , typename ... AspectTs>
 class ImplicitValue : public Required {
+public:
+    typedef TValue<ValueT, AspectTs...> TypedSelf;
 private:
     ValueT _implicitValue;
 protected:
-    virtual void _V_set_implicit_value() override {
-        _TODO_
-        /// TODO: aspects?
-        //static_cast<TValue<ValueT>*>(this)->value(_implicitValue);
+    virtual void _V_assign_implicit_value() override {
+        static_cast<TypedSelf&>(BoundMixin::target())
+                .value(_implicitValue);
+        //static_cast<TValue<ValueT, AspectTs...>*>(this)->value(_implicitValue);
     }
 public:
     ImplicitValue( bool isRequired=true

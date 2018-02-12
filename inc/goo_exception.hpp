@@ -27,6 +27,8 @@
 # include "goo_ansi_escseq.h"
 # include "goo_utility.h"
 
+# include <string.h>
+
 # ifdef __cplusplus
 #   include <string>
 #   include <exception>

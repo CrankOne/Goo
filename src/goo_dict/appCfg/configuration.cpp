@@ -82,12 +82,14 @@ ConfDictCache::ConfDictCache( dict::Configuration & cfg
         if( ra->requires_argument() ) {
             _shorts.push_back( ':' );
         }
-        if( ra->may_be_set_implicitly() ) {
+        if( ra->requires_argument() && ra->may_be_set_implicitly() ) {
+            # if 0  // valid case
             if( ! ra->requires_argument() ) {
                 emraise( badState, "Option '%c' has contradictory flags:"
-                    " it may be implicitly set, but does not expects an argument"
+                    " it may be implicitly set, but does not expect an argument"
                     " value.", c );
             }
+            # endif
             // Two colons mean an option takes an option argument according to
             // getopt's docs.
             _shorts.push_back(':');
@@ -119,7 +121,7 @@ ConfDictCache::_cache_long_options( const std::string & nameprefix
             hasArg = required_argument;
         }
         if( ar->may_be_set_implicitly() ) {
-            assert( ar->requires_argument() );
+            //assert( ar->requires_argument() );
             hasArg = optional_argument;
         }
         auto * acs = pE.second->aspect_cast<dict::aspects::CharShortcut>();
@@ -186,10 +188,10 @@ set_app_conf( dict::Configuration & cfg
                 continue;
             }
             *logStreamPtr << std::string(8, ' ') << loE.name << ":" << std::endl;
-            *logStreamPtr << std::string(12, ' ') << "argument: \""
-                     << (required_argument == loE.val ? "required" :
-                         (optional_argument == loE.val ? "optional" : "<none-or-shortcut>") )
-                     << "\"" << std::endl
+            *logStreamPtr << std::string(12, ' ') << "argument: "
+                     << (required_argument == loE.has_arg ? "required" :
+                        (optional_argument == loE.has_arg ? "optional" : "none") )
+                     << std::endl
                      << std::string(12, ' ') << "getoptVal: "
                      << std::hex << std::showbase << loE.val
                      << std::endl;
@@ -214,10 +216,14 @@ set_app_conf( dict::Configuration & cfg
         if( isalnum(c) ) {
             if( 'h' == c && cachePtr->default_help_interface() ) {
                 if( !optarg || !strnlen(optarg, USHRT_MAX) ) {
+                    log_extraction( "Got help reference option without argument,"
+                        " abort extraction now." );
                     // No argument given --- print default usage text.
                     std::cout << compose_reference_text_for( cfg );
                     return -1;
                 } else {
+                    log_extraction( "Got help reference option with argument \"%s\","
+                        " abort extraction now.", optarg );
                     // Section name given --- print subsection reference.
                     std::cout << compose_reference_text_for(cfg, optarg );
                     return -1;
@@ -230,8 +236,15 @@ set_app_conf( dict::Configuration & cfg
                        , c, c );
             }
             pPtr = pIt->second;
+            log_extraction( "Recognized short option '%c' as parameter %p.\n"
+                         , c, pPtr );
         } else if( 0 == c ) {
             pPtr = cachePtr->current_long_parameter( optIndex );
+            log_extraction( "Recognized long parameter %p ( optindex=%d, \"%s\")...\n"
+                         , pPtr
+                         , (int) optIndex
+                         , cachePtr->longs().data()[optIndex].name
+                         );
         } else if( '?' == c ) {
             if( optopt ) {
                 emraise( parserFailure, "Command-line argument is not "
@@ -260,9 +273,9 @@ set_app_conf( dict::Configuration & cfg
         auto ar = pPtr->aspect_cast<dict::aspects::Required>();
         assert( !!ar );
         if( ar->requires_argument() ) {
-            log_extraction( "c=%c (0x%02x) considered as a (short)"
-                           " parameter with argument \"%s\".\n"
-                         , c, c, optarg );
+            //log_extraction( "c=%c (0x%02x) considered as a (short)"
+            //               " parameter with argument \"%s\".\n"
+            //             , c, c, optarg );
             if( strnlen(optarg, USHRT_MAX) > 1
                 && '-' == optarg[0]
                 && (!isdigit(optarg[1])) ) {
@@ -275,6 +288,9 @@ set_app_conf( dict::Configuration & cfg
                         "option: \"%s\".", c, optarg);
             }
             set_app_cfg_parameter( *pPtr, optarg, logStreamPtr );
+        } else {
+            ar->assign_implicit_value();
+            log_extraction( "    parameter %p has been implicitly set.\n", pPtr );
         }
 
         optIndex = -1;
@@ -305,7 +321,8 @@ void set_app_cfg_parameter( dict::Configuration::FeaturedBase & v
     assert( scnv );
     scnv->parse_argument( strExpr );
     if( logPtr ) {
-        *logPtr << (void *) &v << " set to " << scnv->to_string() << std::endl;
+        *logPtr << "    " << (void *) &v << " set to "
+                << scnv->to_string() << std::endl;
     }
 }
 
