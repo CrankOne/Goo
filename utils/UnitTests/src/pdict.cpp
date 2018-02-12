@@ -12,7 +12,7 @@
 
 //# define NO_BASIC_SPLITTING_TEST
 //# define NO_BASIC_PARSING_TEST
-# define NO_BASIC_ERRORS_TEST
+//# define NO_BASIC_ERRORS_TEST
 # define NO_ARRAY_PARAMETERS_TEST
 # define NO_CONSISTENCY_TESTS
 # define NO_SUBSECTION_PARAMETER_RETRIEVING_TEST
@@ -42,7 +42,7 @@ static void expected_argv_parsing_error(
             goo::dict::Configuration conf,
             std::ostream & mainOutStream ) {
     char ** argv;
-    int argc = goo::dict::Configuration::tokenize_string( str, argv );
+    Size argc = goo_shell_tokenize_string( str, &argv );
     std::stringstream subStream;
     try {
         subStream << "Input arguments after tokenization:" << std::endl;
@@ -50,7 +50,8 @@ static void expected_argv_parsing_error(
             subStream << "  argv[" << (int) i << "]=\""
                       << argv[i] << "\"" << std::endl;
         }
-        conf.extract( argc, argv, true, &subStream );
+        goo::utils::set_app_conf( conf, argc, argv, nullptr, &subStream );
+        //conf.extract( argc, argv, true, &subStream );
         // The code from here to catch() part has not be evaluated unless
         // expected exception was not triggered:
         mainOutStream << "Failed case extraction log dump {" << std::endl
@@ -76,7 +77,7 @@ static void expected_argv_parsing_error(
                 get_errcode_description(e.code()) );
         }
     }
-    goo::dict::Configuration::free_tokens( argc, argv );
+    goo_free_shell_tokens( argc, argv );
 }
 # endif  // NO_BASIC_ERRORS_TEST
 
@@ -176,7 +177,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         char ** argv;
         os << "For given source string: " << ex1 << ":" << std::endl;
         Size argc = goo_shell_tokenize_string( ex1, &argv );
-        for( int n = 0; n < argc; ++n ) {
+        for( Size n = 0; n < argc; ++n ) {
             os << argv[n] << "|";
         }
         os << std::endl;
@@ -184,10 +185,6 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         utils::set_app_conf( conf, argc, argv, nullptr, &os );
 
         goo_free_shell_tokens( argc, argv );
-
-        os << "*** \"quiet\" addr: " << (void *) &(conf["quiet"]) << std::endl  // XXX
-           << "*** 'q' addr: " << (void *) &(conf["q"]) << std::endl
-           ;
 
         // check options are really set to expected values
         _ASSERT(  conf["1"].as<bool>(),         "Option -1 set wrong." );
@@ -226,7 +223,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # ifndef NO_BASIC_ERRORS_TEST
     {
         os << "Basic parsing errors checks: {" << std::endl;
-        goo::dict::Configuration conf( "theApplication2", "Testing parameter set #1." );
+        goo::dict::Configuration conf( "Testing parameter set #1." );
 
         conf.insertion_proxy()
             .flag(    '1',  "A logic flag that may be set." )

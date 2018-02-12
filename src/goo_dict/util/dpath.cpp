@@ -97,7 +97,7 @@ dpath( const std::string & path
     for( size_t nToksPool = (1 << _Goo_m_PATH_TOKENS_START_2PWR)
        ; nToksPool < (1 << _Goo_m_MAX_PATH_TOKENS_2PWR)
        ; nToksPool <<= 1 ) {
-        strncpy(mtPath.data(), path.c_str(), toksPool.size() + 1);
+        strncpy(mtPath.data(), path.c_str(), path.size() + 1);
         toksPool.clear();
         toksPool.resize( nToksPool );
         size_t nToks = parse_dict_path( mtPath.data(), toksPool.data(), toksPool.size() );
