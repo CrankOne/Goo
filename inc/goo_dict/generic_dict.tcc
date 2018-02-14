@@ -132,6 +132,8 @@ public:
     /// granted. It has to become a base class for particular insertion proxies
     /// implementing various entry-construction interfaces.
     typedef GenericDictionary<KeyT, AspectTs...> Self;
+    typedef typename OwnTraits::template IndexBy<KeyT>::Aspect OwnAspect;
+
     template<template <class, class...> class ParameterT> struct BaseInsertionProxy {
         friend void Traits<AspectTs...>::template IndexBy<KeyT>::copy_dict_entry(
                         typename OwnTraits::template IndexBy<KeyT>::DictValue::Value::iterator it
@@ -187,9 +189,10 @@ public:
     GenericDictionary( TT ownAspectsInitializer
                      , CtrArgTs ... ctrArgs ) \
             : DuplicableParent( ownAspectsInitializer )
-            , Traits<AspectTs...>::template IndexBy<KeyT>::Aspect( ctrArgs ... ) {}
+            , OwnAspect( ctrArgs ... ) {}
 
-    GenericDictionary( const Self & orig ) : DuplicableParent(orig) {
+    GenericDictionary( const Self & orig ) : DuplicableParent(orig)
+                                           , OwnAspect(orig, this) {
         // All the contained entries reference the original's memory at this
         // point. We have to produce own copies here.
         // DuplicableParent's parent class refers to 'DictValue' type that

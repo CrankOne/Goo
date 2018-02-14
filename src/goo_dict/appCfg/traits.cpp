@@ -30,15 +30,24 @@ namespace dict {
 
 InsertionProxy<std::string>
 Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::insertion_proxy() {
-    return InsertionProxy<std::string>(dynamic_cast<InsertionProxy<std::string>::Subsection &>(*this));
+    return InsertionProxy<std::string>(
+            dynamic_cast<InsertionProxy<std::string>::Subsection &>(*this) );
 }
 
-/*
-const Traits<_Goo_m_VART_LIST_APP_CONF>::FeaturedBase *
-Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::parameter_ptr( const char * p ) const {
-    return static_cast<const Dictionary &>(*this).entry_ptr( p );
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::Aspect( const Aspect & o
+                                                                       , Dictionary * /*this_*/ ) {
+    // iterate among subsections and copy them recursively.
+    auto ip = insertion_proxy();
+    for( auto it = o.subsections().begin()
+            ; o.subsections().end() != it
+            ; ++it ) {
+        // TODO: use this_'s allocator here:
+        auto subsectCopy = goo::clone_as< iAbstractValue
+                                        , Dictionary
+                                        , Dictionary>( it->second );
+        ip.emplace_subsection_copy( it->first, subsectCopy );
+    }
 }
-*/
 
 void
 Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::copy_dict_entry(

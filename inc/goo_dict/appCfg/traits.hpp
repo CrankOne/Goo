@@ -136,6 +136,10 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
                                             , GenericDictionary<std::string, _Goo_m_VART_LIST_APP_CONF> > {
         friend class InsertionProxy<std::string>;
 
+        Aspect() = default;
+
+        Aspect( const Aspect &, Dictionary * );
+
         /// Constructs and returns insertion proxy referencing current
         /// dictionary instance. Defined in insertion_proxy.tcc
         virtual InsertionProxy<std::string> insertion_proxy();
@@ -197,15 +201,6 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
 
 template<>
 struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char> {
-    /// Char-indexed dictionary within the application configuration does not
-    /// contain any sub-sections (within it's aspect).
-    struct Aspect {
-        friend class InsertionProxy<char>;
-
-        /// Constructs an auxilliary insertion proxy object, specific for the
-        /// application configuration dictionaries.
-        virtual InsertionProxy<char> insertion_proxy();
-    };
     typedef GenericDictionary<char, _Goo_m_VART_LIST_APP_CONF> Dictionary;
     /// The char-index has no description aspect as well.
     typedef TValue< Hash<char, iBaseValue<_Goo_m_VART_LIST_APP_CONF>*> > DictValue;
@@ -216,6 +211,22 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char> {
     /// to.
     static void copy_dict_entry( typename DictValue::Value::iterator
                                , Dictionary * );
+
+    /// Char-indexed dictionary within the application configuration does not
+    /// contain any sub-sections (within it's aspect).
+    struct Aspect {
+        friend class InsertionProxy<char>;
+
+        /// Constructs an auxilliary insertion proxy object, specific for the
+        /// application configuration dictionaries.
+        virtual InsertionProxy<char> insertion_proxy();
+
+        /// Copies nothing.
+        Aspect(const Aspect & orig, Dictionary *) {}
+
+        /// Trivial ctr.
+        Aspect() = default;
+    };
 };
 
 typedef Traits<_Goo_m_VART_LIST_APP_CONF> AppConfTraits;

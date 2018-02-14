@@ -189,6 +189,8 @@ public:
         return *this;
     }
 
+    Self & emplace_subsection_copy( const std::string &, Subsection * );
+
     /// Inserts the new parameters section with given name and description.
     Self & bgn_sect( const std::string &, const std::string & );
 

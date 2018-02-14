@@ -50,7 +50,11 @@ Configuration::Configuration( const Configuration & orig ) \
         : DuplicableParent( orig )
         , _shortcutsIndex( std::make_tuple<>() )
         , _positionalArgument("", nullptr) {
-    _TODO_ // TODO: fill the char index
+    // Upon initial construction procedures are done within the dictionary and
+    // aspect copy ctrs, the all the parameters have to be correctly copied
+    // except the ones related to configuration itself, i.e. the index of
+    // shortcuts, positional and forwarded arguments.
+    _TODO_  // TODO
 }
 
 Configuration::~Configuration() {
