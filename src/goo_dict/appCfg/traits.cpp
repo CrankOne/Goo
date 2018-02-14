@@ -40,6 +40,16 @@ Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::parameter_ptr( 
 }
 */
 
+void
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::copy_dict_entry(
+                    typename DictValue::Value::iterator it
+                  , Dictionary * /*dct*/ ) {
+    // TODO: use allocator submitted by dict instance here
+    //Dictionary::BaseInsertionProxy<InsertableParameter> ip( *dct );
+    it->second = goo::clone_as< iAbstractValue
+                              , FeaturedBase
+                              , FeaturedBase >( it->second );
+}
 
 # if 0
 template<typename ... AspectTs>
@@ -66,6 +76,17 @@ const TValue<AspectTs...> & retrieve_entry_by_path(
 InsertionProxy<char>
 Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char>::Aspect::insertion_proxy() {
     return InsertionProxy<char>(dynamic_cast<GenericDictionary<char, _Goo_m_VART_LIST_APP_CONF> &>(*this));
+}
+
+void
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char>::copy_dict_entry(
+                    typename DictValue::Value::iterator it
+                  , Dictionary * dct ) {
+    // TODO: use allocator submitted by dict instance here
+    //Dictionary::BaseInsertionProxy<InsertableParameter> ip( *dct );
+    it->second = goo::clone_as< iAbstractValue
+                              , FeaturedBase
+                              , FeaturedBase >( it->second );
 }
 
 }  // namespace dict

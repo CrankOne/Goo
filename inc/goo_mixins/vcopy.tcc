@@ -149,9 +149,9 @@ protected:
         return typeid( SelfTypeT );
     }
 
-    /// Forces downcast to avoid stack overflow araised due to
-    /// default behaviour (bug?).
-    iDuplicable( const SelfTypeT & self ) : Parent( self ) {}
+    /// Forces upncast to avoid stack overflow appearing due to
+    /// default behaviour.
+    iDuplicable( const SelfTypeT & self ) : ParentT( static_cast<const ParentT &>(self) ) {}
 
     /// Invoces of copy constructor.
     virtual BaseTypeT * _V_clone() const override {

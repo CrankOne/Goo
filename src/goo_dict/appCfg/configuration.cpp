@@ -44,7 +44,7 @@ namespace dict {
 Configuration::Configuration( const std::string & descr_) \
         : DuplicableParent( std::make_tuple(new aspects::Description(descr_) ) )
         , _shortcutsIndex( std::make_tuple<>() )
-        , _positionalArgument("", nullptr) {}  // TODO< GenericDictionary<char, ...> has all entries aspects within
+        , _positionalArgument("", nullptr) {}
 
 Configuration::Configuration( const Configuration & orig ) \
         : DuplicableParent( orig )
@@ -53,7 +53,9 @@ Configuration::Configuration( const Configuration & orig ) \
     _TODO_ // TODO: fill the char index
 }
 
-Configuration::~Configuration() {}
+Configuration::~Configuration() {
+    _shortcutsIndex.drop_entries();
+}
 
 void
 Configuration::_add_shortcut( char c, FeaturedBase * p ) {

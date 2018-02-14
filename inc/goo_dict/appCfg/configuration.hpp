@@ -34,7 +34,7 @@ struct option;
 
 namespace goo {
 namespace utils {
-class ConfDictCache;
+struct ConfDictCache;
 }
 namespace dict {
 
@@ -60,13 +60,12 @@ namespace dict {
 class Configuration : public mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
                                                 , Configuration
                                                 , AppConfNameIndex> {
-    friend class ::goo::utils::ConfDictCache;
+    friend struct ::goo::utils::ConfDictCache;
     friend class ::goo::dict::InsertionProxy<std::string>;
 public:
     typedef mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
                                , Configuration
-                               , AppConfNameIndex
-                               > DuplicableParent;
+                               , AppConfNameIndex> DuplicableParent;
     typedef GenericDictionary< char, _Goo_m_VART_LIST_APP_CONF > ShortcutsIndex;
     /// The logic parameter may be defined as option without a value (flag)
     /// according to POSIX convention, thus this type has to be treated

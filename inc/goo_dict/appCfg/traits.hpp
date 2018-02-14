@@ -114,7 +114,6 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF> {
 };
 
 template<>
-template<>
 struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
     typedef GenericDictionary< std::string
                              , _Goo_m_VART_LIST_APP_CONF > Dictionary;
@@ -122,6 +121,13 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
     typedef TValue< Hash< std::string
                         , iBaseValue<_Goo_m_VART_LIST_APP_CONF>*>
                   , aspects::Description > DictValue;
+
+    /// In-place entry copying procedure. Takes the iterator to an existing
+    /// mutable entry and pointer to owning dictionary. Copies the entry using
+    /// dictionaries allocator overwriting the object the given iterator points
+    /// to.
+    static void copy_dict_entry( typename DictValue::Value::iterator
+                               , Dictionary * );
 
     /// Aspect defines same-indexed subsections within the current
     /// dictionary.
@@ -190,7 +196,6 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
 
 
 template<>
-template<>
 struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char> {
     /// Char-indexed dictionary within the application configuration does not
     /// contain any sub-sections (within it's aspect).
@@ -204,6 +209,13 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char> {
     typedef GenericDictionary<char, _Goo_m_VART_LIST_APP_CONF> Dictionary;
     /// The char-index has no description aspect as well.
     typedef TValue< Hash<char, iBaseValue<_Goo_m_VART_LIST_APP_CONF>*> > DictValue;
+
+    /// In-place entry copying procedure. Takes the iterator to an existing
+    /// mutable entry and pointer to owning dictionary. Copies the entry using
+    /// dictionaries allocator overwriting the object the given iterator points
+    /// to.
+    static void copy_dict_entry( typename DictValue::Value::iterator
+                               , Dictionary * );
 };
 
 typedef Traits<_Goo_m_VART_LIST_APP_CONF> AppConfTraits;

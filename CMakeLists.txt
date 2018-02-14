@@ -77,10 +77,6 @@ push_option( ENABLE_GDS
         "Goo Declarative Semantics."
         OFF )
 #\option
-push_option( ENABLE_ALLOCATORS
-        "Goo's own allocators subsystem."
-        OFF )
-#\option
 push_option( ENABLE_TENSORS
         "Tensorial algebra support template classes."
         OFF )
@@ -110,6 +106,7 @@ find_package( BZip2 )
 find_package( Git   )
 find_program( GOO_GDB_EXEC      gdb     )
 find_program( GOO_GCORE_EXEC    gcore   )
+find_package( foonathan_memory 0.6 )
 if( EM_STACK_UNWINDING )
     find_package( BFD REQUIRED )
     find_package( LibIberty REQUIRED )
@@ -129,6 +126,10 @@ else( GIT_FOUND )
     SET( COMMIT_HASH "<unknown>" )
     SET( GIT_STRING "gitInfo:'unavailable';" )
 endif( GIT_FOUND )
+
+if( foonathan_memory_FOUND )
+    set(FNTHN_ALLOCATORS TRUE)
+endif( foonathan_memory_FOUND )
 
 #
 # If installation prefix is default, set it to /usr/local
@@ -327,6 +328,9 @@ endif( LZO_FOUND )
 if( BZIP2_FOUND )
     target_link_libraries( ${Goo_LIBRARY} PUBLIC ${BZIP2_LIBRARIES} )
 endif( BZIP2_FOUND )
+if( foonathan_memory_FOUND )
+    target_link_libraries( ${Goo_LIBRARY} PUBLIC foonathan_memory )
+endif( foonathan_memory_FOUND )
 
 if( EM_STACK_UNWINDING )
     if( BFD_FOUND )

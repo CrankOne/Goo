@@ -29,6 +29,10 @@
 
 # include <sstream>
 
+# ifdef FNTHN_ALLOCATORS
+    // TODO: use https://github.com/foonathan/memory here
+# endif
+
 namespace goo {
 namespace dict {
 
@@ -48,7 +52,7 @@ template< typename KeyT
  *
  * The goo::dict traits are defined for every unique set of simple structures
  * called "aspects". By the language limitation, we can not define the set of
- * aspects as an actual "set" (i.e. unordered)
+ * aspects as an actual "set" (i.e. unordered).
  * */
 template< typename ... AspectTs >
 struct Traits {
@@ -76,6 +80,19 @@ struct Traits {
         typedef TValue< Hash<KeyT, FeaturedBase * >
                       , AspectTs ... // < this pack
                       > DictValue;
+
+        /// In-place entry copying procedure. Takes the iterator to an existing
+        /// mutable entry and pointer to owning dictionary. Copies the entry using
+        /// dictionaries allocator overwriting the object the given iterator points
+        /// to.
+        static void copy_dict_entry( typename DictValue::Value::iterator it
+                                   , Dictionary * /*dct*/ ) {
+            // TODO: use allocator submitted by dict instance here
+            //Dictionary::template BaseInsertionProxy<InsertableParameter> ip( *dct );
+            it->second = goo::clone_as< iAbstractValue
+                                      , FeaturedBase
+                                      , FeaturedBase >( it->second );
+        }
     };
 };
 
@@ -98,6 +115,9 @@ struct KeyTraits {
  * however to make the dictionary index other dictionaries as well (via the
  * template specializations within Traits struct). In this case more complex
  * structure shall be introduced via the IndexOf<KeyT>::Aspect mixin.
+ *
+ * The GenericDictionary also "owns" the physical memory of the created entries
+ * allowing the virtual (copying) ctor to perform its operations safely.
  */
 template< typename KeyT
         , typename ... AspectTs>
@@ -113,6 +133,9 @@ public:
     /// implementing various entry-construction interfaces.
     typedef GenericDictionary<KeyT, AspectTs...> Self;
     template<template <class, class...> class ParameterT> struct BaseInsertionProxy {
+        friend void Traits<AspectTs...>::template IndexBy<KeyT>::copy_dict_entry(
+                        typename OwnTraits::template IndexBy<KeyT>::DictValue::Value::iterator it
+                      , Self * dct );
     public:
         template<typename T> using P = ParameterT<T, AspectTs...>;
     private:
@@ -166,10 +189,28 @@ public:
             : DuplicableParent( ownAspectsInitializer )
             , Traits<AspectTs...>::template IndexBy<KeyT>::Aspect( ctrArgs ... ) {}
 
+    GenericDictionary( const Self & orig ) : DuplicableParent(orig) {
+        // All the contained entries reference the original's memory at this
+        // point. We have to produce own copies here.
+        // DuplicableParent's parent class refers to 'DictValue' type that
+        // is defined by traits particular type.
+        for( auto it = this->_mutable_value().begin()
+           ; this->_mutable_value().end() != it; ++it ) {
+            OwnTraits::template IndexBy<KeyT>::copy_dict_entry( it, this );
+        }
+    }
+
     virtual ~GenericDictionary() {
         for( auto p : this->_mutable_value() ) {
-            //_free( p.second );  // TODO !!!
+            _free( p.second );
         }
+    }
+
+    /// Aux method purging entries without actual deletion of the value
+    /// instances. Used to prevent the destructor of wiping out the shared
+    /// entries.
+    void drop_entries() {
+        this->_mutable_value().clear();
     }
 
     // First level getters --- provides basic access to entries.

@@ -239,10 +239,11 @@
 namespace goo {
 namespace em {
 
-# ifndef ENABLE_ALLOCATORS
+# ifndef FNTHN_ALLOCATORS
 typedef std::string String;
 # else
-# error "Allocators subsystem is supported, but actual emString implementation is still unimplemented."
+//#   warning "Allocators subsystem is supported, but actual emString implementation is still unimplemented."
+typedef std::string String;  // TODO
 # endif
 
 # ifdef EM_STACK_UNWINDING
