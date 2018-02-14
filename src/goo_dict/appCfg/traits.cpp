@@ -35,9 +35,8 @@ Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::insertion_proxy
 }
 
 Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::Aspect( const Aspect & o
-                                                                       , Dictionary * /*this_*/ ) {
+                                                                    , Dictionary * this_ ) {
     // iterate among subsections and copy them recursively.
-    auto ip = insertion_proxy();
     for( auto it = o.subsections().begin()
             ; o.subsections().end() != it
             ; ++it ) {
@@ -45,7 +44,7 @@ Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::Aspect( const A
         auto subsectCopy = goo::clone_as< iAbstractValue
                                         , Dictionary
                                         , Dictionary>( it->second );
-        ip.emplace_subsection_copy( it->first, subsectCopy );
+        InsertionProxy<std::string>::emplace_subsection_copy( *this_, it->first, subsectCopy );
     }
 }
 

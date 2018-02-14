@@ -55,20 +55,20 @@ InsertionProxy<std::string>::Self &
 InsertionProxy<std::string>::bgn_sect( const std::string & name
                                      , const std::string & description ) {
     auto sPtr = _alloc<AppConfNameIndex>( std::make_tuple( _alloc<aspects::Description>(description) ) );
-    emplace_subsection_copy( name, sPtr );
+    emplace_subsection_copy( *_stack.top().second, name, sPtr );
     _stack.push( std::pair<std::string, Subsection *>(name, sPtr) );
     return *this;
 }
 
-InsertionProxy<std::string>::Self &
-InsertionProxy<std::string>::emplace_subsection_copy(const std::string & name
-                                                    , Subsection * sPtr) {
-    auto ir = _stack.top().second->emplace( name, sPtr );
+void
+InsertionProxy<std::string>::emplace_subsection_copy( Subsection & self
+                                                  , const std::string & name
+                                                  , Subsection * sPtr) {
+    auto ir = self.emplace( name, sPtr );
     if( !ir.second ) {
         emraise( nonUniq, "Unable to insert new section named \"%s\" since"
             " there is one with same name (%p).", name.c_str(), ir.first->second );
     }
-    return *this;
 }
 
 InsertionProxy<std::string>::Self &

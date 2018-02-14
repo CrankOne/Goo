@@ -85,6 +85,7 @@ private:
 protected:
     void _add_shortcut( char, FeaturedBase * p );
     FeaturedBase * positional_argument_ptr() { return _positionalArgument.second; }
+    const FeaturedBase * positional_argument_ptr() const { return _positionalArgument.second; }
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
@@ -104,7 +105,7 @@ public:
         return _shortcutsIndex;
     }
 
-    /// Explicit copy creation.
+    // Explicit copy creation.
     //Configuration copy() const { return *this; }
 
     /// Makes configuration able to acquire single (only) positional argument.
@@ -201,13 +202,17 @@ public:
 namespace utils {
 
 struct ConfDictCache {
+    // ...
+public:
+    void cache_long_options( const std::string & nameprefix
+                           , const dict::AppConfNameIndex & d
+                           , ConfDictCache & self );
+};
+
+struct getopt_ConfDictCache : public ConfDictCache {
 public:
     /// This two arrays keep the common prefixes for getopt() shortcuts string.
     static const char defaultPrefix[8];
-protected:
-    void _cache_long_options( const std::string & nameprefix
-                            , const dict::AppConfNameIndex & d
-                            , ConfDictCache & self );
 private:
     bool _dftHelpIFace;
     std::string _shorts;
@@ -217,8 +222,8 @@ private:
     /// This variable where option identifiers will be loaded into.
     int _longOptKey;
 public:
-    explicit ConfDictCache( dict::Configuration & cfg
-                          , bool dftHelpIFace=true );
+    explicit getopt_ConfDictCache( dict::Configuration & cfg
+                                 , bool dftHelpIFace=true );
 
     const std::string & shorts() const { return _shorts; }
     const std::vector<struct ::option> & longs() const { return _longs; };

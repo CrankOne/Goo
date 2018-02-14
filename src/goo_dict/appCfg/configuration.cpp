@@ -54,7 +54,9 @@ Configuration::Configuration( const Configuration & orig ) \
     // aspect copy ctrs, the all the parameters have to be correctly copied
     // except the ones related to configuration itself, i.e. the index of
     // shortcuts, positional and forwarded arguments.
-    _TODO_  // TODO
+    auto ip = _shortcutsIndex.insertion_proxy();
+    //goo::utils::ConfDictCache cc( orig );  // non-const?
+    _TODO_
 }
 
 Configuration::~Configuration() {
@@ -74,52 +76,12 @@ Configuration::_add_shortcut( char c, FeaturedBase * p ) {
 
 namespace utils {
 
-const char ConfDictCache::defaultPrefix[8] = "-:";  // "-:h::"
-
-ConfDictCache::ConfDictCache( dict::Configuration & cfg
-                           , bool dftHelpIFace ) : _dftHelpIFace(dftHelpIFace)
-                                                 , _posArgPtr(cfg.positional_argument_ptr()) {
-    // Fill short options string ("optstring" arg for getopt()
-    _shorts = defaultPrefix;
-    for( auto & sRef : cfg.short_opts().value() ) {
-        char c = sRef.first;
-        assert( 'W' != c );
-        _shorts.push_back(c);
-        auto ra = sRef.second->aspect_cast<dict::aspects::Required>();
-        assert( !! ra );  // must be excluded upon insertion into shortcuts dict in Configuration
-        if( ra->requires_argument() ) {
-            _shorts.push_back( ':' );
-        }
-        if( ra->requires_argument() && ra->may_be_set_implicitly() ) {
-            # if 0  // valid case
-            if( ! ra->requires_argument() ) {
-                emraise( badState, "Option '%c' has contradictory flags:"
-                    " it may be implicitly set, but does not expect an argument"
-                    " value.", c );
-            }
-            # endif
-            // Two colons mean an option takes an option argument according to
-            // getopt's docs.
-            _shorts.push_back(':');
-        }
-    }
-    if( dftHelpIFace ) {
-        _shorts += "h::";
-    }
-    // Form long options cache recursively.
-    _cache_long_options( "", cfg, *this );
-    if( dftHelpIFace ) {
-        struct ::option helpO = { "help", optional_argument, NULL, 'h' };
-        _longs.push_back( helpO );
-    }
-    struct ::option sentinelO = { NULL, 0, NULL, 0 };
-    _longs.push_back( sentinelO );
-}
+const char getopt_ConfDictCache::defaultPrefix[8] = "-:";  // "-:h::"
 
 void
-ConfDictCache::_cache_long_options( const std::string & nameprefix
-                                 , const dict::AppConfNameIndex & D
-                                 , ConfDictCache & self ) {
+ConfDictCache::cache_long_options( const std::string & nameprefix
+                                , const dict::AppConfNameIndex & D
+                                , ConfDictCache & self ) {
     // Fill from this section
     for( const auto & pE : D.value() ) {
         auto * ar = pE.second->aspect_cast<dict::aspects::Required>();
@@ -151,19 +113,59 @@ ConfDictCache::_cache_long_options( const std::string & nameprefix
     // Recursive fill from subsections
     for( auto it = D.subsections().begin()
        ; D.subsections().end() != it; ++it ) {
-        _cache_long_options( nameprefix + "." + it->first
+        cache_long_options( nameprefix + "." + it->first
                            , *(it->second)
                            , self );
     }
 }
 
+getopt_ConfDictCache::getopt_ConfDictCache( dict::Configuration & cfg
+                           , bool dftHelpIFace ) : _dftHelpIFace(dftHelpIFace)
+                                                 , _posArgPtr(cfg.positional_argument_ptr()) {
+    // Fill short options string ("optstring" arg for getopt()
+    _shorts = defaultPrefix;
+    for( auto & sRef : cfg.short_opts().value() ) {
+        char c = sRef.first;
+        assert( 'W' != c );
+        _shorts.push_back(c);
+        auto ra = sRef.second->aspect_cast<dict::aspects::Required>();
+        assert( !! ra );  // must be excluded upon insertion into shortcuts dict in Configuration
+        if( ra->requires_argument() ) {
+            _shorts.push_back( ':' );
+        }
+        if( ra->requires_argument() && ra->may_be_set_implicitly() ) {
+            # if 0  // valid case
+            if( ! ra->requires_argument() ) {
+                emraise( badState, "Option '%c' has contradictory flags:"
+                    " it may be implicitly set, but does not expect an argument"
+                    " value.", c );
+            }
+            # endif
+            // Two colons mean an option takes an option argument according to
+            // getopt's docs.
+            _shorts.push_back(':');
+        }
+    }
+    if( dftHelpIFace ) {
+        _shorts += "h::";
+    }
+    // Form long options cache recursively.
+    cache_long_options( "", cfg, *this );
+    if( dftHelpIFace ) {
+        struct ::option helpO = { "help", optional_argument, NULL, 'h' };
+        _longs.push_back( helpO );
+    }
+    struct ::option sentinelO = { NULL, 0, NULL, 0 };
+    _longs.push_back( sentinelO );
+}
+
 dict::Configuration::FeaturedBase *
-ConfDictCache::current_long_parameter( int optIndex ) {
+getopt_ConfDictCache::current_long_parameter( int optIndex ) {
     if( -1 == optIndex ) {
         emraise( badState, "`getopt_long()` parser has came to the wrong"
                " state: long option index is not being set.");
     }
-    assert(optIndex < _longs.size());
+    assert(optIndex < (int) _longs.size());
     // ?
     assert( _longOptKey >= UCHAR_MAX );
     auto it = _lRefs.find( _longOptKey );
@@ -175,16 +177,16 @@ int
 set_app_conf( dict::Configuration & cfg
             , int argc
             , char * const * argv
-            , ConfDictCache * cachePtr
+            , getopt_ConfDictCache * cachePtr
             , std::ostream *logStreamPtr ) {
     bool ownCacheStruct = ! cachePtr;
     # define log_extraction( ... ) if( !!logStreamPtr ) { *logStreamPtr << strfmt( __VA_ARGS__ ); }
     ::opterr = 0;  // prevent default `app_name : invalid option -- '%c'' message
     ::optind = 0;  // forces rescan with each parameters vector
     if( ownCacheStruct ) {
-        cachePtr = new ConfDictCache( cfg );
+        cachePtr = new getopt_ConfDictCache( cfg );
     }
-    ConfDictCache & C = *cachePtr;
+    getopt_ConfDictCache & C = *cachePtr;
     if( !! logStreamPtr ) {
         log_extraction( "parserCaches:\n    shortOptions: \"%s\"\n"
                                 "    longOptions:\n",
