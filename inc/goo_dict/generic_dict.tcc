@@ -93,6 +93,22 @@ struct Traits {
                                       , FeaturedBase
                                       , FeaturedBase >( it->second );
         }
+
+        template<typename CallableT>
+        static CallableT each_entry_recursively_revise( CallableT c, Dictionary & d) {
+            d.each_entry_revise( c );
+            // ... in traits, there are the subsections iterating procedures,
+            // depending on their particular assembly.
+            return c;
+        }
+
+        template<typename CallableT>
+        static CallableT each_entry_recursively_read( CallableT c, const Dictionary & d) {
+            d.each_entry_read( c );
+            // ... in traits, there are the subsections iterating procedures,
+            // depending on their particular assembly.
+            return c;
+        }
     };
 };
 
@@ -262,6 +278,32 @@ public:
                    , KeyTraits<KeyT>::to_str(k).c_str() );
         }
         return *ptr;
+    }
+
+    /// Template function performing iterative invocation of callable for each
+    /// entry in current dictionary (mutable). The callable signature must
+    /// accept value type of underlying container (map, or whatever is defined
+    /// by traits).
+    template<typename CallableT>
+    CallableT each_entry_revise( CallableT c ) {
+        for( auto it = this->_mutable_value().begin()
+           ; it != this->_mutable_value().end(); ++it ) {
+            c(*it);
+        }
+        return c;
+    }
+
+    /// Template function performing iterative invocation of callable for each
+    /// entry in current dictionary (const). The callable signature must
+    /// accept value type of underlying container (map, or whatever is defined
+    /// by traits).
+    template<typename CallableT>
+    CallableT each_entry_read( CallableT c ) const {
+        for( auto it = this->value().begin()
+           ; it != this->value().end(); ++it ) {
+            c(*it);
+        }
+        return c;
     }
 };
 

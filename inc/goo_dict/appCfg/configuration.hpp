@@ -201,18 +201,24 @@ public:
 
 namespace utils {
 
-struct ConfDictCache {
-    // ...
-public:
+struct IConfDictCache {
     void cache_long_options( const std::string & nameprefix
                            , const dict::AppConfNameIndex & d
-                           , ConfDictCache & self );
+                           , IConfDictCache & self );
+
+    /// Will be called by for_all_options() for each entry.
+    virtual void consider_entry( const std::string & name
+                               , const std::string & nameprefix
+                               , dict::AppConfTraits::FeaturedBase & ) = 0;
 };
 
-struct getopt_ConfDictCache : public ConfDictCache {
+struct getopt_ConfDictCache : public IConfDictCache {
 public:
     /// This two arrays keep the common prefixes for getopt() shortcuts string.
     static const char defaultPrefix[8];
+    virtual void consider_entry( const std::string & name
+                               , const std::string & nameprefix
+                               , dict::AppConfTraits::FeaturedBase & ) override;
 private:
     bool _dftHelpIFace;
     std::string _shorts;

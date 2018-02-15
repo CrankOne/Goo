@@ -85,10 +85,51 @@ struct iSubsections : protected THashT<KeyT, SubsectionT*> {
         const auto * cThis = this;
         return const_cast<Subsection &>(cThis->subsection(name));
     }
+
+    // Traversing methods
+
+    /// Template function performing iterative invocation of callable for each
+    /// subsection entry in current dictionary (mutable). The callable signature
+    /// must accept the iterator argument.
+    template<typename CallableT>
+    CallableT each_subsection_revise( CallableT c ) {
+        for( auto it = THashT<KeyT, SubsectionT*>::begin()
+           ; THashT<KeyT, SubsectionT*>::end() != it ; ++it ) {
+            c( it );
+        }
+    }
+
+    /// Template function performing iterative invocation of callable for each
+    /// subsection entry in current dictionary (mutable). The callable signature
+    /// must accept the iterator argument.
+    template<typename CallableT>
+    CallableT each_subsection_read( CallableT c ) const {
+        for( auto it = THashT<KeyT, SubsectionT*>::begin()
+           ; THashT<KeyT, SubsectionT*>::end() != it ; ++it ) {
+            c( it );
+        }
+    }
+
+    struct RecursiveVisitor {
+        void operator()( THashT<KeyT, SubsectionT*>::iterator it ) {
+            _callable( it );
+        }
+    };
 };
 
-}
-}
-}
+template< typename CallableT
+        , typename KeyT
+        , typename SubsectionT >
+struct RecursiveVisitor {
+    CallableT _callable;
+    RecursiveVisitor( CallableT c ) : _callable(c) {}
+    void operator()() {
+        _callable(it);
+    }
+};
+
+}  // namespace aux
+}  // namespace dict
+}  // namespace goo
 
 #endif  // H_GOO_DICT_SUBSECTIONS_H

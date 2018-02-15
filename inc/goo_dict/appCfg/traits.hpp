@@ -196,6 +196,28 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
             # endif
         }
     };
+
+    template<typename CallableT, typename DictionaryT>
+    struct _local_SubsectionsVisitor {
+        CallableT _callable;
+        void operator()( Hash<std::string, DictionaryT> );
+    };
+
+    template<typename CallableT>
+    static CallableT each_entry_recursively_revise( CallableT c, Dictionary & d) {
+        d.each_entry_revise( c );
+        this->each_subsection_revise( each_entry_recursively_revise );
+        return c;
+    }
+
+    template<typename CallableT>
+    static CallableT each_entry_recursively_read( CallableT c, const Dictionary & d) {
+        d.each_entry_read( c );
+        _TODO_
+        // ... in traits, there are the subsections iterating procedures,
+        // depending on their particular assembly.
+        return c;
+    }
 };
 
 

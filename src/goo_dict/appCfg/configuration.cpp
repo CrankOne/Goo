@@ -79,36 +79,12 @@ namespace utils {
 const char getopt_ConfDictCache::defaultPrefix[8] = "-:";  // "-:h::"
 
 void
-ConfDictCache::cache_long_options( const std::string & nameprefix
+IConfDictCache::cache_long_options( const std::string & nameprefix
                                 , const dict::AppConfNameIndex & D
-                                , ConfDictCache & self ) {
+                                , IConfDictCache & self ) {
     // Fill from this section
     for( const auto & pE : D.value() ) {
-        auto * ar = pE.second->aspect_cast<dict::aspects::Required>();
-        assert(ar);
-        int hasArg = no_argument;
-        if( ar->requires_argument() ) {
-            hasArg = required_argument;
-        }
-        if( ar->may_be_set_implicitly() ) {
-            //assert( ar->requires_argument() );
-            hasArg = optional_argument;
-        }
-        auto * acs = pE.second->aspect_cast<dict::aspects::CharShortcut>();
-        int cshrt = acs->shortcut();
-        if( ! cshrt ) {
-            // Parameter entry has no shortcut and, thus, has to be accessed via
-            // the fully-qualified name only.
-            cshrt = UCHAR_MAX + (int) self._lRefs.size();
-        }
-        struct ::option o = { strdup( (nameprefix + pE.first).c_str() )
-                           , hasArg
-                           , cshrt >= UCHAR_MAX ? &(self._longOptKey) : NULL
-                           , cshrt };
-        self._longs.push_back( o );
-        if( cshrt >= UCHAR_MAX ) {
-            self._lRefs.emplace( cshrt, pE.second );
-        }
+        // ...
     }
     // Recursive fill from subsections
     for( auto it = D.subsections().begin()
@@ -116,6 +92,38 @@ ConfDictCache::cache_long_options( const std::string & nameprefix
         cache_long_options( nameprefix + "." + it->first
                            , *(it->second)
                            , self );
+    }
+}
+
+void
+getopt_ConfDictCache::consider_entry( const std::string & name
+                                    , const std::string & nameprefix
+                                    , dict::AppConfTraits::FeaturedBase & db ) {
+    // ...
+    auto * ar = pE.second->aspect_cast<dict::aspects::Required>();
+    assert(ar);
+    int hasArg = no_argument;
+    if( ar->requires_argument() ) {
+        hasArg = required_argument;
+    }
+    if( ar->may_be_set_implicitly() ) {
+        //assert( ar->requires_argument() );
+        hasArg = optional_argument;
+    }
+    auto * acs = pE.second->aspect_cast<dict::aspects::CharShortcut>();
+    int cshrt = acs->shortcut();
+    if( ! cshrt ) {
+        // Parameter entry has no shortcut and, thus, has to be accessed via
+        // the fully-qualified name only.
+        cshrt = UCHAR_MAX + (int) self._lRefs.size();
+    }
+    struct ::option o = { strdup( (nameprefix + pE.first).c_str() )
+                       , hasArg
+                       , cshrt >= UCHAR_MAX ? &(self._longOptKey) : NULL
+                       , cshrt };
+    self._longs.push_back( o );
+    if( cshrt >= UCHAR_MAX ) {
+        self._lRefs.emplace( cshrt, pE.second );
     }
 }
 

@@ -269,7 +269,7 @@ struct get_type_index {
 
 namespace goo {
 
-/// concatenates two multiline strings into one table
+/// Concatenates two multiline strings into one table
 std::string concat_block_strings( const std::string & s1,
                                   const std::string & s2 );
 
