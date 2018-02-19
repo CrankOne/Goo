@@ -76,8 +76,34 @@ Configuration::_add_shortcut( char c, FeaturedBase * p ) {
 
 namespace utils {
 
+struct RecursiveVisitor : public dict::AppConfTraits
+                                    ::IndexBy<std::string>
+                                    ::Aspect
+                                    ::RecursiveRevisingVisitor<getopt_ConfDictCache&> {
+    typedef dict::AppConfTraits
+                ::IndexBy<std::string>
+                ::Aspect
+                ::RecursiveRevisingVisitor<getopt_ConfDictCache&> Parent;
+
+    std::string & _nameprefix;
+    std::stack<std::string> _nameStack;
+
+    /// Overrides subsection callble
+    virtual void operator()( SubsectionIterator it ) override {
+        _nameStack.push( it->first );
+        _TODO_  //_nameprefix = join();  // See: https://stackoverflow.com/a/5289170/1734499
+        Parent::operator()( it );
+        _nameStack.pop();
+    }
+
+    RecursiveVisitor( getopt_ConfDictCache & c
+                   , std::string & nameprefixRef ) : Parent( c )
+                                                  , _nameprefix(nameprefixRef) {}
+};
+
 const char getopt_ConfDictCache::defaultPrefix[8] = "-:";  // "-:h::"
 
+# if 0
 void
 IConfDictCache::cache_long_options( const std::string & nameprefix
                                 , const dict::AppConfNameIndex & D
@@ -94,11 +120,13 @@ IConfDictCache::cache_long_options( const std::string & nameprefix
                            , self );
     }
 }
+# endif
 
 void
 getopt_ConfDictCache::consider_entry( const std::string & name
-                                    , const std::string & nameprefix
-                                    , dict::AppConfTraits::FeaturedBase & db ) {
+                                   , const std::string & nameprefix
+                                   , dict::AppConfTraits::FeaturedBase & db ) {
+    # if 0
     // ...
     auto * ar = pE.second->aspect_cast<dict::aspects::Required>();
     assert(ar);
@@ -125,11 +153,13 @@ getopt_ConfDictCache::consider_entry( const std::string & name
     if( cshrt >= UCHAR_MAX ) {
         self._lRefs.emplace( cshrt, pE.second );
     }
+    # endif
 }
 
 getopt_ConfDictCache::getopt_ConfDictCache( dict::Configuration & cfg
-                           , bool dftHelpIFace ) : _dftHelpIFace(dftHelpIFace)
-                                                 , _posArgPtr(cfg.positional_argument_ptr()) {
+                                         , bool dftHelpIFace ) : _dftHelpIFace(dftHelpIFace)
+                                                               , _posArgPtr(cfg.positional_argument_ptr())
+                                                               , _nameStack(nullptr) {
     // Fill short options string ("optstring" arg for getopt()
     _shorts = defaultPrefix;
     for( auto & sRef : cfg.short_opts().value() ) {
@@ -158,7 +188,10 @@ getopt_ConfDictCache::getopt_ConfDictCache( dict::Configuration & cfg
         _shorts += "h::";
     }
     // Form long options cache recursively.
-    cache_long_options( "", cfg, *this );
+    RecursiveVisitor rv(*this);
+    _nameStack = &(rv._nameStack);
+    cfg.each_subsection_revise( rv );
+    _nameStack = nullptr;
     if( dftHelpIFace ) {
         struct ::option helpO = { "help", optional_argument, NULL, 'h' };
         _longs.push_back( helpO );

@@ -203,6 +203,7 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
         void operator()( Hash<std::string, DictionaryT> );
     };
 
+    # if 0
     template<typename CallableT>
     static CallableT each_entry_recursively_revise( CallableT c, Dictionary & d) {
         d.each_entry_revise( c );
@@ -218,6 +219,7 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
         // depending on their particular assembly.
         return c;
     }
+    # endif
 };
 
 

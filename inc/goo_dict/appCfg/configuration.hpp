@@ -34,7 +34,7 @@ struct option;
 
 namespace goo {
 namespace utils {
-struct ConfDictCache;
+struct getopt_ConfDictCache;
 }
 namespace dict {
 
@@ -60,7 +60,7 @@ namespace dict {
 class Configuration : public mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
                                                 , Configuration
                                                 , AppConfNameIndex> {
-    friend struct ::goo::utils::ConfDictCache;
+    friend struct ::goo::utils::getopt_ConfDictCache;
     friend class ::goo::dict::InsertionProxy<std::string>;
 public:
     typedef mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
@@ -201,7 +201,9 @@ public:
 
 namespace utils {
 
+# if 0
 struct IConfDictCache {
+
     void cache_long_options( const std::string & nameprefix
                            , const dict::AppConfNameIndex & d
                            , IConfDictCache & self );
@@ -210,15 +212,18 @@ struct IConfDictCache {
     virtual void consider_entry( const std::string & name
                                , const std::string & nameprefix
                                , dict::AppConfTraits::FeaturedBase & ) = 0;
-};
 
-struct getopt_ConfDictCache : public IConfDictCache {
+    // dict::AppConfNameIndex::RecursiveVisitor
+};
+# endif
+
+struct getopt_ConfDictCache {
 public:
     /// This two arrays keep the common prefixes for getopt() shortcuts string.
     static const char defaultPrefix[8];
     virtual void consider_entry( const std::string & name
                                , const std::string & nameprefix
-                               , dict::AppConfTraits::FeaturedBase & ) override;
+                               , dict::AppConfTraits::FeaturedBase & );
 private:
     bool _dftHelpIFace;
     std::string _shorts;
@@ -227,6 +232,8 @@ private:
     dict::Configuration::FeaturedBase * _posArgPtr;
     /// This variable where option identifiers will be loaded into.
     int _longOptKey;
+    /// Temporary data attribute, active only during the recursive traversal.
+    mutable std::string _nameprefix;
 public:
     explicit getopt_ConfDictCache( dict::Configuration & cfg
                                  , bool dftHelpIFace=true );
@@ -236,6 +243,9 @@ public:
     bool default_help_interface() const { return _dftHelpIFace; }
     dict::Configuration::FeaturedBase * positional_arg_ptr() const { return _posArgPtr; }
     dict::Configuration::FeaturedBase * current_long_parameter( int );
+
+    /// Used to fill caches during recursive traversal:
+    void operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::iterator );
 };
 
 /**@brief A utility function performing initialization of an existing
@@ -261,7 +271,7 @@ public:
 int set_app_conf( dict::Configuration & cfg
                 , int argc
                 , char * const * argv
-                , ConfDictCache * cachePtr=nullptr
+                , getopt_ConfDictCache * cachePtr=nullptr
                 , std::ostream *logStreamPtr=nullptr );  // TODO: migrate impl from dev branch
 
 std::string compose_reference_text_for( const dict::Configuration & cfg

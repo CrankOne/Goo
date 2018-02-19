@@ -41,6 +41,7 @@ struct iSubsections : protected THashT<KeyT, SubsectionT*> {
     typedef KeyT Key;
     typedef SubsectionT Subsection;
     typedef THashT<Key, Subsection *> Parent;
+    typedef iSubsections<KeyT, THashT, SubsectionT> Self;
 
     const Parent & subsections() const {
         return *this;
@@ -97,6 +98,7 @@ struct iSubsections : protected THashT<KeyT, SubsectionT*> {
            ; THashT<KeyT, SubsectionT*>::end() != it ; ++it ) {
             c( it );
         }
+        return c;
     }
 
     /// Template function performing iterative invocation of callable for each
@@ -110,22 +112,33 @@ struct iSubsections : protected THashT<KeyT, SubsectionT*> {
         }
     }
 
-    struct RecursiveVisitor {
-        void operator()( THashT<KeyT, SubsectionT*>::iterator it ) {
-            _callable( it );
-        }
-    };
-};
+    template<typename CallableT>
+    struct RecursiveReadingVisitor {
+        typedef typename THashT<KeyT, SubsectionT*>::const_iterator SubsectionIterator;
 
-template< typename CallableT
-        , typename KeyT
-        , typename SubsectionT >
-struct RecursiveVisitor {
-    CallableT _callable;
-    RecursiveVisitor( CallableT c ) : _callable(c) {}
-    void operator()() {
-        _callable(it);
-    }
+        CallableT _c;
+
+        virtual void operator()( SubsectionIterator it ) {
+            it->second->each_entry_read( _c );
+            it->second->each_subsection_read( *this );
+        }
+
+        RecursiveReadingVisitor( CallableT c ) : _c(c) {}
+    };
+
+    template<typename CallableT>
+    struct RecursiveRevisingVisitor {
+        typedef typename THashT<KeyT, SubsectionT*>::iterator SubsectionIterator;
+
+        CallableT _c;
+
+        virtual void operator()( SubsectionIterator it ) {
+            it->second->each_entry_revise( _c );
+            it->second->each_subsection_revise( *this );
+        }
+
+        RecursiveRevisingVisitor( CallableT c ) : _c(c) {}
+    };
 };
 
 }  // namespace aux

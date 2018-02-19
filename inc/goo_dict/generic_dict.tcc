@@ -288,7 +288,7 @@ public:
     CallableT each_entry_revise( CallableT c ) {
         for( auto it = this->_mutable_value().begin()
            ; it != this->_mutable_value().end(); ++it ) {
-            c(*it);
+            c(it);
         }
         return c;
     }
@@ -301,7 +301,7 @@ public:
     CallableT each_entry_read( CallableT c ) const {
         for( auto it = this->value().begin()
            ; it != this->value().end(); ++it ) {
-            c(*it);
+            c(it);
         }
         return c;
     }
