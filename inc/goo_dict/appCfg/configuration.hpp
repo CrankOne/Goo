@@ -29,12 +29,12 @@
 
 # include <alloca.h>
 
-
 struct option;
 
 namespace goo {
 namespace utils {
 struct getopt_ConfDictCache;
+struct copier_ConfDictCache;
 }
 namespace dict {
 
@@ -61,6 +61,7 @@ class Configuration : public mixins::iDuplicable< typename AppConfTraits::templa
                                                 , Configuration
                                                 , AppConfNameIndex> {
     friend struct ::goo::utils::getopt_ConfDictCache;
+    friend struct ::goo::utils::copier_ConfDictCache;
     friend class ::goo::dict::InsertionProxy<std::string>;
 public:
     typedef mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
@@ -200,53 +201,6 @@ public:
 }  // namespace dict
 
 namespace utils {
-
-# if 0
-struct IConfDictCache {
-
-    void cache_long_options( const std::string & nameprefix
-                           , const dict::AppConfNameIndex & d
-                           , IConfDictCache & self );
-
-    /// Will be called by for_all_options() for each entry.
-    virtual void consider_entry( const std::string & name
-                               , const std::string & nameprefix
-                               , dict::AppConfTraits::FeaturedBase & ) = 0;
-
-    // dict::AppConfNameIndex::RecursiveVisitor
-};
-# endif
-
-struct getopt_ConfDictCache {
-public:
-    /// This two arrays keep the common prefixes for getopt() shortcuts string.
-    static const char defaultPrefix[8];
-    virtual void consider_entry( const std::string & name
-                               , const std::string & nameprefix
-                               , dict::AppConfTraits::FeaturedBase & );
-private:
-    bool _dftHelpIFace;
-    std::string _shorts;
-    std::vector<struct ::option> _longs;
-    std::unordered_map<int, dict::Configuration::FeaturedBase *> _lRefs;
-    dict::Configuration::FeaturedBase * _posArgPtr;
-    /// This variable where option identifiers will be loaded into.
-    int _longOptKey;
-    /// Temporary data attribute, active only during the recursive traversal.
-    mutable std::string _nameprefix;
-public:
-    explicit getopt_ConfDictCache( dict::Configuration & cfg
-                                 , bool dftHelpIFace=true );
-
-    const std::string & shorts() const { return _shorts; }
-    const std::vector<struct ::option> & longs() const { return _longs; };
-    bool default_help_interface() const { return _dftHelpIFace; }
-    dict::Configuration::FeaturedBase * positional_arg_ptr() const { return _posArgPtr; }
-    dict::Configuration::FeaturedBase * current_long_parameter( int );
-
-    /// Used to fill caches during recursive traversal:
-    void operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::iterator );
-};
 
 /**@brief A utility function performing initialization of an existing
  *        goo::dict::Configuration instance with given argc/argv expression.

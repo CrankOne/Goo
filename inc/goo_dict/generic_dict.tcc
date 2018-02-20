@@ -287,7 +287,7 @@ public:
     template<typename CallableT>
     CallableT each_entry_revise( CallableT c ) {
         for( auto it = this->_mutable_value().begin()
-           ; it != this->_mutable_value().end(); ++it ) {
+               ; it != this->_mutable_value().end(); ++it ) {
             c(it);
         }
         return c;
@@ -300,7 +300,7 @@ public:
     template<typename CallableT>
     CallableT each_entry_read( CallableT c ) const {
         for( auto it = this->value().begin()
-           ; it != this->value().end(); ++it ) {
+               ; it != this->value().end(); ++it ) {
             c(it);
         }
         return c;

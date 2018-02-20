@@ -38,6 +38,111 @@
 # include <iostream>
 
 namespace goo {
+
+namespace utils {
+
+//
+// getopt() internal cache
+
+/// Aux class collecting the getopt() options.
+struct getopt_ConfDictCache {
+public:
+    /// This two arrays keep the common prefixes for getopt() shortcuts string.
+    static const char defaultPrefix[8];
+
+    /// Temporary data attribute, active only during the recursive traversal.
+    //mutable NamePrefixStack nameprefix;
+    mutable class NamePrefixStack : public std::vector<std::string> {
+    private:
+        size_t _fullLength;
+    public:
+        NamePrefixStack() : _fullLength(0) {}
+        void push( const std::string & s ) {
+            _fullLength += 1 + s.size();
+            std::vector<std::string>::push_back( s );
+        }
+        void pop() {
+            _fullLength -= 1 + std::vector<std::string>::back().size();
+            assert( _fullLength >= 0 );
+            std::vector<std::string>::pop_back();
+        }
+        size_t full_length() const { return _fullLength; }
+        void copy_full_prefix_to( char *, size_t n );
+    } nameprefix;
+private:
+    bool _dftHelpIFace;
+    std::string _shorts;
+    std::vector<struct ::option> _longs;
+    std::unordered_map<int, dict::Configuration::FeaturedBase *> _lRefs;
+    dict::Configuration::FeaturedBase * _posArgPtr;
+    /// This variable where option identifiers will be loaded into.
+    int _longOptKey;
+public:
+    explicit getopt_ConfDictCache( dict::Configuration & cfg
+                                 , bool dftHelpIFace=true );
+
+    virtual ~getopt_ConfDictCache();
+
+    virtual void consider_entry( const std::string & name
+                               , dict::AppConfTraits::FeaturedBase & );
+
+    const std::string & shorts() const { return _shorts; }
+    const std::vector<struct ::option> & longs() const { return _longs; };
+    bool default_help_interface() const { return _dftHelpIFace; }
+    dict::Configuration::FeaturedBase * positional_arg_ptr() const { return _posArgPtr; }
+    dict::Configuration::FeaturedBase * current_long_parameter( int );
+
+    /// Used to fill caches during recursive traversal:
+    void operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::iterator it ) {
+        consider_entry( it->first, *(it->second) );
+    }
+};  // struct getopt_ConfDictCache
+
+/// Auxiliary class performing recursive iteration within the configuration and
+/// its subsection, forming the structures for getopt_long() procedure.
+struct RecursiveVisitor_getopt : public dict::AppConfTraits
+                                    ::IndexBy<std::string>
+                                    ::Aspect
+                                    ::RecursiveRevisingVisitor<getopt_ConfDictCache&> {
+    typedef dict::AppConfTraits
+                ::IndexBy<std::string>
+                ::Aspect
+                ::RecursiveRevisingVisitor<getopt_ConfDictCache&> Parent;
+
+    getopt_ConfDictCache::NamePrefixStack & _stack;
+
+    /// Overrides subsection callble
+    virtual void operator()( SubsectionIterator it ) override {
+        _stack.push( it->first );
+        Parent::operator()( it );
+        _stack.pop();
+    }
+
+    RecursiveVisitor_getopt( getopt_ConfDictCache & c
+                   , getopt_ConfDictCache::NamePrefixStack & nameprefixRef ) : Parent( c )
+                                                                           , _stack(c.nameprefix) {}
+};
+
+
+//
+// Copier internal cache
+
+struct copier_ConfDictCache {
+    /// Insertion proxy to the
+    dict::InsertionProxy<char> ip;
+
+    /// Used to fill caches during recursive traversal:
+    void operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::iterator it ) {
+        auto acs = it->second->aspect_cast<dict::aspects::CharShortcut>();
+        int cshrt = acs->shortcut();
+        if( cshrt ) {
+            ip.insert( cshrt, it->second );
+        }
+    }
+};
+
+}
+
 namespace dict {
 
 // TODO: use own _alloc instead of new for allocating description aspect.
@@ -55,8 +160,25 @@ Configuration::Configuration( const Configuration & orig ) \
     // except the ones related to configuration itself, i.e. the index of
     // shortcuts, positional and forwarded arguments.
     auto ip = _shortcutsIndex.insertion_proxy();
-    //goo::utils::ConfDictCache cc( orig );  // non-const?
-    _TODO_
+    ::goo::utils::copier_ConfDictCache ccdc = { ip };
+    dict::AppConfTraits::IndexBy<std::string>::Aspect
+                    ::RecursiveRevisingVisitor<::goo::utils::copier_ConfDictCache&> shrtc(ccdc);
+    this->each_subsection_revise(shrtc);
+    this->each_entry_revise( ccdc );
+    for( auto it = orig._shortcutsIndex.value().begin();
+         it != orig._shortcutsIndex.value().end(); ++it ) {
+        auto presence = _shortcutsIndex.value().find( it->first );
+        if( presence != _shortcutsIndex.value().end() ) {
+            continue;  // already copied
+        }
+        auto pc = goo::clone_as< iAbstractValue
+                               , FeaturedBase
+                               , FeaturedBase >( it->second );
+        ip.insert( it->first, pc );
+    }
+    if( orig._positionalArgument.second ) {
+        _TODO_  // TODO: copy positional args
+    }
 }
 
 Configuration::~Configuration() {
@@ -76,59 +198,32 @@ Configuration::_add_shortcut( char c, FeaturedBase * p ) {
 
 namespace utils {
 
-struct RecursiveVisitor : public dict::AppConfTraits
-                                    ::IndexBy<std::string>
-                                    ::Aspect
-                                    ::RecursiveRevisingVisitor<getopt_ConfDictCache&> {
-    typedef dict::AppConfTraits
-                ::IndexBy<std::string>
-                ::Aspect
-                ::RecursiveRevisingVisitor<getopt_ConfDictCache&> Parent;
-
-    std::string & _nameprefix;
-    std::stack<std::string> _nameStack;
-
-    /// Overrides subsection callble
-    virtual void operator()( SubsectionIterator it ) override {
-        _nameStack.push( it->first );
-        _TODO_  //_nameprefix = join();  // See: https://stackoverflow.com/a/5289170/1734499
-        Parent::operator()( it );
-        _nameStack.pop();
-    }
-
-    RecursiveVisitor( getopt_ConfDictCache & c
-                   , std::string & nameprefixRef ) : Parent( c )
-                                                  , _nameprefix(nameprefixRef) {}
-};
-
 const char getopt_ConfDictCache::defaultPrefix[8] = "-:";  // "-:h::"
 
-# if 0
 void
-IConfDictCache::cache_long_options( const std::string & nameprefix
-                                , const dict::AppConfNameIndex & D
-                                , IConfDictCache & self ) {
-    // Fill from this section
-    for( const auto & pE : D.value() ) {
-        // ...
+getopt_ConfDictCache::NamePrefixStack::copy_full_prefix_to( char * s, size_t n ) {
+    if( n < _fullLength ) {
+        emraise( underflow, "Insufficient string buffer: %zu < %zu.", n, _fullLength );
     }
-    // Recursive fill from subsections
-    for( auto it = D.subsections().begin()
-       ; D.subsections().end() != it; ++it ) {
-        cache_long_options( nameprefix + "." + it->first
-                           , *(it->second)
-                           , self );
+    if( empty() ) {
+        *s = '\0';
+        return;
     }
+    for( const std::string & token : *this ) {
+        strncpy( s, token.c_str(), n );
+        n -= token.size() + 1;
+        s += token.size();
+        *s = '.';  // delimiter
+        ++s;
+    }
+    *s = '\0';
 }
-# endif
 
 void
 getopt_ConfDictCache::consider_entry( const std::string & name
-                                   , const std::string & nameprefix
-                                   , dict::AppConfTraits::FeaturedBase & db ) {
-    # if 0
-    // ...
-    auto * ar = pE.second->aspect_cast<dict::aspects::Required>();
+                                    , dict::AppConfTraits::FeaturedBase & db ) {
+    assert(!name.empty()); //?
+    auto * ar = db.aspect_cast<dict::aspects::Required>();
     assert(ar);
     int hasArg = no_argument;
     if( ar->requires_argument() ) {
@@ -138,28 +233,30 @@ getopt_ConfDictCache::consider_entry( const std::string & name
         //assert( ar->requires_argument() );
         hasArg = optional_argument;
     }
-    auto * acs = pE.second->aspect_cast<dict::aspects::CharShortcut>();
+    auto * acs = db.aspect_cast<dict::aspects::CharShortcut>();
     int cshrt = acs->shortcut();
     if( ! cshrt ) {
         // Parameter entry has no shortcut and, thus, has to be accessed via
         // the fully-qualified name only.
-        cshrt = UCHAR_MAX + (int) self._lRefs.size();
+        cshrt = UCHAR_MAX + (int) _lRefs.size();
     }
-    struct ::option o = { strdup( (nameprefix + pE.first).c_str() )
+    size_t n = nameprefix.full_length() + name.size() + 1;
+    char * nameStr = (char *) malloc( n );
+    nameprefix.copy_full_prefix_to( nameStr, n );
+    strcpy( nameStr + nameprefix.full_length(), name.c_str() );
+    struct ::option o = { nameStr
                        , hasArg
-                       , cshrt >= UCHAR_MAX ? &(self._longOptKey) : NULL
+                       , cshrt >= UCHAR_MAX ? &(_longOptKey) : NULL
                        , cshrt };
-    self._longs.push_back( o );
+    _longs.push_back( o );
     if( cshrt >= UCHAR_MAX ) {
-        self._lRefs.emplace( cshrt, pE.second );
+        _lRefs.emplace( cshrt, &db );
     }
-    # endif
 }
 
 getopt_ConfDictCache::getopt_ConfDictCache( dict::Configuration & cfg
                                          , bool dftHelpIFace ) : _dftHelpIFace(dftHelpIFace)
-                                                               , _posArgPtr(cfg.positional_argument_ptr())
-                                                               , _nameStack(nullptr) {
+                                                               , _posArgPtr(cfg.positional_argument_ptr()) {
     // Fill short options string ("optstring" arg for getopt()
     _shorts = defaultPrefix;
     for( auto & sRef : cfg.short_opts().value() ) {
@@ -188,10 +285,9 @@ getopt_ConfDictCache::getopt_ConfDictCache( dict::Configuration & cfg
         _shorts += "h::";
     }
     // Form long options cache recursively.
-    RecursiveVisitor rv(*this);
-    _nameStack = &(rv._nameStack);
+    RecursiveVisitor_getopt rv(*this, this->nameprefix);
     cfg.each_subsection_revise( rv );
-    _nameStack = nullptr;
+    cfg.each_entry_revise<getopt_ConfDictCache &>( *this );
     if( dftHelpIFace ) {
         struct ::option helpO = { "help", optional_argument, NULL, 'h' };
         _longs.push_back( helpO );
@@ -199,6 +295,8 @@ getopt_ConfDictCache::getopt_ConfDictCache( dict::Configuration & cfg
     struct ::option sentinelO = { NULL, 0, NULL, 0 };
     _longs.push_back( sentinelO );
 }
+
+getopt_ConfDictCache::~getopt_ConfDictCache() {}
 
 dict::Configuration::FeaturedBase *
 getopt_ConfDictCache::current_long_parameter( int optIndex ) {

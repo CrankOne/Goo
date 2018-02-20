@@ -27,6 +27,11 @@
 # include "goo_dict/common_aspects.hpp"
 # include "goo_dict/util/subsections.tcc"
 
+// TODO: recursive iterators
+# if 0
+# include "goo_mixins/iterable.tcc"
+# endif
+
 namespace goo {
 
 /**@defgroup appParameters Application Parameters
@@ -195,31 +200,23 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
             return downCastedPtr->entry(dp.id.name);
             # endif
         }
-    };
 
-    template<typename CallableT, typename DictionaryT>
-    struct _local_SubsectionsVisitor {
-        CallableT _callable;
-        void operator()( Hash<std::string, DictionaryT> );
-    };
-
-    # if 0
-    template<typename CallableT>
-    static CallableT each_entry_recursively_revise( CallableT c, Dictionary & d) {
-        d.each_entry_revise( c );
-        this->each_subsection_revise( each_entry_recursively_revise );
-        return c;
-    }
-
-    template<typename CallableT>
-    static CallableT each_entry_recursively_read( CallableT c, const Dictionary & d) {
-        d.each_entry_read( c );
-        _TODO_
-        // ... in traits, there are the subsections iterating procedures,
-        // depending on their particular assembly.
-        return c;
-    }
-    # endif
+        // TODO: recursive iterators
+        # if 0
+        class Iterator : public iterators::Iterator<
+                    iterators::BaseForwardIterator
+                  , iterators::BaseIOIterator
+                  , iterators::BaseComparableIterator
+                  , Iterator
+                  , std::tuple< typename aux::iSubsections< std::string
+                                    , Hash
+                                    , GenericDictionary<std::string, _Goo_m_VART_LIST_APP_CONF> >::Parent::iterator
+                             , typename DictValue::Value::iterator>
+                  , FeaturedBase > {
+            // ...
+        };
+        # endif
+    };  // struct Aspect
 };
 
 

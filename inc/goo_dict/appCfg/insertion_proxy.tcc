@@ -101,7 +101,9 @@ public:
                                         , _alloc<aspects::IsSet>()
                                         , _alloc<aspects::Array>(false)
                                         );
-        _insert_parameter( name, pPtr );
+        if( !name.empty() ) {
+            _insert_parameter(name, pPtr);
+        }
         _index_by_shortcut( shortcut, pPtr );
         return *this;
     }
@@ -132,7 +134,11 @@ public:
                                         , _alloc<aspects::IsSet>()
                                         , _alloc<aspects::Array>(false)
                                         );
-        _insert_parameter( name, pPtr );
+        if( !name.empty() ) {
+            _insert_parameter(name, pPtr);
+        } else {
+            emraise( badParameter, "Unable to insert parameter with empty name." );
+        }
         return *this;
     }
 
@@ -150,7 +156,9 @@ public:
                                         , _alloc<aspects::Array>(false)
                                         );
         pPtr->value( dft );
-        _insert_parameter( name, pPtr );
+        if( !name.empty() ) {
+            _insert_parameter(name, pPtr);
+        }
         _index_by_shortcut( shortcut, pPtr );
         return *this;
     }
@@ -168,7 +176,11 @@ public:
                                         , _alloc<aspects::Array>(false)
                                         );
         pPtr->value( dft );
-        _insert_parameter( name, pPtr );
+        if( !name.empty() ) {
+            _insert_parameter(name, pPtr);
+        } else {
+            emraise( badParameter, "Unable to insert parameter with empty name." );
+        }
         return *this;
     }
 
