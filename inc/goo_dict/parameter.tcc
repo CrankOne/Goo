@@ -125,50 +125,16 @@ protected:
         }
         _values.push_back( v ); }
 
-    virtual void _V_parse_argument( const char * strval ) override {
-        InsertableParameter<ValueT>::_V_parse_argument( strval );
-        _V_push_value( InsertableParameter<ValueT>::value() ); }
+    //virtual void _V_parse_argument( const char * strval ) override {
+    //    InsertableParameter<ValueT>::_V_parse_argument( strval );
+    //    _V_push_value( InsertableParameter<ValueT>::value() ); }
 public:
     const Array<ValueT> & values() const { return _values; }
 
     template<class ... Types>
-    Parameter( const std::initializer_list<ValueT> & il, Types ... args ) :
-        DuplicableParent( args ... , *il.begin() ),
-        _setToDefault( true ),
-        _values( il )
-    {
-        this->_unset_singular();
-        this->_set_is_set_flag();
-        assert( !(this->name() == nullptr && !this->has_shortcut()) );
-        assert( this->description() );
-    }
-
-    template<class ... Types>
-    Parameter( const Array<ValueT> & il, Types ... args ) :
-        DuplicableParent( args ... , *il.begin() ),
-        _setToDefault( true ),
-        _values( il )
-    {
-        this->_unset_singular();
-        this->_set_is_set_flag();
-        assert( !(this->name() == nullptr && !this->has_shortcut()) );
-        assert( this->description() );
-    }
-
-    template<class ... Types>
     Parameter( Types ... args ) :
         DuplicableParent( args ... ),
-        _setToDefault( false )
-    {   this->_unset_singular();
-        assert( !(this->name() == nullptr && !this->has_shortcut()) );
-        assert( this->description() );
-    }
-
-    Parameter( const Parameter<Array<ValueT> > & orig ) :
-        DuplicableParent( orig ),
-        _setToDefault( orig._setToDefault ),
-        _values( orig._values )
-    {}
+        _setToDefault( false ) {}
 
     ~Parameter() {}
 
@@ -204,23 +170,14 @@ template<typename ... AspectTs> class Parameter<List<iBaseValue<AspectTs...>*> >
 template<typename ... AspectTs>
 template<typename T> const Array<T> &
 iBaseValue<AspectTs...>::as_array_of() const {
-    _TODO_  // TODO: iSingularPArameter -> ???
-    # if 0
-    typedef Parameter<Array<T> > const * CastTarget;
+    # if 1
+    typedef InsertableParameter< Array<T> > const * CastTarget;
     auto ptr = dynamic_cast<CastTarget>(this);
     if( !ptr ) {
-        const iSingularParameter * namedP =
-                                dynamic_cast<const iSingularParameter *>(this);
-        if( namedP ) {
-            if( namedP->name() ) {
-                goo_badcast( DECLTYPE(this), CastTarget, this, "Parameter name: \"%s\"."
-                               , namedP->name() );
-            } else if( namedP->has_shortcut() ) {
-                goo_badcast( DECLTYPE(this), CastTarget, this, "Parameter shortcut: \"%c\"."
-                               , namedP->shortcut() );
-            }
-        }
-        goo_badcast( DECLTYPE(this), CastTarget, this, "Anonymous parameter." );
+        goo_badcast( typename DECLTYPE(this)
+                   , CastTarget
+                   , this
+                   , "Type mismatch for parameters dictionary array entry." );
     }
     return ptr->values();
     # endif
@@ -233,7 +190,10 @@ iBaseValue<AspectTs...>::as() const {
     typedef TValue<T, AspectTs...> const * CastTarget;
     auto ptr = dynamic_cast<CastTarget>(this);
     if( !ptr ) {
-        goo_badcast( typename DECLTYPE(this), CastTarget, this, "Type mismatch of parameters dictionary entry." );
+        goo_badcast( typename DECLTYPE(this)
+                   , CastTarget
+                   , this
+                   , "Type mismatch for parameters dictionary scalar entry." );
         # if 0
         const iSingularParameter * namedP = dynamic_cast<const iSingularParameter *>(this);
         if( namedP ) {

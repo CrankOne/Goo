@@ -17,6 +17,43 @@ class Configuration;  // fwd
 
 template<typename KeyT> class InsertionProxy;
 
+
+# if 0
+/**@class AppConfParameter
+ * @brief An abstract parameter is a base class for Goo's
+ * dictionary entires.
+ *
+ * We're tending to follow here to POSIX convention:
+ * http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html#tag_12_02
+ * extended with GNU long options:
+ * https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html ,
+ *
+ * so the option-arguments are never optional
+ * (see Guideline 7 of 12.2). That means one can not, for example, declare
+ * an option `-c` with optional argument. Even if the `-c` option is a
+ * logical flag the option-argument should either be necessarily presented,
+ * or prohibited by declaration. In first case this option have to be
+ * provided either as `-c true` or `-c false` (or in any equivalent
+ * appropriate way for options of logic type). In the second case this option
+ * can not receive an option-argument (and should be provided as `-c` or
+ * omitted).
+ *
+ * The following subclasses are expected:
+ *  - single-char keys (here referred as `shortcuts')   (flags or with values, multiple time)
+ *  - long options                                      (flags or with values)
+ *  - unnamed positional arguments
+ *  - sections (dictionaries itself)
+ *
+ * Flag can not be required (required=false)
+ *
+ * Required can not be set (set=false)
+ *
+ * List-of-Structures has atomic=false, singular=true (TODO!)
+ *
+ * @ingroup appParameters
+ */
+# endif
+
 /// Insertion proxy specialization for application configuration traits. Supports
 /// Only textual sub-dictionaries (named here '[sub]section'). The bottom dictionary
 /// is always a Configution instance where shortcut parameters and positional
@@ -42,6 +79,9 @@ public:
     InsertionProxy( Subsection & d, const std::string & name="" );
     explicit InsertionProxy( Configuration * R );
     InsertionProxy( Configuration * r, InsertionTargetsStack & s );
+
+    // /////////////////////////////////////////////////////////////////////////
+    // Flags (options that explicitly do not expect argument)
 
     /// Inserts new flag (option that does not expect the argument) referenced by
     /// shortcut only.
@@ -88,6 +128,9 @@ public:
         _latestInsertedRequired = nullptr;
         return *this;
     }
+
+    // /////////////////////////////////////////////////////////////////////////
+    // Ordinary parameters
 
     /// Insert new parameter with shortcut and name, no default value.
     template<typename PT> Self &
@@ -201,6 +244,127 @@ public:
         return *this;
     }
 
+    // /////////////////////////////////////////////////////////////////////////
+    // Arrays
+
+    /// Insert new parameter with shortcut and name, no default value.
+    template<typename PT> Self &
+    array( char shortcut
+         , const std::string & name
+         , const std::string & description ) {
+        auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
+                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::CharShortcut>(shortcut)
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::IsSet>()
+                                        , _alloc<aspects::Array>(true)
+                                        );
+        if( !name.empty() ) {
+            _insert_parameter(name, pPtr);
+        }
+        _index_by_shortcut( shortcut, pPtr );
+        return *this;
+    }
+
+    /// Insert new parameter with shortcut only, no default value.
+    template<typename PT> Self &
+    array( char shortcut
+         , const std::string & description ) {
+        auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
+                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::CharShortcut>(shortcut)
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::IsSet>()
+                                        , _alloc<aspects::Array>(true)
+                                        );
+        _index_by_shortcut( shortcut, pPtr );
+        return *this;
+    }
+
+    /// Insert new parameter with name only, no default value.
+    template<typename PT> Self &
+    array( const std::string & name
+         , const std::string & description ) {
+        auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
+                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::CharShortcut>()  // no shortcut
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::IsSet>()
+                                        , _alloc<aspects::Array>(true)
+                                        );
+        if( !name.empty() ) {
+            _insert_parameter(name, pPtr);
+        } else {
+            emraise( badParameter, "Unable to insert parameter with empty name." );
+        }
+        return *this;
+    }
+
+    /// Insert new parameter with shortcut and name, with default value.
+    template<typename PT> Self &
+    array( char shortcut
+         , const std::string & name
+         , const std::string & description
+         , const std::initializer_list<PT> & dft ) {
+        auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
+                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::CharShortcut>(shortcut)
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::IsSet>(true)
+                                        , _alloc<aspects::Array>(true)
+                                        );
+        pPtr->assign( Array<PT>(dft) );
+        pPtr->set_to_default(true);
+        if( !name.empty() ) {
+            _insert_parameter(name, pPtr);
+        }
+        _index_by_shortcut( shortcut, pPtr );
+        return *this;
+    }
+
+    /// Insert new parameter with name only, with default value.
+    template<typename PT> Self &
+    array( const std::string & name
+         , const std::string & description
+         , const std::initializer_list<PT> & dft ) {
+        auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
+                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::CharShortcut>()  // no shortcut
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::IsSet>(true)
+                                        , _alloc<aspects::Array>(true)
+                                        );
+        pPtr->assign( Array<PT>(dft) );
+        pPtr->set_to_default(true);
+        if( !name.empty() ) {
+            _insert_parameter(name, pPtr);
+        } else {
+            emraise( badParameter, "Unable to insert parameter with empty name." );
+        }
+        return *this;
+    }
+
+    /// Insert new parameter with shortcut only, with default value.
+    template<typename PT> Self &
+    array( char shortcut
+         , const std::string & description
+         , const std::initializer_list<PT> & dft ) {
+        auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
+                                       , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                       , _alloc<aspects::CharShortcut>(shortcut)
+                                       , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                       , _alloc<aspects::IsSet>()
+                                       , _alloc<aspects::Array>(true)
+                                       );
+        pPtr->assign( Array<PT>(dft) );
+        pPtr->set_to_default(true);
+        _index_by_shortcut( shortcut, pPtr );
+        return *this;
+    }
+
+    // /////////////////////////////////////////////////////////////////////////
+    // Subsection insertion methods
+
     static void emplace_subsection_copy( Subsection &, const std::string &, Subsection * );
 
     /// Inserts the new parameters section with given name and description.
@@ -209,6 +373,9 @@ public:
     /// Encloses insertion of the new parameters section. Provide section name
     /// to check yourself.
     Self & end_sect( const std::string & name="" );
+
+    // /////////////////////////////////////////////////////////////////////////
+    // Modifiers
 
     /// Operates with shell parameter aspect. Sets the "requires value" flag.
     Self & required_argument() {

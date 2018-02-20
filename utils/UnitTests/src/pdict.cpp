@@ -13,7 +13,7 @@
 //# define NO_BASIC_SPLITTING_TEST
 //# define NO_BASIC_PARSING_TEST
 //# define NO_BASIC_ERRORS_TEST
-# define NO_ARRAY_PARAMETERS_TEST
+//# define NO_ARRAY_PARAMETERS_TEST
 # define NO_CONSISTENCY_TESTS
 # define NO_SUBSECTION_PARAMETER_RETRIEVING_TEST
 # define NO_ADVANCED_CONFIGURATION_TEST
@@ -255,7 +255,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # ifndef NO_ARRAY_PARAMETERS_TEST
     {
         os << "Array parameters tests : {" << std::endl;
-        goo::dict::Configuration conf( "theApplication3", "Testing parameter set #2." );
+        goo::dict::Configuration conf( "Testing parameter set #2." );
 
         const char strLstDftCheck[][16] = { "one", "two", "three" };
 
@@ -270,7 +270,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                 .array<float>( "fl-num", "Array of floating numbers" )
                 .array<std::string>( 's', "lstr-i", "String array one", {"a", "b", "c"} )
                 .array<std::string>( "lstr-ii", "String array two", {"one", "two", "three"} )
-                .array<std::string>( 'S', nullptr, "String array three", {"1", "two", "III"} )
+                .array<std::string>( 'S', "", "String array three", {"1", "two", "III"} )
             ;
 
         const char ex1[] = "./foo -s one -1v --fl-num 1e-6 -b true -b Off -b On "
@@ -278,13 +278,13 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                            "-byes -s three";
         char ** argv;
         os << "For given source string: " << ex1 << ":" << std::endl;
-        int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
+        int argc = goo_shell_tokenize_string( ex1, &argv );
         for( int n = 0; n < argc; ++n ) {
             os << argv[n] << "|";
         }
         os << std::endl;
 
-        conf.extract( argc, argv, true, &os );
+        utils::set_app_conf( conf, argc, argv, nullptr, &os );
 
         _ASSERT( conf["1"].as<bool>(),
                  "Opt -1 wasn't set." );
@@ -378,7 +378,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             }
         }
 
-        goo::dict::Configuration::free_tokens( argc, argv );
+        goo_free_shell_tokens( argc, argv );
         os << "} Array parameters done." << std::endl;
     }
     # endif

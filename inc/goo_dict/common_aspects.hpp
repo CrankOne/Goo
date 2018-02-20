@@ -32,7 +32,6 @@
 
 namespace goo {
 namespace dict {
-
 namespace aspects {
 
 /// Defines presence of the the textual attribute that should contain
@@ -179,6 +178,34 @@ public:
     explicit TStringConvertible(const Self &o) : TValue<Value>(o) {}
 };
 
+
+template< typename ValueT
+        , typename ... AspectTs>
+class TStringConvertible<dict::Array<ValueT>, AspectTs...> : public iStringConvertible {
+public:
+    typedef ValueT Value;
+    typedef typename iStringConvertible::ConversionTraits<Value> ValueTraits;
+    typedef TStringConvertible<dict::Array<ValueT>, AspectTs...> Self;
+    typedef TValue<dict::Array<ValueT>, AspectTs...> TypedSelf;
+protected:
+    /// Sets the value kept by current instance from string expression.
+    virtual void _V_parse_argument( const char *strval ) override {
+        static_cast<TypedSelf&>(BoundMixin::target())
+                .value(ValueTraits::parse_string_expression(strval));
+    }
+
+    /// Expresses the value kept by current instance as a string.
+    virtual std::string _V_to_string() const override {
+        return ValueTraits::to_string_expression(
+                static_cast<const TypedSelf&>(BoundMixin::target()).value());
+    }
+public:
+    TStringConvertible() {}
+    explicit TStringConvertible(const ValueT &v) : TValue<Value>(v) {}
+    explicit TStringConvertible(const Self &o) : TValue<Value>(o) {}
+};
+
+
 template< typename ValueT
         , typename ... AspectTs>
 class ImplicitValue : public Required {
@@ -205,168 +232,6 @@ public:
 };
 
 }  // namespace aspects
-
-# if 0
-template<typename ValueT, typename ... AspectTs>
-TValue<ValueT, AspectTs...>::TValue( std::tuple<AspectTs * ...> t ) : DuplicableParent(t) {
-    _TODO_  // TODO
-    # if 0
-    aspects::TargetTypeAspect<ValueT, AspectTs...> * crs[] = {
-            // TODO: dynamic_cast -> is_base_of
-            dynamic_cast<aspects::TargetTypeAspect<ValueT, AspectTs...> *>(args)...
-        };
-    for( auto p : crs ) {
-        if(p) p->set_target(this);
-    }
-    # endif
-}
-# endif
-
-# if 0
-/**@class AppConfParameter
- * @brief An abstract parameter is a base class for Goo's
- * dictionary entires.
- *
- * We're tending to follow here to POSIX convention:
- * http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html#tag_12_02
- * extended with GNU long options:
- * https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html ,
- *
- * so the option-arguments are never optional
- * (see Guideline 7 of 12.2). That means one can not, for example, declare
- * an option `-c` with optional argument. Even if the `-c` option is a
- * logical flag the option-argument should either be necessarily presented,
- * or prohibited by declaration. In first case this option have to be
- * provided either as `-c true` or `-c false` (or in any equivalent
- * appropriate way for options of logic type). In the second case this option
- * can not receive an option-argument (and should be provided as `-c` or
- * omitted).
- *
- * The following subclasses are expected:
- *  - single-char keys (here referred as `shortcuts')   (flags or with values, multiple time)
- *  - long options                                      (flags or with values)
- *  - unnamed positional arguments
- *  - sections (dictionaries itself)
- *
- * Flag can not be required (required=false)
- *
- * Required can not be set (set=false)
- *
- * List-of-Structures has atomic=false, singular=true (TODO!)
- *
- * @ingroup appParameters
- */
-class AppConfParameter {
- public:
-    typedef UByte ParameterEntryFlag;
-    static const ParameterEntryFlag
-            set,            ///< Value is set (=false on init for required/flag/dict).
-            flag,           ///< Two-state logical parameter without an argument.
-            positional,     ///< Positional argument (=false for flag/dict).
-            atomic,         ///< Indicates true parameter (otherwise, it's a dictionary).
-            singular,       ///< Can be provided only once (=false for dict).
-            required,       ///< A mandatory parameter entry (=false for flag/dict).
-            shortened       ///< Has a shortcut (single-letter option, =false for positional).
-    ;
-private:
-    char * _name           ///< Name of the option. Can be set to nullptr.
-       , * _description;    ///< Description of the option. Can be set to nullptr.
-    /// Stores logical description of an instance.
-    ParameterEntryFlag _flags;
-protected:
-    /// Used only when shortened flag is set.
-    char _shortcut;
-protected:
-    /// Sets the "set" flag translating instance to initialized state.
-    void _set_is_set_flag();
-
-    /// Sets the "is flag" flag.
-    void _set_is_flag_flag();
-
-    /// This method is to be used by lists only.
-    void _unset_singular();
-
-    /// Single ctr can be only invoked by descendants.
-    AppConfParameter( const char * name,
-            const char * description,
-            ParameterEntryFlag flags,
-            char shortcut = '\0');
-
-    /// Copy ctr.
-    AppConfParameter( const AppConfParameter & );
-
-    /// Raises an exception if contradictory states are set for parameter
-    /// on initial stage.
-    void _check_initial_validity();
-
-    /// Useful for auxilliary classes.
-    void _append_description( const char * );
-public:
-    virtual ~AbstractParameter();
-
-    /// Returns pointer to name string.
-    const char * name() const;
-
-    /// Name setter. Use with care since these parameters may often be cached
-    /// by owning dictionaries.
-    void name( const char * );
-
-    /// Returns pointer to description string.
-    const char * description() const;
-
-    /// Returns shortcut if it was set. Otherwise returns '\0'.
-    char shortcut() const { return _shortcut; }
-
-    /// Returns true, if parameter has a value set (even if it is a default one).
-    bool is_set() const {
-        return _flags & set;
-    }
-    /// Returns true, if parameter means logical flag.
-    bool is_flag() const {
-        return _flags & flag;
-    }
-    /// Returns true, if parameter expects a value (or already contain a default one).
-    bool requires_value() const {
-        return !is_flag();
-    }
-    /// Returns true, if parameter has no name (at all --- even one-letter shortcut).
-    bool is_positional() const {
-        return _flags & positional;
-    }
-    /// Returns true, if parameter is not a dictionary.
-    bool is_atomic() const {
-        return _flags & atomic;
-    }
-    /// Returns true, if parameter is a dictionary.
-    bool is_dictionary() const {
-        return !is_atomic();
-    }
-    /// Returns true, if parameter has only one value.
-    bool is_singular() const {
-        return _flags & singular;
-    }
-    /// Returns true, if parameter has a set of values.
-    bool has_multiple_values() const {
-        return !is_singular();
-    }
-    /// Returns true, if parameter is mandatory.
-    bool is_mandatory() const {
-        return _flags & required;
-    }
-    /// Returns true, if parameter can be omitted.
-    bool is_optional() const {
-        return !is_mandatory();
-    }
-    /// Returns true, if parameter has a single-character shortcut.
-    bool has_shortcut() const {
-        return _flags & shortened;
-    }
-
-    /// Sets the "required" flag marking a mandatory parameter.
-    void set_is_argument_required_flag();
-};  // class AppConfParameter
-# endif
-
 }  // namespace dict
 }  // namespace goo
 
