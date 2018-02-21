@@ -674,6 +674,14 @@ Configuration::print_ASCII_tree( std::ostream & ss, size_t terminalWidth ) const
     }
 }
 
+// TODO: consider move this functions to goo::utils (may be useful in many places further).
+// taken from: https://stackoverflow.com/a/7298458/1734499
+static size_t utf8_length( char * s ) {
+    size_t len = 0;
+    for (; *s; ++s) if ((*s & 0xC0) != 0x80) ++len;
+    return len;
+}
+
 void
 Configuration::print_ASCII_tree( std::list<std::string> & output,
                                  size_t terminalWidth ) const {
@@ -684,22 +692,22 @@ Configuration::print_ASCII_tree( std::list<std::string> & output,
     std::string prefix("╔═ << ")
               , body( description() )
               ;
-    const size_t prefixSize = 6;
+    const size_t prefixSize = utf8_length(prefix);
     std::string subprefix = "║" + std::string( prefixSize - 1, ' ' );
     terminalWidth = terminalWidth - prefixSize;
     if( body.size() > terminalWidth ) {
         std::string tail = body.substr( body.size() -
                                         body.size() % terminalWidth );
         output.push_front( subprefix + tail + "\n║" );
-        body = body.substr( 0, body.size() - tail.size() );
-        for( ;body.size() > terminalWidth; ) {
+        for( body = body.substr( 0, body.size() - tail.size() )
+           ; body.size() > terminalWidth
+           ; ) {
             std::string subbody = body.substr( body.size() - terminalWidth );
             output.push_front( subprefix + subbody );
             body = body.substr( 0, body.size() - subbody.size() );
         }
-            output.push_front( subprefix + body );
-    }
-    else {
+        output.push_front( subprefix + body );
+    } else {
         output.push_front( subprefix + body );
     }
 
