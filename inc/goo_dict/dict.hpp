@@ -263,8 +263,9 @@ public:
 
     /// Prints an ASCII-drawn tree with names and brief comments for all
     /// parameters and sub-sections.
-    virtual void print_ASCII_tree( std::list<std::string> & ) const;
-    
+    virtual void print_ASCII_tree( std::list<std::string> &,
+                                   size_t terminalWidth = 80) const;
+
     const std::list<iSingularParameter *> & parameters() const
                                                     { return _parameters; }
 

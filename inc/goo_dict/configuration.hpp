@@ -176,11 +176,13 @@ public:
 
     /// Extended version of Dictionary's method printing additional decorations
     /// around root node.
-    virtual void print_ASCII_tree( std::list<std::string> & ) const override;
+    virtual void print_ASCII_tree( std::list<std::string> &,
+                                   size_t terminalWidth = 80) const override;
 
     /// Argument-overloaded method that user will probably wish to invoke to
     /// get an ASCII-tree in output stream.
-    virtual void print_ASCII_tree( std::ostream & ) const;
+    virtual void print_ASCII_tree( std::ostream &,
+                                   size_t terminalWidth = 80) const;
 
     /// Inserts dictionary instance created by third-party code (causes caches)
     /// invalidation. Note, that copy of dictionary will be dynamically
