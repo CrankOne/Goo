@@ -411,16 +411,22 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             { "", Exception::common }
         };
         for( auto c = mlfrmdArgs; '\0' != c->cmdLine[0]; ++c ) {
-            expected_argv_parsing_error( c->cmdLine,
-                c->expectedErrorCode, conf, os );
+            //expected_argv_parsing_error( c->cmdLine,
+            //    c->expectedErrorCode, conf, os );
+            auto r = utils::AppConfValidator::run( conf );
+            //_ASSERT( !r.empty(), "Oops..." );
+            if( r.empty() ) {
+                os << "XXX clear" << std::endl;
+            }
+            for( auto p : r ) {
+                os << "XXX " << p.entryIterator->first << " -- " << (int) p.reasons << std::endl;
+            }
         }
         {
             // Everything is ok.
-            int argc = goo_shell_tokenize_string( ex3, &argv );
+            Size argc = goo_shell_tokenize_string( ex3, &argv );
             goo::dict::Configuration confCopy( conf );
-            //confCopy.print_ASCII_tree( os );
             utils::set_app_conf( conf, argc, argv, nullptr, &os );
-            //confCopy.extract( argc, argv, true, &os );
             goo_free_shell_tokens( argc, argv );
         }
         # endif

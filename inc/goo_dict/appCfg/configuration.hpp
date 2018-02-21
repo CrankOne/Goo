@@ -263,7 +263,7 @@ protected:
 public:
     AppConfValidator() = delete;
     /// Used to fill caches during recursive traversal.
-    void operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::iterator it );
+    void operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::const_iterator it );
 
     /// Invoke to validate the configuration instance.
     static std::vector<InvalidEntry> run( const dict::Configuration &, uint8_t options = 0x7 );

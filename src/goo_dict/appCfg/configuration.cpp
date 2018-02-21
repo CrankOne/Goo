@@ -124,12 +124,13 @@ struct copier_ConfDictCache {
 // Configuration consistency check
 
 void
-AppConfValidator::operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::iterator it ) {
+AppConfValidator::operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::const_iterator it ) {
     uint8_t reason = 0x0;
     auto poa = it->second->aspect_cast<dict::aspects::ProgramOption>();
     auto isa = it->second->aspect_cast<dict::aspects::IsSet>();
     auto dea = it->second->aspect_cast<dict::aspects::Description>();
-    if( (_opts & requiredAreNotSet) && (poa->is_required() && isa->is_set()) ) {
+    std::string nm = it->first;  // XXX
+    if( (_opts & requiredAreNotSet) && (poa->is_required() && !isa->is_set()) ) {
         reason |= requiredAreNotSet;
     }
     if( (_opts & requiredAreImplicit) && (poa->is_required() && poa->may_be_set_implicitly()) ) {
@@ -140,13 +141,20 @@ AppConfValidator::operator()( dict::Hash<std::string, dict::AppConfTraits::Featu
     }
     // ...
     if( reason ) {
-        _badEntries.push_back({ _reentrantStack, it });
+        _badEntries.push_back({ _reentrantStack, it, reason });
     }
 }
 
 std::vector<AppConfValidator::InvalidEntry>
-AppConfValidator::run(const dict::Configuration &, uint8_t options) {
-    _TODO_  // TODO
+AppConfValidator::run(const dict::Configuration & cfg, uint8_t options) {
+    AppConfValidator v(options);
+    dict::aux::ReadingVisitor< AppConfValidator&
+                           , std::stack<dict::AppConfTraits::IndexBy<std::string>
+                                                         ::Aspect::Parent::const_iterator>
+                           , dict::AppConfTraits> vv(v);
+    cfg.each_subsection_read(vv);
+    cfg.each_entry_read<AppConfValidator &>(v);
+    return v._badEntries;
 }
 
 }  // namespace utils

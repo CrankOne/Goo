@@ -110,6 +110,7 @@ struct iSubsections : protected THashT<KeyT, SubsectionT*> {
            ; THashT<KeyT, SubsectionT*>::end() != it ; ++it ) {
             c( it );
         }
+        return c;
     }
 
     template<typename CallableT>
@@ -159,7 +160,7 @@ struct RecursiveVisitor : public TVisitorT<EntryCallableT> {
     }
 
     template<typename ... StackInitializers>
-    RecursiveVisitor( EntryCallableT & c, StackInitializers ... si ) : Parent( c ), stack(si...) {}
+    RecursiveVisitor( EntryCallableT c, StackInitializers ... si ) : Parent( c ), stack(si...) {}
 };
 
 /// Shortcut for entry modifying recursive visitor.

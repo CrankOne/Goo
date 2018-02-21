@@ -63,11 +63,11 @@ protected:
         wprintf( "Default _V_set_implicit_value() has no side effects.\n" );
     }
 public:
-    explicit ProgramOption( bool v=true
-                     , bool requiresValue=true
-                     , bool mayBeImplicit=false) : _isRequired(v)
-                                                 , _expectsArgument(requiresValue)
-                                                 , _mayBeImplicit(mayBeImplicit) {}
+    explicit ProgramOption( bool isRequired=false
+                          , bool expectsArgument=true
+                          , bool mayBeImplicitly=false) : _isRequired(isRequired)
+                                                        , _expectsArgument(expectsArgument)
+                                                        , _mayBeImplicit(mayBeImplicitly) {}
     bool is_required() const { return _isRequired; }
     virtual void set_required(bool v) { _isRequired = true; }
     /// Returns whether this parameter expects an argument (otherwise, being a flag).
@@ -224,7 +224,7 @@ protected:
         //static_cast<TValue<ValueT, AspectTs...>*>(this)->value(_implicitValue);
     }
 public:
-    ImplicitValue( bool isRequired=true
+    ImplicitValue( bool isRequired=false
                  , bool requiresValue=true
                  , bool mayBeImplicit=false) : ProgramOption( isRequired
                                                       , requiresValue
