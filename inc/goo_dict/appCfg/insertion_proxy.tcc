@@ -253,9 +253,9 @@ public:
          , const std::string & name
          , const std::string & description ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
-                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::CharShortcut>(shortcut)
-                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::IsSet>()
                                         , _alloc<aspects::Array>(true)
                                         );
@@ -271,9 +271,9 @@ public:
     array( char shortcut
          , const std::string & description ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
-                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::CharShortcut>(shortcut)
-                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::IsSet>()
                                         , _alloc<aspects::Array>(true)
                                         );
@@ -286,9 +286,9 @@ public:
     array( const std::string & name
          , const std::string & description ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
-                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::CharShortcut>()  // no shortcut
-                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::IsSet>()
                                         , _alloc<aspects::Array>(true)
                                         );
@@ -307,9 +307,9 @@ public:
          , const std::string & description
          , const std::initializer_list<PT> & dft ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
-                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::CharShortcut>(shortcut)
-                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::IsSet>(true)
                                         , _alloc<aspects::Array>(true)
                                         );
@@ -328,9 +328,9 @@ public:
          , const std::string & description
          , const std::initializer_list<PT> & dft ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
-                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::CharShortcut>()  // no shortcut
-                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::IsSet>(true)
                                         , _alloc<aspects::Array>(true)
                                         );
@@ -350,9 +350,9 @@ public:
          , const std::string & description
          , const std::initializer_list<PT> & dft ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
-                                       , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                       , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                        , _alloc<aspects::CharShortcut>(shortcut)
-                                       , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
+                                       , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                        , _alloc<aspects::IsSet>()
                                        , _alloc<aspects::Array>(true)
                                        );

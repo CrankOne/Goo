@@ -185,7 +185,7 @@ private:
 protected:
     /// Mutable value reference getter.
     ValueT & _mutable_value() { return _value; }
-    virtual const std::type_info & _V_target_type_info() const final {
+    virtual const std::type_info & _V_target_type_info() const override {
         return typeid(ValueT); }
     /// This method is to be used by user code, for special cases. It should
     /// not be used by Goo API, during the normal argument parsing cycle.

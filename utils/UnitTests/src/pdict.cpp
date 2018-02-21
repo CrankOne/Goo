@@ -294,7 +294,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             bool * c = tstSeq;
             _ASSERT( 5 == binaryOne.size(),
                     "#1 Wrong number of parameters in array: "
-                    "%d != 4.", (int) binaryOne.size() );
+                    "%d != 5.", (int) binaryOne.size() );
             for( auto it = binaryOne.begin(); binaryOne.end() != it; ++it, ++c ) {
                 _ASSERT( *it == *c,
                          "#1 array: parameter #%d is set to unexpected value.",

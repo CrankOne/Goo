@@ -125,6 +125,10 @@ protected:
         }
         _values.push_back( v ); }
 
+    virtual const std::type_info & _V_target_type_info() const override {
+        return typeid( Array<ValueT> );
+    }
+
     //virtual void _V_parse_argument( const char * strval ) override {
     //    InsertableParameter<ValueT>::_V_parse_argument( strval );
     //    _V_push_value( InsertableParameter<ValueT>::value() ); }
@@ -148,18 +152,22 @@ public:
     /// This method is usually used by some user code desiring set all the
     /// parameters list at once. It should not be used by Goo API, during the
     /// normal argument parsing cycle.
-    void assign( const Array<ValueT> & plst ) {
+    void append( const Array<ValueT> & plst ) {
         for( auto v : plst ) {
             _V_push_value(v);
         }
     }
 
-    friend class DictInsertionProxy;
+    void append( const ValueT & v ) {
+        _V_push_value(v);
+    }
 
-    //using AbstractParameter::name;
-    //using AbstractParameter::description;
-    //using AbstractParameter::shortcut;
-    // ... whatever?
+    void assign( const Array<ValueT> & plst ) {
+        _values.clear();
+        append(plst);
+    }
+
+    friend class DictInsertionProxy;
 };
 
 /// This specification has to be treated in the special manner, in a similar way
@@ -170,17 +178,17 @@ template<typename ... AspectTs> class Parameter<List<iBaseValue<AspectTs...>*> >
 template<typename ... AspectTs>
 template<typename T> const Array<T> &
 iBaseValue<AspectTs...>::as_array_of() const {
-    # if 1
-    typedef InsertableParameter< Array<T> > const * CastTarget;
+    typedef Parameter<Array<T>, AspectTs ...> const * CastTarget;
     auto ptr = dynamic_cast<CastTarget>(this);
     if( !ptr ) {
-        goo_badcast( typename DECLTYPE(this)
+        goo_badcast( typeof(this)
                    , CastTarget
                    , this
-                   , "Type mismatch for parameters dictionary array entry." );
+                   , "Type mismatch for parameters dictionary array entry."
+                        " Wrapped data type is: '%s'."
+                   , this->target_type_info().name() );
     }
     return ptr->values();
-    # endif
 }
 
 template<typename ... AspectTs>
@@ -193,20 +201,9 @@ iBaseValue<AspectTs...>::as() const {
         goo_badcast( typename DECLTYPE(this)
                    , CastTarget
                    , this
-                   , "Type mismatch for parameters dictionary scalar entry." );
-        # if 0
-        const iSingularParameter * namedP = dynamic_cast<const iSingularParameter *>(this);
-        if( namedP ) {
-            if( namedP->name() ) {
-                goo_badcast( DECLTYPE(this), CastTarget, this, "Parameter name: \"%s\"."
-                           , namedP->name() );
-            } else if( namedP->has_shortcut() ) {
-                goo_badcast( DECLTYPE(this), CastTarget, this, "Parameter shortcut: \"%c\"."
-                           , namedP->shortcut() );
-            }
-        }
-        goo_badcast( DECLTYPE(this), CastTarget, this, "Anonymous parameter." );
-        # endif
+                   , "Type mismatch for parameters dictionary scalar entry."
+                        " Wrapped data type is: '%s'."
+                   , this->target_type_info().name() );
     }
     return ptr->value();
 }

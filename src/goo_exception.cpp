@@ -319,14 +319,22 @@ Exception::_get_trace() throw() {
 # endif  // EM_STACK_UNWINDING 
 
 void
+Exception::dump_specific_details(std::ostream & os) const throw() {
+    os << "(unavailable)";
+}
+
+void
 Exception::dump(std::ostream & os) const throw() {
     os  << std::endl << ESC_BLDYELLOW
         << std::setw(15) << std::right << "exception code"
         << ESC_CLRCLEAR ": " ESC_BLDRED << (int) _code << ESC_CLRCLEAR;
     os  << " (" ESC_BLDWHITE
         << get_errcode_description(_code) << ESC_CLRCLEAR")" << std::endl;
-    os  << ESC_BLDYELLOW << std::setw(15) << std::right << "details" << ESC_CLRCLEAR": "
+    os  << ESC_BLDYELLOW << std::setw(15) << std::right << "message" << ESC_CLRCLEAR": "
         << _what << std::endl;
+    os <<  ESC_BLDYELLOW << std::setw(15) << std::right << "spec. details" << ESC_CLRCLEAR": ";
+    dump_specific_details( os );
+    os << std::endl;
 
     # ifdef EM_STACK_UNWINDING
     os << ESC_BLDYELLOW << std::setw(15) << std::right << "stacktrace" << ESC_CLRCLEAR":"
@@ -363,53 +371,53 @@ TheException<Exception::unimplemented>::TheException(
                                              , _fileName(fn)
                                              , _prettyFunction(pf) {}
 
-const char *
-TheException<Exception::unimplemented>::what() const throw() {
+void
+TheException<Exception::unimplemented>::dump_specific_details(std::ostream & os) const throw() {
     static char emBf[4*GOO_EMERGENCY_BUFLEN];
     if( -1 == _lineNo ) {
-        // Internal field not set --- use parent's method.
-        return Exception::what();
+        os << "(no positional info)";
+        return;
     }
     snprintf( emBf, sizeof(emBf), "Not implemented code block reached at: %s:%d"
-                     ", function %s. Description: %s."
+                     ", function %s. Description: %s"
              , _fileName.c_str(), _lineNo, _prettyFunction.c_str(), Exception::what() );
-    return emBf;
+    os << emBf;
 }
 
 // - Bad type cast error.
 
-const char *
-TheException<Exception::badCast>::what() const throw() {
+void
+TheException<Exception::badCast>::dump_specific_details(std::ostream & os) const throw() {
     static char emBf[4*GOO_EMERGENCY_BUFLEN];
     if( ! (_fromType && _toType) ) {
-        // Internal field not set --- use generic method.
-        return Exception::what();
+        os << "(no types information)";
+        return;
     }
     snprintf( emBf, sizeof(emBf), "Unable to perform run-time type cast from"
-                     " type \"%s\" to type \"%s\" for data at %p: %s."
+                     " type \"%s\" to type \"%s\" for data at %p: %s"
                   , goo::em::demangle_class(_fromType->name()).c_str()
                   , goo::em::demangle_class(_toType->name()).c_str()
                   , _addr
                   , Exception::what() );
-    return emBf;
+    os << emBf;
 }
 
 // - Variable was not initialized error
 
-const char *
-TheException<Exception::uninitialized>::what() const throw() {
+void
+TheException<Exception::uninitialized>::dump_specific_details(std::ostream & os) const throw() {
     static char emBf[4*GOO_EMERGENCY_BUFLEN];
     if( !_addr ) {
-        // Internal field not set --- use parent's method.
-        return Exception::what();
+        os << "(no address info)";
+        return;
     }
     snprintf( emBf, sizeof(emBf), "Variable labeled \"%s\" by address %p was"
                     " not initialized in current evaluation context. %s Unable"
-                    " to proceed."
+                    " to proceed"
                   , _dataLabel.c_str()
                   , _addr
                   , Exception::what() );
-    return emBf;
+    os << emBf;
 }
 
 // - ... other exceptions to be added here

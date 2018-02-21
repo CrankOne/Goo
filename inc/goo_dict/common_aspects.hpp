@@ -27,6 +27,7 @@
 # include "goo_exception.hpp"
 
 # include "goo_dict/value.hpp"
+# include "goo_dict/parameter.tcc"
 
 # include <tuple>
 
@@ -186,16 +187,17 @@ public:
     typedef ValueT Value;
     typedef typename iStringConvertible::ConversionTraits<Value> ValueTraits;
     typedef TStringConvertible<dict::Array<ValueT>, AspectTs...> Self;
-    typedef TValue<dict::Array<ValueT>, AspectTs...> TypedSelf;
+    typedef Parameter<dict::Array<ValueT>, AspectTs...> TypedSelf;
 protected:
     /// Sets the value kept by current instance from string expression.
     virtual void _V_parse_argument( const char *strval ) override {
         static_cast<TypedSelf&>(BoundMixin::target())
-                .value(ValueTraits::parse_string_expression(strval));
+                .append(ValueTraits::parse_string_expression(strval));
     }
 
     /// Expresses the value kept by current instance as a string.
     virtual std::string _V_to_string() const override {
+        // TODO stringify array of objects
         return ValueTraits::to_string_expression(
                 static_cast<const TypedSelf&>(BoundMixin::target()).value());
     }

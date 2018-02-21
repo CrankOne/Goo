@@ -308,6 +308,8 @@ public:
 
     /// Goo's error code getter.
     inline ErrCode code() const { return _code; }
+    /// Prints the exception type-specific information in human-readable form.
+    virtual void dump_specific_details( std::ostream & ) const throw();
     /// Generic method for printing a brief info.
     virtual const char * what() const throw() { return _what.c_str(); }
 
@@ -356,7 +358,8 @@ public:
                 , const em::String & fn
                 , const em::String & pf
                 , const em::String & description );
-    virtual const char * what() const throw() override;
+    /// Prints the code positional info.
+    void dump_specific_details( std::ostream & ) const throw() override;
     // TODO: ... setters/getters
 };
 
@@ -396,7 +399,8 @@ public:
         return TheException( &typeid(FromTypeT), &typeid(ToTypeT), addr, s );
     }
 
-    virtual const char * what() const throw() override;
+    /// Prints the code positional info.
+    void dump_specific_details( std::ostream & ) const throw() override;
 
     const std::type_info * from_type_info() const throw() { return _fromType; }
     const std::type_info * to_type_info() const throw() { return _toType; }
@@ -434,7 +438,7 @@ public:
                                             , _dataLabel(label)
                                             , _addr(addr) {}
 
-    virtual const char * what() const throw() override;  // TODO
+    void dump_specific_details( std::ostream & ) const throw() override;
     const void * address() const throw() { return _addr; }
 };
 
