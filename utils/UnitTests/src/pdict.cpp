@@ -14,7 +14,7 @@
 //# define NO_BASIC_PARSING_TEST
 //# define NO_BASIC_ERRORS_TEST
 //# define NO_ARRAY_PARAMETERS_TEST
-# define NO_CONSISTENCY_TESTS
+//# define NO_CONSISTENCY_TESTS
 # define NO_SUBSECTION_PARAMETER_RETRIEVING_TEST
 # define NO_ADVANCED_CONFIGURATION_TEST
 # define NO_AOS_TEST
@@ -385,7 +385,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # ifndef NO_CONSISTENCY_TESTS
     {
         os << "Consistency tests : {" << std::endl;
-        goo::dict::Configuration conf( "theApplication4", "Testing parameter set #3." );
+        goo::dict::Configuration conf( "Testing parameter set #3." );
 
         conf.insertion_proxy()
             .p<int>( 'f', "first",          "First parameter, optional one." )
@@ -394,8 +394,8 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .array<double>( '4', "fourth",   "Fourth parameter, required array." ).required_argument()
             ;
 
-        os << "Original config object:" << std::endl;
-        conf.print_ASCII_tree( os );
+        //os << "Original config object:" << std::endl;
+        //conf.print_ASCII_tree( os );
 
         char ** argv;
         # if 0
@@ -416,11 +416,12 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         }
         {
             // Everything is ok.
-            int argc = goo::dict::Configuration::tokenize_string( ex3, argv );
+            int argc = goo_shell_tokenize_string( ex3, &argv );
             goo::dict::Configuration confCopy( conf );
-            confCopy.print_ASCII_tree( os );
-            confCopy.extract( argc, argv, true, &os );
-            goo::dict::Configuration::free_tokens( argc, argv );
+            //confCopy.print_ASCII_tree( os );
+            utils::set_app_conf( conf, argc, argv, nullptr, &os );
+            //confCopy.extract( argc, argv, true, &os );
+            goo_free_shell_tokens( argc, argv );
         }
         # endif
 
