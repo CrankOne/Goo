@@ -50,10 +50,10 @@ public:
 /// The "requires argument"=false state is usually possible for command-line
 /// arguments --- POSIX standard defines such flags. The "is required" flag
 /// makes sense only with composition of the IsSet() aspect.
-struct Required : public BoundMixin {  // TODO: rename this aspect to "ProgrammOption"
+struct ProgramOption : public BoundMixin {
 private:
     bool _isRequired
-       , _requiresValue
+       , _expectsArgument
        , _mayBeImplicit
        ;
 protected:
@@ -63,17 +63,17 @@ protected:
         wprintf( "Default _V_set_implicit_value() has no side effects.\n" );
     }
 public:
-    explicit Required( bool v=true
+    explicit ProgramOption( bool v=true
                      , bool requiresValue=true
                      , bool mayBeImplicit=false) : _isRequired(v)
-                                                 , _requiresValue(requiresValue)
+                                                 , _expectsArgument(requiresValue)
                                                  , _mayBeImplicit(mayBeImplicit) {}
     bool is_required() const { return _isRequired; }
     virtual void set_required(bool v) { _isRequired = true; }
-    /// TODO: Rename to "expects_argument".
-    bool requires_argument() const { return _requiresValue; }
-    /// TODO: Rename to "set_expects_argument".
-    virtual void set_requires_argument( bool v ) { _requiresValue = v; }
+    /// Returns whether this parameter expects an argument (otherwise, being a flag).
+    bool expects_argument() const { return _expectsArgument; }
+    /// (Un)sets the argument indicating this parameter is expecting argument.
+    virtual void set_expects_argument(bool v) { _expectsArgument = v; }
     bool may_be_set_implicitly() const { return _mayBeImplicit; }
     virtual void set_being_implicit( bool v ) { _mayBeImplicit = v; }
     virtual void assign_implicit_value() { _V_assign_implicit_value(); }
@@ -106,6 +106,8 @@ public:
     }
 };
 
+/// Array aspect.
+/// TODO: append/wipe-on-set modifiers.
 struct Array {
 private:
     bool _isArray;
@@ -210,7 +212,7 @@ public:
 
 template< typename ValueT
         , typename ... AspectTs>
-class ImplicitValue : public Required {
+class ImplicitValue : public ProgramOption {
 public:
     typedef TValue<ValueT, AspectTs...> TypedSelf;
 private:
@@ -224,7 +226,7 @@ protected:
 public:
     ImplicitValue( bool isRequired=true
                  , bool requiresValue=true
-                 , bool mayBeImplicit=false) : Required( isRequired
+                 , bool mayBeImplicit=false) : ProgramOption( isRequired
                                                       , requiresValue
                                                       , mayBeImplicit ) {}
     virtual void set_implicit_value( const ValueT & v ) {

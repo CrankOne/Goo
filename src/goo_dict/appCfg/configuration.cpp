@@ -57,9 +57,9 @@ public:
         size_t _fullLength;
     public:
         NamePrefixStack() : _fullLength(0) {}
-        void push( const std::string & s ) {
-            _fullLength += 1 + s.size();
-            std::vector<std::string>::push_back( s );
+        void push( dict::AppConfTraits::IndexBy<std::string>::Aspect::Parent::iterator it ) {
+            _fullLength += 1 + it->first.size();
+            std::vector<std::string>::push_back( it->first );
         }
         void pop() {
             _fullLength -= 1 + std::vector<std::string>::back().size();
@@ -98,34 +98,13 @@ public:
     }
 };  // struct getopt_ConfDictCache
 
-/// Auxiliary class performing recursive iteration within the configuration and
-/// its subsection, forming the structures for getopt_long() procedure.
-struct RecursiveVisitor_getopt : public dict::AppConfTraits
-                                    ::IndexBy<std::string>
-                                    ::Aspect
-                                    ::RecursiveRevisingVisitor<getopt_ConfDictCache&> {
-    typedef dict::AppConfTraits
-                ::IndexBy<std::string>
-                ::Aspect
-                ::RecursiveRevisingVisitor<getopt_ConfDictCache&> Parent;
-
-    getopt_ConfDictCache::NamePrefixStack & _stack;
-
-    /// Overrides subsection callble
-    virtual void operator()( SubsectionIterator it ) override {
-        _stack.push( it->first );
-        Parent::operator()( it );
-        _stack.pop();
-    }
-
-    RecursiveVisitor_getopt( getopt_ConfDictCache & c
-                   , getopt_ConfDictCache::NamePrefixStack & nameprefixRef ) : Parent( c )
-                                                                           , _stack(c.nameprefix) {}
-};
+typedef goo::dict::aux::RevisingVisitor< getopt_ConfDictCache
+                                      , getopt_ConfDictCache::NamePrefixStack &
+                                      , dict::AppConfTraits > RecursiveVisitor_getopt;
 
 
 //
-// Copier internal cache
+// Copying procedure internal cache
 
 struct copier_ConfDictCache {
     /// Insertion proxy to the
@@ -141,7 +120,36 @@ struct copier_ConfDictCache {
     }
 };
 
+//
+// Configuration consistency check
+
+void
+AppConfValidator::operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::iterator it ) {
+    uint8_t reason = 0x0;
+    auto poa = it->second->aspect_cast<dict::aspects::ProgramOption>();
+    auto isa = it->second->aspect_cast<dict::aspects::IsSet>();
+    auto dea = it->second->aspect_cast<dict::aspects::Description>();
+    if( (_opts & requiredAreNotSet) && (poa->is_required() && isa->is_set()) ) {
+        reason |= requiredAreNotSet;
+    }
+    if( (_opts & requiredAreImplicit) && (poa->is_required() && poa->may_be_set_implicitly()) ) {
+        reason |= requiredAreImplicit;
+    }
+    if( (_opts & emptyDescription) && dea->description().empty() ) {
+        reason |= emptyDescription;
+    }
+    // ...
+    if( reason ) {
+        _badEntries.push_back({ _reentrantStack, it });
+    }
 }
+
+std::vector<AppConfValidator::InvalidEntry>
+AppConfValidator::run(const dict::Configuration &, uint8_t options) {
+    _TODO_  // TODO
+}
+
+}  // namespace utils
 
 namespace dict {
 
@@ -223,14 +231,14 @@ void
 getopt_ConfDictCache::consider_entry( const std::string & name
                                     , dict::AppConfTraits::FeaturedBase & db ) {
     assert(!name.empty()); //?
-    auto * ar = db.aspect_cast<dict::aspects::Required>();
+    auto * ar = db.aspect_cast<dict::aspects::ProgramOption>();
     assert(ar);
     int hasArg = no_argument;
-    if( ar->requires_argument() ) {
+    if(ar->expects_argument() ) {
         hasArg = required_argument;
     }
     if( ar->may_be_set_implicitly() ) {
-        //assert( ar->requires_argument() );
+        //assert( ar->expects_argument() );
         hasArg = optional_argument;
     }
     auto * acs = db.aspect_cast<dict::aspects::CharShortcut>();
@@ -263,14 +271,14 @@ getopt_ConfDictCache::getopt_ConfDictCache( dict::Configuration & cfg
         char c = sRef.first;
         assert( 'W' != c );
         _shorts.push_back(c);
-        auto ra = sRef.second->aspect_cast<dict::aspects::Required>();
+        auto ra = sRef.second->aspect_cast<dict::aspects::ProgramOption>();
         assert( !! ra );  // must be excluded upon insertion into shortcuts dict in Configuration
-        if( ra->requires_argument() ) {
+        if( ra->expects_argument() ) {
             _shorts.push_back( ':' );
         }
-        if( ra->requires_argument() && ra->may_be_set_implicitly() ) {
+        if( ra->expects_argument() && ra->may_be_set_implicitly() ) {
             # if 0  // valid case
-            if( ! ra->requires_argument() ) {
+            if( ! ra->expects_argument() ) {
                 emraise( badState, "Option '%c' has contradictory flags:"
                     " it may be implicitly set, but does not expect an argument"
                     " value.", c );
@@ -419,9 +427,9 @@ set_app_conf( dict::Configuration & cfg
         // Upon now, the look-up procedure has to came up with the particular
         // parameter entry instance that may be set (or appended) with the
         // argument value (or may be not, depending on its internal properties
-        auto ar = pPtr->aspect_cast<dict::aspects::Required>();
+        auto ar = pPtr->aspect_cast<dict::aspects::ProgramOption>();
         assert( !!ar );
-        if( ar->requires_argument() ) {
+        if(ar->expects_argument() ) {
             //log_extraction( "c=%c (0x%02x) considered as a (short)"
             //               " parameter with argument \"%s\".\n"
             //             , c, c, optarg );

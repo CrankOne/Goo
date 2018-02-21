@@ -141,6 +141,47 @@ struct iSubsections : protected THashT<KeyT, SubsectionT*> {
     };
 };
 
+/// Auxiliary class performing recursive iteration within the configuration and
+/// its subsection, remembering the full path to the entry.
+template< typename EntryCallableT
+        , template<typename> class TVisitorT
+        , typename StackT >
+struct RecursiveVisitor : public TVisitorT<EntryCallableT> {
+    typedef TVisitorT<EntryCallableT> Parent;
+
+    StackT stack;
+
+    /// Overrides subsection callable, remembering stack.
+    virtual void operator()( typename TVisitorT<EntryCallableT>::SubsectionIterator it ) override {
+        stack.push( it );
+        Parent::operator()( it );
+        stack.pop();
+    }
+
+    template<typename ... StackInitializers>
+    RecursiveVisitor( EntryCallableT & c, StackInitializers ... si ) : Parent( c ), stack(si...) {}
+};
+
+/// Shortcut for entry modifying recursive visitor.
+template< typename EntryCallableT
+        , typename StackT
+        , typename TraitsT> using RevisingVisitor
+            = RecursiveVisitor< EntryCallableT
+                             , TraitsT::template IndexBy<std::string>
+                                      ::Aspect
+                                      ::template RecursiveRevisingVisitor
+                             , StackT >;
+
+/// Shortcut for conservative recursive visitor.
+template< typename EntryCallableT
+        , typename StackT
+        , typename TraitsT> using ReadingVisitor
+            = RecursiveVisitor< EntryCallableT
+                             , TraitsT::template IndexBy<std::string>
+                                      ::Aspect
+                                      ::template RecursiveReadingVisitor
+                             , StackT >;
+
 }  // namespace aux
 }  // namespace dict
 }  // namespace goo

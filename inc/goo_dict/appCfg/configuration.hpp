@@ -75,6 +75,8 @@ public:
     typedef Parameter< bool, _Goo_m_VART_LIST_APP_CONF > LogicOption;
 
     typedef AppConfTraits::FeaturedBase FeaturedBase;
+
+    typedef dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::const_iterator SubsectionIterator;
 private:
     /// Dictionary for shortcut-only parameters. This container is bound with
     /// Configuration instance meaning that its entries lifetime is restricted
@@ -234,6 +236,38 @@ std::string compose_reference_text_for( const dict::Configuration & cfg
 void set_app_cfg_parameter( dict::Configuration::FeaturedBase & v
                           , const char * strExpr
                           , std::ostream * verbose );
+
+//
+// Configuration consistency check
+
+class AppConfValidator {
+public:
+    typedef dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::const_iterator Iterator;
+    typedef dict::AppConfTraits::IndexBy<std::string>::Aspect::Parent::const_iterator SubsectionIterator;
+    struct InvalidEntry {
+        std::stack<SubsectionIterator> sectionPath;
+        Iterator entryIterator;
+        uint8_t reasons;
+    };
+    enum ValidatingOptions : uint8_t {
+        requiredAreNotSet = 0x1,
+        requiredAreImplicit = 0x2,
+        emptyDescription = 0x4,
+    };
+private:
+    std::stack<SubsectionIterator> _reentrantStack;
+    std::vector<InvalidEntry> _badEntries;
+    uint8_t _opts;
+protected:
+    AppConfValidator( uint8_t opts ) : _opts(opts) {}
+public:
+    AppConfValidator() = delete;
+    /// Used to fill caches during recursive traversal.
+    void operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::iterator it );
+
+    /// Invoke to validate the configuration instance.
+    static std::vector<InvalidEntry> run( const dict::Configuration &, uint8_t options = 0x7 );
+};
 
 }  // namespace utils
 }  // namespace goo

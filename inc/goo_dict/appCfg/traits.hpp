@@ -100,7 +100,7 @@ template<typename KeyT> class InsertionProxy;
 # define _Goo_m_VART_LIST_APP_CONF aspects::Description \
                                  , aspects::iStringConvertible \
                                  , aspects::CharShortcut \
-                                 , aspects::Required \
+                                 , aspects::ProgramOption \
                                  , aspects::IsSet \
                                  , aspects::Array
 

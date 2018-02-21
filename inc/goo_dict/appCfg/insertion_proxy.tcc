@@ -46,7 +46,7 @@ template<typename KeyT> class InsertionProxy;
  *
  * Flag can not be required (required=false)
  *
- * Required can not be set (set=false)
+ * ProgramOption can not be set (set=false)
  *
  * List-of-Structures has atomic=false, singular=true (TODO!)
  *
@@ -71,7 +71,7 @@ public:
 private:
     Configuration * _root;
     InsertionTargetsStack _stack;
-    aspects::Required * _latestInsertedRequired;  // TODO: set to null in ctr
+    aspects::ProgramOption * _latestInsertedRequired;  // TODO: set to null in ctr
 protected:
     Subsection & _top();
     void _index_by_shortcut( char, VBase * );
@@ -121,7 +121,7 @@ public:
         else { assert( !name.empty() ); }
         # endif
         _latestInsertedRequired->set_required(false);
-        _latestInsertedRequired->set_requires_argument(false);
+        _latestInsertedRequired->set_expects_argument(false);
         _latestInsertedRequired->set_being_implicit(true);
         static_cast<aspects::ImplicitValue<bool, _Goo_m_VART_LIST_APP_CONF>*>(_latestInsertedRequired)
                 ->set_implicit_value(true);
@@ -135,8 +135,8 @@ public:
     /// Insert new parameter with shortcut and name, no default value.
     template<typename PT> Self &
     p( char shortcut
-     , const std::string & name
-     , const std::string & description ) {
+     , const char * name
+     , const char * description ) {
         auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::CharShortcut>(shortcut)
@@ -144,7 +144,7 @@ public:
                                         , _alloc<aspects::IsSet>()
                                         , _alloc<aspects::Array>(false)
                                         );
-        if( !name.empty() ) {
+        if( nullptr != name && *name != '\0' ) {
             _insert_parameter(name, pPtr);
         }
         _index_by_shortcut( shortcut, pPtr );
@@ -154,7 +154,7 @@ public:
     /// Insert new parameter with shortcut only, no default value.
     template<typename PT> Self &
     p( char shortcut
-     , const std::string & description ) {
+     , const char * description ) {
         auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::CharShortcut>(shortcut)
@@ -168,8 +168,8 @@ public:
 
     /// Insert new parameter with name only, no default value.
     template<typename PT> Self &
-    p( const std::string & name
-     , const std::string & description ) {
+    p( const char * name
+     , const char * description ) {
         auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::CharShortcut>()  // no shortcut
@@ -177,7 +177,7 @@ public:
                                         , _alloc<aspects::IsSet>()
                                         , _alloc<aspects::Array>(false)
                                         );
-        if( !name.empty() ) {
+        if( nullptr != name && *name != '\0' ) {
             _insert_parameter(name, pPtr);
         } else {
             emraise( badParameter, "Unable to insert parameter with empty name." );
@@ -188,8 +188,8 @@ public:
     /// Insert new parameter with shortcut and name, with default value.
     template<typename PT> Self &
     p( char shortcut
-     , const std::string & name
-     , const std::string & description
+     , const char * name
+     , const char * description
      , const PT & dft ) {
         auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
@@ -199,7 +199,7 @@ public:
                                         , _alloc<aspects::Array>(false)
                                         );
         pPtr->value( dft );
-        if( !name.empty() ) {
+        if( nullptr != name && *name != '\0' ) {
             _insert_parameter(name, pPtr);
         }
         _index_by_shortcut( shortcut, pPtr );
@@ -208,8 +208,8 @@ public:
 
     /// Insert new parameter with name only, with default value.
     template<typename PT> Self &
-    p( const std::string & name
-     , const std::string & description
+    p( const char * name
+     , const char * description
      , const PT & dft ) {
         auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
@@ -219,7 +219,7 @@ public:
                                         , _alloc<aspects::Array>(false)
                                         );
         pPtr->value( dft );
-        if( !name.empty() ) {
+        if( nullptr != name && *name != '\0' ) {
             _insert_parameter(name, pPtr);
         } else {
             emraise( badParameter, "Unable to insert parameter with empty name." );
@@ -230,7 +230,7 @@ public:
     /// Insert new parameter with shortcut only, with default value.
     template<typename PT> Self &
     p( char shortcut
-     , const std::string & description
+     , const char * description
      , const PT & dft ) {
         auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
@@ -250,8 +250,8 @@ public:
     /// Insert new parameter with shortcut and name, no default value.
     template<typename PT> Self &
     array( char shortcut
-         , const std::string & name
-         , const std::string & description ) {
+         , const char * name
+         , const char * description ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::CharShortcut>(shortcut)
@@ -259,7 +259,7 @@ public:
                                         , _alloc<aspects::IsSet>()
                                         , _alloc<aspects::Array>(true)
                                         );
-        if( !name.empty() ) {
+        if( nullptr != name && *name != '\0' ) {
             _insert_parameter(name, pPtr);
         }
         _index_by_shortcut( shortcut, pPtr );
@@ -269,7 +269,7 @@ public:
     /// Insert new parameter with shortcut only, no default value.
     template<typename PT> Self &
     array( char shortcut
-         , const std::string & description ) {
+         , const char * description ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::CharShortcut>(shortcut)
@@ -283,8 +283,8 @@ public:
 
     /// Insert new parameter with name only, no default value.
     template<typename PT> Self &
-    array( const std::string & name
-         , const std::string & description ) {
+    array( const char * name
+         , const char * description ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::CharShortcut>()  // no shortcut
@@ -292,7 +292,7 @@ public:
                                         , _alloc<aspects::IsSet>()
                                         , _alloc<aspects::Array>(true)
                                         );
-        if( !name.empty() ) {
+        if( nullptr != name && *name != '\0' ) {
             _insert_parameter(name, pPtr);
         } else {
             emraise( badParameter, "Unable to insert parameter with empty name." );
@@ -303,8 +303,8 @@ public:
     /// Insert new parameter with shortcut and name, with default value.
     template<typename PT> Self &
     array( char shortcut
-         , const std::string & name
-         , const std::string & description
+         , const char * name
+         , const char * description
          , const std::initializer_list<PT> & dft ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
@@ -315,7 +315,7 @@ public:
                                         );
         pPtr->assign( Array<PT>(dft) );
         pPtr->set_to_default(true);
-        if( !name.empty() ) {
+        if( nullptr != name && *name != '\0' ) {
             _insert_parameter(name, pPtr);
         }
         _index_by_shortcut( shortcut, pPtr );
@@ -324,8 +324,8 @@ public:
 
     /// Insert new parameter with name only, with default value.
     template<typename PT> Self &
-    array( const std::string & name
-         , const std::string & description
+    array( const char * name
+         , const char * description
          , const std::initializer_list<PT> & dft ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
                                         , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
@@ -336,7 +336,7 @@ public:
                                         );
         pPtr->assign( Array<PT>(dft) );
         pPtr->set_to_default(true);
-        if( !name.empty() ) {
+        if( nullptr != name && *name != '\0' ) {
             _insert_parameter(name, pPtr);
         } else {
             emraise( badParameter, "Unable to insert parameter with empty name." );
@@ -347,7 +347,7 @@ public:
     /// Insert new parameter with shortcut only, with default value.
     template<typename PT> Self &
     array( char shortcut
-         , const std::string & description
+         , const char * description
          , const std::initializer_list<PT> & dft ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
                                        , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
