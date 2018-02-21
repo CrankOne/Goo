@@ -676,7 +676,7 @@ Configuration::print_ASCII_tree( std::ostream & ss, size_t terminalWidth ) const
 
 // TODO: consider move this functions to goo::utils (may be useful in many places further).
 // taken from: https://stackoverflow.com/a/7298458/1734499
-static size_t utf8_length( char * s ) {
+static size_t utf8_length( const char * s ) {
     size_t len = 0;
     for (; *s; ++s) if ((*s & 0xC0) != 0x80) ++len;
     return len;
@@ -692,7 +692,7 @@ Configuration::print_ASCII_tree( std::list<std::string> & output,
     std::string prefix("╔═ << ")
               , body( description() )
               ;
-    const size_t prefixSize = utf8_length(prefix);
+    const size_t prefixSize = utf8_length( prefix.c_str() );
     std::string subprefix = "║" + std::string( prefixSize - 1, ' ' );
     terminalWidth = terminalWidth - prefixSize;
     if( body.size() > terminalWidth ) {
