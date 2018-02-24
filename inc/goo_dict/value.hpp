@@ -1,6 +1,26 @@
-//
+/*
+ * Copyright (c) 2017 Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Renat R. Dusaev <crank@qcrypt.org>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 // Created by crank on 12.01.18.
-//
 
 # ifndef H_GOO_PARAMETERS_VALUES_H
 # define H_GOO_PARAMETERS_VALUES_H
@@ -16,6 +36,20 @@
 namespace goo {
 namespace dict {
 
+/**@brief Abstract base class for every parameter or dictionary.
+ * @class iAbstractValue
+ *
+ * This base expresses the most basic idea behind every entity within the
+ * goo::dict framework by declaring a class that refers to physical data block.
+ * No assumptions about the particular data structure or type are made here.
+ *
+ * Albeit, this class is rarely used within the framework, it may be convenient
+ * or necessary for some rare cases (like virtual copy constructions). See
+ * iBaseValue subclass playing more significant role.
+ *
+ * Unfortunately, C++ has no native means for Aspect-Oriented Programming, nor
+ * for the virtual constructor, so we had to implement it idiomatically.
+ * */
 class iAbstractValue : public mixins::iDuplicable<iAbstractValue, iAbstractValue, iAbstractValue> {
 protected:
     /// Shall return untyped data pointer.
@@ -38,6 +72,12 @@ public:
 
 namespace aspects {
 
+/**@brief Basic mixin-pointcut for reverse dereferencing.
+ * @class BoundMixin
+ *
+ * This mixin holds the pointer to the owning instance, granting subclassing
+ * aspect access to it.
+ */
 class BoundMixin {
 private:
     iAbstractValue * _self;
@@ -55,10 +95,20 @@ public:
 // aux::unwind_set_targets<ValueT, AspectTs...>( this );
 
 /**@brief Type-agnostic value parameter base.
+ * @class iBaseValue
  *
  * This abstract base claims interface of type-agnostic value-bearing parameter
  * instance providing generic methods accessing the data memory address and
  * C++ RTTI information.
+ *
+ * The particular set of aspects parameters within the template parameter list
+ * will define the behaviour of the object at few stages of its lifetime.
+ *
+ * One may think about this class as it is a pointcut with following join
+ * points:
+ *  - Setting avalue
+ *  - Retrieving a value
+ *  - ... todo?
  * */
 template<typename ... AspectTs>
 class iBaseValue : public iAbstractValue {
@@ -165,6 +215,23 @@ iBaseValue<AspectTs ...>::iBaseValue( std::tuple<AspectTs * ...> t ) : _aspects(
     aspects::aux::unwind_set_targets( this );
 }
 
+template<typename ValueT, typename ... AspectTs>
+class TValue;
+
+// TODO: unwind aspects array for (before/after)_set advice(s).
+template<typename ... AspectTs>
+struct Pointcuts {
+    //
+    // "set" join point
+    template<typename ValueT>
+    static void before_set( const ValueT & v
+                          , TValue<ValueT, AspectTs...> * self ) {}
+
+    template<typename ValueT>
+    static void after_set( const ValueT & v
+                         , TValue<ValueT, AspectTs...> * self ) {}
+};
+
 /**@brief Template container for a value.
  * @class iTValue
  *
@@ -180,16 +247,38 @@ public:
     typedef mixins::iDuplicable< iAbstractValue
                                , TValue<ValueT, AspectTs...>
                                , iBaseValue<AspectTs...> > DuplicableParent;
+    /// Handler for mutating procedures.
+    struct ModificationSeeker {
+    public:
+        typedef TValue<ValueT, AspectTs...> Owner;
+    protected:
+        ModificationSeeker( Owner * owner_ ) : owner(*owner_) {
+            Pointcuts<AspectTs...>::before_set( owner._mutable_value(), &owner );
+        }
+    public:
+        /// Dft ctr forbidden.
+        ModificationSeeker() = delete;
+        /// Copy ctr forbidden.
+        ModificationSeeker(const ModificationSeeker &) = delete;
+        /// Reference to owner parameter entry.
+        Owner & owner;
+        /// Dtr invoking aspect's advice.
+        ~ModificationSeeker(){
+            Pointcuts<AspectTs...>::after_set( owner._mutable_value(), &owner ); }
+    };
 private:
     Value _value;
 protected:
-    /// Mutable value reference getter.
-    ValueT & _mutable_value() { return _value; }
+    /// Mutable value reference getter. Does NOT invokes aspect's after_set()
+    /// advices.
+    ValueT & _mutable_value() {
+        return _value;
+    }
     virtual const std::type_info & _V_target_type_info() const override {
         return typeid(ValueT); }
-    /// This method is to be used by user code, for special cases. It should
-    /// not be used by Goo API, during the normal argument parsing cycle.
-    virtual void _set_value( const ValueT & v ) { _value = v; }
+    /// Sets the option value. Must not be used in ordinary routines as it
+    /// does ignore the potential participant(s) from aspects (e.g. IsSet).
+    virtual void _set_value( const ValueT & v );
     /// Returns kept value address.
     virtual void * _V_data_addr() override { return &_value; }
     /// Returns kept value address (const).
@@ -198,17 +287,30 @@ protected:
     TValue() : _value() {}
 public:
     template<typename ... ArgTs> TValue(ArgTs...args);
-    //TValue( std::tuple<AspectTs * ...> t );  // xxx
     /// Const value getter (public).
     virtual const ValueT & value() const { return _value; }
+    /// Value getter.
+    ModificationSeeker && mutable_value() { return ModificationSeeker(this); }
+    /// Setter.
     virtual void value(const Value & v) { _set_value(v); }
+    /// Ctr "from value". Ignores joint point.
     explicit TValue( const ValueT & v ) : _value(v) {}
+    /// Copy ctr. Besides from implicit iDuplicable parent copy invocation,
+    /// directly copies value.
     TValue( const TValue<Value> & o ) : _value(o._value) {}
 };
 
 template<typename ValueT, typename ... AspectTs>
 template<typename ... ctrArgTs>
 TValue<ValueT, AspectTs...>::TValue( ctrArgTs ... args ) : DuplicableParent(args ... ) {
+}
+
+template< typename ValueT
+        , typename ... AspectTs> void
+TValue<ValueT, AspectTs...>::_set_value( const ValueT & v ) {
+    Pointcuts<AspectTs...>::before_set( v, this );
+    this->_mutable_value() = v;
+    Pointcuts<AspectTs...>::after_set( v, this );
 }
 
 }  // namespace dict

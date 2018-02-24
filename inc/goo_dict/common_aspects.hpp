@@ -236,6 +236,8 @@ public:
 };
 
 }  // namespace aspects
+
+
 }  // namespace dict
 }  // namespace goo
 
