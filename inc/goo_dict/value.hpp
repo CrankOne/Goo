@@ -31,6 +31,8 @@
 # include "goo_mixins/vcopy.tcc"
 # include "goo_utility.hpp"
 
+# include "goo_dict/asp_unwind.tcc"
+
 # include <cassert>
 
 namespace goo {
@@ -155,64 +157,31 @@ namespace aspects {
 namespace aux {
 
 template<typename HeadT>
-struct _Unwind {
-    struct Setter {
-        static int set(HeadT *i, iAbstractValue * t) { i->set_target(t); return 1; }
+struct BoundAspectSetter {
+    struct MeaningfulCaller {
+        static int do_(HeadT *i, iAbstractValue * t) { i->set_target(t); return 1; }
     };
 
-    struct Dummy {
-        static int set(HeadT *, iAbstractValue *) { /* shall be trimmed off by optimization */ return 0; }
+    struct DummyCaller {
+        static int do_(HeadT *, iAbstractValue *) { /* shall be trimmed off by optimization */ return 0; }
     };
 
     typedef typename std::conditional< std::is_base_of<BoundMixin, HeadT>::value
-            , Setter
-            , Dummy>::type Doer;
+            , MeaningfulCaller
+            , DummyCaller>::type Doer;
 };
-
-// Recursive template aspects unwinding template.
-template< int N
-        , typename HeadT
-        , typename ... TailTs>
-struct _TTUnwind {
-    template<typename ... AspectTs>
-    static void set_tuple_aspect_targets(iAbstractValue * trg, std::tuple<AspectTs * ...> t) {
-        _Unwind<HeadT>::Doer::set( std::get<N>(t), trg );
-        _TTUnwind<N+1, TailTs...>:: \
-                template set_tuple_aspect_targets<AspectTs...>( trg, t );
-        //auto rs[] = {  };
-    }
-};
-
-// Last aspect unwinding (template arguments expansion terminator).
-template< int N, typename HeadT>
-struct _TTUnwind<N, HeadT> {
-    template<typename ... AspectTs>
-    static void set_tuple_aspect_targets(iAbstractValue * trg, std::tuple<AspectTs * ...> t) {
-        _Unwind<HeadT>::Doer::set( std::get<N>(t), trg );
-    }
-    // ...
-};
-
-template<typename ... AspectTs> void
-unwind_set_targets( iBaseValue<AspectTs...> * t ) {
-    aux::_TTUnwind<0, AspectTs ... > \
-            ::set_tuple_aspect_targets( t, t->aspects() );
-}
-
-template<> inline void
-unwind_set_targets<>( iBaseValue<> * ) { /* do nothing when no aspects available */ }
 
 }  // namespace aux
 }  // namespace aspects
 
 template<typename ... AspectTs>
 iBaseValue<AspectTs ...>::iBaseValue( AspectTs * ... aspects ) : _aspects(aspects ...) {
-    aspects::aux::unwind_set_targets( this );
+    aspects::aux::ConditionalInTuple<aspects::aux::BoundAspectSetter, AspectTs ...>::apply( this );
 }
 
 template<typename ... AspectTs>
 iBaseValue<AspectTs ...>::iBaseValue( std::tuple<AspectTs * ...> t ) : _aspects(t) {
-    aspects::aux::unwind_set_targets( this );
+    aspects::aux::ConditionalInTuple<aspects::aux::BoundAspectSetter, AspectTs ...>::apply( this );
 }
 
 template<typename ValueT, typename ... AspectTs>
