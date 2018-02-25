@@ -156,19 +156,75 @@ public:
 namespace aspects {
 namespace aux {
 
+/// Aux class, sets the bound target for aspects that are inherited from
+/// BoundMixin. Invoked upon construction (thus, applying advices "on
+/// construction" join point).
 template<typename HeadT>
 struct BoundAspectSetter {
     struct MeaningfulCaller {
-        static int do_(HeadT *i, iAbstractValue * t) { i->set_target(t); return 1; }
+        static int apply_advice(HeadT *i, iAbstractValue * t) { i->set_target(t); return 1; }
     };
 
     struct DummyCaller {
-        static int do_(HeadT *, iAbstractValue *) { /* shall be trimmed off by optimization */ return 0; }
+        static int apply_advice(HeadT *, iAbstractValue *) { /* shall be trimmed off by optimization */ return 0; }
     };
 
     typedef typename std::conditional< std::is_base_of<BoundMixin, HeadT>::value
             , MeaningfulCaller
-            , DummyCaller>::type Doer;
+            , DummyCaller>::type Selector;
+};
+
+/// Aux class, applying the before_set()/after_set() aspect advices ("on set"
+/// join point).
+/// For explanations, see:
+/// - using SFINAE to find out whether class has the method:
+///   https://dev.krzaq.cc/post/checking-whether-a-class-has-a-member-function-with-a-given-signature/
+///   https://stackoverflow.com/questions/18570285/using-sfinae-to-detect-a-member-function
+/// - decltype(a, b) --- https://stackoverflow.com/a/16044573/1734499
+template<typename HeadT>
+struct BeforeSetAdviceApply {
+    template<typename U> static auto test_before_set(int) ->
+                    decltype(std::declval<U>().before_set() == 1, std::true_type());
+
+    template<typename> static std::false_type test_before_set(...);
+
+    static constexpr bool has_before_set = std::is_same<decltype( test_before_set<HeadT>(0))
+                                                                , std::true_type>::value;
+
+    struct MeaningfulCaller {
+        static int apply_advice(HeadT *i, iAbstractValue * t) { i->before_set(); return 1; }
+    };
+
+    struct DummyCaller {
+        static int apply_advice(HeadT *, iAbstractValue *) { /* shall be trimmed off by optimization */ return 0; }
+    };
+
+    typedef typename std::conditional< has_before_set
+            , MeaningfulCaller
+            , DummyCaller>::type Selector;
+};
+
+template<typename HeadT>
+struct AfterSetAdviceApply {
+    template<typename U> static auto test_after_set(int) ->
+                    decltype(std::declval<U>().after_set() == 1, std::true_type());
+
+    template<typename> static std::false_type test_after_set(...);
+
+    static constexpr bool has_after_set = std::is_same<decltype( test_after_set<HeadT>(0))
+                                                                , std::true_type>::value;
+
+    struct MeaningfulCaller {
+        static int apply_advice(HeadT *i, iAbstractValue * t) { i->after_set(); return 1; }
+    };
+
+    struct DummyCaller {
+        static int apply_advice(HeadT *, iAbstractValue *) { /* shall be trimmed off by optimization */ return 0; }
+    };
+
+    typedef typename std::conditional< has_after_set
+            , MeaningfulCaller
+            , DummyCaller>::type Selector;
 };
 
 }  // namespace aux
@@ -194,11 +250,17 @@ struct Pointcuts {
     // "set" join point
     template<typename ValueT>
     static void before_set( const ValueT & v
-                          , TValue<ValueT, AspectTs...> * self ) {}
+                          , TValue<ValueT, AspectTs...> * self ) {
+        aspects::aux::ConditionalInTuple<aspects::aux
+                        ::BeforeSetAdviceApply, AspectTs ...>::apply( self );
+    }
 
     template<typename ValueT>
     static void after_set( const ValueT & v
-                         , TValue<ValueT, AspectTs...> * self ) {}
+                         , TValue<ValueT, AspectTs...> * self ) {
+        aspects::aux::ConditionalInTuple<aspects::aux
+                        ::AfterSetAdviceApply, AspectTs ...>::apply( self );
+    }
 };
 
 /**@brief Template container for a value.

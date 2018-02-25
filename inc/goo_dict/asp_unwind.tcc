@@ -41,12 +41,17 @@ template< template <typename> class MetaFunctionT
         , typename ... TailTs>
 struct UnwindingApplier {
     template<typename ... AspectTs>
-    static void apply(iAbstractValue * trg, std::tuple<AspectTs * ...> t) {
-        MetaFunctionT<HeadT>::Doer::do_( std::get<N>(t), trg );
-        UnwindingApplier<MetaFunctionT, N+1, TailTs...>:: \
-                template apply<AspectTs...>( trg, t );
-        //auto rs[] = {  };
-    }
+    struct ForAspects {
+        template<typename ... ArgTs>
+        static void apply( iAbstractValue * trg
+                         , std::tuple<AspectTs *...> t
+                         , ArgTs ... args ) {
+            MetaFunctionT<HeadT>::Selector::apply_advice(std::get<N>(t), trg, args...);
+            UnwindingApplier<MetaFunctionT, N + 1, TailTs...>::template ForAspects<AspectTs...>
+                ::apply(trg, t, args...);
+            //auto rs[] = {  };
+        }
+    };
 };
 
 // Last aspect unwinding (template arguments expansion terminator).
@@ -55,21 +60,37 @@ template< template <typename> class MetaFunctionT
         , typename HeadT>
 struct UnwindingApplier<MetaFunctionT, N, HeadT> {
     template<typename ... AspectTs>
-    static void apply(iAbstractValue * trg, std::tuple<AspectTs * ...> t) {
-        MetaFunctionT<HeadT>::Doer::do_( std::get<N>(t), trg );
-    }
+    struct ForAspects {
+        template<typename ... ArgTs>
+        static void apply( iAbstractValue * trg
+                         , std::tuple<AspectTs *...> t
+                         , ArgTs ... args ) {
+            MetaFunctionT<HeadT>::Selector::apply_advice(std::get<N>(t), trg, args...);
+        }
+    };
 };
 
+
+/// For given tuple performs conditional invocation of the certain procedure.
+/// The procedure is defined within MetaFunctionT parameter and shall provide
+/// the following traits:
+///     * has nested `Selector` struct with apply_advice() method of the ???
+///       signature;
 template< template <typename> class MetaFunctionT
         , typename ... AspectTs>
 struct ConditionalInTuple {
-    static void apply( iBaseValue<AspectTs...> * t ) {
+    /// Unwinds the aspects tuple.
+    template<typename ... ArgTs>
+    static void apply( iBaseValue<AspectTs...> * t, ArgTs ... args ) {
         UnwindingApplier< MetaFunctionT
                         , 0
-                        , AspectTs ... >::apply( t, t->aspects() );
+                        , AspectTs ... >::template ForAspects<AspectTs...>
+                                        ::apply( t, t->aspects(), args... );
     }
 };
 
+/// Specialization of ConditionalInTuple template for trivial case (no aspects
+/// given).
 template< template<typename> class MetaFunctionT>
 struct ConditionalInTuple<MetaFunctionT> {
     static void apply( iBaseValue<> * ) {/* do nothing when no aspects are given */}

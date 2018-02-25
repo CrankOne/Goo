@@ -88,6 +88,8 @@ public:
     IsSet() : _isSet(false) {}
     virtual bool is_set() const { return _isSet; }
     virtual void set_is_set(bool v) { _isSet = true; }
+
+    int after_set() { _isSet = true; return 0; }
 };
 
 /// Defines "shortcut" attribute, used for application configuration
