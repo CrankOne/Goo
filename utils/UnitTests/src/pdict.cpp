@@ -411,9 +411,16 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             { "", Exception::common }
         };
         for( auto c = mlfrmdArgs; '\0' != c->cmdLine[0]; ++c ) {
-            //expected_argv_parsing_error( c->cmdLine,
-            //    c->expectedErrorCode, conf, os );
-            auto r = utils::AppConfValidator::run( conf );
+            goo::dict::Configuration confCopy = conf;
+            // Important thing: check, that aspects are copied with the
+            // entire parameter entry as well.
+            _ASSERT( conf["second"].aspect_cast<goo::dict::aspects::IsSet>()
+                  != confCopy["second"].aspect_cast<goo::dict::aspects::IsSet>(),
+                "Aspect ptr refers to the original instance for copied parameter." );
+            Size argc = goo_shell_tokenize_string( c->cmdLine, &argv );
+            std::ostringstream os2;
+            utils::set_app_conf( confCopy, argc, argv, nullptr, &os2 );
+            auto r = utils::AppConfValidator::run( confCopy );
             //_ASSERT( !r.empty(), "Oops..." );
             if( r.empty() ) {
                 os << "XXX clear" << std::endl;
@@ -421,6 +428,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             for( auto p : r ) {
                 os << "XXX " << p.entryIterator->first << " -- " << (int) p.reasons << std::endl;
             }
+            goo_free_shell_tokens( argc, argv );
         }
         {
             // Everything is ok.

@@ -38,6 +38,12 @@
 namespace goo {
 namespace dict {
 
+struct AbstractValueAllocator {
+    // ...
+};
+
+template<typename ... AspectTs> class DictionaryAllocator;  // fwd
+
 /**@brief Abstract base class for every parameter or dictionary.
  * @class iAbstractValue
  *
@@ -52,7 +58,11 @@ namespace dict {
  * Unfortunately, C++ has no native means for Aspect-Oriented Programming, nor
  * for the virtual constructor, so we had to implement it idiomatically.
  * */
-class iAbstractValue : public mixins::iDuplicable<iAbstractValue, iAbstractValue, iAbstractValue> {
+class iAbstractValue : public mixins::iDuplicable< iAbstractValue
+                                                 , iAbstractValue
+                                                 , iAbstractValue
+                                                 , false
+                                                 , AbstractValueAllocator&> {
 protected:
     /// Shall return untyped data pointer.
     virtual void * _V_data_addr() = 0;
@@ -113,7 +123,17 @@ public:
  *  - ... todo?
  * */
 template<typename ... AspectTs>
-class iBaseValue : public iAbstractValue {
+class iBaseValue : public
+                    # if 0
+                    mixins::iDuplicable< iAbstractValue
+                                             , iBaseValue<AspectTs...>
+                                             , iAbstractValue
+                                             , false
+                                             , AbstractValueAllocator &>
+                    # else
+                    iAbstractValue
+                    # endif
+                    {
 public:
     typedef iBaseValue<AspectTs ...> Self;
 private:
@@ -121,8 +141,8 @@ private:
 public:
     explicit iBaseValue( AspectTs * ... aspects );
     explicit iBaseValue( std::tuple<AspectTs * ...> t );
-    //iBaseValue() = default;
-    //iBaseValue( const Self & o ) = default; // TODO: copy aspect values instead of just their ptrs
+
+    iBaseValue( const Self & o ) = delete; // TODO: copy aspect values instead of just their ptrs
 
     /// Exposes aspects tuple.
     std::tuple<AspectTs * ...> aspects() { return _aspects; }
@@ -269,16 +289,14 @@ struct Pointcuts {
  * Represents a value-keeping aspect of the parameter classes.
  * */
 template<typename ValueT, typename ... AspectTs>
-class TValue : public mixins::iDuplicable< iAbstractValue
-                                        , TValue<ValueT, AspectTs...>
-                                        , iBaseValue<AspectTs...> > {
+class TValue : public iBaseValue<AspectTs...> {
 public:
     typedef iAbstractValue Base;
     typedef ValueT Value;
-    typedef mixins::iDuplicable< iAbstractValue
-                               , TValue<ValueT, AspectTs...>
-                               , iBaseValue<AspectTs...> > DuplicableParent;
-    /// Handler for mutating procedures.
+    //typedef mixins::iDuplicable< iAbstractValue
+    //                           , TValue<ValueT, AspectTs...>
+    //                           , iBaseValue<AspectTs...> > DuplicableParent;
+    /// Handler for mutating procedures (experimental).
     struct ModificationSeeker {
     public:
         typedef TValue<ValueT, AspectTs...> Owner;
@@ -325,15 +343,17 @@ public:
     /// Setter.
     virtual void value(const Value & v) { _set_value(v); }
     /// Ctr "from value". Ignores joint point.
-    explicit TValue( const ValueT & v ) : _value(v) {}
-    /// Copy ctr. Besides from implicit iDuplicable parent copy invocation,
-    /// directly copies value.
-    TValue( const TValue<Value> & o ) : _value(o._value) {}
+    //explicit TValue( const ValueT & v ) : _value(v) {}
+    // xxx Copy ctr. Besides from implicit iDuplicable parent copy invocation,
+    // xxx directly copies value.
+    // xxx TValue( const TValue<Value> & o ) : _value(o._value) {}
+    TValue( const TValue<Value> & o ) = delete;
 };
 
 template<typename ValueT, typename ... AspectTs>
 template<typename ... ctrArgTs>
-TValue<ValueT, AspectTs...>::TValue( ctrArgTs ... args ) : DuplicableParent(args ... ) {
+TValue<ValueT, AspectTs...>::TValue( ctrArgTs ... args )
+                                    : iBaseValue<AspectTs...>( args ... ) {
 }
 
 template< typename ValueT

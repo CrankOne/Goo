@@ -48,6 +48,24 @@ class BaseInsertionProxy;  // fwd
 template< typename KeyT
         , class ... AspectTs > struct InsertionAttorney;
 
+template<typename ... AspectTs>
+class DictionaryAllocator : public AbstractValueAllocator {
+protected:
+    /// Called by insertion proxies to allocate data of various types, including
+    /// instances of particular parameter types.
+    template<typename T, typename ... CtrArgTs>
+    T *_alloc(CtrArgTs ... args) {
+        // TODO: use more advanced allocation logic here.
+        return new T(args...);
+    }
+
+    template<typename T>
+    void _free(T *p) {
+        // TODO: use more advanced allocation logic here.
+        delete p;
+    }
+};
+
 /**@brief Common traits (pretty basic ones)
  *
  * The goo::dict traits are defined for every unique set of simple structures
@@ -137,11 +155,13 @@ struct KeyTraits {
  */
 template< typename KeyT
         , typename ... AspectTs>
-class GenericDictionary : public mixins::iDuplicable< typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue::Base
-                                                    , GenericDictionary<KeyT, AspectTs ...>
-                                                    , typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
-                                                    >
-                        , public Traits<AspectTs...>::template IndexBy<KeyT>::Aspect {
+class GenericDictionary : //public mixins::iDuplicable< typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue::Base
+                          //                          , GenericDictionary<KeyT, AspectTs ...>
+                          //                          , typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
+                          //                          >
+                          public Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
+                        , public Traits<AspectTs...>::template IndexBy<KeyT>::Aspect
+                        , public DictionaryAllocator<AspectTs...> {
 public:
     typedef Traits<AspectTs...> OwnTraits;
     /// The insertion proxy is a class to which the insertion permission is
@@ -179,36 +199,33 @@ public:
             return _target._alloc< P<T> >(args...);
         };
     };
-    typedef mixins::iDuplicable< typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue::Base
-                                                    , GenericDictionary<KeyT, AspectTs ...>
-                                                    , typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
-                                                    > DuplicableParent;
+    //typedef mixins::iDuplicable< typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue::Base
+    //                                                , GenericDictionary<KeyT, AspectTs ...>
+    //                                                , typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
+    //                                                > DuplicableParent;
 protected:
-    /// Called by insertion proxies to allocate data of various types, including
-    /// instances of particular parameter types.
-    template<typename T, typename ... CtrArgTs> T * _alloc(CtrArgTs ... args) {
-        // TODO: use more advanced allocation logic here.
-        return new T(args...);
-    }
-    template<typename T> void _free( T * p ) {
-        // TODO: use more advanced allocation logic here.
-        delete p;
-    }
     // Protected entry-insertion method.
     //virtual std::pair<typename Hash<KeyT, iBaseValue<AspectTs...> *>::iterator, bool>
     //_insert_parameter( const KeyT & k, iBaseValue<AspectTs...> * p ) {
     //    return this->_mutable_value().emplace(k, p);
     //}
+    virtual typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue::Base *
+                            _V_clone( AbstractValueAllocator & ) const override {
+        _TODO_   // TODO
+    }
 public:
     /// Common ctr, that barely forwards arguments to aspect ctr.
     template<typename TT, typename ... CtrArgTs>
     GenericDictionary( TT ownAspectsInitializer
                      , CtrArgTs ... ctrArgs ) \
-            : DuplicableParent( ownAspectsInitializer )
+            : Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue( ownAspectsInitializer )
             , OwnAspect( ctrArgs ... ) {}
 
-    GenericDictionary( const Self & orig ) : DuplicableParent(orig)
-                                           , OwnAspect(orig, this) {
+    # if 1
+    GenericDictionary( const Self & orig ) = delete;
+    # else
+    GenericDictionary( const Self & orig ) : DuplicableParent( orig )
+                                           , OwnAspect( orig, this ) {
         // All the contained entries reference the original's memory at this
         // point. We have to produce own copies here.
         // DuplicableParent's parent class refers to 'DictValue' type that
@@ -218,10 +235,11 @@ public:
             OwnTraits::template IndexBy<KeyT>::copy_dict_entry( it, this );
         }
     }
+    # endif
 
     virtual ~GenericDictionary() {
         for( auto p : this->_mutable_value() ) {
-            _free( p.second );
+            DictionaryAllocator<AspectTs...>::_free( p.second );
         }
     }
 

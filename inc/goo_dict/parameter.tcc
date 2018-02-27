@@ -51,13 +51,28 @@ namespace dict {
  */
 template< typename ValueT
         , typename ... AspectTs>
-class Parameter : public mixins::iDuplicable< iAbstractValue
+class Parameter :
+        # if 0
+        public mixins::iDuplicable< iAbstractValue
                                            , Parameter<ValueT, AspectTs...>
-                                           , TValue<ValueT, AspectTs...> > {
+                                           , TValue<ValueT, AspectTs...>
+                                           , true
+                                           , AbstractValueAllocator& >
+        # else
+        public TValue<ValueT, AspectTs...>
+        # endif
+        {
 public:
-    typedef mixins::iDuplicable< iAbstractValue
+    typedef
+    # if 0
+    mixins::iDuplicable< iAbstractValue
                                , Parameter<ValueT, AspectTs...>
-                               , TValue<ValueT, AspectTs...> > DuplicableParent;
+                               , TValue<ValueT, AspectTs...>
+                               , true
+                               , AbstractValueAllocator& >
+    # else
+    TValue<ValueT, AspectTs...> DuplicableParent;
+    # endif
     template<typename ... Ts> Parameter(Ts ... ctrArgs) : DuplicableParent(ctrArgs...) {}
 };
 
@@ -107,13 +122,29 @@ using InsertableParameter = typename
 template< typename ValueT
         , typename ... AspectTs>
 class Parameter<Array<ValueT>, AspectTs... > :
-            public mixins::iDuplicable< iAbstractValue
+            public
+            # if 0
+            mixins::iDuplicable< iAbstractValue
                                      ,  Parameter< Array<ValueT>, AspectTs ... >
-                                     ,  /*protected?*/ InsertableParameter< ValueT, AspectTs ... > > {
+                                     ,  /*protected?*/ InsertableParameter< ValueT, AspectTs ... >
+                                     , true
+                                     , AbstractValueAllocator& >
+            # else
+            InsertableParameter< ValueT, AspectTs ... >
+            # endif
+            {
 public:
-    typedef mixins::iDuplicable< iAbstractValue
+    typedef
+    # if 0
+    mixins::iDuplicable< iAbstractValue
                                , Parameter< Array<ValueT>, AspectTs ... >
-                               , InsertableParameter<ValueT, AspectTs ...> > DuplicableParent;
+                               , InsertableParameter<ValueT, AspectTs ...>
+                               , true
+                               , AbstractValueAllocator& > ;
+    # else
+    InsertableParameter< ValueT, AspectTs ... >
+    # endif
+    DuplicableParent;
 private:
     bool _setToDefault;
     Array<ValueT> _values;
