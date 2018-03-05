@@ -36,6 +36,7 @@ namespace utils {
 struct getopt_ConfDictCache;
 struct copier_ConfDictCache;
 }
+
 namespace dict {
 
 //}  // namespace dict
@@ -57,15 +58,15 @@ namespace dict {
  * `invalidate_getopt_caches()` just before `extract()` invocation if inserted
  * sub-sections were modified.
  * */
-class Configuration : public mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
+class Configuration : public mixins::iDuplicable< typename AppConfTraits::template IndexBy<String>::DictValue::Base
                                                 , Configuration
                                                 , AppConfNameIndex
                                                 , AbstractValueAllocator & > {
     friend struct ::goo::utils::getopt_ConfDictCache;
     friend struct ::goo::utils::copier_ConfDictCache;
-    friend class ::goo::dict::InsertionProxy<std::string>;
+    friend class ::goo::dict::InsertionProxy<String>;
 public:
-    typedef mixins::iDuplicable< typename AppConfTraits::template IndexBy<std::string>::DictValue::Base
+    typedef mixins::iDuplicable< typename AppConfTraits::template IndexBy<String>::DictValue::Base
                                , Configuration
                                , AppConfNameIndex
                                , AbstractValueAllocator & > DuplicableParent;
@@ -78,7 +79,8 @@ public:
 
     typedef AppConfTraits::FeaturedBase FeaturedBase;
 
-    typedef dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::const_iterator SubsectionIterator;
+    typedef dict::Hash< String
+                      , dict::AppConfTraits::FeaturedBase *>::const_iterator SubsectionIterator;
 private:
     /// Dictionary for shortcut-only parameters. This container is bound with
     /// Configuration instance meaning that its entries lifetime is restricted
@@ -86,7 +88,8 @@ private:
     ShortcutsIndex _shortcutsIndex;
     /// Positional parameter. Ptr may be null if positional argument is
     /// disallowed.
-    std::pair<std::string, FeaturedBase *> _positionalArgument;
+    std::pair< String
+             , FeaturedBase *> _positionalArgument;
 protected:
     void _add_shortcut( char, FeaturedBase * p );
     FeaturedBase * positional_argument_ptr() { return _positionalArgument.second; }
@@ -96,14 +99,14 @@ public:
     /// to be an application description.
     /// @param defaultHelpIFace controls, whether the -h/--help/-? flags will
     ///        be automatically inserted.
-    explicit Configuration( const std::string & description );
+    explicit Configuration( const char * description );
     ~Configuration();
 
     /// Copy ctr.
     Configuration( const Configuration & );
 
-    virtual InsertionProxy<std::string> insertion_proxy() override {
-        return InsertionProxy<std::string>( this );
+    virtual InsertionProxy<String> insertion_proxy() override {
+        return InsertionProxy<String>( this );
     }
 
     const ShortcutsIndex & short_opts() const {
@@ -140,7 +143,7 @@ public:
 
     /// Overrides the default entry getter to support positional argument and the
     /// single character names usually referring to shortcuts (const ver).
-    virtual const FeaturedBase * entry_ptr( const std::string & name ) const override {
+    virtual const FeaturedBase * entry_ptr( const String & name ) const override {
         assert( !name.empty() );
         if( _positionalArgument.second
          && _positionalArgument.first.size()
@@ -148,7 +151,7 @@ public:
             return _positionalArgument.second;
         }
         if( 1 == name.size() ) {
-            auto it = _shortcutsIndex.value().find( name[0] );
+            auto it = _shortcutsIndex.value().find( name.c_str()[0] );
             if( _shortcutsIndex.value().end() != it ) {
                 return it->second;
             }
@@ -158,7 +161,7 @@ public:
 
     /// Overrides the default entry getter to support positional argument and the
     /// single character names usually referring to shortcuts (mutable ver).
-    virtual FeaturedBase * entry_ptr( const std::string & name ) override {
+    virtual FeaturedBase * entry_ptr( const String & name ) override {
         assert( !name.empty() );
         if( _positionalArgument.second
          && _positionalArgument.first.size()
@@ -197,9 +200,9 @@ public:
     # endif
 
     /// Returns forwarded arguments (if they were set).
-    const Array<std::string> & forwarded_argv() const;
+    const Array<String> & forwarded_argv() const;
 
-    bool is_consistent( Hash<std::string, const FeaturedBase *> & ) const;
+    bool is_consistent( Hash<String, const FeaturedBase *> & ) const;
 };  // class Configuration
 
 }  // namespace dict
@@ -232,8 +235,8 @@ int set_app_conf( dict::Configuration & cfg
                 , getopt_ConfDictCache * cachePtr=nullptr
                 , std::ostream *logStreamPtr=nullptr );  // TODO: migrate impl from dev branch
 
-std::string compose_reference_text_for( const dict::Configuration & cfg
-                                    , const std::string & sect="" );
+dict::String compose_reference_text_for( const dict::Configuration & cfg
+                                       , const char * sect=nullptr );
 
 void set_app_cfg_parameter( dict::Configuration::FeaturedBase & v
                           , const char * strExpr
@@ -244,8 +247,9 @@ void set_app_cfg_parameter( dict::Configuration::FeaturedBase & v
 
 class AppConfValidator {
 public:
-    typedef dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::const_iterator Iterator;
-    typedef dict::AppConfTraits::IndexBy<std::string>::Aspect::Parent::const_iterator SubsectionIterator;
+    typedef dict::Hash< dict::String
+                      , dict::AppConfTraits::FeaturedBase *>::const_iterator Iterator;
+    typedef dict::AppConfTraits::IndexBy<dict::String>::Aspect::Parent::const_iterator SubsectionIterator;
     struct InvalidEntry {
         std::stack<SubsectionIterator> sectionPath;
         Iterator entryIterator;
@@ -265,7 +269,8 @@ protected:
 public:
     AppConfValidator() = delete;
     /// Used to fill caches during recursive traversal.
-    void operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::const_iterator it );
+    void operator()( dict::Hash< dict::String
+                               , dict::AppConfTraits::FeaturedBase *>::const_iterator it );
 
     /// Invoke to validate the configuration instance.
     static std::vector<InvalidEntry> run( const dict::Configuration &, uint8_t options = 0x7 );

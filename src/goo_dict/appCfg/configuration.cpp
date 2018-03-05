@@ -57,9 +57,9 @@ public:
         size_t _fullLength;
     public:
         NamePrefixStack() : _fullLength(0) {}
-        void push( dict::AppConfTraits::IndexBy<std::string>::Aspect::Parent::iterator it ) {
+        void push( dict::AppConfTraits::IndexBy<dict::String>::Aspect::Parent::iterator it ) {
             _fullLength += 1 + it->first.size();
-            std::vector<std::string>::push_back( it->first );
+            std::vector<std::string>::push_back( it->first.c_str() );
         }
         void pop() {
             _fullLength -= 1 + std::vector<std::string>::back().size();
@@ -124,12 +124,13 @@ struct copier_ConfDictCache {
 // Configuration consistency check
 
 void
-AppConfValidator::operator()( dict::Hash<std::string, dict::AppConfTraits::FeaturedBase *>::const_iterator it ) {
+AppConfValidator::operator()( dict::Hash< dict::String
+                                        , dict::AppConfTraits::FeaturedBase *>::const_iterator it ) {
     uint8_t reason = 0x0;
     auto poa = it->second->aspect_cast<dict::aspects::ProgramOption>();
     auto isa = it->second->aspect_cast<dict::aspects::IsSet>();
     auto dea = it->second->aspect_cast<dict::aspects::Description>();
-    std::string nm = it->first;  // XXX
+    //const char * nm = it->first.c_str();  // XXX
     if( (_opts & requiredAreNotSet) && (poa->is_required() && !isa->is_set()) ) {
         reason |= requiredAreNotSet;
     }
@@ -149,7 +150,7 @@ std::vector<AppConfValidator::InvalidEntry>
 AppConfValidator::run(const dict::Configuration & cfg, uint8_t options) {
     AppConfValidator v(options);
     dict::aux::ReadingVisitor< AppConfValidator&
-                           , std::stack<dict::AppConfTraits::IndexBy<std::string>
+                           , std::stack<dict::AppConfTraits::IndexBy<dict::String>
                                                          ::Aspect::Parent::const_iterator>
                            , dict::AppConfTraits> vv(v);
     cfg.each_subsection_read(vv);
@@ -162,9 +163,9 @@ AppConfValidator::run(const dict::Configuration & cfg, uint8_t options) {
 namespace dict {
 
 // TODO: use own _alloc instead of new for allocating description aspect.
-Configuration::Configuration( const std::string & descr_) \
+Configuration::Configuration( const char * descr_) \
         : DuplicableParent( std::make_tuple(_alloc<aspects::Description>(descr_) ) )
-        , _shortcutsIndex( std::make_tuple<>() )
+        , _shortcutsIndex( /*TODO allocator, */ std::make_tuple<>() )
         , _positionalArgument("", nullptr) {}
 
 Configuration::Configuration( const Configuration & orig ) \
@@ -177,7 +178,7 @@ Configuration::Configuration( const Configuration & orig ) \
     // shortcuts, positional and forwarded arguments.
     auto ip = _shortcutsIndex.insertion_proxy();
     ::goo::utils::copier_ConfDictCache ccdc = { ip };
-    dict::AppConfTraits::IndexBy<std::string>::Aspect
+    dict::AppConfTraits::IndexBy<String>::Aspect
                     ::RecursiveRevisingVisitor<::goo::utils::copier_ConfDictCache&> shrtc(ccdc);
     this->each_subsection_revise(shrtc);
     this->each_entry_revise( ccdc );

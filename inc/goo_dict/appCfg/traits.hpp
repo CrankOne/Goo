@@ -97,12 +97,12 @@ namespace dict {
 
 template<typename KeyT> class InsertionProxy;
 
-# define _Goo_m_VART_LIST_APP_CONF aspects::Description \
-                                 , aspects::iStringConvertible \
+# define _Goo_m_VART_LIST_APP_CONF aspects::Array \
                                  , aspects::CharShortcut \
-                                 , aspects::ProgramOption \
+                                 , aspects::Description \
+                                 , aspects::iStringConvertible \
                                  , aspects::IsSet \
-                                 , aspects::Array
+                                 , aspects::ProgramOption
 
 /// Specialization for common name-indexed dictionary structure used for
 /// application configuration. Does not provide list-like structures.
@@ -119,12 +119,12 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF> {
 };
 
 template<>
-struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
-    typedef GenericDictionary< std::string
+struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<String> {
+    typedef GenericDictionary< String
                              , _Goo_m_VART_LIST_APP_CONF > Dictionary;
 
-    typedef TValue< Hash< std::string
-                        , iBaseValue<_Goo_m_VART_LIST_APP_CONF>*>
+    typedef TValue< Hash< String
+                        , iBaseValue<_Goo_m_VART_LIST_APP_CONF> * >
                   , aspects::Description > DictValue;
 
     /// In-place entry copying procedure. Takes the iterator to an existing
@@ -136,86 +136,32 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string> {
 
     /// Aspect defines same-indexed subsections within the current
     /// dictionary.
-    struct Aspect : public aux::iSubsections< std::string
+    struct Aspect : public aux::iSubsections< String
                                             , Hash
-                                            , GenericDictionary<std::string, _Goo_m_VART_LIST_APP_CONF> > {
-        friend class InsertionProxy<std::string>;
+                                            , GenericDictionary< String
+                                                               , _Goo_m_VART_LIST_APP_CONF> > {
+        friend class InsertionProxy<String>;
 
         Aspect() = default;
-
         Aspect( const Aspect &, Dictionary * );
 
         /// Constructs and returns insertion proxy referencing current
         /// dictionary instance. Defined in insertion_proxy.tcc
-        virtual InsertionProxy<std::string> insertion_proxy();
+        virtual InsertionProxy<String> insertion_proxy();
 
         /// Returns a parameter entry by given path expression (const).
-        virtual const FeaturedBase & operator[]( const std::string & path ) const {
-            std::vector<char> namecache;
-            return operator[]( utils::dpath( path, namecache ).front() );
-        }
+        virtual const FeaturedBase & operator[]( const String & path ) const;
 
         /// Returns a parameter entry by given path expression (mutable).
-        virtual FeaturedBase & operator[]( const std::string & path ) {
-            std::vector<char> namecache;
-            return operator[]( utils::dpath( path, namecache ).front() );
-        }
+        virtual FeaturedBase & operator[]( const String & path );
 
         /// Returns a parameter entry by given path (const).
-        virtual const FeaturedBase & operator[]( const utils::DictPath & dp ) const {
-            if( dp.isIndex ) {
-                emraise( badParameter, "Current path token is an integer index."
-                    " Unable to dereference it within application configuration"
-                    " context." );
-            }
-            if( dp.next ) {
-                return subsection( dp.id.name )[*dp.next];
-            }
-            // that's a terminating path token:
-            # ifdef NDEBUG
-            return static_cast<const Subsection *>(this)->entry(dp.id.name);
-            # else
-            auto downCastedPtr = dynamic_cast<const Subsection *>(this);
-            assert( downCastedPtr );  // failed, indicates broken inheritance
-            return downCastedPtr->entry(dp.id.name);
-            # endif
-        }
+        virtual const FeaturedBase & operator[]( const utils::DictPath & dp ) const;
 
         /// Returns a parameter entry by given path (const).
-        virtual FeaturedBase & operator[]( const utils::DictPath & dp ) {
-            if( dp.isIndex ) {
-                emraise( badParameter, "Current path token is an integer index."
-                    " Unable to dereference it within application configuration"
-                    " context." );
-            }
-            if( dp.next ) {
-                return subsection( dp.id.name )[*dp.next];
-            }
-            // that's a terminating path token:
-            # ifdef NDEBUG
-            return static_cast<Subsection *>(this)->entry(dp.id.name);
-            # else
-            auto downCastedPtr = dynamic_cast<Subsection *>(this);
-            assert( downCastedPtr );  // failed, indicates broken inheritance
-            return downCastedPtr->entry(dp.id.name);
-            # endif
-        }
+        virtual FeaturedBase & operator[]( const utils::DictPath & dp );
 
         // TODO: recursive iterators
-        # if 0
-        class Iterator : public iterators::Iterator<
-                    iterators::BaseForwardIterator
-                  , iterators::BaseIOIterator
-                  , iterators::BaseComparableIterator
-                  , Iterator
-                  , std::tuple< typename aux::iSubsections< std::string
-                                    , Hash
-                                    , GenericDictionary<std::string, _Goo_m_VART_LIST_APP_CONF> >::Parent::iterator
-                             , typename DictValue::Value::iterator>
-                  , FeaturedBase > {
-            // ...
-        };
-        # endif
     };  // struct Aspect
 };
 
@@ -252,7 +198,7 @@ struct Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char> {
 
 typedef Traits<_Goo_m_VART_LIST_APP_CONF> AppConfTraits;
 
-typedef AppConfTraits::IndexBy<std::string>::Dictionary AppConfNameIndex;
+typedef AppConfTraits::IndexBy<String>::Dictionary AppConfNameIndex;
 
 
 // Note: the char-indexing dictionary aspect is declared ath the configuration.hpp

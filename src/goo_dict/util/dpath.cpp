@@ -87,8 +87,8 @@ parse_dict_path( char * pathString, DictPath * pToks, size_t nPToks ) {
 }
 
 std::vector<DictPath>
-dpath( const std::string & path
-     , std::vector<char> & namecache ) {
+dpath( const String & path
+     , std::vector<char, TheAllocatorHandle<char> > & namecache ) {
     // Prepare pools
     std::vector<char> & mtPath = namecache;
     mtPath.resize(path.size() + 1, '\0');

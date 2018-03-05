@@ -168,7 +168,7 @@ template< typename EntryCallableT
         , typename StackT
         , typename TraitsT> using RevisingVisitor
             = RecursiveVisitor< EntryCallableT
-                             , TraitsT::template IndexBy<std::string>
+                             , TraitsT::template IndexBy<String>
                                       ::Aspect
                                       ::template RecursiveRevisingVisitor
                              , StackT >;
@@ -178,7 +178,7 @@ template< typename EntryCallableT
         , typename StackT
         , typename TraitsT> using ReadingVisitor
             = RecursiveVisitor< EntryCallableT
-                             , TraitsT::template IndexBy<std::string>
+                             , TraitsT::template IndexBy<String>
                                       ::Aspect
                                       ::template RecursiveReadingVisitor
                              , StackT >;

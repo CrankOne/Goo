@@ -137,8 +137,8 @@ class GenericDictionary : public DictionaryAllocator<AspectTs...>
                         , public mixins::iDuplicable< iAbstractValue /*typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue::Base*/
                                                     , GenericDictionary<KeyT, AspectTs ...>
                                                     , typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
-                                                    , DictionaryAllocator<AspectTs...> & >
-                        , public Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
+                                                    , AbstractValueAllocator & >
+                        /*, public Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue*/
                         , public Traits<AspectTs...>::template IndexBy<KeyT>::Aspect {
 public:
     typedef DictionaryAllocator<AspectTs...> OwnAllocator;
@@ -148,7 +148,7 @@ public:
     typedef mixins::iDuplicable< /*OwnBaseValue*/ iAbstractValue
                                , GenericDictionary<KeyT, AspectTs ...>
                                , OwnDictValue
-                               , OwnAllocator &> DuplicableParent;
+                               , AbstractValueAllocator &> DuplicableParent;
     /// The insertion proxy is a class to which the insertion permission is
     /// granted. It has to become a base class for particular insertion proxies
     /// implementing various entry-construction interfaces.

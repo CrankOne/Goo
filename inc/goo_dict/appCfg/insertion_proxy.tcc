@@ -59,11 +59,10 @@ template<typename KeyT> class InsertionProxy;
 /// is always a Configution instance where shortcut parameters and positional
 /// parameter are indexed.
 template<>
-class InsertionProxy< std::string > : public AppConfTraits \
-                                           ::template IndexBy<std::string>::Dictionary \
-                                           ::BaseInsertionProxy< InsertableParameter > {
+class InsertionProxy< String > : public AppConfNameIndex \
+                                        ::BaseInsertionProxy< InsertableParameter > {
 public:
-    typedef InsertionProxy<std::string> Self;
+    typedef InsertionProxy<String> Self;
     typedef AppConfNameIndex Subsection;
     typedef std::stack< std::pair<std::string, Subsection *> > InsertionTargetsStack;
     typedef AppConfTraits::VBase VBase;
@@ -76,7 +75,7 @@ protected:
     Subsection & _top();
     void _index_by_shortcut( char, VBase * );
 public:
-    InsertionProxy( Subsection & d, const std::string & name="" );
+    InsertionProxy( Subsection & d, const char * name=nullptr );
     explicit InsertionProxy( Configuration * R );
     InsertionProxy( Configuration * r, InsertionTargetsStack & s );
 
@@ -85,49 +84,15 @@ public:
 
     /// Inserts new flag (option that does not expect the argument) referenced by
     /// shortcut only.
-    Self &
-    flag( char shortcut, const std::string & description ) {
-        assert(isalnum(shortcut));
-        return flag( shortcut, "", description );
-    }
+    InsertionProxy<String>::
 
     /// Inserts new flag (option that does not expect the argument) referenced by
     /// name only.
-    Self &
-    flag( const std::string & name, const std::string & description ) {
-        assert(!name.empty());
-        return flag( '\0', name, description );
-    }
+    Self & flag( const char * name, const char * description );
 
     /// Inserts new flag (option that does not expect the argument) referenced by
     /// name or shortcut.
-    Self &
-    flag( char shortcut, const std::string & name, const std::string & description ) {
-        auto pPtr = _alloc_parameter<bool>( _alloc<aspects::Description>(description)
-                                          , _alloc<aspects::TStringConvertible<bool, _Goo_m_VART_LIST_APP_CONF>>()
-                                          , _alloc<aspects::CharShortcut>(shortcut)
-                                          , _latestInsertedRequired = _alloc<aspects::ImplicitValue<bool, _Goo_m_VART_LIST_APP_CONF>>()
-                                          , _alloc<aspects::IsSet>()
-                                          , _alloc<aspects::Array>(false)
-                                          );
-        if( !name.empty() ) {
-            _insert_parameter( name, pPtr );
-        }
-        if( '\0' != shortcut ) {
-            assert( isalnum(shortcut) );
-            _index_by_shortcut( shortcut, pPtr );
-        }
-        # ifndef NDEBUG
-        else { assert( !name.empty() ); }
-        # endif
-        _latestInsertedRequired->set_required(false);
-        _latestInsertedRequired->set_expects_argument(false);
-        _latestInsertedRequired->set_being_implicit(true);
-        static_cast<aspects::ImplicitValue<bool, _Goo_m_VART_LIST_APP_CONF>*>(_latestInsertedRequired)
-                ->set_implicit_value(true);
-        _latestInsertedRequired = nullptr;
-        return *this;
-    }
+    Self & flag( char shortcut, const char * name, const char * description );
 
     // /////////////////////////////////////////////////////////////////////////
     // Ordinary parameters
@@ -365,14 +330,17 @@ public:
     // /////////////////////////////////////////////////////////////////////////
     // Subsection insertion methods
 
-    static void emplace_subsection_copy( Subsection &, const std::string &, Subsection * );
+    static void emplace_subsection_copy( Subsection &
+                                       , const char *
+                                       , Subsection * );
 
     /// Inserts the new parameters section with given name and description.
-    Self & bgn_sect( const std::string &, const std::string & );
+    Self & bgn_sect( const char *
+                   , const char * );
 
     /// Encloses insertion of the new parameters section. Provide section name
     /// to check yourself.
-    Self & end_sect( const std::string & name="" );
+    Self & end_sect( const char * name=nullptr );
 
     // /////////////////////////////////////////////////////////////////////////
     // Modifiers

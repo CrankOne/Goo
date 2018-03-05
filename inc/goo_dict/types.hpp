@@ -93,9 +93,9 @@ public:
     TheAllocatorHandle() = delete;
     inline explicit TheAllocatorHandle( AbstractValueAllocator & a ) : _t(a) {}
     inline ~TheAllocatorHandle() {}
-    inline explicit TheAllocatorHandle(TheAllocatorHandle const& o) : _t(o._t) {}
+    inline explicit TheAllocatorHandle( TheAllocatorHandle const& o ) : _t(o._t) {}
     template<typename U>
-    inline explicit TheAllocatorHandle(TheAllocatorHandle<U> const& o) : _t(o._t) {}
+    inline explicit TheAllocatorHandle( TheAllocatorHandle<U> const& o ) : _t(o._t) {}
 
     // address
     inline pointer address(reference r) { return &r; }
@@ -153,19 +153,32 @@ template<typename T> using List = std::list< T, TheAllocatorHandle<T> >;
 template<typename KeyT, typename ValueT> using Hash = std::unordered_map< KeyT
                                              , ValueT
                                              , std::hash<KeyT>
-                                             , std::less<std::equal_to<KeyT> >
+                                             , std::equal_to<KeyT>
                                              , TheAllocatorHandle<std::pair<KeyT, ValueT> > >;
 
 template<typename ValueT> using Set = std::unordered_set< ValueT
-                                                        , std::less<ValueT>
-                                                        , TheAllocatorHandle<ValueT> >;
+                                       , std::less<ValueT>
+                                       , TheAllocatorHandle<ValueT> >;
 
-namespace aux {
+typedef std::basic_string< char
+                         , std::char_traits<char>
+                         , TheAllocatorHandle<char>
+                         > String;
 
-}  // namespace aux
 
-}  // namespace dict
-}  // namespace goo
 
+}  // namespace ::goo::dict
+}  // namespace ::goo
+
+namespace std {
+
+template<>
+struct hash<goo::dict::String> {
+    size_t operator()( const goo::dict::String & k ) const {
+        return std::_Hash_impl::hash(k.data(), k.length());
+    }
+};
+
+}  // namespace ::std
 
 #endif //GOO_BASES_HPP

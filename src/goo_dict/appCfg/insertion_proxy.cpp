@@ -30,30 +30,31 @@ namespace dict {
 
 //typedef  AppConfInsertionProxy;
 
-InsertionProxy<std::string>::InsertionProxy(Subsection & d, const std::string & name)
-    : AppConfTraits::IndexBy<std::string>::Dictionary::BaseInsertionProxy<InsertableParameter >(d)
+InsertionProxy<String>::InsertionProxy( Subsection & d
+                                           , const char * name )
+    : AppConfTraits::IndexBy<String>::Dictionary::BaseInsertionProxy<InsertableParameter >(d)
     , _root(nullptr)
     , _latestInsertedRequired(nullptr) {
     _stack.push( std::make_pair(name, &d) );
 }
 
-InsertionProxy<std::string>::InsertionProxy( Configuration * R )
-    : AppConfTraits::IndexBy<std::string>::Dictionary::BaseInsertionProxy<InsertableParameter >(*R)
+InsertionProxy<String>::InsertionProxy( Configuration * R )
+    : AppConfTraits::IndexBy<String>::Dictionary::BaseInsertionProxy<InsertableParameter >(*R)
     , _root(R)
     , _latestInsertedRequired(nullptr) {
     // ...
 }
 
-InsertionProxy<std::string>::InsertionProxy( Configuration * R, InsertionTargetsStack & s )
-    : AppConfTraits::IndexBy<std::string>::Dictionary::BaseInsertionProxy<InsertableParameter >(*R)
+InsertionProxy<String>::InsertionProxy( Configuration * R, InsertionTargetsStack & s )
+    : AppConfTraits::IndexBy<String>::Dictionary::BaseInsertionProxy<InsertableParameter >(*R)
     , _root(R)
     , _stack(s)
     , _latestInsertedRequired(nullptr) {
     // ...
 }
 
-InsertionProxy<std::string>::Subsection &
-InsertionProxy<std::string>::_top() {
+InsertionProxy<String>::Subsection &
+InsertionProxy<String>::_top() {
     if( _stack.empty() ) {
         if( !_root ) {
             emraise( badState, "Empty insertion proxy object." );
@@ -64,7 +65,7 @@ InsertionProxy<std::string>::_top() {
 }
 
 void
-InsertionProxy<std::string>::_index_by_shortcut( char shrtc, VBase * p ) {
+InsertionProxy<String>::_index_by_shortcut( char shrtc, VBase * p ) {
     if( !_root ) {
         emraise( badState, "Unable to index parameter %p by shortcut %c with"
                 " the insertion proxy object %p since proxy has no associated"
@@ -73,9 +74,9 @@ InsertionProxy<std::string>::_index_by_shortcut( char shrtc, VBase * p ) {
     _root->_add_shortcut( shrtc, static_cast<Configuration::FeaturedBase *>(p) );
 }
 
-InsertionProxy<std::string>::Self &
-InsertionProxy<std::string>::bgn_sect( const std::string & name
-                                     , const std::string & description ) {
+InsertionProxy<String>::Self &
+InsertionProxy<String>::bgn_sect( const char * name
+                                , const char * description ) {
     auto sPtr = _alloc<AppConfNameIndex>( std::make_tuple( _alloc<aspects::Description>(description) ) );
     emplace_subsection_copy( *_stack.top().second, name, sPtr );
     _stack.push( std::pair<std::string, Subsection *>(name, sPtr) );
@@ -83,27 +84,65 @@ InsertionProxy<std::string>::bgn_sect( const std::string & name
 }
 
 void
-InsertionProxy<std::string>::emplace_subsection_copy( Subsection & self
-                                                  , const std::string & name
-                                                  , Subsection * sPtr) {
+InsertionProxy<String>::emplace_subsection_copy( Subsection & self
+                                               , const char * name
+                                               , Subsection * sPtr) {
     auto ir = self.emplace( name, sPtr );
     if( !ir.second ) {
         emraise( nonUniq, "Unable to insert new section named \"%s\" since"
-            " there is one with same name (%p).", name.c_str(), ir.first->second );
+            " there is one with same name (%p).", name, ir.first->second );
     }
 }
 
-InsertionProxy<std::string>::Self &
-InsertionProxy<std::string>::end_sect( const std::string & name ) {
-    if( !name.empty() ) {
+InsertionProxy<String>::Self &
+InsertionProxy<String>::end_sect( const char * name ) {
+    if( name && '\0' != name[0] ) {
         if( name != _stack.top().first ) {
             emraise(assertFailed, "end_sect(\"%s\") does not correspond to"
-                    " bgn_sect(\"%s\").", name.c_str(), _stack.top().first.c_str() );
+                    " bgn_sect(\"%s\").", name, _stack.top().first.c_str() );
         }
     }
     _stack.pop();
     return *this;
 }
+
+InsertionProxy<String>::Self &
+InsertionProxy<String>::flag( const char * name
+                            , const char * description ) {
+    assert( name && '\0' != name[0] );
+    return flag( '\0', name, description );
+}
+
+InsertionProxy<String>::Self &
+InsertionProxy<String>::flag( char shortcut
+                            , const char * name
+                            , const char * description ) {
+    auto pPtr = _alloc_parameter<bool>( _alloc<aspects::Description>(description)
+                                      , _alloc<aspects::TStringConvertible<bool, _Goo_m_VART_LIST_APP_CONF>>()
+                                      , _alloc<aspects::CharShortcut>(shortcut)
+                                      , _latestInsertedRequired = _alloc<aspects::ImplicitValue<bool, _Goo_m_VART_LIST_APP_CONF>>()
+                                      , _alloc<aspects::IsSet>()
+                                      , _alloc<aspects::Array>(false)
+                                      );
+    if( name && '\0' != name[0] ) {
+        _insert_parameter( name, pPtr );
+    }
+    if( '\0' != shortcut ) {
+        assert( isalnum(shortcut) );
+        _index_by_shortcut( shortcut, pPtr );
+    }
+    # ifndef NDEBUG
+    else { assert( name && '\0' != name[0] ); }
+    # endif
+    _latestInsertedRequired->set_required(false);
+    _latestInsertedRequired->set_expects_argument(false);
+    _latestInsertedRequired->set_being_implicit(true);
+    static_cast<aspects::ImplicitValue<bool, _Goo_m_VART_LIST_APP_CONF>*>(_latestInsertedRequired)
+            ->set_implicit_value(true);
+    _latestInsertedRequired = nullptr;
+    return *this;
+}
+
 
 InsertionProxy<char>::InsertionProxy( AppConfTraits::template IndexBy<char>::Dictionary & d )
     : TheDictionary::BaseInsertionProxy<InsertableParameter >(d) {}

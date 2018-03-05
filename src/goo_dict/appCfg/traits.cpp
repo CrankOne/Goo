@@ -20,36 +20,16 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+# include "goo_dict/common_aspects.hpp"
+# include "goo_dict/types.hpp"
 # include "goo_dict/appCfg/traits.hpp"
 # include "goo_dict/appCfg/insertion_proxy.tcc"
 
 namespace goo {
 namespace dict {
 
-// generic options container
-
-InsertionProxy<std::string>
-Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::insertion_proxy() {
-    return InsertionProxy<std::string>(
-            dynamic_cast<InsertionProxy<std::string>::Subsection &>(*this) );
-}
-
-Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::Aspect::Aspect( const Aspect & o
-                                                                    , Dictionary * this_ ) {
-    // iterate among subsections and copy them recursively.
-    for( auto it = o.subsections().begin()
-            ; o.subsections().end() != it
-            ; ++it ) {
-        // TODO: use this_'s allocator here:
-        auto subsectCopy = goo::clone_as< iAbstractValue
-                                        , Dictionary
-                                        , Dictionary>( it->second );
-        InsertionProxy<std::string>::emplace_subsection_copy( *this_, it->first, subsectCopy );
-    }
-}
-
 void
-Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::copy_dict_entry(
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<String>::copy_dict_entry(
                     typename DictValue::Value::iterator it
                   , Dictionary * /*dct*/ ) {
     // TODO: use allocator submitted by dict instance here
@@ -59,25 +39,84 @@ Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<std::string>::copy_dict_entry(
                               , FeaturedBase >( it->second );
 }
 
-# if 0
-template<typename ... AspectTs>
-const TValue<AspectTs...> & retrieve_entry_by_str_path(
-        const GenericDictionary<std::string, AspectTs> & D
-      , const std::string & strPath ) {
-    auto path = dpath( strPath );
-    return retrieve_entry_by_path( D, path );
+// generic options container
+
+InsertionProxy<String>
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<String>::Aspect::insertion_proxy() {
+    return InsertionProxy<String>(
+            dynamic_cast<InsertionProxy<String>::Subsection &>(*this) );
 }
 
-template<typename ... AspectTs>
-const TValue<AspectTs...> & retrieve_entry_by_path(
-        const GenericDictionary<std::string, AspectTs> & D
-      , const DictPath & p ) {
-    if( p.next ) {
-        return retrieve_entry_by_path( D.subsection(p), p.next );
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<String>::Aspect::Aspect( const Aspect & o
+                                                                  , Dictionary * this_ ) {
+    // iterate among subsections and copy them recursively.
+    for( auto it = o.subsections().begin()
+            ; o.subsections().end() != it
+            ; ++it ) {
+        // TODO: use this_'s allocator here:
+        auto subsectCopy = goo::clone_as< iAbstractValue
+                                        , Dictionary
+                                        , Dictionary>( it->second );
+        InsertionProxy<String>::emplace_subsection_copy( *this_
+                                                       , it->first
+                                                       , subsectCopy );
     }
-    //return D.value(p.);
 }
-# endif
+
+const Traits<_Goo_m_VART_LIST_APP_CONF>::FeaturedBase &
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<String>::Aspect::operator[]( const String & path ) const {
+    std::vector< char, TheAllocatorHandle<char> > namecache;
+    return operator[]( utils::dpath( path, namecache ).front() );
+}
+
+/// Returns a parameter entry by given path expression (mutable).
+Traits<_Goo_m_VART_LIST_APP_CONF>::FeaturedBase &
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<String>::Aspect::operator[]( const String & path ) {
+    std::vector<char, TheAllocatorHandle<char> > namecache;
+    return operator[]( utils::dpath( path, namecache ).front() );
+}
+
+/// Returns a parameter entry by given path (const).
+const Traits<_Goo_m_VART_LIST_APP_CONF>::FeaturedBase &
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<String>::Aspect::operator[]( const utils::DictPath & dp ) const {
+    if( dp.isIndex ) {
+        emraise( badParameter, "Current path token is an integer index."
+            " Unable to dereference it within application configuration"
+            " context." );
+    }
+    if( dp.next ) {
+        return subsection_ptr( dp.id.name )->operator[](*dp.next);
+    }
+    // that's a terminating path token:
+    # ifdef NDEBUG
+    return static_cast<const Subsection *>(this)->entry(dp.id.name);
+    # else
+    auto downCastedPtr = dynamic_cast<const Subsection *>(this);
+    assert( downCastedPtr );  // failed, indicates broken inheritance
+    return downCastedPtr->entry(dp.id.name);
+    # endif
+}
+
+/// Returns a parameter entry by given path (const).
+Traits<_Goo_m_VART_LIST_APP_CONF>::FeaturedBase &
+Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<String>::Aspect::operator[]( const utils::DictPath & dp ) {
+    if( dp.isIndex ) {
+        emraise( badParameter, "Current path token is an integer index."
+            " Unable to dereference it within application configuration"
+            " context." );
+    }
+    if( dp.next ) {
+        return subsection( dp.id.name )[*dp.next];
+    }
+    // that's a terminating path token:
+    # ifdef NDEBUG
+    return static_cast<Subsection *>(this)->entry(dp.id.name);
+    # else
+    auto downCastedPtr = dynamic_cast<Subsection *>(this);
+    assert( downCastedPtr );  // failed, indicates broken inheritance
+    return downCastedPtr->entry(dp.id.name);
+    # endif
+}
 
 // shortcut-only options container
 
