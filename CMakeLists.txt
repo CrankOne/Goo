@@ -63,10 +63,6 @@ push_option( SOURCE_POSITION_INFO
         "Supplement printing lines with source file info."
         OFF)
 #\option
-push_option( EM_STACK_UNWINDING
-        "C++ exception throw produce a stack unwinding."
-        ON )
-#\option
 push_option( ANSI_ESCSEQ_PRINT
         "Terminal messages coloring."
         ON )
@@ -107,10 +103,16 @@ find_package( Git   )
 find_program( GOO_GDB_EXEC      gdb     )
 find_program( GOO_GCORE_EXEC    gcore   )
 find_package( foonathan_memory 0.6 QUIET )
-if( EM_STACK_UNWINDING )
-    find_package( BFD REQUIRED )
-    find_package( LibIberty REQUIRED )
-endif( EM_STACK_UNWINDING )
+find_package( BFD )
+find_package( LibIberty )
+
+if( BFD_FOUND OR LibIberty_FOUND )
+    set( EM_STACK_UNWINDING TRUE )
+else(BFD_FOUND OR LibIberty_FOUND)
+    message( WARNING "No libiberty, nor libfd found. Stack unwinding is disabled." )
+    set( EM_STACK_UNWINDING FALSE )
+endif( BFD_FOUND OR LibIberty_FOUND )
+
 if( GIT_FOUND )
     # obtain current commit hash
     EXECUTE_PROCESS(COMMAND git rev-parse HEAD OUTPUT_VARIABLE COMMIT_HASH

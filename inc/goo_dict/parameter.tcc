@@ -56,7 +56,6 @@ class Parameter :
         public mixins::iDuplicable< iAbstractValue
                                            , Parameter<ValueT, AspectTs...>
                                            , TValue<ValueT, AspectTs...>
-                                           , true
                                            , AbstractValueAllocator& >
         # else
         public TValue<ValueT, AspectTs...>
@@ -68,7 +67,6 @@ public:
     mixins::iDuplicable< iAbstractValue
                                , Parameter<ValueT, AspectTs...>
                                , TValue<ValueT, AspectTs...>
-                               , true
                                , AbstractValueAllocator& >
     # else
     TValue<ValueT, AspectTs...> DuplicableParent;
@@ -127,7 +125,6 @@ class Parameter<Array<ValueT>, AspectTs... > :
             mixins::iDuplicable< iAbstractValue
                                      ,  Parameter< Array<ValueT>, AspectTs ... >
                                      ,  /*protected?*/ InsertableParameter< ValueT, AspectTs ... >
-                                     , true
                                      , AbstractValueAllocator& >
             # else
             InsertableParameter< ValueT, AspectTs ... >
@@ -139,7 +136,6 @@ public:
     mixins::iDuplicable< iAbstractValue
                                , Parameter< Array<ValueT>, AspectTs ... >
                                , InsertableParameter<ValueT, AspectTs ...>
-                               , true
                                , AbstractValueAllocator& > ;
     # else
     InsertableParameter< ValueT, AspectTs ... >

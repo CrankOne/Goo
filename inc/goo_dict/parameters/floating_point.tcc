@@ -69,12 +69,14 @@ template< typename T
         , typename ... AspectTs>
 class FloatingPointParameter : public mixins::iDuplicable< iAbstractValue
                                                        , FloatingPointParameter<T, AspectTs ...>
-                                                       , Parameter<T, AspectTs...> > {
+                                                       , Parameter<T, AspectTs...>
+                                                       , AbstractValueAllocator & > {
 public:
     typedef T Float;
     typedef mixins::iDuplicable< iAbstractValue
                                , FloatingPointParameter<T, AspectTs ...>
-                               , Parameter<T, AspectTs...> > DuplicableParent;
+                               , Parameter<T, AspectTs...>
+                               , AbstractValueAllocator & > DuplicableParent;
 
     template<typename ... Ts> FloatingPointParameter( Ts ... ctrArgs ) : DuplicableParent(ctrArgs...) {}
     //FloatingPointParameter( const FloatingPointParameter<Float> & o ) : DuplicableParent( o ) {}

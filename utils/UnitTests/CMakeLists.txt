@@ -21,6 +21,10 @@
 cmake_minimum_required( VERSION 2.6 )
 project(GooTests)
 
+find_package( GSL )
+
+if( GSL_FOUND )
+
 include_directories( "${PROJECT_SOURCE_DIR}/inc/"
                      "${PROJECT_SOURCE_DIR}/../../inc/" )
 file(GLOB_RECURSE GooTests_SRCS src/*.c*)
@@ -32,7 +36,6 @@ target_link_libraries( ${Goo_UT_UTIL} ${Goo_LIBRARY} )
 
 install( TARGETS ${Goo_UT_UTIL} RUNTIME DESTINATION bin )
 
-find_package( GSL REQUIRED )
-
 target_link_libraries( GooTests${Goo_BUILD_POSTFIX} ${GSL_LIBRARIES} )
 
+endif( GSL_FOUND )

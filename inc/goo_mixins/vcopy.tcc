@@ -30,6 +30,23 @@
 
 namespace goo {
 
+/**@brief Type traits struct defining how to copy derived classes for certain
+ * base.
+ *
+ * Override this traits with specialization for various operations that needed
+ * to be done upon copy contruction (instance-based allocators, etc.).
+ */
+template< typename BaseT
+        , typename ... CCtrArgsT>
+struct CloningTraits {
+    template<typename DerivedT>
+    struct ForDerived {
+        static BaseT * clone( const DerivedT & o, CCtrArgsT ... ccargs ) {
+            return new DerivedT( o, ccargs... );
+        }
+    };
+};
+
 // fwd
 namespace mixins {
 /**@class iDuplicable
@@ -58,24 +75,19 @@ namespace mixins {
 template< typename BaseTypeT
         , typename SelfTypeT=BaseTypeT
         , typename ParentT=BaseTypeT
-        , bool forceImplement=true  //< see class notes
         , typename ... CopyCtrArgTs
         >
 class iDuplicable;
 }  // namespace mixins
 
-
-template< typename BaseTypeT
-        , typename SelfTypeT
-        , typename ParentT
-        , bool forceImplem
-        , typename ... CopyCtrArgTs> BaseTypeT *
-clone( const mixins::iDuplicable< BaseTypeT
-                                , SelfTypeT
-                                , ParentT
-                                , forceImplem
-                                , CopyCtrArgTs ...> * origPtr
-     , CopyCtrArgTs ... );
+/**@brief Function notation for virtual copy ctr.
+ *
+ * An alias for the virtual copy constructor. Merely a
+ * procedural shim for iDuplicable<BaseTypeT, SelfTypeT, ParentT>::clone()
+ * method.
+ */
+template< typename BaseTypeT, typename ... CopyCtrArgTs> BaseTypeT *
+clone( const BaseTypeT * origPtr, CopyCtrArgTs ... );
 
 
 namespace mixins {
@@ -85,10 +97,10 @@ namespace mixins {
 /// classes. The forceImplement is always false at this level (there is nothing
 /// to 'force' actually, nothing to be automatically implemented).
 template< typename SelfTypeT, typename ... CopyCtrArgTs>
-class iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, false, CopyCtrArgTs...> {
+class iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, CopyCtrArgTs...> {
 public:
-    typedef iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, false, CopyCtrArgTs...> DuplicableParent;
-    typedef iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, false, CopyCtrArgTs...> DuplicableBase;
+    typedef iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, CopyCtrArgTs...> DuplicableParent;
+    typedef iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, CopyCtrArgTs...> DuplicableBase;
     typedef SelfTypeT Parent;
     typedef SelfTypeT BaseType;
 
@@ -103,37 +115,8 @@ protected:
         return typeid( SelfTypeT );
     }
 
-    friend BaseType * ::goo::clone<>( const DuplicableParent * origPtr, CopyCtrArgTs ... );
+    friend BaseType * ::goo::clone<>( const BaseType *, CopyCtrArgTs ... );
 };  // class iDuplicable
-
-/// An iDuplicable implementation for base class with default cloning
-/// method implementation (copy ctr is provided by class definition). Designed
-/// to be used in base classes which can be instantiated on its own.
-template< typename SelfTypeT
-        , typename ... CopyCtrArgTs >
-class iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, true, CopyCtrArgTs ...> {
-public:
-    typedef iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, true,  CopyCtrArgTs ...> DuplicableParent;
-    typedef iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, true, CopyCtrArgTs ...> DuplicableBase;
-    typedef SelfTypeT Parent;
-    typedef SelfTypeT BaseType;
-
-    virtual ~iDuplicable(){}
-protected:
-    /// Performs invocation of copy constructor.
-    virtual SelfTypeT * _V_clone(CopyCtrArgTs ... ccargs) const {
-        return new SelfTypeT( *static_cast<const SelfTypeT *>(this), ccargs ... );
-    }
-
-    /// Returns standard C++ RTTI struct describing this instance class
-    /// (outermost descendant).
-    virtual const std::type_info & _V_cloning_type_id() const {
-        return typeid( SelfTypeT );
-    }
-
-    friend SelfTypeT * ::goo::clone<>( const DuplicableParent * origPtr, CopyCtrArgTs ... );
-};  // class iDuplicable
-
 
 /// An iDuplicable implementation for outermost descendant with
 /// abstract base class (copy ctr is provided).
@@ -141,27 +124,26 @@ template< typename BaseTypeT
         , typename SelfTypeT
         , typename ParentT
         , typename ... CopyCtrArgTs>
-class iDuplicable< BaseTypeT
-                 , SelfTypeT
-                 , ParentT
-                 , true
-                 , CopyCtrArgTs ...> : public ParentT {
+class iDuplicable : public ParentT {
 public:
-    typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, false, CopyCtrArgTs ...> DuplicableParent;
-    typedef iDuplicable<BaseTypeT, BaseTypeT, BaseTypeT, false, CopyCtrArgTs ...> DuplicableBase;
+    /// Parent class typedef for subclass usage.
     typedef ParentT Parent;
+    /// Cloning self typedef for subclass usage.
+    typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, CopyCtrArgTs ...> DuplicableSelf;
+    /// Cloning abstract base typedef for subclass usage.
     typedef BaseTypeT BaseType;
-
+    /// Most-base class in inheritance hierarchy typedef for subclass usage.
+    typedef iDuplicable<BaseTypeT, BaseTypeT, BaseTypeT, CopyCtrArgTs ...> DuplicableBase;
+    /// Trivial virtual dtr.
     virtual ~iDuplicable(){}
 protected:
+    /// Forwarding ctr. Does nothing except directo forwarding  of provided args
+    /// to parent class.
     template<typename ... CtrArgsT>
     iDuplicable( CtrArgsT ... args ) : ParentT( args ... ) {}
 
-    template<typename T=typename std::is_default_constructible<ParentT>::type>
-    iDuplicable() : ParentT() {}
-
     /// Returns standard C++ RTTI struct describing this instance class
-    /// (outermost descendant).
+    /// (outern descendant).
     virtual const std::type_info & _V_cloning_type_id() const override {
         return typeid( SelfTypeT );
     }
@@ -184,31 +166,37 @@ protected:
         static_assert(!std::is_abstract<SelfTypeT>::value,
                         "Outermost type is abstract.");
         # endif
-        return new SelfTypeT( *static_cast<const SelfTypeT *>(this), ccargs ... );
+        //return new SelfTypeT( *static_cast<const SelfTypeT *>(this), ccargs ... );
+        return CloningTraits<BaseTypeT, CopyCtrArgTs...>::template ForDerived<SelfTypeT> \
+                    ::clone( static_cast<const SelfTypeT &>(*this), ccargs... );
     }
-    friend BaseTypeT * ::goo::clone<>( const DuplicableParent * origPtr, CopyCtrArgTs ... );
+
+    friend BaseType * ::goo::clone<>( const BaseType *, CopyCtrArgTs ... );
 };  // class iDuplicable
 
 }  // namespace mixins
 
 template< typename BaseTypeT
-        , typename SelfT
-        , typename ParentT
-        , bool ForceImplem
-        , typename ... CopyCtrArgTs> BaseTypeT *
-clone( const mixins::iDuplicable<BaseTypeT, SelfT, ParentT, ForceImplem, CopyCtrArgTs ...> * origPtr
-     , CopyCtrArgTs ... ccargs) {
+        , typename ... CopyCtrArgTs>
+typename std::enable_if< std::is_base_of< mixins::iDuplicable< BaseTypeT
+                                                             , BaseTypeT
+                                                             , BaseTypeT
+                                                             , CopyCtrArgTs... >
+                                        , BaseTypeT
+                                        >::value
+                       , BaseTypeT * >::type
+clone( const BaseTypeT * orig, CopyCtrArgTs ... ccargs) {
     # ifndef NDEBUG
-    if( origPtr->_V_cloning_type_id() != typeid(*origPtr) ) {
+    if( orig->_V_cloning_type_id() != typeid(orig) ) {
         emraise( badArchitect,
                 "Instance %p of class \"%s\" manifests mismatching _V_cloning_type_id() "
                 "(of class \"%s\") indicating Goo's coding style violation. Please, "
                 "refer to \"#cloning\" section of Goo standard.",
-                origPtr, typeid(*origPtr).name(),
-                origPtr->_V_cloning_type_id().name() );
+                orig, typeid(*orig).name(),
+                orig->_V_cloning_type_id().name() );
     }
     # endif
-    return origPtr->_V_clone( ccargs ... );
+    return orig->_V_clone( ccargs ... );
 }
 
 template< typename BaseTypeT
@@ -218,10 +206,14 @@ template< typename BaseTypeT
 DesiredT * clone_as( const ProvidedT * origProvidedPtr
                    , CopyCtrArgTs ... ccargs) {
     return static_cast<DesiredT *>(clone<BaseTypeT>(
-           static_cast<const mixins::iDuplicable<BaseTypeT> *>(origProvidedPtr)
+           static_cast< const BaseTypeT * >(origProvidedPtr)
          , ccargs ...
                                                    )
                                   );
+    /*const mixins::iDuplicable< BaseTypeT
+                                                , BaseTypeT
+                                                , BaseTypeT
+                                                , CopyCtrArgTs ... >*/
 }
 
 }  // namespace goo

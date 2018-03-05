@@ -94,12 +94,14 @@ integral_safe_parse<unsigned long long int>( const char * str, int base );
 template<typename T, typename ... AspTs>
 class IntegralParameter : public mixins::iDuplicable< iAbstractValue
                                                   , IntegralParameter<T, AspTs...>
-                                                  , Parameter<T, AspTs...> > {
+                                                  , Parameter<T, AspTs...>
+                                                  , AbstractValueAllocator & > {
 public:
     typedef T Integral;
     typedef mixins::iDuplicable< iAbstractValue
                                , IntegralParameter<T, AspTs...>
-                               , Parameter<T, AspTs...> > DuplicableParent;
+                               , Parameter<T, AspTs...>
+                               , AbstractValueAllocator & > DuplicableParent;
     IntegralParameter( AspTs * ... asps ) : DuplicableParent( asps ... ) {}
 };
 

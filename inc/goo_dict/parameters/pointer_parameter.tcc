@@ -33,13 +33,15 @@ namespace dict {
 template<typename T>
 class PointerParameter : public mixins::iDuplicable< iAbstractValue
                                                  , PointerParameter<T>
-                                                 , iParameter<T> > {
+                                                 , iParameter<T>
+                                                 , AbstractValueAllocator & > {
 public:
     typedef T PointerType;
     typedef typename std::remove_pointer<T>::type DataType;
     typedef mixins::iDuplicable< iAbstractValue
                                , PointerParameter<T>
-                               , iParameter<T> > DuplicableParent;
+                               , iParameter<T>
+                               , AbstractValueAllocator & > DuplicableParent;
 public:
     /// Long option with shortcut.
     PointerParameter( char shortcut_,

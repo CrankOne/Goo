@@ -163,7 +163,7 @@ namespace dict {
 
 // TODO: use own _alloc instead of new for allocating description aspect.
 Configuration::Configuration( const std::string & descr_) \
-        : DuplicableParent( std::make_tuple(new aspects::Description(descr_) ) )
+        : DuplicableParent( std::make_tuple(_alloc<aspects::Description>(descr_) ) )
         , _shortcutsIndex( std::make_tuple<>() )
         , _positionalArgument("", nullptr) {}
 
@@ -189,7 +189,8 @@ Configuration::Configuration( const Configuration & orig ) \
         }
         auto pc = goo::clone_as< iAbstractValue
                                , FeaturedBase
-                               , FeaturedBase >( it->second );
+                               , FeaturedBase
+                               , AbstractValueAllocator & >( it->second, *this );
         ip.insert( it->first, pc );
     }
     if( orig._positionalArgument.second ) {

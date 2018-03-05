@@ -26,10 +26,19 @@
 # ifndef H_GOO_PARAMETERS_BASES_H
 # define H_GOO_PARAMETERS_BASES_H
 
+# include "goo_config.h"
+
 # include <vector>
 # include <list>
 # include <unordered_map>
 # include <unordered_set>
+# include <limits>
+
+# include "goo_exception.hpp"
+
+# ifdef FNTHN_ALLOCATORS
+    // TODO: use https://github.com/foonathan/memory here
+# endif
 
 /**@file bases.hpp
  * Sequence container templates. The particular selection may significantly
@@ -42,25 +51,116 @@
 namespace goo {
 namespace dict {
 
+struct AbstractValueAllocator {
+    /// Called by insertion proxies to allocate data of various types, including
+    /// instances of particular parameter types.
+    template<typename T, typename ... CtrArgTs>
+    T *_alloc(CtrArgTs ... args) /*throw(TheException<Exception::memAllocError>)*/ {
+        // TODO: use more advanced allocation logic here.
+        return new T(args...);
+    }
+
+    template<typename T>
+    void _free(T *p) /*throw(TheException<Exception::memAllocError>)*/ {
+        // TODO: use more advanced allocation logic here.
+        delete p;
+    }
+    // ...
+};
+
+/// Alias type for STL containers referring to the generic dictionary allocator
+/// instance.
+template<typename T>
+class TheAllocatorHandle {
+private:
+    AbstractValueAllocator & _t;
+public :
+    // typedefs
+    typedef T value_type;
+    typedef value_type* pointer;
+    typedef const value_type* const_pointer;
+    typedef value_type& reference;
+    typedef const value_type& const_reference;
+    typedef std::size_t size_type;
+    typedef std::ptrdiff_t difference_type;
+public:
+    // convert an allocator<T> to allocator<U>
+    template<typename U>
+    struct rebind {
+        typedef TheAllocatorHandle<U> other;
+    };
+public:
+    TheAllocatorHandle() = delete;
+    inline explicit TheAllocatorHandle( AbstractValueAllocator & a ) : _t(a) {}
+    inline ~TheAllocatorHandle() {}
+    inline explicit TheAllocatorHandle(TheAllocatorHandle const& o) : _t(o._t) {}
+    template<typename U>
+    inline explicit TheAllocatorHandle(TheAllocatorHandle<U> const& o) : _t(o._t) {}
+
+    // address
+    inline pointer address(reference r) { return &r; }
+    inline const_pointer address(const_reference r) { return &r; }
+
+    // memory allocation
+    inline pointer allocate(size_type cnt,
+            typename std::allocator<void>::const_pointer = 0) {
+        return reinterpret_cast<pointer>(::operator new(cnt * sizeof (T)));
+    }
+    inline void deallocate(pointer p, size_type) {
+        ::operator delete(p);
+    }
+
+    // size
+    inline size_type max_size() const {
+        return std::numeric_limits<size_type>::max() / sizeof(T);
+    }
+
+    // construction/destruction
+    inline void construct(pointer p, const T& t) { new(p) T(t); }
+    inline void destroy(pointer p) { p->~T(); }
+
+    inline bool operator==(TheAllocatorHandle const&) { return true; }
+    inline bool operator!=(TheAllocatorHandle const& a) { return !operator==(a); }
+};    //    end of class Allocator
+
+/**@brief Hierarchical dictionary allocator class
+ *
+ * Incapsulates allocation of every dictionary-related entity in a way allowing
+ * to reside the complex hierarchical data within controllable memory blocks
+ * (e.g. allocated within shmat()).
+ *
+ * In this approach, the allocators aren't necessary static types. It may be an
+ * instance, for example, controlling the memory block of fixed size.
+ */
+template<typename ... AspectTs>
+class DictionaryAllocator : public AbstractValueAllocator {
+protected:
+    // ...
+};
+
 /// Type referencing element position in a List.
 typedef unsigned long ListIndex;
 
 /// Array parameter container template. Used to store the homogeneous typed
 /// singular parameters.
-template<typename T> using Array = std::vector<T>;
+template<typename T> using Array = std::vector< T, TheAllocatorHandle<T> >;
 
 /// List of heterogeneous parameters kept within the section or "list of
 /// structres".
-template<typename T> using List = std::list<T>;
+template<typename T> using List = std::list< T, TheAllocatorHandle<T> >;
 
-/// This container is used to cache parameters indexing.
-template<typename KeyT, typename ValueT> using Hash = std::unordered_map<KeyT, ValueT>;
+/// This container is used to cache parameters indexing (associative array).
+template<typename KeyT, typename ValueT> using Hash = std::unordered_map< KeyT
+                                             , ValueT
+                                             , std::hash<KeyT>
+                                             , std::less<std::equal_to<KeyT> >
+                                             , TheAllocatorHandle<std::pair<KeyT, ValueT> > >;
 
-template<typename ValueT> using Set = std::unordered_set<ValueT>;
+template<typename ValueT> using Set = std::unordered_set< ValueT
+                                                        , std::less<ValueT>
+                                                        , TheAllocatorHandle<ValueT> >;
 
 namespace aux {
-
-
 
 }  // namespace aux
 

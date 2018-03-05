@@ -38,12 +38,6 @@
 namespace goo {
 namespace dict {
 
-struct AbstractValueAllocator {
-    // ...
-};
-
-template<typename ... AspectTs> class DictionaryAllocator;  // fwd
-
 /**@brief Abstract base class for every parameter or dictionary.
  * @class iAbstractValue
  *
@@ -61,8 +55,7 @@ template<typename ... AspectTs> class DictionaryAllocator;  // fwd
 class iAbstractValue : public mixins::iDuplicable< iAbstractValue
                                                  , iAbstractValue
                                                  , iAbstractValue
-                                                 , false
-                                                 , AbstractValueAllocator&> {
+                                                 , AbstractValueAllocator & > {
 protected:
     /// Shall return untyped data pointer.
     virtual void * _V_data_addr() = 0;

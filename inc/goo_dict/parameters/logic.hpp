@@ -60,13 +60,11 @@ template<typename ... AspectTs>
 class Parameter<bool, AspectTs...> : public mixins::iDuplicable< iAbstractValue
                                                                , Parameter<bool, AspectTs...>
                                                                , TValue<bool, AspectTs...>
-                                                               , true
                                                                , AbstractValueAllocator & > {
 public:
     typedef mixins::iDuplicable< iAbstractValue
                                , Parameter<bool, AspectTs...>
                                , TValue<bool, AspectTs...>
-                               , true
                                , AbstractValueAllocator & > DuplicableParent;
     template<typename ... Ts> Parameter( Ts ... ctrArgs) : DuplicableParent( ctrArgs... ) {}
     // ...
