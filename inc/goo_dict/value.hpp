@@ -330,7 +330,7 @@ protected:
     /// Potentially dangerous ctr leaving the value uninitialized.
     TValue() : _value() {}
 public:
-    template<typename ... ArgTs> TValue(ArgTs...args);
+    template<typename ... ArgTs> TValue( const ValueT & v, ArgTs...args);
     /// Const value getter (public).
     virtual const ValueT & value() const { return _value; }
     /// Value getter.
@@ -347,9 +347,10 @@ public:
 
 template<typename ValueT, typename ... AspectTs>
 template<typename ... ctrArgTs>
-TValue<ValueT, AspectTs...>::TValue( ctrArgTs ... args )
-                                    : iBaseValue<AspectTs...>( args ... ) {
-}
+TValue<ValueT, AspectTs...>::TValue(  const ValueT & v
+                                   , ctrArgTs ... args )
+                                   : iBaseValue<AspectTs...>( args ... )
+                                   , _value(v) {}
 
 template< typename ValueT
         , typename ... AspectTs> void

@@ -105,7 +105,11 @@ public:
     inline ~TheAllocatorHandle() {}
     inline TheAllocatorHandle( const TheAllocatorHandle & o ) : _t(o._t) {}
     template<typename U>
-    inline explicit TheAllocatorHandle( const TheAllocatorHandle<U> & o ) : _t(o._t) {}
+    inline /*explicit*/ TheAllocatorHandle( const TheAllocatorHandle<U> & o ) : \
+            _t(const_cast<AbstractValueAllocator &>(o.value_allocator())) {}
+
+    AbstractValueAllocator & value_allocator() { return _t; }
+    const AbstractValueAllocator & value_allocator() const { return _t; }
 
     // address
     inline pointer address(reference r) { return &r; }

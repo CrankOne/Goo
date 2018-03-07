@@ -136,13 +136,13 @@ struct KeyTraits {
 template< typename KeyT
         , typename ... AspectTs>
 class GenericDictionary : public DictionaryAllocator<AspectTs...>
-                        , public mixins::iDuplicable< iAbstractValue /*typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue::Base*/
+                        , public mixins::iDuplicable< iAbstractValue
                                                     , GenericDictionary<KeyT, AspectTs ...>
                                                     , typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
                                                     , AbstractValueAllocator & >
-                        /*, public Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue*/
                         , public Traits<AspectTs...>::template IndexBy<KeyT>::Aspect {
 public:
+    /// Allocator type (defined by template parameter).
     typedef DictionaryAllocator<AspectTs...> OwnAllocator;
     typedef Traits<AspectTs...> OwnTraits;
     typedef typename OwnTraits::template IndexBy<KeyT>::DictValue OwnDictValue;
@@ -186,20 +186,6 @@ public:
             return _target.template _alloc< P<T> >(args...);
         };
     };
-    //typedef mixins::iDuplicable< typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue::Base
-    //                                                , GenericDictionary<KeyT, AspectTs ...>
-    //                                                , typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
-    //                                                > DuplicableParent;
-protected:
-    // Protected entry-insertion method.
-    //virtual std::pair<typename Hash<KeyT, iBaseValue<AspectTs...> *>::iterator, bool>
-    //_insert_parameter( const KeyT & k, iBaseValue<AspectTs...> * p ) {
-    //    return this->_mutable_value().emplace(k, p);
-    //}
-    //virtual typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue::Base *
-    //                        _V_clone( AbstractValueAllocator & ) const override {
-    //    _TODO_   // TODO
-    //}
 public:
     /// Common ctr. Copies the given allocator instance to self, sets own
     /// aspects with given aspects tuple, forwards the rest arguments to the

@@ -51,7 +51,10 @@ private:
 
 }  // namespace ::goo::dict::aspects
 
-# define _Goo_m_VART_LIST_UTDCT aspects::IsSet, aspects::Word
+class WordInsertionProxy;
+
+# define _Goo_m_VART_LIST_UTDCT ::goo::dict::aspects::IsSet \
+                              , ::goo::dict::aspects::Word
 
 // General traits for dictionaries with given set of entry aspects.
 template<>
@@ -75,12 +78,22 @@ struct Traits< _Goo_m_VART_LIST_UTDCT > {
         static void copy_dict_entry( typename DictValue::Value::iterator
                                    , Dictionary * );
         // Dictionary aspect class.
-        class Aspect : public aux::iSubsections< KeyT
+        struct Aspect : public aux::iSubsections< KeyT
                                                , Hash
                                                , Dictionary > {
+            typedef aux::iSubsections< KeyT
+                                     , Hash
+                                     , Dictionary > Subsections;
+            WordInsertionProxy insertion_proxy();
             // ...
+            Aspect( TheAllocatorHandle<std::pair<KeyT, Subsections*> > h ) : Subsections(h) {}
         };
     };
+};
+
+class WordInsertionProxy : public GenericDictionary<char, _Goo_m_VART_LIST_UTDCT> \
+                                    ::BaseInsertionProxy<InsertableParameter> {
+    // ...
 };
 
 }  // namespace ::goo::dict
@@ -111,12 +124,37 @@ as high as the first story of a house never do i sink as low as the house
 doors and at last i float at an extraordinary height above the vaulted cellar
 of the dealer whom i see far below crouching over his table where he is
 writing he has opened the door to let out the excessive heat
-)Kafka"
+)Kafka";
 
+typedef goo::dict::GenericDictionary< char
+                                    , _Goo_m_VART_LIST_UTDCT > WordDict;
+
+void
+fill_text( goo::dict::WordInsertionProxy & ip,
+           const char * c ) {
+    const char * wordBgn = c;
+    while( !isalnum(*wordBgn) && '\0' != *wordBgn ) { ++wordBgn; }
+    while( isalnum(*c) ) { ++c; }
+    if( !(c-wordBgn) ) { return; }
+    // XXX
+    {
+        std::string word( wordBgn, c );
+        std::cout << word;
+    }
+    //ip.insert( wordBgn, c );
+}
 
 GOO_UT_BGN( PDict, "Parameters dictionary routines" ) {
-    typedef goo::dict::GenericDictionary< goo::dict::aspects::IsSet
-                                        , goo::dict::aspects::Word> d;
+    goo::dict::DictionaryAllocator<_Goo_m_VART_LIST_UTDCT> allocator;
+    goo::dict::TheAllocatorHandle<std::pair< char
+                                 , goo::dict::Traits<_Goo_m_VART_LIST_UTDCT>::IndexBy<char>::Aspect::Subsections *> >
+            ssHandle = allocator;
+    goo::dict::TheAllocatorHandle<std::pair<char, WordDict *> > sdHandle = allocator;
+    WordDict d( allocator
+              , std::tuple( allocator._alloc<goo::dict::Traits< _Goo_m_VART_LIST_UTDCT
+                                                              >::IndexBy<char>::Dictionary::Value >(allocator)
+                          , allocator._alloc<goo::dict::aspects::Word>())
+              , allocator );
     //
 } GOO_UT_END( PDict, "VCtr" )
 
