@@ -35,6 +35,8 @@
 
 # include <cassert>
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 
@@ -360,5 +362,6 @@ TValue<ValueT, AspectTs...>::_set_value( const ValueT & v ) {
 }  // namespace dict
 }  // namespace goo
 
-# endif // H_GOO_PARAMETERS_VALUES_H
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)
+# endif  // H_GOO_PARAMETERS_VALUES_H
 

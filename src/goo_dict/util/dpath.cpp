@@ -24,8 +24,10 @@
  * Created by crank on 16.01.18.
  */
 
-
 # include "goo_dict/util/dpath.hpp"
+
+# if !defined( _Goo_m_DISABLE_DICTIONARIES )
+
 # include <cstring>
 
 namespace goo {
@@ -90,7 +92,7 @@ std::vector<DictPath>
 dpath( const String & path
      , std::vector<char, TheAllocatorHandle<char> > & namecache ) {
     // Prepare pools
-    std::vector<char> & mtPath = namecache;
+    std::vector<char, TheAllocatorHandle<char> > & mtPath = namecache;
     mtPath.resize(path.size() + 1, '\0');
     std::vector<DictPath> toksPool;
     // Try to extract into pools
@@ -115,3 +117,5 @@ dpath( const String & path
 }  // namespace aux
 }  // namespace dict
 }  // namespace goo
+
+# endif  // !defined( _Goo_m_DISABLE_DICTIONARIES )

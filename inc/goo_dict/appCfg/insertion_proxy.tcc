@@ -10,6 +10,9 @@
 # include "goo_dict/generic_dict.tcc"
 # include "goo_dict/parameters/logic.hpp"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 
@@ -102,8 +105,8 @@ public:
     p( char shortcut
      , const char * name
      , const char * description ) {
-        auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description)
-                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF>>()
+        auto pPtr = _alloc_parameter<PT>( _alloc<aspects::Description>(description, _top())
+                                        , _alloc<aspects::TStringConvertible<PT, _Goo_m_VART_LIST_APP_CONF> >()
                                         , _alloc<aspects::CharShortcut>(shortcut)
                                         , _latestInsertedRequired = _alloc<aspects::ImplicitValue<PT, _Goo_m_VART_LIST_APP_CONF>>()
                                         , _alloc<aspects::IsSet>()
@@ -218,12 +221,12 @@ public:
          , const char * name
          , const char * description ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
-                                        , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
-                                        , _alloc<aspects::CharShortcut>(shortcut)
-                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
-                                        , _alloc<aspects::IsSet>()
-                                        , _alloc<aspects::Array>(true)
-                                        );
+                                    , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
+                                    , _alloc<aspects::CharShortcut>(shortcut)
+                                    , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
+                                    , _alloc<aspects::IsSet>()
+                                    , _alloc<aspects::Array>(true)
+                                    );
         if( nullptr != name && *name != '\0' ) {
             _insert_parameter(name, pPtr);
         }
@@ -236,12 +239,12 @@ public:
     array( char shortcut
          , const char * description ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
-                                        , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
-                                        , _alloc<aspects::CharShortcut>(shortcut)
-                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
-                                        , _alloc<aspects::IsSet>()
-                                        , _alloc<aspects::Array>(true)
-                                        );
+                                    , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
+                                    , _alloc<aspects::CharShortcut>(shortcut)
+                                    , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
+                                    , _alloc<aspects::IsSet>()
+                                    , _alloc<aspects::Array>(true)
+                                    );
         _index_by_shortcut( shortcut, pPtr );
         return *this;
     }
@@ -251,12 +254,12 @@ public:
     array( const char * name
          , const char * description ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
-                                        , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
-                                        , _alloc<aspects::CharShortcut>()  // no shortcut
-                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
-                                        , _alloc<aspects::IsSet>()
-                                        , _alloc<aspects::Array>(true)
-                                        );
+                                    , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
+                                    , _alloc<aspects::CharShortcut>()  // no shortcut
+                                    , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
+                                    , _alloc<aspects::IsSet>()
+                                    , _alloc<aspects::Array>(true)
+                                    );
         if( nullptr != name && *name != '\0' ) {
             _insert_parameter(name, pPtr);
         } else {
@@ -272,12 +275,12 @@ public:
          , const char * description
          , const std::initializer_list<PT> & dft ) {
         auto pPtr = _alloc_parameter< goo::dict::Array<PT> >( _alloc<aspects::Description>(description)
-                                        , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
-                                        , _alloc<aspects::CharShortcut>(shortcut)
-                                        , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
-                                        , _alloc<aspects::IsSet>(true)
-                                        , _alloc<aspects::Array>(true)
-                                        );
+                                    , _alloc<aspects::TStringConvertible<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
+                                    , _alloc<aspects::CharShortcut>(shortcut)
+                                    , _latestInsertedRequired = _alloc<aspects::ImplicitValue<goo::dict::Array<PT>, _Goo_m_VART_LIST_APP_CONF>>()
+                                    , _alloc<aspects::IsSet>(true)
+                                    , _alloc<aspects::Array>(true)
+                                    );
         pPtr->assign( Array<PT>(dft) );
         pPtr->set_to_default(true);
         if( nullptr != name && *name != '\0' ) {
@@ -390,5 +393,6 @@ public:
 }  // namespace dict
 }  // namespace goo
 
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
 # endif  // H_GOO_PARAMETERS_DICTIONARY_INSERTION_PROXY_H
 

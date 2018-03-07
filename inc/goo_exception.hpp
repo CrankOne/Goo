@@ -328,8 +328,10 @@ public:
 };
 
 namespace em {
+# ifdef EM_STACK_UNWINDING
 String demangle_class( const char * );
 String demangle_function( const String & name );
+# endif
 }  // namespace em
 
 

@@ -30,6 +30,8 @@
 # include "goo_dict/types.hpp"
 # include "goo_dict/generic_dict.tcc"
 
+# if !defined( _Goo_m_DISABLE_DICTIONARIES )
+
 namespace goo {
 namespace dict {
 namespace aux {
@@ -42,6 +44,11 @@ struct iSubsections : protected THashT<KeyT, SubsectionT*> {
     typedef SubsectionT Subsection;
     typedef THashT<Key, Subsection *> Parent;
     typedef iSubsections<KeyT, THashT, SubsectionT> Self;
+
+    typedef TheAllocatorHandle<std::pair<KeyT, SubsectionT*> > AllocatorHandle;
+
+    iSubsections() = delete;
+    iSubsections( AllocatorHandle h ) : THashT<KeyT, SubsectionT*>(h) {}
 
     const Parent & subsections() const {
         return *this;
@@ -187,4 +194,5 @@ template< typename EntryCallableT
 }  // namespace dict
 }  // namespace goo
 
-#endif  // H_GOO_DICT_SUBSECTIONS_H
+# endif  //!defined( _Goo_m_DISABLE_DICTIONARIES )
+# endif  // H_GOO_DICT_SUBSECTIONS_H

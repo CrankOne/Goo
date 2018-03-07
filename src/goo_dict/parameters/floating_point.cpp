@@ -22,6 +22,9 @@
 
 # include "goo_dict/parameters/floating_point.tcc"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 
@@ -45,3 +48,4 @@ _floating_point_parse( const char * str, char ** endptr ) {
 }  // namespace dict
 }  // namespace goo
 
+# endif   // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)

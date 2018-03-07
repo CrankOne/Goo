@@ -22,6 +22,8 @@
 
 # include "goo_dict/parameters/integral.tcc"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 
@@ -96,3 +98,4 @@ integral_safe_parse<unsigned long long int>( const char * str, int base ) {
 }  // namespace dict
 }  // namespace goo
 
+# endif   // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)

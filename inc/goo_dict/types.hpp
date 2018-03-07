@@ -23,8 +23,8 @@
 
 // Created by crank on 12.01.18.
 
-# ifndef H_GOO_PARAMETERS_BASES_H
-# define H_GOO_PARAMETERS_BASES_H
+# ifndef H_GOO_DICT_TYPES_H
+# define H_GOO_DICT_TYPES_H
 
 # include "goo_config.h"
 
@@ -39,6 +39,16 @@
 # ifdef FNTHN_ALLOCATORS
     // TODO: use https://github.com/foonathan/memory here
 # endif
+
+// Fine configuration for
+// - disables dictionaries (overall):
+//# define _Goo_m_DISABLE_DICTIONARIES
+// - application configuration dictionaries implementation
+# define _Goo_m_DISABLE_APP_CONF_DICTIONARIES
+// - disables common dictionaries implementation
+# define _Goo_m_DISABLE_GENERIC_DICTIONARIES
+
+# if !defined(_Goo_m_DISABLE_DICTIONARIES)
 
 /**@file bases.hpp
  * Sequence container templates. The particular selection may significantly
@@ -91,11 +101,11 @@ public:
     };
 public:
     TheAllocatorHandle() = delete;
-    inline explicit TheAllocatorHandle( AbstractValueAllocator & a ) : _t(a) {}
+    inline TheAllocatorHandle( AbstractValueAllocator & a ) : _t(a) {}
     inline ~TheAllocatorHandle() {}
-    inline explicit TheAllocatorHandle( TheAllocatorHandle const& o ) : _t(o._t) {}
+    inline TheAllocatorHandle( const TheAllocatorHandle & o ) : _t(o._t) {}
     template<typename U>
-    inline explicit TheAllocatorHandle( TheAllocatorHandle<U> const& o ) : _t(o._t) {}
+    inline explicit TheAllocatorHandle( const TheAllocatorHandle<U> & o ) : _t(o._t) {}
 
     // address
     inline pointer address(reference r) { return &r; }
@@ -181,4 +191,6 @@ struct hash<goo::dict::String> {
 
 }  // namespace ::std
 
-#endif //GOO_BASES_HPP
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)
+
+# endif  // H_GOO_DICT_TYPES_H

@@ -25,6 +25,9 @@
 # include "goo_dict/appCfg/traits.hpp"
 # include "goo_dict/appCfg/insertion_proxy.tcc"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 
@@ -138,3 +141,5 @@ Traits<_Goo_m_VART_LIST_APP_CONF>::IndexBy<char>::copy_dict_entry(
 
 }  // namespace dict
 }  // namespace goo
+
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)

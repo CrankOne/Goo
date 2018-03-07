@@ -30,6 +30,9 @@
 # include "goo_dict/generic_dict.tcc"
 # include "goo_dict/common_aspects.hpp"
 
+# if !defined( _Goo_m_DISABLE_DICTIONARIES ) \
+  && !defined( _Goo_m_DISABLE_GENERIC_DICTIONARIES )
+
 namespace goo {
 namespace dict {
 
@@ -98,4 +101,5 @@ public:
 }  // ns dict
 }  // ns goo
 
-#endif  // GOO_TRAITS_HPP
+# endif  // !defined( _Goo_m_DISABLE_DICTIONARIES ) && !defined( _Goo_m_DISABLE_GENERIC_DICTIONARIES )
+# endif  // GOO_TRAITS_HPP

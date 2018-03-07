@@ -27,6 +27,9 @@
 # include "insertion_proxy.tcc"
 # include "goo_dict/util/dpath.hpp"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 # include <alloca.h>
 
 struct option;
@@ -99,11 +102,16 @@ public:
     /// to be an application description.
     /// @param defaultHelpIFace controls, whether the -h/--help/-? flags will
     ///        be automatically inserted.
-    explicit Configuration( const char * description );
+    explicit Configuration( const char * description
+                          , DictionaryAllocator<_Goo_m_VART_LIST_APP_CONF> & );
     ~Configuration();
 
     /// Copy ctr.
-    Configuration( const Configuration & );
+    Configuration( const Configuration &
+                 , DictionaryAllocator<_Goo_m_VART_LIST_APP_CONF> & );
+
+    // TODO: shall we make default copier with simple heap allocator?
+    Configuration( const Configuration & ) = delete;
 
     virtual InsertionProxy<String> insertion_proxy() override {
         return InsertionProxy<String>( this );
@@ -279,5 +287,6 @@ public:
 }  // namespace utils
 }  // namespace goo
 
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
 # endif  // H_GOO_PARAMETERS_CONFIGURATION_H
 

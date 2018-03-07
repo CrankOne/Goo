@@ -25,6 +25,9 @@
 
 # include "goo_dict/parameter.tcc"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 # include <type_traits>
 
 namespace goo {
@@ -168,6 +171,7 @@ static void __goo_define_enum_entry_ ## enumName ()  {                          
 }  // namespace dict
 }  // namespace goo
 
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
 # endif  // H_GOO_PARAMETERS_DICTIONARY_PARAMETER_ENUM_H
 
 

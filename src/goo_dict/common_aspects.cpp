@@ -31,6 +31,8 @@
 # include <cstring>
 # include <cassert>
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 
@@ -242,3 +244,5 @@ AppConfParameter::set_is_argument_required_flag() {
 
 }  // namespace dict
 }  // namespace goo
+
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)

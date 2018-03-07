@@ -21,8 +21,10 @@
  */
 
 # include "goo_dict/util/conf_help_render.hpp"
-
 # include "goo_dict/appCfg/configuration.hpp"
+
+# if !defined( _Goo_m_DISABLE_DICTIONARIES ) \
+  && !defined( _Goo_m_DISABLE_APP_CONF_DICTIONARIES )
 
 # include <algorithm>
 
@@ -225,4 +227,6 @@ POSIXRenderer::_recollect_first_level_options(
 
 }  // namespace dict
 }  // namespace goo
+
+# endif  // !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
 

@@ -26,6 +26,9 @@
 # include "goo_dict/parameter.tcc"
 # include "goo_dict/common_aspects.hpp"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 
@@ -89,5 +92,6 @@ struct iStringConvertible::ConversionTraits<bool> {
 }  // namespace dict
 }  // namespace goo
 
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
 # endif  // H_GOO_PARAMETERS_DICTIONARY_PARAMETER_LOGICAL_H
 

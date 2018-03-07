@@ -22,6 +22,8 @@
 
 # include "goo_dict/parameters/logic.hpp"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 # include <regex>
 
 static const std::regex
@@ -55,3 +57,4 @@ iStringConvertible::ConversionTraits<bool>::to_string_expression(const bool &val
 }  // namespace dict
 }  // namespace goo
 
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)

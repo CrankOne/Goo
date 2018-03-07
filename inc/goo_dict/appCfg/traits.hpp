@@ -27,6 +27,9 @@
 # include "goo_dict/common_aspects.hpp"
 # include "goo_dict/util/subsections.tcc"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 // TODO: recursive iterators
 # if 0
 # include "goo_mixins/iterable.tcc"
@@ -208,5 +211,6 @@ typedef AppConfTraits::IndexBy<String>::Dictionary AppConfNameIndex;
 /** @} */  // end of appParameters group
 }  // namespace goo
 
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
 # endif  // H_GOO_PARAMETERS_DICTIONARY_H
 

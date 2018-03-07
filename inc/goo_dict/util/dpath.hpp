@@ -27,8 +27,9 @@
 #ifndef GOO_PARAMETERS_DPATH_HPP
 #define GOO_PARAMETERS_DPATH_HPP
 
-# include "goo_dict/parameters/los.hpp"
 # include "goo_dict/generic_dict.tcc"
+
+# if !defined( _Goo_m_DISABLE_DICTIONARIES )
 
 # include <cstring>
 
@@ -214,4 +215,5 @@ std::vector<DictPath> dpath( const String & path
 }  // namespace dict
 }  // namespace goo
 
+#endif  // !defined( _Goo_m_DISABLE_DICTIONARIES )
 #endif  // GOO_PARAMETERS_DPATH_HPP

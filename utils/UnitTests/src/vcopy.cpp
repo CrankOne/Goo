@@ -39,7 +39,9 @@
 /// for virtual copying. This one has no pure-virtual
 /// methods, so it may be reasonable to force its
 /// cloning method to be implemented.
-class Base : public goo::mixins::iDuplicable<Base, Base, Base, true> {
+/// \ingroup UnitTests
+class Base : public goo::mixins::iDuplicable<Base, Base, Base> {
+    friend Base * goo::clone<Base>( const Base * );
 public:
     static UShort new_id() {
         return USHRT_MAX*(double(rand())/RAND_MAX);
@@ -48,6 +50,8 @@ private:
     const UShort _id,
                  _copiedFromID
                  ;
+protected:
+    virtual Base * _V_clone() const override { return new Base(*this); }
 public:
     Base() : _id(new_id()), _copiedFromID(0) {}
     Base( UShort id_ ) : _id(id_), _copiedFromID(0) {}
@@ -57,7 +61,7 @@ public:
     UShort original_id() const { return _copiedFromID; }
 };  // class Base
 
-class AbstractBase : public goo::mixins::iDuplicable<AbstractBase, AbstractBase, AbstractBase, false> {
+class AbstractBase : public goo::mixins::iDuplicable<AbstractBase, AbstractBase, AbstractBase> {
 public:
     static UShort new_id() {
         return USHRT_MAX*(double(rand())/RAND_MAX);
@@ -78,7 +82,9 @@ public:
 /// Direct duplicable descendant of duplicable base.
 template<typename BaseT>
 class Derived1 : public goo::mixins::iDuplicable<BaseT, Derived1<BaseT>, BaseT> {
-    typedef typename goo::mixins::iDuplicable<BaseT, Derived1<BaseT>, BaseT>::DuplicableParent DuplicableParent;
+    typedef typename goo::mixins::iDuplicable< BaseT
+                                             , Derived1<BaseT>
+                                             , BaseT> DuplicableParent;
 public:
     Derived1() : DuplicableParent( this->new_id() ) {}
     Derived1( const Derived1<BaseT> & copy ) : DuplicableParent( copy ) {}
@@ -97,7 +103,9 @@ public:
 /// Far duplicable descendant of duplicable base.
 template<typename BaseT>
 class Derived3 : public goo::mixins::iDuplicable<BaseT, Derived3<BaseT>, Derived2<BaseT>> {
-    typedef typename goo::mixins::iDuplicable<BaseT, Derived3<BaseT>, Derived2<BaseT>>::DuplicableParent DuplicableParent;
+    typedef typename goo::mixins::iDuplicable< BaseT
+                                             , Derived3<BaseT>
+                                             , Derived2<BaseT> > DuplicableParent;
 protected:
     virtual void _V_some_interfacing_function() override {}
 public:

@@ -26,6 +26,9 @@
 # include "goo_dict/parameter.tcc"
 # include "goo_path.hpp"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 
@@ -91,5 +94,6 @@ struct iStringConvertibleParameter::ConversionTraits<filesystem::Path> {
 }  // namespace dict
 }  // namespace goo
 
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
 # endif  // H_GOO_PARAMETERS_DICTIONARY_PARAMETER_PATH_H
 

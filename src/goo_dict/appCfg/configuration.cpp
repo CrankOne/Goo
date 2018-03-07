@@ -26,6 +26,9 @@
 # include "goo_utility.hpp"
 # include "goo_dict/util/conf_help_render.hpp"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 # include <algorithm>
 # include <cstring>
 # include <unistd.h>
@@ -38,7 +41,6 @@
 # include <iostream>
 
 namespace goo {
-
 namespace utils {
 
 //
@@ -163,15 +165,19 @@ AppConfValidator::run(const dict::Configuration & cfg, uint8_t options) {
 namespace dict {
 
 // TODO: use own _alloc instead of new for allocating description aspect.
-Configuration::Configuration( const char * descr_) \
-        : DuplicableParent( std::make_tuple(_alloc<aspects::Description>(descr_) ) )
-        , _shortcutsIndex( /*TODO allocator, */ std::make_tuple<>() )
+// TODO: track allocator
+Configuration::Configuration( const char * descr
+                            , DictionaryAllocator<_Goo_m_VART_LIST_APP_CONF> & a ) \
+        : DuplicableParent( a, std::make_tuple( _alloc<aspects::Description>(descr, a) ) )
+        , _shortcutsIndex( as_allocator(), std::make_tuple<>() )
         , _positionalArgument("", nullptr) {}
 
-Configuration::Configuration( const Configuration & orig ) \
-        : DuplicableParent( orig )
-        , _shortcutsIndex( std::make_tuple<>() )
-        , _positionalArgument("", nullptr) {
+// TODO: allocs
+Configuration::Configuration( const Configuration & orig
+                            , DictionaryAllocator<_Goo_m_VART_LIST_APP_CONF> & a ) \
+        : DuplicableParent( orig, a )
+        , _shortcutsIndex( a, std::make_tuple<>() )
+        , _positionalArgument( "", nullptr ) {
     // Upon initial construction procedures are done within the dictionary and
     // aspect copy ctrs, the all the parameters have to be correctly copied
     // except the ones related to configuration itself, i.e. the index of
@@ -502,3 +508,4 @@ compose_reference_text_for( const dict::Configuration & cfg
 }  // namespace utils
 }  // namespace goo
 
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)

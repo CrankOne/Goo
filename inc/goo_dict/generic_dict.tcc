@@ -20,14 +20,16 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-# ifndef H_GOO_PARAMETERS_PLURAL_H
-# define H_GOO_PARAMETERS_PLURAL_H
+# ifndef H_GOO_PARAMETERS_GENERIC_DICT_H
+# define H_GOO_PARAMETERS_GENERIC_DICT_H
 
 # include "goo_dict/types.hpp"
 # include "goo_dict/value.hpp"
 # include "goo_mixins/vcopy.tcc"
 
 # include <sstream>
+
+# if !defined(_Goo_m_DISABLE_DICTIONARIES)
 
 namespace goo {
 namespace dict {
@@ -207,7 +209,8 @@ public:
                      , TT ownAspectsInitializer
                      , CtrArgTs ... ctrArgs ) \
             : OwnAllocator(da)
-            , Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue( ownAspectsInitializer )
+            //, Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue( ownAspectsInitializer )
+            , DuplicableParent( ownAspectsInitializer )
             , OwnAspect( ctrArgs ... ) {}
 
     # if 0
@@ -316,10 +319,13 @@ public:
         }
         return c;
     }
+
+    DictionaryAllocator<AspectTs...> & as_allocator() { return *this; }
 };
 
 }  // namespace dict
 }  // namespace goo
 
-# endif  // H_GOO_PARAMETERS_PLURAL_H
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)
+# endif  // H_GOO_PARAMETERS_GENERIC_DICT_H
 

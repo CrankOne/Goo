@@ -28,6 +28,10 @@
 
 # include "goo_dict/parameter.tcc"
 # include "goo_dict/common_aspects.hpp"
+
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 # include <climits>
 
 namespace goo {
@@ -123,5 +127,6 @@ struct iStringConvertible::ConversionTraits<T, typename std::enable_if<std::is_i
 }  // namespace dict
 }  // namespace goo
 
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
 # endif  // H_GOO_PARAMETERS_DICTIONARY_PARAMETER_INTEGRAL_H
 

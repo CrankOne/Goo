@@ -33,6 +33,8 @@
 # include <cassert>
 # include <sstream>
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 
@@ -240,5 +242,6 @@ iBaseValue<AspectTs...>::as() const {
 }  // namespace dict
 }  // namespace goo
 
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)
 # endif  // H_GOO_PARAMETERS_DICTIONARY_DICTIONARY_H
 

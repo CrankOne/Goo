@@ -20,9 +20,12 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+# include "utest.hpp"
+
+# if !defined(_Goo_m_NO_GSL)
+
 # include <cstring>
 # include <goo_xform.tcc>
-# include "utest.hpp"
 
 # include <gsl/gsl_randist.h>
 
@@ -170,4 +173,4 @@ GOO_UT_BGN( NumRanges, "Scalable numeric ranges" ) {  // ranges
 
 } GOO_UT_END( NumRanges )
 
-
+# endif  // _Goo_m_NO_GSL

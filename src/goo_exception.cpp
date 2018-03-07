@@ -395,8 +395,13 @@ TheException<Exception::badCast>::dump_specific_details(std::ostream & os) const
     }
     snprintf( emBf, sizeof(emBf), "Unable to perform run-time type cast from"
                      " type \"%s\" to type \"%s\" for data at %p: %s"
+                  # ifdef EM_STACK_UNWINDING
                   , goo::em::demangle_class(_fromType->name()).c_str()
                   , goo::em::demangle_class(_toType->name()).c_str()
+                  # else
+                  , _fromType->name()
+                  , _toType->name()
+                  # endif
                   , _addr
                   , Exception::what() );
     os << emBf;

@@ -89,7 +89,6 @@ class iDuplicable;
 template< typename BaseTypeT, typename ... CopyCtrArgTs> BaseTypeT *
 clone( const BaseTypeT * origPtr, CopyCtrArgTs ... );
 
-
 namespace mixins {
 
 /// An iDuplicable implementation for abstract base class
@@ -99,7 +98,7 @@ namespace mixins {
 template< typename SelfTypeT, typename ... CopyCtrArgTs>
 class iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, CopyCtrArgTs...> {
 public:
-    typedef iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, CopyCtrArgTs...> DuplicableParent;
+    //typedef iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, CopyCtrArgTs...> DuplicableParent;
     typedef iDuplicable<SelfTypeT, SelfTypeT, SelfTypeT, CopyCtrArgTs...> DuplicableBase;
     typedef SelfTypeT Parent;
     typedef SelfTypeT BaseType;
@@ -178,6 +177,7 @@ protected:
 
 template< typename BaseTypeT
         , typename ... CopyCtrArgTs>
+# if 0
 typename std::enable_if< std::is_base_of< mixins::iDuplicable< BaseTypeT
                                                              , BaseTypeT
                                                              , BaseTypeT
@@ -185,10 +185,13 @@ typename std::enable_if< std::is_base_of< mixins::iDuplicable< BaseTypeT
                                         , BaseTypeT
                                         >::value
                        , BaseTypeT * >::type
+# else
+BaseTypeT *
+# endif
 clone( const BaseTypeT * orig, CopyCtrArgTs ... ccargs) {
     # ifndef NDEBUG
-    if( orig->_V_cloning_type_id() != typeid(orig) ) {
-        emraise( badArchitect,
+    if( orig->_V_cloning_type_id() != typeid(*orig) ) {
+        emraise( dbgBadArchitect,
                 "Instance %p of class \"%s\" manifests mismatching _V_cloning_type_id() "
                 "(of class \"%s\") indicating Goo's coding style violation. Please, "
                 "refer to \"#cloning\" section of Goo standard.",

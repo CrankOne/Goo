@@ -22,6 +22,9 @@
 
 # include "goo_dict/parameters/string.hpp"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 namespace aspects {
@@ -39,3 +42,4 @@ iStringConvertible::ConversionTraits<std::string>::to_string_expression(const Va
 }  // namespace dict
 }  // namespace goo
 
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)

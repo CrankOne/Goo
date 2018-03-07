@@ -22,6 +22,9 @@
 
 # include "goo_dict/parameters/path_parameter.hpp"
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 
@@ -83,4 +86,4 @@ iStringConvertibleParameter::ConversionTraits<filesystem::Path>::to_string_expre
 }  // namespace dict
 }  // namespace goo
 
-
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)

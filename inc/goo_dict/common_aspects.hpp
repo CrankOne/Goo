@@ -20,8 +20,8 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-# ifndef H_GOO_PARAMETERS_APP_CONF_INFO_H
-# define H_GOO_PARAMETERS_APP_CONF_INFO_H
+# ifndef H_GOO_PARAMETERS_COMMON_ASPECTS_H
+# define H_GOO_PARAMETERS_COMMON_ASPECTS_H
 
 # include "goo_types.h"
 # include "goo_exception.hpp"
@@ -31,6 +31,8 @@
 
 # include <tuple>
 
+# if !defined(_Goo_m_DISABLE_DICTIONARIES)
+
 namespace goo {
 namespace dict {
 namespace aspects {
@@ -39,11 +41,12 @@ namespace aspects {
 /// human-readable description for parameter or dictionary.
 class Description {
 private:
-     std::string _d;
+     String _d;
 public:
-    explicit Description( const std::string & t ) : _d(t) {}
-    virtual const std::string & description() { return _d; }
-    virtual void description( const std::string & t ) { _d = t; }
+    explicit Description( const char * t
+                        , TheAllocatorHandle<char> ah ) : _d(t, ah) {}
+    virtual const String & description() { return _d; }
+    virtual void description( const String & t ) { _d = t; }
 };
 
 /// Defines the "is required" and "requires argument" flags for parameters.
@@ -128,12 +131,12 @@ protected:
     /// Shall translate string expression to C++ value.
     virtual void _V_parse_argument( const char * ) = 0;
     /// Shall render C++ value to string.
-    virtual std::string _V_to_string( ) const = 0;
+    virtual String _V_to_string( ) const = 0;
 public:
     /// Translates value from string representation.
     void parse_argument( const char * strval ) { _V_parse_argument( strval ); }
     /// Renders string from C++ value.
-    std::string to_string() const { return _V_to_string(); }
+    String to_string() const { return _V_to_string(); }
     template<typename ValueT, typename EnableT=void> struct ConversionTraits;
     //{
     //    typedef ValueT Value;
@@ -173,7 +176,7 @@ protected:
     }
 
     /// Expresses the value kept by current instance as a string.
-    virtual std::string _V_to_string() const override {
+    virtual String _V_to_string() const override {
         return ValueTraits::to_string_expression(
                 static_cast<const TypedSelf&>(BoundMixin::target()).value());
     }
@@ -243,4 +246,5 @@ public:
 }  // namespace dict
 }  // namespace goo
 
-#endif  // H_GOO_PARAMETERS_APP_CONF_INFO_H
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)
+# endif  // H_GOO_PARAMETERS_COMMON_ASPECTS_H

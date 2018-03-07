@@ -20,10 +20,14 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-# include <cstring>
 # include "goo_dict/types.hpp"
 # include "goo_dict/appCfg/insertion_proxy.tcc"
 # include "goo_dict/appCfg/configuration.hpp"
+
+# if !defined(_Goo_m_DISABLE_DICTIONARIES) \
+  && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
+
+# include <cstring>
 
 namespace goo {
 namespace dict {
@@ -77,7 +81,11 @@ InsertionProxy<String>::_index_by_shortcut( char shrtc, VBase * p ) {
 InsertionProxy<String>::Self &
 InsertionProxy<String>::bgn_sect( const char * name
                                 , const char * description ) {
-    auto sPtr = _alloc<AppConfNameIndex>( std::make_tuple( _alloc<aspects::Description>(description) ) );
+    // TODO: subsections rent their own allocators?
+    auto & ownAlloc = _top().as_allocator();
+    auto sPtr = _alloc<AppConfNameIndex>( ownAlloc,
+            std::make_tuple<aspects::Description *>( _alloc<aspects::Description>(description, ownAlloc) )
+        );
     emplace_subsection_copy( *_stack.top().second, name, sPtr );
     _stack.push( std::pair<std::string, Subsection *>(name, sPtr) );
     return *this;
@@ -117,22 +125,23 @@ InsertionProxy<String>::Self &
 InsertionProxy<String>::flag( char shortcut
                             , const char * name
                             , const char * description ) {
-    auto pPtr = _alloc_parameter<bool>( _alloc<aspects::Description>(description)
-                                      , _alloc<aspects::TStringConvertible<bool, _Goo_m_VART_LIST_APP_CONF>>()
-                                      , _alloc<aspects::CharShortcut>(shortcut)
-                                      , _latestInsertedRequired = _alloc<aspects::ImplicitValue<bool, _Goo_m_VART_LIST_APP_CONF>>()
+    auto pPtr = _alloc_parameter<bool>( _alloc<aspects::Array>(false)
+                                      , _alloc<aspects::CharShortcut>( shortcut )
+                                      , _alloc<aspects::Description>( description, TheAllocatorHandle<char>(_top().as_allocator()) )
+                                      , _alloc<aspects::TStringConvertible<bool, _Goo_m_VART_LIST_APP_CONF> >()
                                       , _alloc<aspects::IsSet>()
-                                      , _alloc<aspects::Array>(false)
+                                      , _latestInsertedRequired = _alloc<aspects::ImplicitValue<bool, _Goo_m_VART_LIST_APP_CONF> >()
                                       );
+    //# undef _ma
     if( name && '\0' != name[0] ) {
-        _insert_parameter( name, pPtr );
+        _insert_parameter( String( name, _top().as_allocator() ), pPtr );
     }
     if( '\0' != shortcut ) {
         assert( isalnum(shortcut) );
         _index_by_shortcut( shortcut, pPtr );
     }
     # ifndef NDEBUG
-    else { assert( name && '\0' != name[0] ); }
+    else { assert( name && '\0' != *name ); }
     # endif
     _latestInsertedRequired->set_required(false);
     _latestInsertedRequired->set_expects_argument(false);
@@ -155,4 +164,4 @@ InsertionProxy<char>::insert( char c, AppConfTraits::VBase * e ) {
 }  // namespace goo
 }  // namespace dicts
 
-
+# endif  // !defined(_Goo_m_DISABLE_DICTIONARIES) && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)
