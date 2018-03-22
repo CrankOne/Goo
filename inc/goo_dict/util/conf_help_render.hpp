@@ -23,7 +23,7 @@
 # ifndef H_GOO_CONFIGURATION_HELP_RENDERED_H
 # define H_GOO_CONFIGURATION_HELP_RENDERED_H
 
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 
 # include <cassert>
 # include <map>

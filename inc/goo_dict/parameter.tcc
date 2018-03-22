@@ -24,7 +24,7 @@
 # define H_GOO_PARAMETERS_DICTIONARY_DICTIONARY_H
 
 # include "goo_types.h"
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 # include "value.hpp"
 
 # include <list>

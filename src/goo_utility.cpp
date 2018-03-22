@@ -27,7 +27,7 @@
 # include <cassert>
 # include <cstring>
 # include "goo_utility.hpp"
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 
 namespace stdE {
 

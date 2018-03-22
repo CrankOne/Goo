@@ -24,7 +24,7 @@
 # define H_GOO_PARAMETERS_COMMON_ASPECTS_H
 
 # include "goo_types.h"
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 
 # include "goo_dict/value.hpp"
 # include "goo_dict/parameter.tcc"

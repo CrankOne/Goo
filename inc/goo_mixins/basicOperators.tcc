@@ -32,7 +32,7 @@
 # include <queue>
 # include <sstream>
 # include "goo_types.h"
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 
 # ifndef DNDEBUG
 # define auth_cast dynamic_cast

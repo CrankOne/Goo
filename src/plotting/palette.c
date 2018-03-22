@@ -22,7 +22,7 @@
 
 # include "goo_plotting/palette.h"
 # include "goo_types.h"
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 
 # include <stdlib.h>
 # include <stdio.h>

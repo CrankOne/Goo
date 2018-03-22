@@ -3,7 +3,7 @@
 
 # include <stack>
 
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 # include "goo_dict/parameter.tcc"
 # include "goo_dict/appCfg/traits.hpp"
 # include "goo_dict/util/dpath.hpp"

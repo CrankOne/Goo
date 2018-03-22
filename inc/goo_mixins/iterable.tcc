@@ -24,7 +24,7 @@
  */
 
 # include "goo_config.h"
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 # include "goo_mixins/basicOperators.tcc"
 # include <iterator>
 

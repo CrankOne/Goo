@@ -20,9 +20,8 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-# include "goo_path.hpp"
-
-# include "goo_exception.hpp"
+# include "goo_sys/path.hpp"
+# include "goo_sys/exception.hpp"
 
 # include <set>
 

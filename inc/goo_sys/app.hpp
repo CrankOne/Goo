@@ -60,7 +60,7 @@
 # include <cassert>
 
 # include "goo_types.h"
-# include "goo_exception.hpp"
+# include "exception.hpp"
 
 namespace goo {
 

@@ -29,7 +29,7 @@
 # include <string>
 # endif
 
-/*! \addtogroup types
+/*!\addtogroup types
  *
  * Here are some shortcuts for simple types used in projects.
  * Such naming often helps code to be more laconic and
@@ -37,7 +37,7 @@
  * @{
  */
 
-/*! \file goo_types.h
+/*!\file goo_types.h
  * \brief Contains atomic Goo's types and definitions.
  * 
  * Note the following types table:
@@ -232,9 +232,9 @@
 for_all_atomic_datatypes(declare_typedef)
 # undef declare_typedef
 
-typedef uint8_t         ErrCode;    ///< Goo error code type.
-typedef GOO_SIZE_TYPE   Size;       ///< Goo size type.
-typedef uint8_t         TypeCode;   ///< goo type descriptor code.
+typedef uint8_t         ErrCode;    ///< Error code type.
+typedef GOO_SIZE_TYPE   Size;       ///< Size type.
+typedef uint8_t         TypeCode;   ///< Type descriptor code.
 
 const char * get_errcode_description( const ErrCode C );
 

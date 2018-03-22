@@ -26,7 +26,7 @@
 # include <sstream>
 
 # include "goo_types.h"
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 
 # ifdef EM_STACK_UNWINDING
 #   include <cxxabi.h>

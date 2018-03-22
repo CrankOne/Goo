@@ -28,8 +28,8 @@
 # include <iostream>
 # include <sstream>
 
-# include "goo_app.hpp"
-# include "goo_exception.hpp"
+# include "goo_sys/app.hpp"
+# include "goo_sys/exception.hpp"
 # include "goo_tsort.tcc"
 
 namespace goo {

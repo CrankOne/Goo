@@ -34,7 +34,7 @@
 # include <unordered_set>
 # include <limits>
 
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 
 # ifdef FNTHN_ALLOCATORS
     // TODO: use https://github.com/foonathan/memory here
@@ -82,7 +82,7 @@ struct AbstractValueAllocator {
 /// instance.
 template<typename T>
 class TheAllocatorHandle {
-private:
+protected:
     AbstractValueAllocator & _t;
 public :
     // typedefs
@@ -146,6 +146,7 @@ template<typename ... AspectTs>
 class DictionaryAllocator : public AbstractValueAllocator {
 protected:
     // ...
+public:
 };
 
 /// Type referencing element position in a List.

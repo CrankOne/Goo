@@ -102,6 +102,10 @@
 #   define GDS_PARSER_STRING_BUF_LEN 1024*1024
 # endif
 
+# ifndef GOO_DICT_POOLID_BITLEN
+#   define GOO_DICT_POOLID_BITLEN 14
+# endif
+
 # ifdef __cplusplus
 # include <stdexcept>
 # endif

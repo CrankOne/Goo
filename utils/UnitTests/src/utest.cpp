@@ -30,7 +30,7 @@
 
 # include <getopt.h>
 
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 # include "goo_versioning.h"
 # include "utest.hpp"
 

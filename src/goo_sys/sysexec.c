@@ -20,7 +20,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-# include "goo_sysexec.h"
+# include "goo_sys/sysexec.h"
 
 # include <unistd.h>
 # include <sys/wait.h>

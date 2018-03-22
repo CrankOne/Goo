@@ -24,7 +24,7 @@
 # define H_GOO_PARAMETERS_DICTIONARY_PARAMETER_PATH_H
 
 # include "goo_dict/parameter.tcc"
-# include "goo_path.hpp"
+# include "goo_sys/path.hpp"
 
 # if !defined(_Goo_m_DISABLE_DICTIONARIES) \
   && !defined(_Goo_m_DISABLE_APP_CONF_DICTIONARIES)

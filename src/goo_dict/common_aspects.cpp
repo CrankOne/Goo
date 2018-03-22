@@ -26,7 +26,7 @@
 
 # include "goo_dict/value.hpp"
 # include "goo_dict/common_aspects.hpp"
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 
 # include <cstring>
 # include <cassert>

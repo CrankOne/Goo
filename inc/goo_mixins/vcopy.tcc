@@ -26,7 +26,7 @@
 # include <tuple>
 # include <typeinfo>
 # include "goo_utility.hpp"
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 
 namespace goo {
 

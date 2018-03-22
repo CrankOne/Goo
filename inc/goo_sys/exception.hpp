@@ -24,7 +24,7 @@
  */
 
 # include "goo_types.h"
-# include "goo_ansi_escseq.h"
+# include "ansi_escseq.h"
 # include "goo_utility.h"
 
 # include <string.h>

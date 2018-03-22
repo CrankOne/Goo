@@ -22,7 +22,7 @@
 
 # include "goo_dict/appCfg/configuration.hpp"
 # include "goo_dict/appCfg/insertion_proxy.tcc"
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 # include "goo_utility.hpp"
 # include "goo_dict/util/conf_help_render.hpp"
 

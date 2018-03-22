@@ -23,7 +23,7 @@
 # include <unordered_map>
 # include <type_traits>
 # include <cstring>
-# include "goo_exception.hpp"
+# include "goo_sys/exception.hpp"
 # include "goo_types.h"
 # ifdef ENABLE_GDS
 # include "gds/interpreter.h"

@@ -53,6 +53,11 @@ private:
 
 # define _Goo_m_VART_LIST_UTDCT aspects::IsSet, aspects::Word
 
+template <class, class...> class WordCounter;
+class WordInsertionProxy;
+
+typedef GenericDictionary< char, aspects::IsSet, aspects::Word > GD;
+
 // General traits for dictionaries with given set of entry aspects.
 template<>
 struct Traits< _Goo_m_VART_LIST_UTDCT > {
@@ -79,9 +84,23 @@ struct Traits< _Goo_m_VART_LIST_UTDCT > {
                                                , Hash
                                                , Dictionary > {
             // ...
+            WordInsertionProxy insertion_proxy();
         };
     };
 };
+
+class WordInsertionProxy : public GD::BaseInsertionProxy<WordCounter> {
+public:
+    explicit WordInsertionProxy( GD & t ) : GD::BaseInsertionProxy<WordCounter>(t) {}
+    void consider( const char * wBgn, const char * wEnd );
+};
+
+template<>
+template<typename KeyT>
+WordInsertionProxy
+Traits<_Goo_m_VART_LIST_UTDCT>::IndexBy<KeyT>::Aspect::insertion_proxy() {
+    return WordInsertionProxy( static_cast<GD &>(*this) );
+}
 
 }  // namespace ::goo::dict
 }  // namespace ::goo
@@ -111,13 +130,29 @@ as high as the first story of a house never do i sink as low as the house
 doors and at last i float at an extraordinary height above the vaulted cellar
 of the dealer whom i see far below crouching over his table where he is
 writing he has opened the door to let out the excessive heat
-)Kafka"
+)Kafka";
 
+static void
+fill_txt( const char * text
+        , ::goo::dict::WordInsertionProxy & ip ) {
+    const char * wordBegin = nullptr;
+    for( const char * c = text; '\0' != *c ; ++c ) {
+        if( isalnum(*c) ) {
+            if( !wordBegin ) {
+                wordBegin = c;
+            }
+            continue;
+        } else if( wordBegin ) {
+            ip.consider( wordBegin, c );
+        }
+    }
+}
 
 GOO_UT_BGN( PDict, "Parameters dictionary routines" ) {
-    typedef goo::dict::GenericDictionary< goo::dict::aspects::IsSet
-                                        , goo::dict::aspects::Word> d;
-    //
+    // TODO: dict allocator da
+    ::goo::dict::GD d(da);
+    fill_txt( _local_tstText
+            , d.insertion_proxy() );
 } GOO_UT_END( PDict, "VCtr" )
 
 # endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)

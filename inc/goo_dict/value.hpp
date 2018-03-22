@@ -145,7 +145,7 @@ public:
     template<typename T> T * aspect_cast() {
         return std::get<stdE::get_type_index<T, AspectTs...>::value>(_aspects);
     }
-
+// ...
     template<typename T> const T * aspect_cast() const {
         return std::get<stdE::get_type_index<T, AspectTs...>::value>(_aspects);
     }
