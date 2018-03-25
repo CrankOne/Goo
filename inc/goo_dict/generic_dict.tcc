@@ -62,7 +62,7 @@ struct IndexingTraits {
  */
 template< typename KeyT
         , template <typename> class X
-        , template <typename> class AllocatorT >
+        , template <typename> class AllocatorT=std::allocator >
 class Dictionary : public X< typename IndexingTraits<KeyT, X>::template Map< AllocatorT > > {
 public:
     template<typename ... CtrArgTs>

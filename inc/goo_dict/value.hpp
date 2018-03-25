@@ -118,7 +118,9 @@ public:
                     >::type                                                 \
             as() {                                                          \
                 return ReferableTraits<X>::template Dealer<ValueT, DesiredT> \
-                ::obtain(_v); }                                             \
+                ::obtain(_v); }                                              \
+        X<ValueT> & container() { return _v; }                               \
+        const X<ValueT> & container() const { return _v; }                   \
     };  // Traits<X>::ReferableWrapper (generic)
 
 /// Generic traits for goo::dict's entries.

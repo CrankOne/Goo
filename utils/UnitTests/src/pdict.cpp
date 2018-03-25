@@ -38,6 +38,9 @@
 
 template<typename T> struct SimpleValueKeeper {
     T value;
+    size_t count;
+    SimpleValueKeeper() : count(0) {}
+    operator T & () { return value; }
 };
 
 # if 0
@@ -77,28 +80,43 @@ of the dealer whom i see far below crouching over his table where he is
 writing he has opened the door to let out the excessive heat
 )Kafka";
 
-# if 0
 static void
 fill_txt( const char * text
-        , ::goo::dict::WordInsertionProxy & ip ) {
+        , ::goo::dict::Dictionary<char, SimpleValueKeeper> & d ) {
     const char * wordBegin = nullptr;
+    auto it = d.value.end();
     for( const char * c = text; '\0' != *c ; ++c ) {
         if( isalnum(*c) ) {
             if( !wordBegin ) {
                 wordBegin = c;
             }
+            if( d.value.end() != it ) {
+                static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
+                        ::goo::dict::Dictionary<char, SimpleValueKeeper>
+                        > * >(it->second);
+            }
+            auto ir = d.value.emplace( *c,
+                    new ::goo::dict::ReferableTraits<SimpleValueKeeper> \
+                        ::ReferableWrapper<::goo::dict::Dictionary<char, SimpleValueKeeper>>() );
+            it = ir.first;
             continue;
         } else if( wordBegin ) {
-            ip.consider( wordBegin, c );
+            if( d.value.end() != it ) {
+                ++(static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>
+                                          ::ReferableWrapper<::goo::dict::Dictionary<char, SimpleValueKeeper> > *
+                          >(it->second)->container().count); //->as &> );
+                it = d.value.end();
+            }
+            //consider_word( wordBegin, c );
         }
     }
 }
-# endif
 
 GOO_UT_BGN( PDict, "Parameters dictionary routines" ) {
-    ::goo::dict::Dictionary<char, SimpleValueKeeper, std::allocator> d;
-    //fill_txt( _local_tstText
-    //        , d.insertion_proxy() );
+    ::goo::dict::Dictionary<char, SimpleValueKeeper> d;
+    fill_txt( _local_tstText, d );
+    // std::cout << d.value.size() << " els in dict" << std::endl;
+    // TODO: put some tests here
 } GOO_UT_END( PDict, "VCtr" )
 
 # endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)
