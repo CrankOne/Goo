@@ -37,6 +37,7 @@ namespace goo {
 namespace dict {
 namespace aspects {
 
+# if 0
 /// Defines presence of the the textual attribute that should contain
 /// human-readable description for parameter or dictionary.
 class Description {
@@ -239,6 +240,8 @@ public:
         _implicitValue = v;
     }
 };
+
+# endif
 
 }  // namespace aspects
 

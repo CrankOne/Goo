@@ -38,7 +38,7 @@
 namespace goo {
 namespace dict {
 
-# if 1
+# if 0
 
 //class iSingularParameter;
 

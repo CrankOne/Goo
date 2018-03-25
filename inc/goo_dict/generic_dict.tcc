@@ -28,284 +28,47 @@
 # include "goo_mixins/vcopy.tcc"
 
 # include <sstream>
+# include <unordered_map>
 
 # if !defined(_Goo_m_DISABLE_DICTIONARIES)
 
 namespace goo {
 namespace dict {
 
-template< typename KeyT
-        , typename ... AspectTs>
-class GenericDictionary;  // fwd
+# if 0  // shall be defined within the allocator type
+    /// Pointer type referencing particular referable instance within
+    /// dictionary.
+    typedef iReferable * Reference;
+# endif
 
 template< typename KeyT
-        , template <class, class...> class ParameterT
-        , class ... AspectTs >
-class BaseInsertionProxy;  // fwd
-
-template< typename KeyT
-        , class ... AspectTs > struct InsertionAttorney;
-
-/**@brief Common traits definition.
- *
- * The goo::dict traits are defined for every unique set of simple structures
- * called "aspects". By the language limitation, we can not define the set of
- * aspects as an actual "set" (i.e. unordered).
- * */
-template< typename ... AspectTs >
-struct Traits {
-    /// Type of general value kept by dictionaries with the fixed aspects set.
-    typedef iAbstractValue VBase;
-    typedef iBaseValue<AspectTs...> FeaturedBase;
-    /// The index (dictionary) traits may be re-defined within partial
-    /// specialization for certain key type (whithin every unique aspects set).
-    template<typename KeyT> struct IndexBy {
-        // One probably will want to append the dictionary traits (within partial
-        // specialization). By default, each dictionary aspect keeps a map
-        // indexing a set of self-typed instance pointers by same key.
-        /// Additional behaviour may be mixed in the GenericDictionary<> by the mean
-        /// of partial specialization of this type. By default its an empty struct.
-        struct Aspect { /* nothing special by default */ };
-        //typedef TValue< Hash<KeyT, GenericDictionary<KeyT, AspectTs...>* > > Aspect;
-        //        // ... public Value< Map< otherKeyT , Dictionary<KeyT, AspectTs...>* > >
-
-        typedef GenericDictionary<KeyT, AspectTs...> Dictionary;
-
-        /// Key-value pairs container, the mandatory part of any generic dictionary.
-        /// One probably would desire to re-define the second AspectTs... pack in order
-        /// to restrict the aspects set included at the dictionary within particular
-        /// traits.
-        typedef TValue< Hash<KeyT, FeaturedBase * >
-                      , AspectTs ... // < this pack
-                      > DictValue;
-
-        /// In-place entry copying procedure. Takes the iterator to an existing
-        /// mutable entry and pointer to owning dictionary. Copies the entry using
-        /// dictionaries allocator overwriting the object the given iterator points
-        /// to.
-        static void copy_dict_entry( typename DictValue::Value::iterator it
-                                   , Dictionary * /*dct*/ ) {
-            // TODO: use allocator submitted by dict instance here
-            //Dictionary::template BaseInsertionProxy<InsertableParameter> ip( *dct );
-            it->second = goo::clone_as< iAbstractValue
-                                      , FeaturedBase
-                                      , FeaturedBase >( it->second );
-        }
-
-        template<typename CallableT>
-        static CallableT each_entry_recursively_revise( CallableT c, Dictionary & d) {
-            d.each_entry_revise( c );
-            // ... in traits, there are the subsections iterating procedures,
-            // depending on their particular assembly.
-            return c;
-        }
-
-        template<typename CallableT>
-        static CallableT each_entry_recursively_read( CallableT c, const Dictionary & d) {
-            d.each_entry_read( c );
-            // ... in traits, there are the subsections iterating procedures,
-            // depending on their particular assembly.
-            return c;
-        }
-    };
+        , template <typename> class X
+        >
+struct IndexingTraits {
+    /// Container type.
+    template< template <typename> class AllocatorT > using Map
+            = std::unordered_map< KeyT
+                                , typename AllocatorT<iReferable>::pointer
+                                , std::hash<KeyT>
+                                , std::equal_to<KeyT>
+                                , AllocatorT< std::pair<const KeyT, typename AllocatorT<iReferable>::pointer> > >;
 };
 
-template<typename KeyT>
-struct KeyTraits {
-    static std::string to_str( const KeyT & k ) {
-        std::ostringstream os;
-        os << k;
-        return os.str();
-    }
-};
-
-
-/**@class GenericDictionary
- * @brief The GenericDictionary template class defines a relations between
- *        parameters sets indexed by some key values.
+/**\brief Dictionary is an object defining mapping between keys and referables.
  *
- * The dictionary instance itself, basically, holds the key-value mapping where
- * for certain key corresponds a single parameter instance. It is possible,
- * however, to make the dictionary index other dictionaries as well (via the
- * template specializations within Traits struct). In this case more complex
- * structure shall be introduced via the IndexOf<KeyT>::Aspect mixin.
- *
- * The GenericDictionary optionally "owns" the physical memory of the created
- * entries allowing the virtual (copying) ctor to perform its operations safely.
+ * @tparam KeyT Key type indexing the references.
+ * @tparam X Template referable class.
+ * @tparam Map Template container performing actual mapping.
  */
 template< typename KeyT
-        , typename ... AspectTs>
-class GenericDictionary : public mixins::iDuplicable< iAbstractValue
-                                                    , GenericDictionary<KeyT, AspectTs ...>
-                                                    , typename Traits<AspectTs ...>::template IndexBy<KeyT>::DictValue
-                                                    , AbstractValueAllocator & >
-                        , public Traits<AspectTs...>::template IndexBy<KeyT>::Aspect {
+        , template <typename> class X
+        , template <typename> class AllocatorT >
+class Dictionary : public X< typename IndexingTraits<KeyT, X>::template Map< AllocatorT > > {
 public:
-    typedef mixins::iDuplicable< iAbstractValue
-                               , GenericDictionary<KeyT, AspectTs ...>
-                               , typename Traits<AspectTs...>::template IndexBy<KeyT>::DictValue
-                               , AbstractValueAllocator &> DuplicableParent;
-
-    typedef GenericDictionary<KeyT, AspectTs...> Self;
-    typedef typename Traits<AspectTs...>::template IndexBy<KeyT>::Aspect OwnAspect;
-
-    /**\brief Base insertion proxy template class.
-     *
-     * The insertion proxy is a class to which the insertion permission is
-     * granted. It has to become a base class for particular insertion proxies
-     * implementing various entry-construction interfaces.
-     *
-     * \tparam ParameterT is a template class declaration naming concrete
-     *         instantiable class that will be actually constructed by proxy.
-     * */
-    template<template <class, class...> class ParameterT> struct BaseInsertionProxy {
-        friend void Traits<AspectTs...>::template IndexBy<KeyT>::copy_dict_entry(
-                        typename Traits<AspectTs...>::template IndexBy<KeyT>::DictValue::Value::iterator it
-                      , Self * dct );
-    public:
-        template<typename T> using P = ParameterT<T, AspectTs...>;
-    private:
-        /// Insertion target.
-        Self & _target;
-    protected:
-        /// Returns insertion target reference.
-        Self & target() { return _target; }
-        /// Protected entry-insertion method.
-        virtual std::pair<typename Hash<KeyT, iBaseValue<AspectTs...> *>::iterator, bool>
-        _insert_parameter( const KeyT & k, typename Traits<AspectTs...>::FeaturedBase * p ) {
-            return target()._mutable_value().emplace(k, p);
-        }
-    protected:
-        BaseInsertionProxy( Self & t ) : _target(t) {}
-
-        /// This allocator is usually used by descendant classes to allocate
-        /// aspects or some additional data which lifetime is bound with
-        /// dictionary.
-        template<typename T, typename ... CtrArgTs> T * _alloc( CtrArgTs ... args  ) {
-            return _target.template _alloc<T>(args...);
-        };
-        /// A special method to allocate and initialize a new parameter instance.
-        template<typename T> P<T> * _alloc_parameter( AspectTs * ... args ) {
-            return _target.template _alloc< P<T> >(args...);
-        };
-    };
-public:
-    /// Common ctr. Copies the given allocator instance to self, sets own
-    /// aspects with given aspects tuple, forwards the rest arguments to the
-    /// aspect ctr as is.
-    template<typename TT, typename ... CtrArgTs>
-    GenericDictionary( DictionaryAllocator<AspectTs...> & da
-                     , TT ownAspectsInitializer
-                     , CtrArgTs ... ctrArgs ) \
-            : DictionaryAllocator<AspectTs...>(da)
-            , DuplicableParent( ownAspectsInitializer )
-            , OwnAspect( ctrArgs ... ) {}
-
-    GenericDictionary( const Self & orig
-                     , DictionaryAllocator<AspectTs...> & da ) : DictionaryAllocator<AspectTs...>(da)
-                                                               , DuplicableParent( orig, da )
-                                                               , OwnAspect( static_cast<const OwnAspect &>(orig)
-                                                                          , static_cast<const OwnAspect *>(this)
-                                                                          , da ) {
-        // All the contained entries reference the original's memory at this
-        // point. We have to produce own copies here.
-        // DuplicableParent's parent class refers to 'DictValue' type that
-        // is defined by traits particular type.
-        for( auto it = this->_mutable_value().begin()
-           ; this->_mutable_value().end() != it; ++it ) {
-            Traits<AspectTs...>::template IndexBy<KeyT>::copy_dict_entry( it, this );
-        }
-    }
-
-    virtual ~GenericDictionary() {
-        for( auto p : this->_mutable_value() ) {
-            DictionaryAllocator<AspectTs...>::_free( p.second );
-        }
-    }
-
-    /// Aux method purging entries without actual deletion of the value
-    /// instances. Used to prevent the destructor of wiping out the shared
-    /// entries.
-    void drop_entries() {
-        this->_mutable_value().clear();
-    }
-
-    // First level getters --- provides basic access to entries.
-
-    /// Returns pointer to value or nullptr (if entry not found).
-    virtual const typename Traits<AspectTs...>::FeaturedBase * entry_ptr( const KeyT & k ) const {
-        auto it = this->value().find(k);
-        if( this->value().end() == it ) {
-            return nullptr;
-        }
-        return (it->second);
-    }
-
-    /// Returns pointer to value or nullptr (if entry not found).
-    virtual typename Traits<AspectTs...>::FeaturedBase * entry_ptr( const KeyT & k ) {
-        auto it = this->_mutable_value().find(k);
-        if( this->_mutable_value().end() == it ) {
-            return nullptr;
-        }
-        return (it->second);
-    }
-
-    // Second level getters.
-
-    /// Returns mutable reference to value, or raises goo::notFound if not
-    /// found.
-    virtual typename Traits<AspectTs...>::FeaturedBase & entry( const KeyT & k ) {
-        auto ptr = entry_ptr(k);
-        if( ! ptr ) {
-            emraise( notFound
-                   , "Dictionary %p has no entry with key \"%s\"."
-                   , this
-                   , KeyTraits<KeyT>::to_str(k).c_str() );
-        }
-        return *ptr;
-    }
-
-    /// Returns const reference to value, or raises goo::notFound if not
-    /// found.
-    virtual const typename Traits<AspectTs...>::FeaturedBase & entry( const KeyT & k ) const {
-        auto ptr = entry_ptr(k);
-        if( ! ptr ) {
-            emraise( notFound
-                   , "Dictionary %p has no entry with key \"%s\"."
-                   , this
-                   , KeyTraits<KeyT>::to_str(k).c_str() );
-        }
-        return *ptr;
-    }
-
-    /// Template function performing iterative invocation of callable for each
-    /// entry in current dictionary (mutable). The callable signature must
-    /// accept value type of underlying container (map, or whatever is defined
-    /// by traits).
-    template<typename CallableT>
-    CallableT each_entry_revise( CallableT c ) {
-        for( auto it = this->_mutable_value().begin()
-               ; it != this->_mutable_value().end(); ++it ) {
-            c(it);
-        }
-        return c;
-    }
-
-    /// Template function performing iterative invocation of callable for each
-    /// entry in current dictionary (const). The callable signature must
-    /// accept value type of underlying container (map, or whatever is defined
-    /// by traits).
-    template<typename CallableT>
-    CallableT each_entry_read( CallableT c ) const {
-        for( auto it = this->value().begin()
-               ; it != this->value().end(); ++it ) {
-            c(it);
-        }
-        return c;
-    }
-
-    DictionaryAllocator<AspectTs...> & as_allocator() { return *this; }
-};
+    template<typename ... CtrArgTs>
+    Dictionary(CtrArgTs ... ctrArgs) : X< typename IndexingTraits<KeyT, X> \
+                                ::template Map< AllocatorT > > ( ctrArgs ... ) {}
+};  // class Dictionary
 
 }  // namespace dict
 }  // namespace goo

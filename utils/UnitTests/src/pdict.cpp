@@ -36,74 +36,19 @@
 
 # if !defined(_Goo_m_DISABLE_DICTIONARIES)
 
+template<typename T> struct SimpleValueKeeper {
+    T value;
+};
+
+# if 0
+
 namespace goo {
 namespace dict {
 
-namespace aspects {
-
-class Word {
-private:
-    uint8_t wordNo  // todo
-          , lineNo
-          ;
-    // ...
-};
-
-}  // namespace ::goo::dict::aspects
-
-# define _Goo_m_VART_LIST_UTDCT aspects::IsSet, aspects::Word
-
-template <class, class...> class WordCounter;
-class WordInsertionProxy;
-
-typedef GenericDictionary< char, aspects::IsSet, aspects::Word > GD;
-
-// General traits for dictionaries with given set of entry aspects.
-template<>
-struct Traits< _Goo_m_VART_LIST_UTDCT > {
-    // Abstract type of any value within the family.
-    typedef iAbstractValue                      VBase;
-    // Particular type of any value within the family. Actually, the
-    // data type-unrelated part of entry type.
-    typedef iBaseValue<_Goo_m_VART_LIST_UTDCT>  FeaturedBase;
-
-    // Declaration for further specializations.
-    template<typename KeyT> struct IndexBy {
-        // General dictionary type responsible for indexing entries of given family.
-        typedef GenericDictionary< KeyT
-                                 , _Goo_m_VART_LIST_UTDCT > Dictionary;
-        // Container for entries, will become parent for Dictionary class.
-        typedef TValue< Hash< KeyT
-                            , iBaseValue<_Goo_m_VART_LIST_UTDCT> * >
-                      , aspects::Word > DictValue;
-        // Entry copying routine, need for virtual copy constructor.
-        static void copy_dict_entry( typename DictValue::Value::iterator
-                                   , Dictionary * );
-        // Dictionary aspect class.
-        class Aspect : public aux::iSubsections< KeyT
-                                               , Hash
-                                               , Dictionary > {
-            // ...
-            WordInsertionProxy insertion_proxy();
-        };
-    };
-};
-
-class WordInsertionProxy : public GD::BaseInsertionProxy<WordCounter> {
-public:
-    explicit WordInsertionProxy( GD & t ) : GD::BaseInsertionProxy<WordCounter>(t) {}
-    void consider( const char * wBgn, const char * wEnd );
-};
-
-template<>
-template<typename KeyT>
-WordInsertionProxy
-Traits<_Goo_m_VART_LIST_UTDCT>::IndexBy<KeyT>::Aspect::insertion_proxy() {
-    return WordInsertionProxy( static_cast<GD &>(*this) );
-}
-
 }  // namespace ::goo::dict
 }  // namespace ::goo
+
+# endif
 
 static const char _local_tstText[] = R"Kafka(
 coal all spent the bucket empty the shovel useless the stove breathing out
@@ -132,6 +77,7 @@ of the dealer whom i see far below crouching over his table where he is
 writing he has opened the door to let out the excessive heat
 )Kafka";
 
+# if 0
 static void
 fill_txt( const char * text
         , ::goo::dict::WordInsertionProxy & ip ) {
@@ -147,12 +93,12 @@ fill_txt( const char * text
         }
     }
 }
+# endif
 
 GOO_UT_BGN( PDict, "Parameters dictionary routines" ) {
-    // TODO: dict allocator da
-    ::goo::dict::GD d(da);
-    fill_txt( _local_tstText
-            , d.insertion_proxy() );
+    ::goo::dict::Dictionary<char, SimpleValueKeeper, std::allocator> d;
+    //fill_txt( _local_tstText
+    //        , d.insertion_proxy() );
 } GOO_UT_END( PDict, "VCtr" )
 
 # endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)

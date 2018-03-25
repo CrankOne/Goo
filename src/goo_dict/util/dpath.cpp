@@ -37,7 +37,7 @@ namespace utils {
 int
 pull_opt_path_token( char *& path
                   , const char *& current
-                  , ListIndex & idx ) {
+                  , size_t & idx ) {
     // if first char is digit, we'll interpret token as integer index:
     int rc = 0;
     if( '#' == *path ) {
@@ -88,6 +88,7 @@ parse_dict_path( char * pathString, DictPath * pToks, size_t nPToks ) {
     return nPToks;
 }
 
+# if 0
 std::vector<DictPath>
 dpath( const String & path
      , std::vector<char, TheAllocatorHandle<char> > & namecache ) {
@@ -113,6 +114,7 @@ dpath( const String & path
              " exceeded available tokens pool (%d)."
            , path.size(), (1 << _Goo_m_MAX_PATH_TOKENS_2PWR) );
 }
+# endif
 
 }  // namespace aux
 }  // namespace dict

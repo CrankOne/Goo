@@ -77,13 +77,13 @@ namespace utils {
  */
 int pull_opt_path_token( char *& path
                       , const char *& current
-                      , ListIndex & idx );
+                      , size_t & idx );
 
 /// Intermediate representation of dictionary/list index referencing an element.
 struct DictPath {
     union {
         const char * name;
-        ListIndex index;
+        size_t index;
     } id;
     bool isIndex;
     DictPath * next;
@@ -91,7 +91,7 @@ struct DictPath {
     DictPath() : next(nullptr) { id.name = nullptr; }
     explicit DictPath( const char * strID ) : next(nullptr)
             { id.name = strID; isIndex = false; }
-    explicit DictPath( ListIndex idx ) : next(nullptr)
+    explicit DictPath( size_t idx ) : next(nullptr)
             { id.index = idx; isIndex = true; }
 
     //template<typename T> typename T::Key key_for();
@@ -205,11 +205,13 @@ dpath( const std::string & path ) {
 }
 # endif
 
+# if 0
 /// Hides all the micromanagement details of parse_dict_path() within itself
 /// providing an easy interface to turning stringified paths into the DictPath
 /// list located in single contiguous memory block.
 std::vector<DictPath> dpath( const String & path
                            , std::vector<char, TheAllocatorHandle<char> > & namecache );
+# endif
 
 }  // namespace utils
 }  // namespace dict

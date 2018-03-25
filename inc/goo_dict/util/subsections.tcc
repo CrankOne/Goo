@@ -36,6 +36,7 @@ namespace goo {
 namespace dict {
 namespace aux {
 
+# if 0
 template< typename KeyT
         , template<class, class> class THashT
         , typename SubsectionT>
@@ -189,6 +190,7 @@ template< typename EntryCallableT
                                       ::Aspect
                                       ::template RecursiveReadingVisitor
                              , StackT >;
+# endif
 
 }  // namespace aux
 }  // namespace dict
