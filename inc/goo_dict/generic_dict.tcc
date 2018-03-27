@@ -29,32 +29,42 @@
 
 # include <sstream>
 # include <unordered_map>
+# include <stack>
 
 # if !defined(_Goo_m_DISABLE_DICTIONARIES)
 
 namespace goo {
 namespace dict {
 
-# if 0  // shall be defined within the allocator type
-    /// Pointer type referencing particular referable instance within
-    /// dictionary.
-    typedef iReferable * Reference;
-# endif
-
 template< typename KeyT
         , template <typename> class X
         >
 struct IndexingTraits {
-    /// Container type.
+    /**@brief Container type.
+     *
+     * Shall define interface similar to the STL map container: (const) iterator,
+     * types, insert/emplace/erase/find methods returning results of standard
+     * (defined by standard) types.
+     * */
     template< template <typename> class AllocatorT > using Map
             = std::unordered_map< KeyT
                                 , typename AllocatorT<iReferable>::pointer
                                 , std::hash<KeyT>
                                 , std::equal_to<KeyT>
                                 , AllocatorT< std::pair<const KeyT, typename AllocatorT<iReferable>::pointer> > >;
+    /// Converts key value to human-readable form, in a string expression.
+    static std::string key_to_str( const KeyT & k ) {
+        std::ostringstream ss;
+        ss << k;
+        return ss.str();
+    }
 };
 
-/**\brief Dictionary is an object defining mapping between keys and referables.
+/**@brief Dictionary is an object defining mapping between keys and referables.
+ *
+ * This class defines few helper functions shortening the routine
+ * insertion/retrieval operations provided by underlying
+ * IndexingTraits<KeyT, X>::Map class.
  *
  * @tparam KeyT Key type indexing the references.
  * @tparam X Template referable class.
@@ -65,10 +75,69 @@ template< typename KeyT
         , template <typename> class AllocatorT=std::allocator >
 class Dictionary : public X< typename IndexingTraits<KeyT, X>::template Map< AllocatorT > > {
 public:
+    /// Exposing template parameter: key type.
+    typedef KeyT Key;
+    /// Exposing template parameter: referable template class.
+    template<typename T> using Referable = X<T>;
+    /// Exposing template parameter: allocator template.
+    template<typename T> using Allocator = AllocatorT<T>;
+    /// Particular traits for external usage.
+    typedef IndexingTraits<Key, X> Traits;
+    /// Particular IndexingTraits<KeyT, X>::Map ancestor type
+    typedef X< typename IndexingTraits<KeyT, X>::template Map< AllocatorT > > TheMap;
+public:
+    /// Ctr forwarding args to Map class defined by IndexingTraits<KeyT, X>::Map.
     template<typename ... CtrArgTs>
-    Dictionary(CtrArgTs ... ctrArgs) : X< typename IndexingTraits<KeyT, X> \
-                                ::template Map< AllocatorT > > ( ctrArgs ... ) {}
+    Dictionary(CtrArgTs && ... ctrArgs) : TheMap( ctrArgs ... ) {}
 };  // class Dictionary
+
+
+/**@brief A helper class providing advanced syntax for dict hierarchy.
+ *
+ * The insertion proxies become convenient tool for in-place construction
+ * of complex dictionaries. They're keeping the "insertion stack" which
+ * top refers to current insertion target and shall be updated as new
+ * sub-dictionaries ("sections") are added or finalized.
+ *
+ * Insertion proxy objects exist only in current process (thus may use ordinary
+ * pointers) and are generally slow. Their primary purpose is to shorten some
+ * common initialization procedures.
+ */
+template<typename DictionaryT>
+class InsertionProxyBase {
+public:
+    /// Stack type of sections folded one into another. Ordinary on-heap
+    /// allocating STL stack container (though its entries may be not
+    /// allocated on heap).
+    typedef std::stack< std::pair< const std::type_info *
+                                 , typename DictionaryT::template Allocator<iReferable>
+                                                       ::pointer
+                                 >
+                      > Stack;
+protected:
+    /// Stack of sections, folded one into another. Stack top is the
+    /// current insertion target.
+    Stack _stack;
+public:
+    template< typename NewKeyT
+            , typename ... CtrArgTs> auto new_section( const NewKeyT & key
+                                                     , CtrArgTs && ... ctrArgs ) {
+        auto ir = _stack.top().emplace( key, ctrArgs ... );
+        if( !ir.second ) {
+            emraise( nonUniq, "Insertion proxy object %p unable to add new"
+                   " section within dictionary instance %p since key \"%s\""
+                   " is not unique."
+                   , this
+                   , &_stack.top()
+                   , DictionaryT::Traits::key_to_str(key).c_str() );
+        }
+        _stack.push( std::make_pair( &typeid(NewKeyT), ir.first.second ) );
+        return ir;
+    }
+    template< typename NewKeyT > void close_section( const NewKeyT & key ) {
+        // ...
+    }
+};
 
 }  // namespace dict
 }  // namespace goo

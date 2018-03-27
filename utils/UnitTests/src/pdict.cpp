@@ -82,40 +82,86 @@ writing he has opened the door to let out the excessive heat
 
 static void
 fill_txt( const char * text
-        , ::goo::dict::Dictionary<char, SimpleValueKeeper> & d ) {
+        , ::goo::dict::Dictionary<char, SimpleValueKeeper> & D
+        , std::map<std::string, size_t> & checkM ) {
     const char * wordBegin = nullptr;
+    ::goo::dict::Dictionary<char, SimpleValueKeeper> & d = D;
     auto it = d.value.end();
     for( const char * c = text; '\0' != *c ; ++c ) {
         if( isalnum(*c) ) {
             if( !wordBegin ) {
                 wordBegin = c;
             }
-            if( d.value.end() != it ) {
-                static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
-                        ::goo::dict::Dictionary<char, SimpleValueKeeper>
-                        > * >(it->second);
-            }
+            // TODO: wtf is happening here? Completly messed up...
             auto ir = d.value.emplace( *c,
-                    new ::goo::dict::ReferableTraits<SimpleValueKeeper> \
-                        ::ReferableWrapper<::goo::dict::Dictionary<char, SimpleValueKeeper>>() );
+                    new ::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
+                            ::goo::dict::Dictionary<char, SimpleValueKeeper>
+                        >() );
             it = ir.first;
+            if( d.value.end() != it ) {
+                d = static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
+                                ::goo::dict::Dictionary<char, SimpleValueKeeper>
+                               > * >(it->second)->container().value;
+            }
             continue;
         } else if( wordBegin ) {
             if( d.value.end() != it ) {
-                ++(static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>
-                                          ::ReferableWrapper<::goo::dict::Dictionary<char, SimpleValueKeeper> > *
-                          >(it->second)->container().count); //->as &> );
+                ++(static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
+                            ::goo::dict::Dictionary<char, SimpleValueKeeper>
+                        > *>(it->second)
+                            ->container().count);
                 it = d.value.end();
+
+                std::string token( wordBegin, c );
+                auto cir = checkM.emplace( token, 1 );
+                if( !cir.second ) {
+                    size_t & cntr = cir.first->second;
+                    ++cntr;
+                }
+                wordBegin = nullptr;
             }
             //consider_word( wordBegin, c );
         }
     }
 }
 
+static int
+get_counted( ::goo::dict::Dictionary<char, SimpleValueKeeper> & d
+           , const char * word ) {
+    if( !word || '\0' == *word ) {
+        return 0;
+    }
+    const char * c = word;
+    auto it = d.value.find(*c);
+    if( d.value.end() == it ) {
+        return -2;
+    }
+    while( '\0' != *(++c) ) {
+        auto & nd = static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
+                            ::goo::dict::Dictionary<char, SimpleValueKeeper>
+                        > *>(it->second)
+                            ->container().value;
+        it = nd.value.find(*c);
+        if( nd.value.end() == it ) {
+            return -1;
+        }
+    };
+    return static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
+                            ::goo::dict::Dictionary<char, SimpleValueKeeper>
+                        > *>(it->second)
+                            ->container().count;
+}
+
 GOO_UT_BGN( PDict, "Parameters dictionary routines" ) {
+    std::map<std::string, size_t> m;
     ::goo::dict::Dictionary<char, SimpleValueKeeper> d;
-    fill_txt( _local_tstText, d );
-    // std::cout << d.value.size() << " els in dict" << std::endl;
+    fill_txt( _local_tstText, d, m );
+    for( auto it : m ) {
+        os << it.first << " -- " << it.second
+           << " =?= " << get_counted( d, it.first.c_str() )
+           << std::endl;
+    }
+    std::cout << d.value.size() << " els in dict" << std::endl;
     // TODO: put some tests here
 } GOO_UT_END( PDict, "VCtr" )
 

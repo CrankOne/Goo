@@ -286,6 +286,7 @@ if( EM_STACK_UNWINDING )
     #    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -I/usr/include/libiberty/" )
 endif( EM_STACK_UNWINDING )
 
+# See, e.g. https://cmake.org/cmake/help/v3.1/prop_gbl/CMAKE_CXX_KNOWN_FEATURES.html
 target_compile_features( ${Goo_LIBRARY} PUBLIC
             c_variadic_macros
             cxx_constexpr
@@ -293,7 +294,8 @@ target_compile_features( ${Goo_LIBRARY} PUBLIC
             cxx_delegating_constructors
             cxx_variadic_macros
             cxx_variadic_templates
-            cxx_template_template_parameters )
+            cxx_template_template_parameters
+            cxx_return_type_deduction )
 
 target_compile_definitions( ${Goo_LIBRARY} PUBLIC _GNU_SOURCE _FILE_OFFSET_BITS=64 )
 target_compile_options( ${Goo_LIBRARY} PRIVATE -Wall -fexceptions -pthread )
