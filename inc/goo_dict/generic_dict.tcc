@@ -31,6 +31,8 @@
 # include <unordered_map>
 # include <stack>
 
+# include <iostream>  // xxx
+
 # if !defined(_Goo_m_DISABLE_DICTIONARIES)
 
 namespace goo {
@@ -48,10 +50,10 @@ struct IndexingTraits {
      * */
     template< template <typename> class AllocatorT > using Map
             = std::unordered_map< KeyT
-                                , typename AllocatorT<iReferable>::pointer
+                                , typename AllocatorT<typename ReferableTraits<X>::AbstractReferable>::pointer
                                 , std::hash<KeyT>
                                 , std::equal_to<KeyT>
-                                , AllocatorT< std::pair<const KeyT, typename AllocatorT<iReferable>::pointer> > >;
+                                , AllocatorT< std::pair<const KeyT, typename AllocatorT<typename ReferableTraits<X>::AbstractReferable>::pointer> > >;
     /// Converts key value to human-readable form, in a string expression.
     static std::string key_to_str( const KeyT & k ) {
         std::ostringstream ss;
@@ -66,6 +68,11 @@ struct IndexingTraits {
  * insertion/retrieval operations provided by underlying
  * IndexingTraits<KeyT, X>::Map class.
  *
+ * Besides of methods inherited from mapping container, provides:
+ *  - get_ptr() method performing search for certain entry and downcast'ing it;
+ *    Note, that this method may return null pointer if entry is not found by
+ *    the given key AND if down cast fails.
+ *
  * @tparam KeyT Key type indexing the references.
  * @tparam X Template referable class.
  * @tparam Map Template container performing actual mapping.
@@ -73,7 +80,7 @@ struct IndexingTraits {
 template< typename KeyT
         , template <typename> class X
         , template <typename> class AllocatorT=std::allocator >
-class Dictionary : public X< typename IndexingTraits<KeyT, X>::template Map< AllocatorT > > {
+class Dictionary : protected IndexingTraits<KeyT, X>::template Map< AllocatorT > {
 public:
     /// Exposing template parameter: key type.
     typedef KeyT Key;
@@ -84,11 +91,109 @@ public:
     /// Particular traits for external usage.
     typedef IndexingTraits<Key, X> Traits;
     /// Particular IndexingTraits<KeyT, X>::Map ancestor type
-    typedef X< typename IndexingTraits<KeyT, X>::template Map< AllocatorT > > TheMap;
+    typedef typename IndexingTraits<KeyT, X>::template Map< AllocatorT > TheMap;
+    /// Returns interim object, suitable for further downcasting operations in
+    /// various contexts: indexing (as a dict), retrieving values, etc.
+    template<typename ValueTypeT=typename TheMap::value_type&>
+    struct AccessProxy {
+        ValueTypeT v;
+        AccessProxy() = delete;
+        AccessProxy( ValueTypeT v_ ) : v(v_) {}
+        /// This operator will try to consider subject as the dictionary indexed
+        /// with keys of certain type.
+        template<typename NextKeyT> auto operator[]( const NextKeyT & k ) {
+            typedef Dictionary<NextKeyT, X, AllocatorT> Subsection;
+            auto sub = this->of<Subsection>();
+            if( !sub ) {
+                emraise( badParameter, "Unable to cast referable object %p [%s] "
+                                       "to dictionary instance indexing "
+                                       "with key [%s]."
+                                     , (void *) v.second
+                                     , IndexingTraits<KeyT, X>::key_to_str(v.first).c_str()
+                                     , IndexingTraits<NextKeyT, X>::key_to_str(k).c_str() );
+            }
+            return sub->template as<Subsection&>().operator[](k);
+        }
+        template<typename T> auto of() {
+            return ReferableTraits<X>::template specify<T, AllocatorT>( v.second );
+        }
+    };
 public:
+    using TheMap::begin;
+    using TheMap::end;
+    using TheMap::find;
+    using TheMap::emplace;
+    using TheMap::insert;
+
     /// Ctr forwarding args to Map class defined by IndexingTraits<KeyT, X>::Map.
     template<typename ... CtrArgTs>
     Dictionary(CtrArgTs && ... ctrArgs) : TheMap( ctrArgs ... ) {}
+
+    /// Returns pointer to typed referable instance or nullptr if not found.
+    template<typename T>
+    typename AllocatorT<typename ReferableTraits<X>::template ReferableWrapper<T> >::pointer
+    get_ptr( const KeyT & k ) {
+        auto fr = this->find( k );
+        if( this->end() == fr ) {
+            return nullptr;
+        }
+        return ReferableTraits<X>::template specify<T, AllocatorT>( fr->second );
+    }
+
+    /// Returns pointer to typed referable instance or nullptr if not found (const).
+    template<typename T>
+    typename AllocatorT<typename ReferableTraits<X>::template ReferableWrapper<T> >::const_pointer
+    get_ptr( const KeyT & k ) const {
+        auto fr = this->find( k );
+        if( this->end() == fr ) {
+            return nullptr;
+        }
+        return ReferableTraits<X>::template specify<T, AllocatorT>( fr->second );
+    }
+
+    template<typename T, typename ... CtrArgTs>
+    auto situate( const KeyT & k, CtrArgTs ... ctrArgs ) {
+        typedef typename ReferableTraits<X>
+              ::template ReferableWrapper<T> TargetWrapper;
+        auto it = this->find( k );
+        if( this->end() != it ) {
+            // duplicate found, abort insertion
+            return std::pair<typename TheMap::iterator, bool>( it, false );
+        }
+        // insertion of the new entry:
+        auto cA = this->get_allocator();
+        // ^^^ orig alloc instance (alloc'ing pairs)
+        typedef typename std::allocator_traits<decltype(cA)>
+                       ::template rebind_traits<TargetWrapper> SubATraits;
+        typename std::allocator_traits<decltype(cA)>
+               ::template rebind_alloc<TargetWrapper> subA(cA);
+        // ^^^ new alloc (alloc'ing wrappers)
+        // alloc & construct new entry:
+        auto newEMem = SubATraits::allocate( subA, 1 );
+        SubATraits::construct( subA, newEMem, ctrArgs... );
+        // insert new entry
+        return this->emplace( k, newEMem );
+    };
+
+    AccessProxy<typename TheMap::reference> operator[]( const KeyT & k ) {
+        auto it = TheMap::find(k);
+        if( TheMap::end() == it ) {
+            emraise( notFound, "No entry by key [%s] exists in %p."
+                             , IndexingTraits<KeyT, X>::key_to_str(k).c_str()
+                             , this );
+        }
+        return *it;
+    }
+
+    AccessProxy<typename TheMap::const_reference> operator[]( const KeyT & k ) const {
+        auto it = TheMap::find(k);
+        if( TheMap::end() == it ) {
+            emraise( notFound, "No entry by key [%s] exists in %p (const)."
+                     , IndexingTraits<KeyT, X>::key_to_str(k).c_str()
+                     , this );
+        }
+        return *it;
+    }
 };  // class Dictionary
 
 
@@ -110,8 +215,7 @@ public:
     /// allocating STL stack container (though its entries may be not
     /// allocated on heap).
     typedef std::stack< std::pair< const std::type_info *
-                                 , typename DictionaryT::template Allocator<iReferable>
-                                                       ::pointer
+                                 , typename DictionaryT::TheMap::value_type
                                  >
                       > Stack;
 protected:
@@ -121,7 +225,7 @@ protected:
 public:
     template< typename NewKeyT
             , typename ... CtrArgTs> auto new_section( const NewKeyT & key
-                                                     , CtrArgTs && ... ctrArgs ) {
+                                          , CtrArgTs && ... ctrArgs ) {
         auto ir = _stack.top().emplace( key, ctrArgs ... );
         if( !ir.second ) {
             emraise( nonUniq, "Insertion proxy object %p unable to add new"

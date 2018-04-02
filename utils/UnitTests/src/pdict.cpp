@@ -34,11 +34,13 @@
 # include "goo_dict/common_aspects.hpp"
 # include "goo_dict/util/subsections.tcc"
 
+# include <iomanip>
+
 # if !defined(_Goo_m_DISABLE_DICTIONARIES)
 
 template<typename T> struct SimpleValueKeeper {
-    T value;
     size_t count;
+    T value;
     SimpleValueKeeper() : count(0) {}
     operator T & () { return value; }
 };
@@ -53,7 +55,7 @@ namespace dict {
 
 # endif
 
-static const char _local_tstText[] = R"Kafka(
+static const char _local_tstText2[] = R"Kafka(
 coal all spent the bucket empty the shovel useless the stove breathing out
 cold the room freezing the trees outside the window rigid covered with
 rime the sky a silver shield against anyone who looks for help from it i
@@ -80,47 +82,56 @@ of the dealer whom i see far below crouching over his table where he is
 writing he has opened the door to let out the excessive heat
 )Kafka";
 
+static const char _local_tstText1[] = "a aa ab ac ba";
+
 static void
 fill_txt( const char * text
         , ::goo::dict::Dictionary<char, SimpleValueKeeper> & D
         , std::map<std::string, size_t> & checkM ) {
+    typedef ::goo::dict::Dictionary<char, SimpleValueKeeper> Node;
     const char * wordBegin = nullptr;
-    ::goo::dict::Dictionary<char, SimpleValueKeeper> & d = D;
-    auto it = d.value.end();
+    Node * d = &D;
+    auto it = d->end();
     for( const char * c = text; '\0' != *c ; ++c ) {
         if( isalnum(*c) ) {
-            if( !wordBegin ) {
+            if (!wordBegin) {
                 wordBegin = c;
             }
-            // TODO: wtf is happening here? Completly messed up...
-            auto ir = d.value.emplace( *c,
-                    new ::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
-                            ::goo::dict::Dictionary<char, SimpleValueKeeper>
-                        >() );
+            auto ptr = d->get_ptr<Node>(*c);
+            if( ptr ) {
+                it = d->find(*c);
+                d = &(ptr->as<Node&>());
+                continue;
+            }
+            auto ir = d->situate<Node>(*c);
+            if( !ir.second ) {
+                emraise( uTestFailure, "Failed to insert new dict '%c'."
+                       , *c );
+            }
             it = ir.first;
-            if( d.value.end() != it ) {
-                d = static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
-                                ::goo::dict::Dictionary<char, SimpleValueKeeper>
-                               > * >(it->second)->container().value;
-            }
-            continue;
+            auto w =  static_cast<::goo::dict
+                        ::ReferableTraits<SimpleValueKeeper>
+                        ::ReferableWrapper<Node> *>(it->second);
+            d = &(w->as<Node&>());
         } else if( wordBegin ) {
-            if( d.value.end() != it ) {
-                ++(static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
-                            ::goo::dict::Dictionary<char, SimpleValueKeeper>
-                        > *>(it->second)
-                            ->container().count);
-                it = d.value.end();
-
-                std::string token( wordBegin, c );
-                auto cir = checkM.emplace( token, 1 );
-                if( !cir.second ) {
-                    size_t & cntr = cir.first->second;
-                    ++cntr;
-                }
-                wordBegin = nullptr;
+            if( d->end() == it ) {
+                emraise( uTestFailure, "wordBegin set to '%c'"
+                         " while iterator points to nowhere.", *wordBegin );
             }
-            //consider_word( wordBegin, c );
+            ++(static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
+                        ::goo::dict::Dictionary<char, SimpleValueKeeper>
+                    > *>(it->second)
+                        ->container().count);
+            it = d->end();
+
+            std::string token( wordBegin, c );
+            auto cir = checkM.emplace( token, 1 );
+            if( !cir.second ) {
+                size_t & cntr = cir.first->second;
+                ++cntr;
+            }
+            wordBegin = nullptr;
+            d = &D;
         }
     }
 }
@@ -128,41 +139,44 @@ fill_txt( const char * text
 static int
 get_counted( ::goo::dict::Dictionary<char, SimpleValueKeeper> & d
            , const char * word ) {
+    typedef ::goo::dict::Dictionary<char, SimpleValueKeeper> Node;
+    typedef ::goo::dict::ReferableTraits<SimpleValueKeeper> Traits;
     if( !word || '\0' == *word ) {
         return 0;
     }
     const char * c = word;
-    auto it = d.value.find(*c);
-    if( d.value.end() == it ) {
+    auto it = d.find(*c);
+    if( d.end() == it ) {
         return -2;
     }
     while( '\0' != *(++c) ) {
-        auto & nd = static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
-                            ::goo::dict::Dictionary<char, SimpleValueKeeper>
-                        > *>(it->second)
-                            ->container().value;
-        it = nd.value.find(*c);
-        if( nd.value.end() == it ) {
+        auto * nd = Traits::specify<Node, std::allocator>( it->second );
+        it = nd->as<Node&>().find(*c);
+        if( nd->as<Node&>().end() == it ) {
             return -1;
         }
     };
-    return static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
-                            ::goo::dict::Dictionary<char, SimpleValueKeeper>
-                        > *>(it->second)
-                            ->container().count;
+    return Traits::specify<Node, std::allocator>( it->second )->container().count;
 }
 
 GOO_UT_BGN( PDict, "Parameters dictionary routines" ) {
     std::map<std::string, size_t> m;
-    ::goo::dict::Dictionary<char, SimpleValueKeeper> d;
-    fill_txt( _local_tstText, d, m );
+    typedef ::goo::dict::Dictionary<char, SimpleValueKeeper> Node;
+    Node d;
+    fill_txt( _local_tstText2, d, m );
+    bool wasMismatch = false;
     for( auto it : m ) {
-        os << it.first << " -- " << it.second
+        os << std::setw(20) << it.first << " -- " << it.second
            << " =?= " << get_counted( d, it.first.c_str() )
            << std::endl;
+        wasMismatch |= (get_counted( d, it.first.c_str() ) != (int) it.second);
     }
-    std::cout << d.value.size() << " els in dict" << std::endl;
-    // TODO: put some tests here
+    _ASSERT( !wasMismatch, "Counter mismatches were found." );
+    _ASSERT( d['c']['o']['a']['l'].of<Node>()->container().count == 6
+           , "Wrong counter #1 (non-const)" );
+    const Node & cd = d;
+    _ASSERT( cd['c']['o']['a']['l'].of<Node>()->container().count == 6
+           , "Wrong counter #1 (const)" );
 } GOO_UT_END( PDict, "VCtr" )
 
 # endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)
