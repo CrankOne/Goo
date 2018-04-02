@@ -94,8 +94,9 @@ struct Dealer {
  * strategy pattern). User may want to re-define this behaviour in some rare
  * cases too (do it via the template specialization). */
 template< template<typename> typename X
-        , typename ValueT >
-struct ReferableWrapper : public iReferable {
+        , typename ValueT
+        , typename BaseT >
+struct ReferableWrapper : public BaseT {
 private:
     X<ValueT> _v;
 protected:
@@ -115,8 +116,10 @@ public:
         as() {
             return ReferableTraits<X>::template Dealer<ValueT, DesiredT>
             ::obtain(_v); }
-    X<ValueT> & container() { return _v; }
-    const X<ValueT> & container() const { return _v; }
+    /// Directly returns contained instance.
+    X<ValueT> & as_self() { return _v; }
+    /// Directly returns contained instance (const).
+    const X<ValueT> & as_self() const { return _v; }
 };  // Traits<X>::ReferableWrapper (generic)
 
 }  // namespace generic
@@ -127,10 +130,10 @@ struct ReferableTraits {
     /// Base type for referable containers. Usually untyped base of
     /// ReferableWrapper, to be indexed within the dictionaries.
     typedef iReferable AbstractReferable;
-
+    // Generic traits uses generic dealer.
     template <typename RealT, typename DesiredT> using Dealer = generic::Dealer<X, RealT, DesiredT>;
-    template <typename ValueT> using ReferableWrapper = generic::ReferableWrapper<X, ValueT>;
-
+    // Generic traits uses generic wrapper.
+    template <typename ValueT> using ReferableWrapper = generic::ReferableWrapper<X, ValueT, AbstractReferable>;
     /// Defines type downcast conversion: from AbstractReferable * to X<T> *.
     template< typename T
             , template <typename> class AllocatorT >
@@ -147,6 +150,13 @@ struct ReferableTraits {
     }
 };
 
+// Example:
+//template< template<typename> class X >
+//struct ReferableTraits<X>::AbstractReferable : public iReferable {
+//    template<typename T> T as() {
+//        return dynamic_cast<ReferableTraits<X>::ReferableWrapper<T>&>(*this);
+//    }
+//};
 
 }  // namespace dict
 }  // namespace goo

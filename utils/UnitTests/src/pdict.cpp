@@ -55,7 +55,7 @@ namespace dict {
 
 # endif
 
-static const char _local_tstText2[] = R"Kafka(
+static const char _local_tstText[] = R"Kafka(
 coal all spent the bucket empty the shovel useless the stove breathing out
 cold the room freezing the trees outside the window rigid covered with
 rime the sky a silver shield against anyone who looks for help from it i
@@ -82,13 +82,12 @@ of the dealer whom i see far below crouching over his table where he is
 writing he has opened the door to let out the excessive heat
 )Kafka";
 
-static const char _local_tstText1[] = "a aa ab ac ba";
-
 static void
 fill_txt( const char * text
         , ::goo::dict::Dictionary<char, SimpleValueKeeper> & D
         , std::map<std::string, size_t> & checkM ) {
     typedef ::goo::dict::Dictionary<char, SimpleValueKeeper> Node;
+    typedef ::goo::dict::ReferableTraits<SimpleValueKeeper> Traits;
     const char * wordBegin = nullptr;
     Node * d = &D;
     auto it = d->end();
@@ -97,31 +96,29 @@ fill_txt( const char * text
             if (!wordBegin) {
                 wordBegin = c;
             }
-            auto ptr = d->get_ptr<Node>(*c);
+            // The ptr is of type ReferableWrapper<Node> *, not the Node * yet:
+            auto ptr = d->get_entry<Node>(*c);
             if( ptr ) {
                 it = d->find(*c);
                 d = &(ptr->as<Node&>());
                 continue;
             }
-            auto ir = d->situate<Node>(*c);
+            auto ir = d->add_entry<Node>(*c);
             if( !ir.second ) {
                 emraise( uTestFailure, "Failed to insert new dict '%c'."
                        , *c );
             }
             it = ir.first;
-            auto w =  static_cast<::goo::dict
-                        ::ReferableTraits<SimpleValueKeeper>
-                        ::ReferableWrapper<Node> *>(it->second);
+            auto w = Traits::specify<Node, std::allocator>(it->second);
             d = &(w->as<Node&>());
         } else if( wordBegin ) {
             if( d->end() == it ) {
                 emraise( uTestFailure, "wordBegin set to '%c'"
                          " while iterator points to nowhere.", *wordBegin );
             }
-            ++(static_cast<::goo::dict::ReferableTraits<SimpleValueKeeper>::ReferableWrapper<
-                        ::goo::dict::Dictionary<char, SimpleValueKeeper>
-                    > *>(it->second)
-                        ->container().count);
+            // ++(it->second->as<Node&>().count);
+            ++(Traits::specify<Node, std::allocator>(it->second)
+                    ->as<SimpleValueKeeper<Node>&>().count);
             it = d->end();
 
             std::string token( wordBegin, c );
@@ -156,14 +153,14 @@ get_counted( ::goo::dict::Dictionary<char, SimpleValueKeeper> & d
             return -1;
         }
     };
-    return Traits::specify<Node, std::allocator>( it->second )->container().count;
+    return Traits::specify<Node, std::allocator>( it->second )->as_self().count;
 }
 
 GOO_UT_BGN( PDict, "Parameters dictionary routines" ) {
     std::map<std::string, size_t> m;
     typedef ::goo::dict::Dictionary<char, SimpleValueKeeper> Node;
     Node d;
-    fill_txt( _local_tstText2, d, m );
+    fill_txt( _local_tstText, d, m );
     bool wasMismatch = false;
     for( auto it : m ) {
         os << std::setw(20) << it.first << " -- " << it.second
@@ -172,11 +169,11 @@ GOO_UT_BGN( PDict, "Parameters dictionary routines" ) {
         wasMismatch |= (get_counted( d, it.first.c_str() ) != (int) it.second);
     }
     _ASSERT( !wasMismatch, "Counter mismatches were found." );
-    _ASSERT( d['c']['o']['a']['l'].of<Node>()->container().count == 6
+    _ASSERT( d['c']['o']['a']['l'].of<Node>()->as_self().count == 6
            , "Wrong counter #1 (non-const)" );
     const Node & cd = d;
-    _ASSERT( cd['c']['o']['a']['l'].of<Node>()->container().count == 6
-           , "Wrong counter #1 (const)" );
+    _ASSERT( cd['c']['o']['a']['l'].of<Node>()->as_self().count == 6
+           , "Wrong counter #2 (const)" );
 } GOO_UT_END( PDict, "VCtr" )
 
 # endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)

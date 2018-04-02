@@ -124,6 +124,7 @@ public:
     using TheMap::find;
     using TheMap::emplace;
     using TheMap::insert;
+    using TheMap::erase;
 
     /// Ctr forwarding args to Map class defined by IndexingTraits<KeyT, X>::Map.
     template<typename ... CtrArgTs>
@@ -132,7 +133,7 @@ public:
     /// Returns pointer to typed referable instance or nullptr if not found.
     template<typename T>
     typename AllocatorT<typename ReferableTraits<X>::template ReferableWrapper<T> >::pointer
-    get_ptr( const KeyT & k ) {
+    get_entry( const KeyT & k ) {
         auto fr = this->find( k );
         if( this->end() == fr ) {
             return nullptr;
@@ -143,7 +144,7 @@ public:
     /// Returns pointer to typed referable instance or nullptr if not found (const).
     template<typename T>
     typename AllocatorT<typename ReferableTraits<X>::template ReferableWrapper<T> >::const_pointer
-    get_ptr( const KeyT & k ) const {
+    get_entry( const KeyT & k ) const {
         auto fr = this->find( k );
         if( this->end() == fr ) {
             return nullptr;
@@ -152,7 +153,7 @@ public:
     }
 
     template<typename T, typename ... CtrArgTs>
-    auto situate( const KeyT & k, CtrArgTs ... ctrArgs ) {
+    auto add_entry( const KeyT & k, CtrArgTs ... ctrArgs ) {
         typedef typename ReferableTraits<X>
               ::template ReferableWrapper<T> TargetWrapper;
         auto it = this->find( k );
