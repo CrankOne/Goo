@@ -89,7 +89,7 @@ struct Dealer {
 };  // Dealer
 
 /**This generic implementation represents shimmering template class providing
- * accessto various value conversions. It is a routing point to forward value
+ * access to various value conversions. It is a routing point to forward value
  * handling invocations to various dealer classes (which are merely the
  * strategy pattern). User may want to re-define this behaviour in some rare
  * cases too (do it via the template specialization). */
@@ -120,7 +120,7 @@ public:
     X<ValueT> & as_self() { return _v; }
     /// Directly returns contained instance (const).
     const X<ValueT> & as_self() const { return _v; }
-};  // Traits<X>::ReferableWrapper (generic)
+};  // Traits<X>::ReferableMessenger (generic)
 
 }  // namespace generic
 
@@ -128,33 +128,43 @@ public:
 template< template<typename> class X >
 struct ReferableTraits {
     /// Base type for referable containers. Usually untyped base of
-    /// ReferableWrapper, to be indexed within the dictionaries.
-    typedef iReferable AbstractReferable;
-    // Generic traits uses generic dealer.
+    /// ReferableWrapper, to be indexed within the dictionaries. This type is
+    /// supposed to be actually stored by dictionaries' mapping container and
+    /// will be the 'second' part of value_type pair tuple. Conversion from
+    /// this generic referable messenger type to the particular messenger type
+    /// has to be performed by ::specify<>() static method.
+    typedef iReferable ReferableMessengerBase;
+    /// Messenger is a wrapper around particular X<T> defining common data
+    /// access and modification operations.
+    template <typename ValueT> using ReferableMessenger = generic::ReferableWrapper<X, ValueT, ReferableMessengerBase>;
+    /// The "dealer" template defines how the value of particular type may be
+    /// obtained from particular messenger. Its functions are typically
+    /// exploited by messenger template class(es).
     template <typename RealT, typename DesiredT> using Dealer = generic::Dealer<X, RealT, DesiredT>;
-    // Generic traits uses generic wrapper.
-    template <typename ValueT> using ReferableWrapper = generic::ReferableWrapper<X, ValueT, AbstractReferable>;
     /// Defines type downcast conversion: from AbstractReferable * to X<T> *.
+    /// May rely on various mechanisms -- from C++ RTTI to user-defined
+    /// allocator-based instance indexing logic (depending on ReferableTraits
+    /// specialization).
     template< typename T
             , template <typename> class AllocatorT >
-    static typename AllocatorT<ReferableWrapper<T> >::pointer specify(
-                        typename AllocatorT<AbstractReferable>::pointer arf ) {
-        return dynamic_cast<typename AllocatorT<ReferableWrapper<T> >::pointer >( arf );
+    static typename AllocatorT<ReferableMessenger<T> >::pointer specify(
+                        typename AllocatorT<ReferableMessengerBase>::pointer arf ) {
+        return dynamic_cast<typename AllocatorT<ReferableMessenger<T> >::pointer >( arf );
     }
     /// Defines type downcast conversion: from const AbstractReferable * to const X<T> *.
     template< typename T
             , template <typename> class AllocatorT >
-    static const typename AllocatorT<ReferableWrapper<T> >::const_pointer specify(
-                    typename AllocatorT<AbstractReferable>::const_pointer arf ) {
-        return dynamic_cast<typename AllocatorT<ReferableWrapper<T> >::const_pointer >( arf );
+    static const typename AllocatorT<ReferableMessenger<T> >::const_pointer specify(
+                    typename AllocatorT<ReferableMessengerBase>::const_pointer arf ) {
+        return dynamic_cast<typename AllocatorT<ReferableMessenger<T> >::const_pointer >( arf );
     }
 };
 
 // Example:
 //template< template<typename> class X >
-//struct ReferableTraits<X>::AbstractReferable : public iReferable {
+//struct ReferableTraits<X>::ReferableMessengerBase : public iReferable {
 //    template<typename T> T as() {
-//        return dynamic_cast<ReferableTraits<X>::ReferableWrapper<T>&>(*this);
+//        return dynamic_cast<ReferableTraits<X>::ReferableMessenger<T>&>(*this);
 //    }
 //};
 

@@ -96,7 +96,7 @@ fill_txt( const char * text
             if (!wordBegin) {
                 wordBegin = c;
             }
-            // The ptr is of type ReferableWrapper<Node> *, not the Node * yet:
+            // The ptr is of type ReferableMessenger<Node> *, not the Node * yet:
             auto ptr = d->get_entry<Node>(*c);
             if( ptr ) {
                 it = d->find(*c);

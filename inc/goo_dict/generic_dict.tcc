@@ -26,34 +26,78 @@
 # include "goo_dict/types.hpp"
 # include "goo_dict/value.hpp"
 # include "goo_mixins/vcopy.tcc"
+# include "goo_mixins/iterable.tcc"
 
 # include <sstream>
 # include <unordered_map>
 # include <stack>
-
-# include <iostream>  // xxx
 
 # if !defined(_Goo_m_DISABLE_DICTIONARIES)
 
 namespace goo {
 namespace dict {
 
+namespace generic {
+
 template< typename KeyT
         , template <typename> class X
-        >
-struct IndexingTraits {
-    /**@brief Container type.
+        , template <typename> class AllocatorT>
+struct ContainerTraits {
+    /// Indexing key type.
+    typedef KeyT Key;
+    /// Value type kept by the hashing container.
+    typedef typename AllocatorT<typename ReferableTraits<X>
+                                ::ReferableMessengerBase>::pointer Value;
+    /**@brief Physical container instance type to deal with.
      *
      * Shall define interface similar to the STL map container: (const) iterator,
      * types, insert/emplace/erase/find methods returning results of standard
      * (defined by standard) types.
      * */
-    template< template <typename> class AllocatorT > using Map
-            = std::unordered_map< KeyT
-                                , typename AllocatorT<typename ReferableTraits<X>::AbstractReferable>::pointer
-                                , std::hash<KeyT>
-                                , std::equal_to<KeyT>
-                                , AllocatorT< std::pair<const KeyT, typename AllocatorT<typename ReferableTraits<X>::AbstractReferable>::pointer> > >;
+    typedef std::unordered_map< Key
+                              , Value
+                              , std::hash<Key>
+                              , std::equal_to<Key>
+                              , AllocatorT<std::pair<Key, Value> > > Container;
+    /// Plain iterator follows only the horizontal level of hierarchy.
+    typedef typename Container::iterator PlainIterator;
+    /// Plain iterator follows only the horizontal level of hierarchy (const).
+    typedef typename Container::const_iterator ConstPlainIterator;
+    /// Returns the first plain iterator value.
+    static ConstPlainIterator begin( const Container & m ) {
+        return m.begin();
+    }
+    /// Returns the end plain iterator value (after last one).
+    static ConstPlainIterator end( const Container & m ) {
+        return m.end();
+    }
+    /// Inserts new element into the container.
+    static auto insert( const Container & m, const KeyT & k, Value & v ) {
+        return m.insert( k, v );
+    }
+    /// In-place constructions of new element.
+    template<typename ... CtrArgTs>
+    static auto emplace( const Container & m, const KeyT & k, CtrArgTs & ... ctrArgs ) {
+        return m.emplace( k, ctrArgs ... );
+    }
+    /// Returns plain iterator pointing to the element with certain key or
+    /// end iterator if no entry found.
+    static ConstPlainIterator find( const Container & m, const KeyT & k ) {
+        return m.find( k );
+    }
+
+};
+
+}  // namespace generic
+
+template< typename KeyT
+        , template <typename> class X
+        >
+struct IndexingTraits {
+    /// Traits defining physical mapping container.
+    template<template<typename> class AllocatorT> using MapTraits
+                                = generic::ContainerTraits<KeyT, X, AllocatorT>;
+
     /// Converts key value to human-readable form, in a string expression.
     static std::string key_to_str( const KeyT & k ) {
         std::ostringstream ss;
@@ -80,7 +124,7 @@ struct IndexingTraits {
 template< typename KeyT
         , template <typename> class X
         , template <typename> class AllocatorT=std::allocator >
-class Dictionary : protected IndexingTraits<KeyT, X>::template Map< AllocatorT > {
+class Dictionary : private IndexingTraits<KeyT, X>::template MapTraits<AllocatorT>::Container {
 public:
     /// Exposing template parameter: key type.
     typedef KeyT Key;
@@ -91,11 +135,21 @@ public:
     /// Particular traits for external usage.
     typedef IndexingTraits<Key, X> Traits;
     /// Particular IndexingTraits<KeyT, X>::Map ancestor type
-    typedef typename IndexingTraits<KeyT, X>::template Map< AllocatorT > TheMap;
-    /// Returns interim object, suitable for further downcasting operations in
-    /// various contexts: indexing (as a dict), retrieving values, etc.
+    typedef typename IndexingTraits<KeyT, X>::template MapTraits<AllocatorT>::Container TheMap;
+    /**@brief Interim object returned by index operation.
+     *
+     * Aux object class suitable for further downcasting operations in
+     * various lexical contexts: indexing (as a dict), retrieving values, etc.:
+     * When operator[]() applied, tries to downcast the current entry to the
+     * dictionary class defined by given key type, and with same X<> and
+     * allocator template classes as in the containing (parent) dictionary.
+     *
+     * Be aware to not mex the allocator classes as downcasting is performed in
+     * assumption that child dictionary uses the same allocator template class.
+     * */
     template<typename ValueTypeT=typename TheMap::value_type&>
-    struct AccessProxy {
+    struct AccessProxy /* : public  */ {
+        /// Usually refers to plain iterator of current map.
         ValueTypeT v;
         AccessProxy() = delete;
         AccessProxy( ValueTypeT v_ ) : v(v_) {}
@@ -119,8 +173,8 @@ public:
         }
     };
 public:
-    using TheMap::begin;
     using TheMap::end;
+    using TheMap::begin;
     using TheMap::find;
     using TheMap::emplace;
     using TheMap::insert;
@@ -130,10 +184,13 @@ public:
     template<typename ... CtrArgTs>
     Dictionary(CtrArgTs && ... ctrArgs) : TheMap( ctrArgs ... ) {}
 
-    /// Returns pointer to typed referable instance or nullptr if not found.
+    /// Returns pointer to referable instance of certain type or nullptr if not
+    /// found. Internally, uses ReferableTraits<X>::specify<>() to perform a
+    /// downcast, so may return nullptr in the case of bad cast either.
     template<typename T>
-    typename AllocatorT<typename ReferableTraits<X>::template ReferableWrapper<T> >::pointer
+    typename AllocatorT<typename ReferableTraits<X>::template ReferableMessenger<T> >::pointer
     get_entry( const KeyT & k ) {
+        //auto fr = Traits::Map<AllocatorT>::find( k );
         auto fr = this->find( k );
         if( this->end() == fr ) {
             return nullptr;
@@ -141,9 +198,10 @@ public:
         return ReferableTraits<X>::template specify<T, AllocatorT>( fr->second );
     }
 
-    /// Returns pointer to typed referable instance or nullptr if not found (const).
+    /// Returns pointer to typed referable instance or nullptr if not found
+    /// (const form).
     template<typename T>
-    typename AllocatorT<typename ReferableTraits<X>::template ReferableWrapper<T> >::const_pointer
+    typename AllocatorT<typename ReferableTraits<X>::template ReferableMessenger<T> >::const_pointer
     get_entry( const KeyT & k ) const {
         auto fr = this->find( k );
         if( this->end() == fr ) {
@@ -152,10 +210,13 @@ public:
         return ReferableTraits<X>::template specify<T, AllocatorT>( fr->second );
     }
 
+    /// Performs in-place construction of an entry (as std::map::emplace()
+    /// does), returning a pair of iterator and boolean value (with usual
+    /// semantics).
     template<typename T, typename ... CtrArgTs>
-    auto add_entry( const KeyT & k, CtrArgTs ... ctrArgs ) {
+    auto add_entry( const KeyT & k, CtrArgTs & ... ctrArgs ) {
         typedef typename ReferableTraits<X>
-              ::template ReferableWrapper<T> TargetWrapper;
+              ::template ReferableMessenger<T> TargetWrapper;
         auto it = this->find( k );
         if( this->end() != it ) {
             // duplicate found, abort insertion
@@ -176,6 +237,9 @@ public:
         return this->emplace( k, newEMem );
     };
 
+    /// Dictionary indexing operator. Returns an AccessProxy object referencing
+    /// particular dictionary entry, or throws a goo::notFound exception if no
+    /// entry found by given key.
     AccessProxy<typename TheMap::reference> operator[]( const KeyT & k ) {
         auto it = TheMap::find(k);
         if( TheMap::end() == it ) {
@@ -186,6 +250,7 @@ public:
         return *it;
     }
 
+    /// Dictionary indexing operator (const version).
     AccessProxy<typename TheMap::const_reference> operator[]( const KeyT & k ) const {
         auto it = TheMap::find(k);
         if( TheMap::end() == it ) {

@@ -92,7 +92,7 @@ template<typename T> const T * MockMutator<T>::lValAddress = nullptr;
 
 GOO_UT_BGN( Referable, "goo::dict referable helpers" ) {
     {  // Simple value aggregators
-        goo::dict::ReferableTraits<SimpleValue>::ReferableWrapper<int> v(2);
+        goo::dict::ReferableTraits<SimpleValue>::ReferableMessenger<int> v(2);
         v.as<int &>() = 3.14;
         float iv = v.as<float>();
         _ASSERT(iv == 3
@@ -110,7 +110,7 @@ GOO_UT_BGN( Referable, "goo::dict referable helpers" ) {
         bzero(layout, 4 * sizeof(float));
 
         goo::dict::ReferableTraits<ByAddrReference>
-                 ::ReferableWrapper<float> v0(((float *) layout), "one")
+                 ::ReferableMessenger<float> v0(((float *) layout), "one")
                                          , v1(((float *) layout) + 1, "two")
                                          , v2(((float *) layout) + 2, "three")
                                          , v3(((float *) layout), "alias to one")
