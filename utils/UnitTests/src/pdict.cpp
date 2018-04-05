@@ -43,17 +43,10 @@ template<typename T> struct SimpleValueKeeper {
     T value;
     SimpleValueKeeper() : count(0) {}
     operator T & () { return value; }
+    operator const T & () const { return value; }
 };
 
-# if 0
-
-namespace goo {
-namespace dict {
-
-}  // namespace ::goo::dict
-}  // namespace ::goo
-
-# endif
+typedef typename ::goo::dict::ReferableTraits<SimpleValueKeeper> ThisTraits;
 
 static const char _local_tstText[] = R"Kafka(
 coal all spent the bucket empty the shovel useless the stove breathing out
@@ -84,13 +77,13 @@ writing he has opened the door to let out the excessive heat
 
 static void
 fill_txt( const char * text
-        , ::goo::dict::Dictionary<char, SimpleValueKeeper> & D
+        , ThisTraits::DictionaryMessenger<char> & D
         , std::map<std::string, size_t> & checkM ) {
-    typedef ::goo::dict::Dictionary<char, SimpleValueKeeper> Node;
+    typedef ThisTraits::DictionaryMessenger<char> Node;
     typedef ::goo::dict::ReferableTraits<SimpleValueKeeper> Traits;
     const char * wordBegin = nullptr;
     Node * d = &D;
-    auto it = d->end();
+    auto it = d->container().end();
     for( const char * c = text; '\0' != *c ; ++c ) {
         if( isalnum(*c) ) {
             if (!wordBegin) {
@@ -99,7 +92,7 @@ fill_txt( const char * text
             // The ptr is of type ReferableMessenger<Node> *, not the Node * yet:
             auto ptr = d->get_entry<Node>(*c);
             if( ptr ) {
-                it = d->find(*c);
+                it = d->container().find(*c);
                 d = &(ptr->as<Node&>());
                 continue;
             }
@@ -109,17 +102,17 @@ fill_txt( const char * text
                        , *c );
             }
             it = ir.first;
-            auto w = Traits::specify<Node, std::allocator>(it->second);
+            auto w = Traits::specify<Node>(it->second);
             d = &(w->as<Node&>());
         } else if( wordBegin ) {
-            if( d->end() == it ) {
+            if( d->container().end() == it ) {
                 emraise( uTestFailure, "wordBegin set to '%c'"
                          " while iterator points to nowhere.", *wordBegin );
             }
             // ++(it->second->as<Node&>().count);
-            ++(Traits::specify<Node, std::allocator>(it->second)
+            ++(Traits::specify<Node>(it->second)
                     ->as<SimpleValueKeeper<Node>&>().count);
-            it = d->end();
+            it = d->container().end();
 
             std::string token( wordBegin, c );
             auto cir = checkM.emplace( token, 1 );
@@ -134,31 +127,31 @@ fill_txt( const char * text
 }
 
 static int
-get_counted( ::goo::dict::Dictionary<char, SimpleValueKeeper> & d
+get_counted( ThisTraits::DictionaryMessenger<char> & d
            , const char * word ) {
-    typedef ::goo::dict::Dictionary<char, SimpleValueKeeper> Node;
+    typedef ThisTraits::DictionaryMessenger<char> Node;
     typedef ::goo::dict::ReferableTraits<SimpleValueKeeper> Traits;
     if( !word || '\0' == *word ) {
         return 0;
     }
     const char * c = word;
-    auto it = d.find(*c);
-    if( d.end() == it ) {
+    auto it = d.container().find(*c);
+    if( d.container().end() == it ) {
         return -2;
     }
     while( '\0' != *(++c) ) {
-        auto * nd = Traits::specify<Node, std::allocator>( it->second );
-        it = nd->as<Node&>().find(*c);
-        if( nd->as<Node&>().end() == it ) {
+        auto * nd = Traits::specify<Node>( it->second );
+        it = nd->as<Node&>().container().find(*c);
+        if( nd->as<Node&>().container().end() == it ) {
             return -1;
         }
     };
-    return Traits::specify<Node, std::allocator>( it->second )->as_self().count;
+    return Traits::specify<Node>( it->second )->as_self().count;
 }
 
 GOO_UT_BGN( PDict, "Parameters dictionary routines" ) {
     std::map<std::string, size_t> m;
-    typedef ::goo::dict::Dictionary<char, SimpleValueKeeper> Node;
+    typedef ThisTraits::DictionaryMessenger<char> Node;
     Node d;
     fill_txt( _local_tstText, d, m );
     bool wasMismatch = false;
