@@ -48,6 +48,10 @@ template< template<typename> class X > struct ReferableTraits;
  * This base expresses the most basic idea behind every entity within the
  * goo::dict framework by declaring a class that refers to physical data block.
  * No assumptions about the particular data structure or type are made here.
+ *
+ * C/C++ pointers returned by data_addr() family of functions and the
+ * target_type_info() are in the sense of native C/C++ pointers and RTTI. The
+ * rest may be customized.
  * */
 class iReferable {
 protected:
@@ -70,7 +74,9 @@ public:
 
 namespace generic {
 
-/**This generic implementation steers default conversion rules for target type
+/**@brief Conversion rule, generic implementation.
+ *
+ * This generic implementation steers default conversion rules for target type
  * based on ordinary C++ conversion mechanic. To allow ser to define more
  * complex conversions, this class must be specialized.
  *
@@ -89,11 +95,16 @@ struct Dealer {
     static const actual_ret_type obtain(const X <RealT> &t) { return t; }
 };  // Dealer
 
-/**This generic implementation represents shimmering template class providing
+/**@brief Referable entity, generic implementation.
+ *
+ * This generic implementation represents shimmering template class providing
  * access to various value conversions. It is a routing point to forward value
  * handling invocations to various dealer classes (which are merely the
  * strategy pattern). User may want to re-define this behaviour in some rare
- * cases too (do it via the template specialization). */
+ * cases too (do it via the template specialization).
+ * @tparam X Value holder class template.
+ * @tparam ValueT actual value type.
+ * @tparam BaseT customizable base class for entity (used by traits). */
 template< template<typename> class X
         , typename ValueT
         , typename BaseT >
@@ -135,11 +146,17 @@ public:
 
 /**@brief Traits scope defining the container properties.
  *
- * It is possible to implement various indexing models (e.g. trees, hashmaps)
- * that establishes correspondance between two classes of objects. The
+ * It is possible to implement various indexing models (e.g. trees, hash maps)
+ * that establishes correspondence between two classes of objects. The
  * particular container may be physically implemented in various ways, but
  * default traits implementation defines std::unordered_map as most versatile
- * one. */
+ * one.
+ *
+ * Most of the types have the usual STL sense (pointer, reference, value_type)
+ * and their meaning is covered by STL documentation.
+ * @tparam KeyT indexing key defining
+ * @tparam X Value holder class template
+ * @tparam AllocatorT allocator class template */
 template< typename KeyT
         , template <typename> class X
         , template <typename> class AllocatorT>
@@ -200,17 +217,21 @@ struct ContainerTraits {
     }
 };
 
-/**@brief Dictionary is an object defining mapping between keys and referables.
+/**@brief Key/value index template, generic implementation.
+ *
+ * Dictionary is an object defining mapping between keys and referable entity.
  *
  * This class defines few helper functions shortening the routine
- * insertion/retrieval operations provided by underlying container class.
+ * insertion/retrieval operations provided by underlying container class, that
+ * is defined by the ContainerTraits.
+ *
+ * Note that allocator type will be defined by ReferableTraits.
  *
  * Besides of methods inherited from usual value messenger container, provides:
  *  - get_ptr() method performing search for certain entry and downcast'ing it;
  *    Note, that this method may return null pointer if entry is not found by
  *    the given key AND if down cast fails.
  *
- * @tparam KeyT Key type indexing the references.
  * @tparam X Template referable class.
  * @tparam Map Template container performing actual mapping.
  */
@@ -357,7 +378,13 @@ public:
 
 }  // namespace generic
 
-/// Generic traits for goo::dict's entries.
+/**@brief Generic traits for goo::dict's entries.
+ *
+ * This traits struct defines the basic properties of hierarchical structures
+ * built over a superset induced by a template class.
+ *
+ * @tparam X Value keeper template class.
+ */
 template< template<typename> class X >
 struct ReferableTraits {
     /// Base type for referable containers. Usually untyped base of
@@ -403,14 +430,6 @@ struct ReferableTraits {
     /// Messenger referencing the dictionary.
     template<typename KeyT> using DictionaryMessenger = generic::DictionaryWrapper<X, KeyT>;
 };
-
-// Example:
-//template< template<typename> class X >
-//struct ReferableTraits<X>::ReferableMessengerBase : public iReferable {
-//    template<typename T> T as() {
-//        return dynamic_cast<ReferableTraits<X>::ReferableMessenger<T>&>(*this);
-//    }
-//};
 
 }  // namespace dict
 }  // namespace goo
