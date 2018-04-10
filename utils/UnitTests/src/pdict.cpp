@@ -38,15 +38,26 @@
 
 # if !defined(_Goo_m_DISABLE_DICTIONARIES)
 
+// Simple recurrent structure.
+// Besides of the value itself (usually a map for another dictionary), stores
+// the counter to be increased. For instance, for the text of two words:
+// "on one" there chain of three nodes will be constructed:
+// <- 'o'(2) <- 'n'(2) <- 'e'(1).
+// For text "aa ab ac" the structure will be
+//            / 'a'(1)
+// <- 'a'(2) <- 'b'(1)
+//            \ 'c'(1)
+// Note, the key is usually stored in upper structure (index).
 template<typename T> struct SimpleValueKeeper {
+    T value;  // always being a map<char, ThisTraits::ReferableMessengerBase>
     size_t count;
-    T value;
     SimpleValueKeeper() : count(0) {}
     operator T & () { return value; }
     operator const T & () const { return value; }
 };
 
-typedef typename ::goo::dict::ReferableTraits<SimpleValueKeeper> ThisTraits;
+// For simplicity, we alias traits here.
+typedef typename ::goo::dict::ReferableTraits<SimpleValueKeeper> TestTraits;
 
 static const char _local_tstText[] = R"Kafka(
 coal all spent the bucket empty the shovel useless the stove breathing out
@@ -77,41 +88,38 @@ writing he has opened the door to let out the excessive heat
 
 static void
 fill_txt( const char * text
-        , ThisTraits::DictionaryMessenger<char> & D
+        , typename TestTraits::DictionaryMessenger<char> & D
         , std::map<std::string, size_t> & checkM ) {
-    typedef ThisTraits::DictionaryMessenger<char> Node;
-    typedef ::goo::dict::ReferableTraits<SimpleValueKeeper> Traits;
     const char * wordBegin = nullptr;
-    Node * d = &D;
-    auto it = d->container().end();
+    typename TestTraits::DictionaryMessenger<char> * d = &D;
+    auto it = d->unwrap().value.end();  // todo: fwd
     for( const char * c = text; '\0' != *c ; ++c ) {
         if( isalnum(*c) ) {
             if (!wordBegin) {
                 wordBegin = c;
             }
-            // The ptr is of type ReferableMessenger<Node> *, not the Node * yet:
-            auto ptr = d->get_entry<Node>(*c);
+            auto ptr = d->subsect_ptr(*c);
             if( ptr ) {
-                it = d->container().find(*c);
-                d = &(ptr->as<Node&>());
+                it = d->find(*c);  // todo: fwd
+                d = &(ptr->as<Dict>());
                 continue;
             }
-            auto ir = d->add_entry<Node>(*c);
+            auto ir = d->add_dict<char>(*c);
             if( !ir.second ) {
                 emraise( uTestFailure, "Failed to insert new dict '%c'."
                        , *c );
             }
             it = ir.first;
-            auto w = Traits::specify<Node>(it->second);
-            d = &(w->as<Node&>());
+            auto w = Traits::specify<Dict>(it->second);
+            d = &(w->as<Dict>());
         } else if( wordBegin ) {
             if( d->container().end() == it ) {
                 emraise( uTestFailure, "wordBegin set to '%c'"
                          " while iterator points to nowhere.", *wordBegin );
             }
             // ++(it->second->as<Node&>().count);
-            ++(Traits::specify<Node>(it->second)
-                    ->as<SimpleValueKeeper<Node>&>().count);
+            ++(Traits::specify<Dict>(it->second)
+                    ->as<SimpleValueKeeper<Dict>&>().count);
             it = d->container().end();
 
             std::string token( wordBegin, c );
@@ -146,12 +154,13 @@ get_counted( ThisTraits::DictionaryMessenger<char> & d
             return -1;
         }
     };
-    return Traits::specify<Node>( it->second )->as_self().count;
+    return Traits::specify<Node>( it->second )->unwrap().count;
 }
 
 GOO_UT_BGN( PDict, "Parameters dictionary routines" ) {
     std::map<std::string, size_t> m;
     typedef ThisTraits::DictionaryMessenger<char> Node;
+    // Object to fill
     Node d;
     fill_txt( _local_tstText, d, m );
     bool wasMismatch = false;
@@ -162,10 +171,10 @@ GOO_UT_BGN( PDict, "Parameters dictionary routines" ) {
         wasMismatch |= (get_counted( d, it.first.c_str() ) != (int) it.second);
     }
     _ASSERT( !wasMismatch, "Counter mismatches were found." );
-    _ASSERT( d['c']['o']['a']['l'].of<Node>()->as_self().count == 6
+    _ASSERT( d['c']['o']['a']['l'].as<Node>().unwrap().count == 6
            , "Wrong counter #1 (non-const)" );
     const Node & cd = d;
-    _ASSERT( cd['c']['o']['a']['l'].of<Node>()->as_self().count == 6
+    _ASSERT( cd['c']['o']['a']['l'].as<Node>().unwrap().count == 6
            , "Wrong counter #2 (const)" );
 } GOO_UT_END( PDict, "VCtr" )
 

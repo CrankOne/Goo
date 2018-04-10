@@ -25,6 +25,7 @@
 # include "utest.hpp"
 # include "goo_dict/value.hpp"
 
+# if 0
 # if !defined(_Goo_m_DISABLE_DICTIONARIES)
 
 // -------------------------------------------------------------------------- //
@@ -142,5 +143,5 @@ GOO_UT_BGN( Referable, "goo::dict referable helpers" ) {
 } GOO_UT_END( Referable )
 
 # endif  // !defined(_Goo_m_DISABLE_DICTIONARIES)
-
+# endif
 
