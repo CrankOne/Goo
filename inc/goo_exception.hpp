@@ -1,5 +1,27 @@
-# ifndef GOO_EXCEPTION_HPP
-# define GOO_EXCEPTION_HPP
+# ifndef H_GOO_EXCEPTION_H
+# define H_GOO_EXCEPTION_H
+
+/*
+ * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 # include "goo_types.h"
 # include "goo_ansi_escseq.h"
@@ -271,27 +293,6 @@ String demangle_function( const String & name );
 
 # endif /* __cplusplus */
 
-# ifdef __cplusplus
-extern "C" {
-# endif
-
-/**@brief raises custom GOO-exception from c-code
- *
- * C-function with C++ linkage that throws Goo-exception.
- * Not defined for C++ code.
- */
-int C_error( ErrCode, const char * fmt, ... );
-
-# define declare_error_code_C_alias( code, name, descr ) \
-extern const ErrCode goo_e_ ## name;
-for_all_statuscodes( declare_error_code_C_alias )
-# undef declare_error_code_C_alias
-
-# ifdef __cplusplus
-} // extern "C"
-# endif
-
-
 # ifndef NDEBUG
 # ifdef __cplusplus /* C++ --- use exception */
 # define DBG_NULLPTR_CHECK( ptr, ... ) \
@@ -305,5 +306,5 @@ for_all_statuscodes( declare_error_code_C_alias )
 
 /*! @} */
 
-# endif  /* GOO_EXCEPTION_HPP */
+# endif  /* H_GOO_EXCEPTION_H */
 

@@ -1,7 +1,7 @@
 # ifndef H_GOO_QUATERNION_H
 # define H_GOO_QUATERNION_H
 
-# include "goo_mixins.tcc"
+# include "goo_mixins/basicOperators.tcc"
 
 namespace goo {
 namespace g3D {

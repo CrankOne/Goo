@@ -34,7 +34,7 @@
 
 # include <string.h>
 # include <unordered_set>
-# include "3D/hph_camera.tcc"
+# include "goo_ui/camera.tcc"
 # include "hph_ogl_mesh.hpp"
 # include "fl_frame_slider.hpp"
 # include "fl_color_ruler.hpp"

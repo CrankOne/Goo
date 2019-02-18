@@ -6,7 +6,7 @@
 // TODO: unary arithmetic operators like *=(...) should retern this-reference.
 
 # include "math.h"
-# include "goo_mixins.tcc"
+# include "goo_mixins/basicOperators.tcc"
 
 namespace goo {
 namespace g3D {

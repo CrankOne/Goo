@@ -1,6 +1,30 @@
 # ifndef H_GOO_UTILITY_CPP_H
 # define H_GOO_UTILITY_CPP_H
 
+/*
+ * Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>
+ * Author: Renat R. Dusaev <crank@qcrypt.org>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+# include "goo_types.h"
+
 # include <string>
 # include <type_traits>
 # include <thread>
@@ -8,7 +32,7 @@
 # include <chrono>
 # include <map>
 # include <vector>
-# include "goo_mixins.tcc"
+# include <cmath>
 
 namespace std {
 template<bool B, typename T = void> using disable_if = enable_if<!B, T>;
@@ -243,6 +267,35 @@ encode_type();  // default be undefined by design.
 template<> constexpr TypeCode encode_type<cnm>() { return num; }
 for_all_atomic_datatypes(declare_cexpr_ftype_encoder)
 # undef declare_cexpr_ftype_encoder
+
+
+// May be useful in tuple-to-signature argument expansion. See:
+// https://habrahabr.ru/post/228031/ (rus)
+// http://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer
+# if 0
+template<typename FT,
+         typename TupleT,
+         bool EnoughT,
+         size_t TotalArgsT,
+         size_t ... NT>
+struct CallImpl {
+    static auto call(FT f, TupleT && t) {
+        return CallImpl<FT, TupleT, TotalArgsT == 1 + sizeof...(NT),
+                                    TotalArgsT, NT ..., sizeof...(NT)
+                        >::call(f, std::forward<TupleT>(t));
+    }
+};
+
+template<typename FT,
+         typename TupleT,
+         int TotalArgsT,
+         int... NT>
+struct CallImpl<FT, TupleT, true, TotalArgsT, NT...> {
+    auto static call(FT f, TupleT && t) {
+        return f(std::get<NT>(std::forward<TupleT>(t))...);
+    }
+};
+# endif
 
 }  // namespace goo
 

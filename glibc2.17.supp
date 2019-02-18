@@ -1,6 +1,0 @@
-{
-    glibc-2.17
-    Memcheck:Cond
-    fun:index
-    obj:*ld-2.17.so
-}
