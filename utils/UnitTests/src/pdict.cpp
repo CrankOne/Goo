@@ -239,17 +239,19 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         conf.insertion_proxy()
             .flag( '1', "parameter-one",  "First parameter" )
-            .list<bool>( 'b', "binary", "options array #1",
-                                                {true, true, false, false} )
-            .list<bool>( 'B', "options array #2", {false, false, false, false} )
+            .list<bool>( 'b', "binary", "options array #1"
+                       , {true, true, false, false} )
+            .list<bool>( 'B', "options array #2"
+                       , {false, false, false, false} )
             .list<bool>( "binary2", "options array #3" )
-            .list<bool>( 'a', "options array #4", {true, false, true} )
+            .list<bool>( 'a', "options array #4"
+                       , {true, false, true} )
             .flag( 'v', "Enables verbose output" )
             .list<short>( 'x', "List of short ints", { 112, 53, 1024 } )
             .list<float>( "fl-num", "List of floating numbers" )
             .list<std::string>( 's', "lstr-i", "String list one", {"a", "b", "c"} )
             .list<std::string>( "lstr-ii", "String list two", { "one", "two", "three" } )
-            .list<std::string>( 's', nullptr, "String list three", { "1", "two", "III" } )
+            .list<std::string>( 'S', nullptr, "String list three", { "1", "two", "III" } )
             ;
 
         const char ex1[] = "./foo -s one -1v --fl-num 1e-6 -b true -b Off -b On "

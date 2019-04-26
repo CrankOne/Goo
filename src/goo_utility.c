@@ -39,7 +39,7 @@ goo_dstr_triangular( const double c ) {
  * Time
  */
 
-static char timebf[32];
+static char timebf[64];
 
 const char *
 hctime() {
@@ -48,7 +48,7 @@ hctime() {
     if(cTime < 0) {
         return "time_unsupp";
     }
-    snprintf(timebf, 8, "%.2f", cTime );
+    snprintf(timebf, sizeof(timebf), "%.2f", cTime );
     return timebf;
 }
 
@@ -61,7 +61,7 @@ get_timestamp() {
     struct tm *info;
     time( &rawtime );
     info = localtime( &rawtime );
-    strftime(tbf, 32, "%y/%m/%d/%H/%M/%S", info );
+    strftime(tbf, sizeof(tbf), "%y/%m/%d/%H/%M/%S", info );
     snprintf(timebf, sizeof(timebf), "%s.%s", tbf, sbf );
     return timebf;
 }

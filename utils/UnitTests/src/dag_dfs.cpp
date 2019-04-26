@@ -154,9 +154,9 @@ GOO_UT_BGN( DFS_DAG, "Direct acyclic graph depth-first search" )
     // Set-up nodes dependencies.
     for( uint8_t i = 0; i < sizeof(deps)/sizeof(DepDecl) - 1; ++i ) {
         DepDecl * cnDataPtr = deps + i;
-        os << " node '" << cnDataPtr->name << "' is dependence of: ";
+        os << " node '" << cnDataPtr->name << "' is required for: ";
         for( char * c = cnDataPtr->deps; *c != '\0'; c++ ) {
-            cnDataPtr->n->dependance_of( nodesIndex[*c] );
+            cnDataPtr->n->precedes( nodesIndex[*c] );
             os << *c << ",";
         }
         os << std::endl;

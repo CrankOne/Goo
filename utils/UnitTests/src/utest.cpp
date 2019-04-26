@@ -397,7 +397,7 @@ UTApp::_incorporate_dependencies() {
                     );
             }
             auto dependencyNode = _modulesGraphPtr->get_node( *depNameIt );
-            dependencyNode.dependance_of( &dependantNode );
+            dependencyNode.precedes( &dependantNode );
         }
     }
 }

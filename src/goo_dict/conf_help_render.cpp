@@ -25,6 +25,7 @@
 # include "goo_dict/configuration.hpp"
 
 # include <algorithm>
+# include <functional>
 
 namespace goo {
 namespace dict {
@@ -129,7 +130,7 @@ POSIXRenderer::_singular_parameter_usage_info(
                                     const char * lnName ) {
     char nameID[128],
          valueID[128],
-         fullID[256]
+         fullID[512]
          ;
 
     if( p.has_shortcut() ) {
