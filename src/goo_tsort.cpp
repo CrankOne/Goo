@@ -28,14 +28,19 @@ visit( DAGNode & n
 }
 
 
-void
-dfs( std::unordered_set<DAGNode*> & s
-   , std::vector<std::unordered_set<DAGNode*> > & l ) {
+std::vector<std::unordered_set<DAGNode*> >
+dfs( std::unordered_set<DAGNode*> & s ) {
+    std::vector<std::unordered_set<DAGNode*> > l;
     for( auto nPtr : s ) {
         if( !nPtr->is_marked() ) {
             visit( *nPtr, l );
         }
     }
+    for( auto nPtr : s ) {
+        assert( nPtr->is_marked() );
+        nPtr->reset_dfs_descriptor();
+    }
+    return l;
 }
 
 }  // namespace dag

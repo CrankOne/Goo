@@ -62,11 +62,10 @@ struct Config {
                              namesToAvoid;
 
     /// Prepared unit sequence to run.
-    mutable LabeledDAG<UTApp::TestingUnit>::Order units;
+    mutable std::vector<std::unordered_set<dag::DAGNode*> > units;
 };
 
-LabeledDAG<UTApp::TestingUnit> * UTApp::_modulesGraphPtr = nullptr;
-std::unordered_map<std::string, UTApp::TestingUnit *> * UTApp::_modulesStoragePtr = nullptr;
+UTApp::Registry * UTApp::_modulesGraphPtr = nullptr;
 
 //
 // Aux
@@ -141,18 +140,8 @@ _set_task( Config & cfgObj, Config::Operations op ) {
 UTApp::UTApp( const std::string & appName ) : _ss(nullptr), _appName(appName) {}
 
 UTApp::~UTApp() {
-    // free units:
-    for( auto it = _modulesStoragePtr->begin();
-         _modulesStoragePtr && _modulesStoragePtr->end() != it;
-         ++it ) {
-        delete it->second;
-    }
-    // free containers:
-    if( _modulesGraphPtr ) {
-        delete _modulesGraphPtr;
-    }
-    if( _modulesStoragePtr ) {
-        delete _modulesStoragePtr;
+    for( auto p : *_modulesGraphPtr ) {
+        delete p.second;
     }
     // free stringstream, if it wasn't set to standard objects:
     if(_ss && _ss != &(std::cout) && _ss != &(std::cerr)) {
@@ -164,11 +153,9 @@ void
 UTApp::register_unit( const std::string & label,
                       TestingUnit * unitObject ) {
     if( !_modulesGraphPtr ) {
-        _modulesGraphPtr = new LabeledDAG<UTApp::TestingUnit>();
-        _modulesStoragePtr = new std::unordered_map<std::string, TestingUnit *>();
+        _modulesGraphPtr = new Registry();
     }
-    _modulesGraphPtr->insert( label, unitObject );
-    (*_modulesStoragePtr)[label] = unitObject;
+    _modulesGraphPtr->emplace( label, new dag::Node<TestingUnit>(*unitObject) );
 }
 
 Config *
@@ -237,8 +224,6 @@ UTApp::_V_construct_config_object( int argc, char * const argv[] ) const {
 
 void
 UTApp::_V_configure_application( const Config * c ) {
-    // Implying that all units now ready, set up dependency relations now.
-    _incorporate_dependencies();
     // Only continue for unit running tasks.
     if( c->operation < Config::runAll ) {
         return;
@@ -246,19 +231,30 @@ UTApp::_V_configure_application( const Config * c ) {
     if( !_modulesGraphPtr ) {
         emraise( badState, "No modules graph structured yet. Couldn't continue." );
     }
+    std::unordered_set<dag::DAGNode *> nodes;
+    std::transform( _modulesGraphPtr->begin(), _modulesGraphPtr->end()
+                  , std::inserter( nodes, nodes.begin() )
+                  , [](const std::pair<std::string, dag::Node<TestingUnit>*> & p ){
+                        return p.second; } );
     // If it is common run, just obtain the correct sequence:
     if( Config::runAll == c->operation ) {
-        _modulesGraphPtr->dfs( c->units );
+        c->units = dag::dfs( nodes );
     }
     // If it is a selective run, determine which modules we need.
     if( Config::runChoosen == c->operation ) {
         // For all units pointed out:
         for( auto it = c->namesToEvaluate.begin(); c->namesToEvaluate.end() != it; ++it ) {
+            auto nodeIt = _modulesGraphPtr->find(*it);
             if( !c->ignoreDeps ) {
-                _modulesGraphPtr->chain_for_node_by_label( *it, c->units );
+                if( _modulesGraphPtr->end() == nodeIt ) {
+                    emraise( notFound, "No module named \"%s\".", it->c_str() );
+                }
+                dag::visit(*(nodeIt->second), c->units );
+                //_modulesGraphPtr->chain_for_node_by_label( *it, c->units );
             } else {
                 // utherwise, just obtain the module pointer:
-                c->units.push_front( (*_modulesGraphPtr)( *it ).data_ptr() );
+                c->units.insert( c->units.begin()
+                               , std::unordered_set<goo::dag::DAGNode*>{nodeIt->second} );
             }
         }
     }
@@ -266,8 +262,8 @@ UTApp::_V_configure_application( const Config * c ) {
     //    c->units.reverse();
     //}
 
-    // erase repititions:
-    c->units.unique();
+    //TODO: erase repititions:
+    //c->units.unique();
 }
 
 std::ostream *
@@ -282,12 +278,12 @@ UTApp::_V_acquire_stream() {
 void
 UTApp::list_modules( std::ostream & os ) {
     os << "MODULES AVAILABLE:" << std::endl;
-    if( _modulesGraphPtr->index().empty() ) {
+    if( _modulesGraphPtr->empty() ) {
         os << " <none>" << std::endl;
         return;
     }
-    for( auto it = _modulesGraphPtr->index().cbegin();
-              it != _modulesGraphPtr->index().cend(); ++it ) {
+    for( auto it = _modulesGraphPtr->cbegin();
+              it != _modulesGraphPtr->cend(); ++it ) {
         os << "  - "
            << it->first
            << std::endl;
@@ -333,7 +329,9 @@ UTApp::_V_run() {
             list_modules( std::cout );
         } break;
         case Config::dumpDOT : {
-            _modulesGraphPtr->dump_DOT_notated_graph( std::cout );
+            // TODO
+            emraise( unimplemented, "Not yet implemented." )
+            //_modulesGraphPtr->dump_DOT_notated_graph( std::cout );
         } break;
         case Config::runAll :
         case Config::runChoosen : {
@@ -345,10 +343,14 @@ UTApp::_V_run() {
                  UTApp::co().units.end() != it; ++it ) {
                 // to avoid const casting, we provide a search among mutable storage:
                 //TestingUnit * mutable // TODO
-                int rc = _run_unit( const_cast<TestingUnit *>(*it), Parent::ls() /*, dryRun*/ );
-                if( rc < 0 ) { ++nErrors; }
-                else if( rc == 0 ) { ++nRan; }
-                else if( rc == 2 ) { ++nSkipped; }
+                for( auto p : *it ) {
+                    TestingUnit & u = dynamic_cast<dag::Node<TestingUnit>*>(p)->data();
+                    int rc = _run_unit( &u
+                                      , Parent::ls() /*, dryRun*/ );
+                    if( rc < 0 ) { ++nErrors; }
+                    else if( rc == 0 ) { ++nRan; }
+                    else if( rc == 2 ) { ++nSkipped; }
+                }
             }
             Parent::ls() << "Unit test routine is now finishing up:" << std::endl
                          << " units ran : " << ESC_BLDGREEN << nRan << ESC_CLRCLEAR << std::endl
@@ -358,18 +360,21 @@ UTApp::_V_run() {
                 Parent::ls() << "REPORTS:" << std::endl;
                 for( auto it  = UTApp::co().units.begin();
                      UTApp::co().units.end() != it; ++it ) {
-                    if( 2 == (*it)->ran_result() ) {
-                        continue;
-                    }
-                    Parent::ls() << "UNIT ";
-                    if( (*it)->ran_result() == 0 ) {
-                        Parent::ls() << ESC_BLDGREEN;
-                    } else {
-                        Parent::ls() << ESC_BLDRED;
-                    }
-                    Parent::ls() << (*it)->verbose_name() << ESC_CLRCLEAR << ":" << std::endl;
-                    Parent::ls() << dynamic_cast<const std::stringstream&>(
-                                (*it)->outs()).str() << std::endl;
+                    for( auto p : *it ) {
+                        TestingUnit & u = dynamic_cast<dag::Node<TestingUnit>*>(p)->data();
+                        if( 2 == u.ran_result() ) {
+                            continue;
+                        }
+                        Parent::ls() << "UNIT ";
+                        if( u.ran_result() == 0 ) {
+                            Parent::ls() << ESC_BLDGREEN;
+                        } else {
+                            Parent::ls() << ESC_BLDRED;
+                        }
+                        Parent::ls() << u.verbose_name() << ESC_CLRCLEAR << ":" << std::endl;
+                        Parent::ls() << dynamic_cast<const std::stringstream&>(
+                                    u.outs()).str() << std::endl;
+                        }
                 }
             }
         } break;
@@ -380,26 +385,6 @@ UTApp::_V_run() {
         } break;
     };
     return EXIT_SUCCESS;
-}
-
-void
-UTApp::_incorporate_dependencies() {
-    for( auto it  = _modulesStoragePtr->begin();
-              it != _modulesStoragePtr->end(); ++it ) {
-        auto dependantNode = _modulesGraphPtr->get_node( it->first );
-        for( auto depNameIt  = it->second->dep_names().begin();
-                  depNameIt != it->second->dep_names().end(); ++depNameIt ) {
-            auto depNodeIt = _modulesStoragePtr->find( *depNameIt );
-            if( _modulesStoragePtr->end() == depNodeIt ) {
-                emraise( noSuchKey, "Unit \"%s\" depends from unknown module: \"%s\".",
-                        it->first.c_str(),
-                        depNameIt->c_str()
-                    );
-            }
-            auto dependencyNode = _modulesGraphPtr->get_node( *depNameIt );
-            dependencyNode.precedes( &dependantNode );
-        }
-    }
 }
 
 //

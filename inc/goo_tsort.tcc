@@ -49,11 +49,19 @@ struct Traits {
 };
 template<typename T> struct Traits<const T> : public Traits<T> {};
 
-
 typedef GOO_DAG_NODE_DESCRIPTOR_TYPE DFSDescriptor;
 constexpr DFSDescriptor temporary_mark = 0x1;
 constexpr DFSDescriptor visited_mark = 0x2;
 constexpr DFSDescriptor depth_max = ((~((DFSDescriptor)0)) >> 2);
+
+class DAGNode;
+
+typedef std::vector<std::unordered_set<DAGNode*> > Order;
+
+void visit( DAGNode & n
+          , std::vector< std::unordered_set<DAGNode*> > & l );
+
+Order dfs(std::unordered_set<DAGNode*> & s );
 
 class DAGNode : public std::unordered_set<DAGNode *> {
 private:
@@ -69,17 +77,37 @@ protected:
     void mark_as_visited() { _f |= visited_mark; }
     DFSDescriptor depth() const { return _f >> 2; }
     void set_depth(DFSDescriptor d) { assert(d <= depth_max); _f = (0x3 & _f) | (d << 2); }
+public:
+    virtual ~DAGNode() {}
+    /// Sets the relation 'node nd depends on this node'.
+    DAGNode & precedes( DAGNode & nd ) {
+        this->insert( &nd );
+        return *this;
+    }
+    /// Sets the relation 'this node depends on nd'.
+    DAGNode & depends_on( DAGNode & nd ) {
+        nd.precedes( *this );
+        return *this;
+    }
+    /// Returns true if node is terminative (does not precedes to anything).
+    bool is_terminative() const { return this->empty(); }
+    /// Returns list of dependencies (to which this node has to precede).
+    const std::unordered_set<DAGNode *> & dependencies() const { return *this; }
+    /// After single visit() call one may need to manually re-set the
+    /// DFS-properties descriptor prior to running some look-up procedures
+    /// within the DAG again.
+    void reset_dfs_descriptor() { _f = 0x0; }
 
     friend void visit( DAGNode & n
                      , std::vector< std::unordered_set<DAGNode*> > & l );
-    friend void dfs( std::unordered_set<DAGNode*> & s
-                   , std::vector<std::unordered_set<DAGNode*> > & l );
+    friend std::vector<std::unordered_set<DAGNode*> > dfs(
+                     std::unordered_set<DAGNode*> & s );
 };
 
 /// Represents a DAG node with associated data. Contains set of dependencies
 /// and reference to the data object.
 template<typename T>
-class Node : protected DAGNode {
+class Node : public DAGNode {
 private:
     /// Data constness should be guaranteed along all the DAG routines.
     typename Traits<T>::Ref _data;
@@ -88,28 +116,17 @@ public:
     Node( typename Traits<T>::Ref d ) : _data(d) {}
     /// Ctr for dereferred data association.
     Node() {}
-    /// Sets the relation 'node nd depends on this node'.
-    Node & precedes( const Node<T> & nd ) {
-        this->insert( &nd );
-        return *this;
-    }
-    /// Sets the relation 'this node depends on nd'.
-    const Node<T> & depends_on( Node<T> & nd ) const {
-        nd->precedes( *this );
-        return *this;
-    }
     /// dtr: no heap operations.
     virtual ~Node(){}
     /// Data getter.
     typename Traits<T>::Ref data() { return _data; }
     /// Data const getter.
     typename Traits<T>::CRef data() const { return _data; }
-    /// Returns true if node is terminative (does not precedes to anything).
-    bool is_terminative() const { return this->empty(); }
-    /// Returns list of dependencies (to which this node has to precede).
-    const std::unordered_set<DAGNode *> & dependencies() const { return *this; }
+    /// Data setter.
+    void data(typename Traits<T>::Ref d) { _data = d; }
 };  // class Node
 
+# if 0
 /**@class DAG
  * @brief Directed Acyclic Graph container.
  *
@@ -281,6 +298,7 @@ public:
         return _byLabels;
     }
 };
+# endif
 # endif
 
 }  // namespace goo::dag
