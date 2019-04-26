@@ -321,6 +321,18 @@ UTApp::_run_unit( TestingUnit * unit,
 
 int
 UTApp::_V_run() {
+    // Incorporate dependencies after app is ran
+    for( auto p : *_modulesGraphPtr ) {
+        for( auto dn : p.second->data().dep_names() ) {
+            auto it = _modulesGraphPtr->find(dn);
+            if( _modulesGraphPtr->end() == it ) {
+                emraise(badState, "Has no unit module \"%s\" to"
+                        " establish dependency with unit \"%s\".",
+                        dn.c_str(), p.first.c_str() );
+            }
+            p.second->insert( it->second );
+        }
+    }
     switch( UTApp::co().operation ) {
         case Config::printBuildConfig : {
             goo_build_info( stdout );
@@ -329,9 +341,24 @@ UTApp::_V_run() {
             list_modules( std::cout );
         } break;
         case Config::dumpDOT : {
-            // TODO
-            emraise( unimplemented, "Not yet implemented." )
-            //_modulesGraphPtr->dump_DOT_notated_graph( std::cout );
+            std::cout << "digraph Units {" << std::endl;
+            for( auto it = _modulesGraphPtr->begin()
+               ; it != _modulesGraphPtr->end()
+               ; ++it ) {
+                std::cout << "    " << it->first << ";" << std::endl;
+            }
+            for( auto it = _modulesGraphPtr->begin()
+               ; it != _modulesGraphPtr->end()
+               ; ++it ) {
+                auto depNames = it->second->data().dep_names();
+                for( auto depName : depNames) {
+                    std::cout << "    "
+                              << it->first << " -> "
+                              << depName
+                              << ";" << std::endl;
+                }
+            }
+            std::cout << "}" << std::endl;
         } break;
         case Config::runAll :
         case Config::runChoosen : {
