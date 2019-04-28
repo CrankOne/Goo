@@ -22,7 +22,6 @@ void test_on_set_of_length( std::ostream & os
     _ASSERT( ! bs.test(nBit), "Empty's bit #%zu is set (of %zu bits).", nBit, nBits );
 
     bs.set(nBit);
-    //bs.dump(os);
     os << bs;
     os << " [ any = " << (bs.any() ? "true" : "false")
        << ", all = " << (bs.all() ? "true" : "false")
@@ -30,12 +29,16 @@ void test_on_set_of_length( std::ostream & os
        << ", test(" << nBit << ") = " << (bs.test(nBit) ? "true" : "false")
        << "]" << std::endl
        ;
+    bs.dump(os);
     _ASSERT(   bs.any(),  "Non-empty set's any() is false (%zu, %zu).", nBits, nBit );
     _ASSERT( ! bs.all(),  "Non-empty set's all() is true (%zu, %zu).", nBits, nBit );
     _ASSERT( ! bs.none(), "Non-empty set's none() is false (%zu, %zu).", nBits, nBit );
     _ASSERT(   bs.test(nBit), "Bit #%zu was not set (of %zu bits).", nBit, nBits );
 
-    bs.set();
+    //bs.set();
+    bs.flip(nBit);
+    bs.flip();
+
     os << bs;
     os << " [ any = " << (bs.any() ? "true" : "false")
        << ", all = " << (bs.all() ? "true" : "false")

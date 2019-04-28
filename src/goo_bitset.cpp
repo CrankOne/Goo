@@ -2,19 +2,27 @@
 # include "goo_exception.hpp"
 
 # include <limits>
+# include <cstring>
 
 namespace goo {
 
 Bitset::Bitset() : _size(0) {}
 
-Bitset::~Bitset() {
-    if(!empty()) {
-        delete [] _data;
-    }
+Bitset::Bitset( const Bitset & o ) : _size(o._size)
+                                   , _data(new Word_t [o._nWords])
+                                   , _nWords(o._nWords)
+                                   , _tailMask(o._tailMask) {
+    memcpy(_data, o._data, _nWords);
 }
 
 Bitset::Bitset(size_t length) : _size(0) {
     resize( length );
+}
+
+Bitset::~Bitset() {
+    if(!empty()) {
+        delete [] _data;
+    }
 }
 
 void
@@ -33,7 +41,7 @@ Bitset::set(size_t n, bool value) {
     size_t wd = n/nBiW
          , bd = n%nBiW
          ;
-    _data[wd] |= (Word_t{1} << ((nBiW - 1) - bd));
+    _data[wd] |= (Word_t{1} << bd);
 }
 
 void
@@ -60,9 +68,9 @@ Bitset::resize( size_t newSize ) {
     ++newNWords;
     // Set least-significant n bits to 0, others to 1 to obtain a tail
     // bit mask.
-    newTailMask = std::numeric_limits<Word_t>::max();
+    newTailMask = 0x0;  //std::numeric_limits<Word_t>::max();
     if( remnant ) {
-        newTailMask &= ~((Word_t(1) << (nBiW - remnant)) - 1);
+        newTailMask = (Word_t(1) << remnant) - 1;
     }
     if( empty() ) {
         _data = new Word_t [newNWords];
@@ -74,6 +82,21 @@ Bitset::resize( size_t newSize ) {
     }
 }
 
+Bitset &
+Bitset::flip() {
+    for( size_t nw = 0; nw < _nWords; ++nw ) {
+        _data[nw] = ~_data[nw];
+    }
+    return *this;
+}
+
+Bitset &
+Bitset::flip(size_t n) {
+    assert(n < size());
+    _data[n/nBiW] ^= Word_t{1} << n%nBiW;
+    return *this;
+}
+
 std::string
 Bitset::to_string() const {
     std::string s(size(), '\0');
@@ -83,7 +106,7 @@ Bitset::to_string() const {
         }
     }
     for( size_t nb = 0; nb < _size%nBiW; ++nb ) {
-        s[(_nWords-1)*nBiW + nb] = ((Word_t(1) << (nBiW - nb - 1)) & _data[_nWords-1] ? '1' : '0' );
+        s[(_nWords-1)*nBiW + nb] = ((Word_t(1) << nb) & _data[_nWords-1] ? '1' : '0' );
     }
     return s;
 }

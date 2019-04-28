@@ -28,6 +28,7 @@ private:
     Word_t _tailMask;
 public:
     Bitset();
+    Bitset( const Bitset & );
     Bitset(size_t length);
     ~Bitset();
 
@@ -39,20 +40,26 @@ public:
     void reset();
     /// Sets n-th bit to false.
     void reset(size_t n);
+    /// Re-allocates the bitset. New bits will be appended to the back in
+    /// undefined state.
+    void resize(size_t);
+    /// Inverts all bits in set, returns *this ref.
+    Bitset & flip();
+    /// Inverts n-th bit in set, returns *this ref.
+    Bitset & flip(size_t);
+
+
     /// Returns true if bitset is empty (of zero size).
     bool empty() const { return !_size; }  // todo: suboptimal?
     /// Returns number of bits stored.
     size_t size() const { return _size; }
-    /// Re-allocates the bitset. New bits will be appended to the back in
-    /// undefined state.
-    void resize(size_t);
     /// Returns textual representation of the bitset.
     std::string to_string() const;
 
     /// Returns value of n-th bit.
-    bool test(size_t n) const {
+    inline bool test(size_t n) const {
         assert( size() > n );
-        return _data[n/nBiW] & (1 << (nBiW - n%nBiW - 1));
+        return _data[n/nBiW] & (Word_t{1} << (n%nBiW));
     }
     /// Returns true, if all bits are set to truth.
     bool all() const;
@@ -68,4 +75,5 @@ public:
 };
 
 }  // namespace goo
-
+// 0000 00000 0000 01
+// 0123 45678 0123 45
