@@ -1,69 +1,27 @@
-# include <cassert>
-# include <bitset>
-# include <mutex>
-# include <thread>
-# include <vector>
-# include <iostream>
-# include <condition_variable>
-# include <chrono>
-
-# include "goo_tsort.tcc"
-
-namespace goo {
-namespace dataflow {
-
-typedef uint8_t ProcessingStatus;
-
-class iProcessor {
-public:
-    typedef 
-private:
-    Slots slots;
-protected:
-    virtual ProcessingStatus eval( const ValuesMap &
-                                 , ValuesMap & ) = 0;
-public:
-    ProcessingStatus eval( const ValuesMap & i
-                         , ValuesMap & o ) {
-        return _V_eval(i, o);
-    }
-    /// Creates new typed slot.
-    template<typename T> Slot slot( const std::string & slotName ) {
-        auto ir = slots.emplace(slotName, Slot<T>());
-        if( ! ir.first ) {
-            emraise( nonUniq, "Slot named \"%s\" already exists."
-                   , slotName.c_str() );
-        }
-        return it.second;
-    }
-};
-
-class Processor : public iProcessor {
-public:
-    Processor() {
-        slot<int>("a");
-        slot<float>("b");
-        slot<MyEvent&>("event");
-        slot<float>("sum");
-    }
-    virtual ProcessingStatus eval( const Values & values ) {
-        values["sum"].as<float>() = values["a"].as<int>()
-                                  + values.get_as<float>("b");
-        auto & e = args["event"].as<MyEvent&>();
-        // ... do stuff with mutable & e.
-        return 0;  // equivalent to goo::dataflow::proceed;
-    }
-};
+# pragma once
 
 # if 0
+//# include <cassert>
+//# include <bitset>
+//# include <mutex>
+//# include <thread>
+//# include <vector>
+//# include <iostream>
+//# include <condition_variable>
+//# include <chrono>
+//# include <typeinfo>
+//# include <unordered_map>
+//# include <list>
+
+//# include "goo_tsort.tcc"
+
 constexpr size_t NProcessors = 10;
 
-template<std::size_t N>
 class TierMonitor {
 private:
     std::mutex _accessMtx;
     std::condition_variable _cv;
-    std::bitset<N> _freeFlags;
+    std::bitset<NProcessors> _freeFlags;
 public:
     TierMonitor() : _freeFlags(0x0) {
         for( size_t np = 0; np < NProcessors; ++np ) {  // TODO
@@ -98,6 +56,7 @@ public:
     }
 };
 
+# if 0
 // Testing fixture
 /////////////////
 
@@ -150,8 +109,4 @@ main(int arc, char * argv[]) {
 }
 # endif
 
-
-}  // namespace dataflow
-}  // namespace goo
-
-
+# endif
