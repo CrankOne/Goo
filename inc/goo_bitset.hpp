@@ -28,6 +28,7 @@ namespace goo {
  *
  * @TODO: profile, study performance against different Word_t types
  * @TODO: allocators
+ * @TODO: bitshift operators (<<. <<=, >>, >>=).
  */
 class Bitset {
 protected:
@@ -70,9 +71,9 @@ public:
     Bitset & flip(size_t);
 
     /// Returns true if bitset is empty (of zero size).
-    bool empty() const { return !_size; }  // todo: suboptimal?
+    inline bool empty() const { return !_size; }  // todo: suboptimal?
     /// Returns number of bits stored.
-    size_t size() const { return _size; }
+    inline size_t size() const { return _size; }
 
     /// Returns value of n-th bit.
     inline bool test(size_t n) const {
@@ -92,16 +93,16 @@ public:
     Bitset operator~() const;
     /// Computes bitwise-and with given bitset, writing result to current set.
     Bitset & bitwise_and( const Bitset & );
-    Bitset & operator&=( const Bitset & bs) { return bitwise_and(bs); }
+    inline Bitset & operator&=( const Bitset & bs) { return bitwise_and(bs); }
     Bitset operator&( const Bitset & ) const;
     /// Computes bitwise-or with givine bitset, writing result to current set.
     Bitset & bitwise_or( const Bitset & );
-    Bitset & operator|=( const Bitset & bs) { return bitwise_or(bs); }
+    inline Bitset & operator|=( const Bitset & bs) { return bitwise_or(bs); }
     Bitset operator|( const Bitset & ) const;
     /// Computes bitwise-exclusive-or with givine bitset, writing result to
     /// current set.
     Bitset & bitwise_xor( const Bitset & );
-    Bitset & operator^=( const Bitset & bs) { return bitwise_xor(bs); }
+    inline Bitset & operator^=( const Bitset & bs) { return bitwise_xor(bs); }
     Bitset operator^( const Bitset & ) const;
 
     /// Template method performing bitwise conversion to certain type.
@@ -109,9 +110,9 @@ public:
     /// Returns textual representation of the bitset as a sequence of 1 and 0.
     std::string to_string() const;
     /// Returns unsigned long representation of bitset.
-    unsigned long to_ulong() const { return to<unsigned long>(); }
+    inline unsigned long to_ulong() const { return to<unsigned long>(); }
     /// Returns unsigned long long representation of bitset.
-    unsigned long long to_ullong() const { return to<unsigned long long>(); }
+    inline unsigned long long to_ullong() const { return to<unsigned long long>(); }
 
     friend std::ostream & operator<<( std::ostream & os, const Bitset & bs ) {
         os << bs.to_string(); return os; }
@@ -123,7 +124,7 @@ template<typename T> T
 Bitset::to() const {
     if( sizeof(T) < _nWords*sizeof(Word_t) )
         throw std::overflow_error("Bitset is too large.");
-    T result;
+    T result {0};
     for( size_t nw = 0; nw < _nWords; ++nw ) {
         memcpy( ((Word_t*) &result) + nw
               , _data + nw
@@ -133,10 +134,7 @@ Bitset::to() const {
     return result;
 }
 
-template<> std::string
-Bitset::to<std::string>() const {
-    return to_string();
-}
+template<> std::string Bitset::to<std::string>() const;
 
 # if 0
 template<size_t N> std::bitset<N>

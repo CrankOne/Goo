@@ -215,6 +215,11 @@ Bitset::to_string() const {
     return s;
 }
 
+template<> std::string
+Bitset::to<std::string>() const {
+    return to_string();
+}
+
 # if 0
 void
 Bitset::dump( std::ostream & os ) {

@@ -71,6 +71,21 @@ public:
 };
 # endif
 
+/**@class Framework
+ * @brief Schedules semi-parallel treatment of interconnected tasks.
+ *
+ * Instances serve as a container maintaining set of processor instances
+ * arranged in a DAG.
+ *
+ * Might be ran using input operator (<<), or, if all the data generated
+ * directly in DAG
+ * XXX
+ * 
+ * */
+class Framework : public iProcessor {
+public:
+};
+
 }  // namespace dataflow
 }  // namespace goo
 
