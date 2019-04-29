@@ -2,27 +2,49 @@
 # include "goo_exception.hpp"
 
 # include <limits>
-# include <cstring>
 
 namespace goo {
 
 Bitset::Bitset() : _size(0) {}
 
 Bitset::Bitset( const Bitset & o ) : _size(o._size)
-                                   , _data(new Word_t [o._nWords])
                                    , _nWords(o._nWords)
                                    , _tailMask(o._tailMask) {
+    _data = _alloc(o._nWords);
     memcpy(_data, o._data, _nWords);
 }
 
 Bitset::Bitset(size_t length) : _size(0) {
-    resize( length );
+    if(length) resize( length );
+}
+
+Bitset::Word_t *
+Bitset::_alloc( size_t nw ) {
+    return new Word_t [nw];
+}
+
+void
+Bitset::_delete( Word_t * ptr ) {
+    delete [] ptr;
+}
+
+void
+Bitset::_free() {
+    if(!empty()) {
+        _size = 0;
+        _delete(_data);
+    }
 }
 
 Bitset::~Bitset() {
-    if(!empty()) {
-        delete [] _data;
-    }
+    _free();
+}
+
+Bitset &
+Bitset::operator=(const Bitset & o) {
+    this->resize(o._size);
+    memcpy( _data, o._data, o._nWords );
+    return *this;
 }
 
 void
@@ -61,6 +83,10 @@ Bitset::reset(size_t n) {
 
 void
 Bitset::resize( size_t newSize ) {
+    if(!newSize) {
+        _free();
+        return;
+    }
     size_t newNWords = newSize/nBiW
          , remnant = newSize%nBiW
          ;
@@ -72,22 +98,15 @@ Bitset::resize( size_t newSize ) {
     if( remnant ) {
         newTailMask = (Word_t(1) << remnant) - 1;
     }
-    if( empty() ) {
-        _data = new Word_t [newNWords];
-        _size = newSize;
-        _nWords = newNWords;
-        _tailMask = newTailMask;
-    } else {
-        emraise( unimplemented, "TODO: preserve values in bitset on realloc." )
+    Word_t * newData = _alloc(newNWords);
+    if( !empty() ) {
+        memcpy( newData, _data, newNWords > _nWords ? _nWords : newNWords );
+        _delete(_data);
     }
-}
-
-Bitset &
-Bitset::flip() {
-    for( size_t nw = 0; nw < _nWords; ++nw ) {
-        _data[nw] = ~_data[nw];
-    }
-    return *this;
+    _data = newData;
+    _size = newSize;
+    _nWords = newNWords;
+    _tailMask = newTailMask;
 }
 
 Bitset &
@@ -95,20 +114,6 @@ Bitset::flip(size_t n) {
     assert(n < size());
     _data[n/nBiW] ^= Word_t{1} << n%nBiW;
     return *this;
-}
-
-std::string
-Bitset::to_string() const {
-    std::string s(size(), '\0');
-    for( size_t nw = 0; nw < _nWords-1; ++nw ) {
-        for( size_t nb = 0; nb < nBiW; ++nb ) {
-            s[nw*nBiW + nb] = ((Word_t(1) << nb) & _data[nw] ? '1' : '0' );
-        }
-    }
-    for( size_t nb = 0; nb < _size%nBiW; ++nb ) {
-        s[(_nWords-1)*nBiW + nb] = ((Word_t(1) << nb) & _data[_nWords-1] ? '1' : '0' );
-    }
-    return s;
 }
 
 bool
@@ -139,7 +144,78 @@ Bitset::none() const {
     return !any();
 }
 
-# if 1
+Bitset &
+Bitset::flip() {
+    for( size_t nw = 0; nw < _nWords; ++nw ) {
+        _data[nw] = ~_data[nw];
+    }
+    return *this;
+}
+
+Bitset
+Bitset::operator~() const {
+    Bitset r(*this);
+    return r.flip();
+}
+
+Bitset &
+Bitset::bitwise_and( const Bitset & bs ) {
+    assert( size() == bs.size() );
+    for( size_t nw = 0; nw < _nWords; ++nw ) {
+        _data[nw] &= bs._data[nw];
+    }
+    return *this;
+}
+
+Bitset
+Bitset::operator&( const Bitset & bs ) const {
+    Bitset r(*this);
+    return r.bitwise_and(bs);
+}
+
+Bitset &
+Bitset::bitwise_or( const Bitset & bs ) {
+    for( size_t nw = 0; nw < _nWords; ++nw ) {
+        _data[nw] |= bs._data[nw];
+    }
+    return *this;
+}
+
+Bitset
+Bitset::operator|( const Bitset & bs ) const {
+    Bitset r(*this);
+    return r.bitwise_or(bs);
+}
+
+Bitset &
+Bitset::bitwise_xor( const Bitset & bs ) {
+    for( size_t nw = 0; nw < _nWords; ++nw ) {
+        _data[nw] ^= bs._data[nw];
+    }
+    return *this;
+}
+
+Bitset
+Bitset::operator^( const Bitset & bs ) const {
+    Bitset r(*this);
+    return r.bitwise_xor(bs);
+}
+
+std::string
+Bitset::to_string() const {
+    std::string s(size(), '\0');
+    for( size_t nw = 0; nw < _nWords-1; ++nw ) {
+        for( size_t nb = 0; nb < nBiW; ++nb ) {
+            s[nw*nBiW + nb] = ((Word_t(1) << nb) & _data[nw] ? '1' : '0' );
+        }
+    }
+    for( size_t nb = 0; nb < _size%nBiW; ++nb ) {
+        s[(_nWords-1)*nBiW + nb] = ((Word_t(1) << nb) & _data[_nWords-1] ? '1' : '0' );
+    }
+    return s;
+}
+
+# if 0
 void
 Bitset::dump( std::ostream & os ) {
     if(empty()) return;
