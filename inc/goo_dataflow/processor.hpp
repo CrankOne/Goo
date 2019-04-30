@@ -5,6 +5,8 @@
 # include <unordered_map>
 # include <list>
 
+# pragma once
+
 namespace goo {
 namespace dataflow {
 
@@ -19,6 +21,7 @@ public:
     Slot( const std::string & nm
         , const std::type_info & ti ) : _name(nm)
                                       , _typeInfo(&ti) {}
+    const std::string & name() const { return _name; }
     const std::type_info & type() const { return *_typeInfo; }
 };
 
@@ -50,6 +53,8 @@ public:
     template<typename T> void slot( const std::string & slotName ) {
         _slots.push_back(new Slot(slotName, typeid(T)));
     }
+
+    const std::list<Slot *> & slots() const { return _slots; }
 };
 
 # if 0
@@ -70,21 +75,6 @@ public:
     }
 };
 # endif
-
-/**@class Framework
- * @brief Schedules semi-parallel treatment of interconnected tasks.
- *
- * Instances serve as a container maintaining set of processor instances
- * arranged in a DAG.
- *
- * Might be ran using input operator (<<), or, if all the data generated
- * directly in DAG
- * XXX
- * 
- * */
-class Framework : public iProcessor {
-public:
-};
 
 }  // namespace dataflow
 }  // namespace goo

@@ -3,21 +3,29 @@
 namespace goo {
 namespace dataflow {
 
-TierMonitor::TierMonitor(size_t n) : _freeFlags(n) {
+# if 0
+Tier::Tier(size_t n) : _freeFlags(n) {
     if(!_freeFlags.empty()) {
         _freeFlags.set();
     }
 }
+# endif
+
+Tier::Tier( std::unordered_set<dag::DAGNode*> & ns ) : _freeFlags(ns.size()) {
+    assert( !ns.empty() );
+    _freeFlags.set();
+    // ... TODO: fill vector
+}
 
 void
-TierMonitor::set_free( size_t n ) {
+Tier::set_free( size_t n ) {
     std::unique_lock<std::mutex> lock(_accessMtx);
     _freeFlags.set(n);
     _cv.notify_all();
 }
 
 size_t
-TierMonitor::borrow_one( const Bitset & toProcess ) {
+Tier::borrow_one( const Bitset & toProcess ) {
     size_t n;
     std::unique_lock<std::mutex> lock(_accessMtx);
     auto available = toProcess & _freeFlags;

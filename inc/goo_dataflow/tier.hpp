@@ -13,6 +13,8 @@
 //# include "goo_tsort.tcc"
 
 # include "goo_bitset.hpp"
+# include "goo_tsort.tcc"
+# include "goo_dataflow/processor.hpp"
 
 # pragma once
 
@@ -20,6 +22,7 @@ namespace goo {
 namespace dataflow {
 
 class Worker;
+class Framework;
 
 /**@brief Semi-parallel processed DAG synchronization helper.
  * @class TierMonitor
@@ -35,13 +38,16 @@ class Worker;
  *
  * The TierMonitor class offers synchroniation ...
  * */
-class TierMonitor {
+class Tier {
 private:
     std::mutex _accessMtx;
     std::condition_variable _cv;
     Bitset _freeFlags;
+
+    std::vector<dag::Node<iProcessor>*> _nodes;
 protected:
-    TierMonitor( size_t n=0 );
+    //Tier( size_t n=0 );
+    Tier( std::unordered_set<dag::DAGNode*> & );
     /// Sets n-th processor free indicator bit and notifies all subscribed
     /// worker threads.
     void set_free( size_t n );
@@ -50,6 +56,7 @@ protected:
     size_t borrow_one( const Bitset & );
 
     friend class ::goo::dataflow::Worker;
+    friend class ::goo::dataflow::Framework;
 };
 
 }  // namespace ::goo::dataflow

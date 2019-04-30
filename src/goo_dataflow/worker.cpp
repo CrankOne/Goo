@@ -1,19 +1,37 @@
 # include "goo_dataflow/worker.hpp"
-
-# include <vector>
+# include "goo_exception.hpp"
 
 namespace goo {
 namespace dataflow {
 
 Worker::Worker() {}
 
+# if 0
 void
-Worker::run( ) {
+Worker::run() {
     size_t nBytesTLS = 0;
-    // TODO: nBytesTLS += ...
+    _TODO_ // TODO: nBytesTLS += ...
+    // Allocate storage:
     std::vector<char> data(nBytesTLS);
-    // ...
+    for( auto & tier : tiers ) {
+        // Bitmask reflecting one-to-one bits for processing
+        Bitset toProcess( tier.size );
+        toProcess.set();
+        while( toProcess.any() ) {
+            size_t nProcCurrent = tier.borrow_one();
+            // Retrieve the data
+            ValuesMap vm;
+            _TODO_ // ^^^ TODO: built variables map for processor
+            // Here the actual processing goes:
+            tier[nProcCurrent].eval(vm);
+            // Release the processor, drop "interest" bit
+            tm.set_free(nProcCurrent);
+            toProcess.clear( nProcCurrent );
+        }
+        assert( toProcess.none() );  // assure all done
+    }
 }
+# endif
 
 # if 0
 // Testing fixture
