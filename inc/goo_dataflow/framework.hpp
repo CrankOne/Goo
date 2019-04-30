@@ -13,8 +13,8 @@ namespace dataflow {
  * The framework describes how the set of routines are connected together in
  * a direct acyclic graph (DAG).
  *
- * The framework does not maintain the lifetime of processor instances. It's
- * primary function is to gurantee simultaneous update procedures of various
+ * The framework does not maintain the lifetime of processor instances. Its
+ * primary function to gurantee simultaneous update procedures of various
  * caches used during parallel treatment using Worker class instances.
  *
  * TODO: Might be ran using input operator (<<), or, if all the data generated
@@ -24,11 +24,15 @@ class Framework {
 public:
     struct Link {
         dag::Node<iProcessor> & from, & to;
-        // ...
+        // ... TODO: other properties of a link instance
+        void maps( const std::string & fromName
+                 , const std::string & toName ) {
+            _TODO_  // TODO: implement
+        }
     };
 private:
     std::unordered_set<dag::DAGNode*> _nodes;
-    std::list<Link> _links;
+    std::list<Link *> _links;
     /// Caches derived from _links & _nodes.
     struct {
         std::unordered_map< const iProcessor *

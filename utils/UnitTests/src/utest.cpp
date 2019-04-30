@@ -236,6 +236,20 @@ UTApp::_V_configure_application( const Config * c ) {
                   , std::inserter( nodes, nodes.begin() )
                   , [](const std::pair<std::string, dag::Node<TestingUnit>*> & p ){
                         return p.second; } );
+
+    // Incorporate dependencies after app is ran
+    for( auto p : *_modulesGraphPtr ) {
+        for( auto dn : p.second->data().dep_names() ) {
+            auto it = _modulesGraphPtr->find(dn);
+            if( _modulesGraphPtr->end() == it ) {
+                emraise(badState, "Has no unit module \"%s\" to"
+                        " establish dependency with unit \"%s\".",
+                        dn.c_str(), p.first.c_str() );
+            }
+            p.second->precedes( *it->second );
+        }
+    }
+
     // If it is common run, just obtain the correct sequence:
     if( Config::runAll == c->operation ) {
         c->units = dag::dfs( nodes );
@@ -321,18 +335,6 @@ UTApp::_run_unit( TestingUnit * unit,
 
 int
 UTApp::_V_run() {
-    // Incorporate dependencies after app is ran
-    for( auto p : *_modulesGraphPtr ) {
-        for( auto dn : p.second->data().dep_names() ) {
-            auto it = _modulesGraphPtr->find(dn);
-            if( _modulesGraphPtr->end() == it ) {
-                emraise(badState, "Has no unit module \"%s\" to"
-                        " establish dependency with unit \"%s\".",
-                        dn.c_str(), p.first.c_str() );
-            }
-            p.second->insert( it->second );
-        }
-    }
     switch( UTApp::co().operation ) {
         case Config::printBuildConfig : {
             goo_build_info( stdout );

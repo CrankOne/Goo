@@ -42,18 +42,18 @@ class Tier {
 private:
     std::mutex _accessMtx;
     std::condition_variable _cv;
-    Bitset _freeFlags;
+    Bitset _freeFlags
+         , _stateless;
 
     std::vector<dag::Node<iProcessor>*> _nodes;
 protected:
-    //Tier( size_t n=0 );
     Tier( std::unordered_set<dag::DAGNode*> & );
     /// Sets n-th processor free indicator bit and notifies all subscribed
     /// worker threads.
     void set_free( size_t n );
     /// Blocks execution of current thread until one of the given will become
     /// available.
-    size_t borrow_one( const Bitset & );
+    size_t borrow_one( const Bitset &, dag::Node<iProcessor> *& );
 
     friend class ::goo::dataflow::Worker;
     friend class ::goo::dataflow::Framework;

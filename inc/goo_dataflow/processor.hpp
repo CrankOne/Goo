@@ -5,10 +5,14 @@
 # include <unordered_map>
 # include <list>
 
+# include "goo_exception.hpp"
+
 # pragma once
 
 namespace goo {
 namespace dataflow {
+
+class ValuesMap;
 
 /// Processing status code.
 typedef uint8_t PSC;
@@ -26,7 +30,7 @@ public:
 };
 
 class ValueEntry {
-private:
+protected:
     void * _data;
     Slot * _slot;
 public:
@@ -34,19 +38,54 @@ public:
         assert( typeid(T) == _slot->type() );
         return *reinterpret_cast<T*>(_data);
     }
+
+    friend class ::goo::dataflow::ValuesMap;
 };
 
 /// Represents the values set, that processor operates. Built by worker
 /// procedure, based on slots declaration.
-class ValuesMap : public std::unordered_map<std::string, ValueEntry> {};
+class ValuesMap {
+public:
+    typedef std::unordered_map<std::string, ValueEntry>::iterator Iterator;
+private:
+    std::unordered_map<std::string, ValueEntry> _values;
+protected:
+    template<typename T> Iterator
+    _find(const std::string & vName) {
+        auto it = _values.find(vName);
+        if( _values.end() == it ) {
+            emraise( noSuchKey, "Slot \"%s\" is not declared in processor."
+                   , vName.c_str() );
+        }
+        if( it->second._slot->type() != typeid(T) ) {
+            emraise( badCast, "Type mismatch for \"%s\": declared \"%s\","
+                    " requested \"%s\".", vName.c_str()
+                    , it->second._slot->type().name()
+                    , typeid(T).name() );
+        }
+        return it;
+    }
+public:
+    template<typename T> void
+    set( const std::string & vName
+           , const T & value ) {
+        auto it = _find<T>(vName);
+        *reinterpret_cast<T*>(it->second._data) = value;
+    }
+    template<typename T> const T &
+    get( const std::string & vName ) {
+        auto it = _find<T>(vName);
+        return *reinterpret_cast<T*>(it->second._data);
+    }
+};
 
 class iProcessor {
 private:
     std::list<Slot *> _slots;
 protected:
-    virtual PSC _V_eval( const ValuesMap & ) = 0;
+    virtual PSC _V_eval( ValuesMap & ) = 0;
 public:
-    PSC eval( const ValuesMap & vm ) {
+    PSC eval( ValuesMap & vm ) {
         return _V_eval(vm);
     }
     /// Creates new typed slot.

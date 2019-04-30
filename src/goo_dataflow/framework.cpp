@@ -39,9 +39,9 @@ Framework::depends( iProcessor * a, iProcessor * b ) {
     dag::Node<iProcessor> & nodeA = _get_node_by_proc_ptr( a )
                         , & nodeB = _get_node_by_proc_ptr( b );
     nodeA.depends_on( nodeB );
-    _links.push_back( Link{ nodeB, nodeA } );
-    _cache.linksByFrom.emplace( a, &_links.back() );
-    _cache.linksByTo.emplace( b, &_links.back() );
+    _links.push_back( new Link{ nodeB, nodeA } );
+    _cache.linksByFrom.emplace( a, _links.back() );
+    _cache.linksByTo.emplace( b, _links.back() );
 }
 
 }  // ::goo::dataflow
