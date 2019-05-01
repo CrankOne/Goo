@@ -4,15 +4,51 @@
 namespace goo {
 namespace dataflow {
 
+Storage::Storage( const Framework::Cache & fwCache ) {
+    dag::Order order = dag::dfs(_nodes);
+    std::list<Tier *> tiers;
+    for(auto tierNodes : order) {
+        tiers.push_back(new Tier(tierNodes));
+        for(auto dagNodePtr : tierNodes) {
+            auto nodePtr = static_cast<dag::Node<iProcessor *>*>(dagNodePtr);
+            iProcessor * p = nodePtr->data();
+            for( auto slotPtr : p->slots() ) {
+                //slotPtr->name()
+                //slotPtr->type()
+            }
+        }
+    }
+}
+
+void
+Storage::build_variables_map( ValuesMap & vm
+                            , const Tier & tier
+                            , size_t nProcessor ) {
+    for( auto slot : tier[nProcessor]->data().slots() ) {
+        // We use name from the slot to assure that processor will receive the
+        // entry named exact as it was desired.
+        vm._add_value_entry( slot->first
+                           , ValueEntry{dataPtr, linkPtr} );
+    }
+}
+
+void
+Storage::free_values_map( ValuesMap & vm
+                        , const Tier & tier
+                        , size_t nProcessor ) {
+}
+
+// Worker
+////////
+
 Worker::Worker() {}
 
-# if 0
+# if 1
 void
 Worker::run() {
-    size_t nBytesTLS = 0;
-    _TODO_ // TODO: nBytesTLS += ...
-    // Allocate storage:
-    std::vector<char> data(nBytesTLS);
+    // Allocate storage
+    Storage context( _dwRef );
+    size_t tierCount = 0;
     for( auto & tier : tiers ) {
         // Bitmask reflecting one-to-one bits for processing
         Bitset toProcess( tier.size );
@@ -21,11 +57,12 @@ Worker::run() {
             size_t nProcCurrent = tier.borrow_one();
             // Retrieve the data
             ValuesMap vm;
-            _TODO_ // ^^^ TODO: built variables map for processor
-            // Here the actual processing goes:
+            context.build_values_map( vm, tier, nProcCurrent );
+            // Here the actual processing goes
             tier[nProcCurrent].eval(vm);
             // Release the processor, drop "interest" bit
             tm.set_free(nProcCurrent);
+            context.free_values_map( vm, tier, nProcCurrent );
             toProcess.clear( nProcCurrent );
         }
         assert( toProcess.none() );  // assure all done

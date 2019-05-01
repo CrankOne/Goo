@@ -13,14 +13,15 @@
 //# include "goo_tsort.tcc"
 
 # include "goo_bitset.hpp"
+# pragma once
+
 # include "goo_tsort.tcc"
 # include "goo_dataflow/processor.hpp"
-
-# pragma once
 
 namespace goo {
 namespace dataflow {
 
+class Storage;
 class Worker;
 class Framework;
 
@@ -38,14 +39,12 @@ class Framework;
  *
  * The TierMonitor class offers synchroniation ...
  * */
-class Tier {
+class Tier : public std::vector<dag::Node<iProcessor>*> {
 private:
     std::mutex _accessMtx;
     std::condition_variable _cv;
     Bitset _freeFlags
          , _stateless;
-
-    std::vector<dag::Node<iProcessor>*> _nodes;
 protected:
     Tier( std::unordered_set<dag::DAGNode*> & );
     /// Sets n-th processor free indicator bit and notifies all subscribed
@@ -57,6 +56,7 @@ protected:
 
     friend class ::goo::dataflow::Worker;
     friend class ::goo::dataflow::Framework;
+    friend class ::goo::dataflow::Storage;
 };
 
 }  // namespace ::goo::dataflow

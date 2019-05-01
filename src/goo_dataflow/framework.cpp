@@ -16,33 +16,20 @@ Framework::_get_node_by_proc_ptr( iProcessor * p ) {
     return *(it->second);
 }
 
-void
-Framework::_build_context() {
-    dag::Order order = dag::dfs(_nodes);
-    std::list<Tier *> tiers;
-    // Allocate TLS
-    for(auto tierNodes : order) {
-        tiers.push_back(new Tier(tierNodes));
-        for(auto dagNodePtr : tierNodes) {
-            auto nodePtr = static_cast<dag::Node<iProcessor *>*>(dagNodePtr);
-            iProcessor * p = nodePtr->data();
-            for( auto slotPtr : p->slots() ) {
-                //slotPtr->name()
-                //slotPtr->type()
-            }
-        }
-    }
-}
-
 Link &
 Framework::precedes( iProcessor * a, iProcessor * b ) {
     dag::Node<iProcessor> & nodeA = _get_node_by_proc_ptr( a )
                         , & nodeB = _get_node_by_proc_ptr( b );
     nodeA.depends_on( nodeB );
     _links.push_back( new Link{ nodeB, nodeA } );
-    //_cache.linksByFrom.emplace( a, _links.back() );
-    //_cache.linksByTo.emplace( b, _links.back() );
+    _cache.linksByFrom.emplace( a, _links.back() );
+    _cache.linksByTo.emplace( b, _links.back() );
     return *(_links.back());
+}
+
+const Framework::Cache &
+Framework::get_cache() const {
+    return _cache;
 }
 
 }  // ::goo::dataflow

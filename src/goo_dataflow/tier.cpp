@@ -16,7 +16,7 @@ Tier::Tier( std::unordered_set<dag::DAGNode*> & ns ) : _freeFlags(ns.size())
     assert( !ns.empty() );
     _freeFlags.set();
     for( auto nodePtr : ns ) {
-        _nodes.push_back( static_cast<dag::Node<iProcessor>*>(nodePtr) );
+        push_back( static_cast<dag::Node<iProcessor>*>(nodePtr) );
     }
     // TODO: stateless processors have to be considered as "always free" ones
     // since there is nothing to guard from concurent access. On the loop above
@@ -47,7 +47,7 @@ Tier::borrow_one( const Bitset & toProcess
     // Get first freed processor number, mark it as busy and return number
     for( n = 0; n < available.size(); ++n ) {
         if( available.test(n) ) {
-            dest = _nodes[n];
+            dest = this->at(n);
             _freeFlags.reset(n);
             return n;
         }

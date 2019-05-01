@@ -10,6 +10,12 @@ Link::maps( const std::string & fn
     toName = toName;
 }
 
+void
+ValuesMap::_add_value_entry( const std::string & nm
+                           , ValueEntry ve ) {
+    _values.emplace( nm, ve );
+}
+
 }  // namespace goo::dataflow
 }  // namespace goo
 

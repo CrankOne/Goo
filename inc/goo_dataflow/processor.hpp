@@ -1,3 +1,5 @@
+# pragma once
+
 # include <cstdint>
 # include <string>
 # include <cassert>
@@ -7,8 +9,6 @@
 
 # include "goo_exception.hpp"
 # include "goo_tsort.tcc"
-
-# pragma once
 
 namespace goo {
 namespace dataflow {
@@ -79,6 +79,9 @@ public:
         auto it = _find<T>(vName);
         return *reinterpret_cast<T*>(it->second._data);
     }
+    
+    /// Emplaces value entry with given name. TODO: protect it from users code.
+    void _add_value_entry( const std::string &, ValueEntry );
 };
 
 class iProcessor {

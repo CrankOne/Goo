@@ -1,8 +1,8 @@
+# pragma once
+
 # include "goo_tsort.tcc"
 # include "goo_dataflow/processor.hpp"
 # include "goo_dataflow/tier.hpp"
-
-# pragma once
 
 namespace goo {
 namespace dataflow {
@@ -21,26 +21,28 @@ namespace dataflow {
  * directly in DAG.
  * */
 class Framework {
-private:
-    std::unordered_set<dag::DAGNode*> _nodes;
-    std::list<Link *> _links;
+protected:
     /// Caches derived from _links & _nodes.
-    struct {
+    struct Cache {
         std::unordered_map< const iProcessor *
                           , dag::Node<iProcessor> *> nodesByProcPtr;
         std::unordered_map< const iProcessor *
                           , Link * > linksByFrom
                                    , linksByTo;
-    } _cache;
-protected:
-    /// Assembles tiers and TLS caches.
-    void _build_context();
+    };
+    const Cache & get_cache() const;
+private:
+    std::unordered_set<dag::DAGNode*> _nodes;
+    std::list<Link *> _links;
     /// Returns Node by processor pointer. If processor has not been added
     /// before, allocates new node.
     dag::Node<iProcessor> & _get_node_by_proc_ptr( iProcessor * );
+    Cache _cache;
 public:
     /// Makes processor A to precede processor B.
     Link & precedes( iProcessor * a, iProcessor * b );  // TODO: rename to `precedes'
+
+    friend class Storage;
 };
 
 }  // ::goo::dataflow
