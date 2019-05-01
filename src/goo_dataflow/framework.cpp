@@ -26,7 +26,7 @@ Framework::_build_context() {
         for(auto dagNodePtr : tierNodes) {
             auto nodePtr = static_cast<dag::Node<iProcessor *>*>(dagNodePtr);
             iProcessor * p = nodePtr->data();
-            for( const Slot * slotPtr : p->slots() ) {
+            for( auto slotPtr : p->slots() ) {
                 //slotPtr->name()
                 //slotPtr->type()
             }
@@ -34,14 +34,15 @@ Framework::_build_context() {
     }
 }
 
-Framework::Link &
-Framework::depends( iProcessor * a, iProcessor * b ) {
+Link &
+Framework::precedes( iProcessor * a, iProcessor * b ) {
     dag::Node<iProcessor> & nodeA = _get_node_by_proc_ptr( a )
                         , & nodeB = _get_node_by_proc_ptr( b );
     nodeA.depends_on( nodeB );
     _links.push_back( new Link{ nodeB, nodeA } );
-    _cache.linksByFrom.emplace( a, _links.back() );
-    _cache.linksByTo.emplace( b, _links.back() );
+    //_cache.linksByFrom.emplace( a, _links.back() );
+    //_cache.linksByTo.emplace( b, _links.back() );
+    return *(_links.back());
 }
 
 }  // ::goo::dataflow

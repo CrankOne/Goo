@@ -104,26 +104,26 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
     auto cmp = new Compare();
     {
         // Connect dices to 6-input sum
-        fw.depends( sum6, dices + 0 ).maps("value", "x1");
-        fw.depends( sum6, dices + 1 ).maps("value", "x2");
-        fw.depends( sum6, dices + 2 ).maps("value", "x3");
-        fw.depends( sum6, dices + 3 ).maps("value", "x4");
-        fw.depends( sum6, dices + 4 ).maps("value", "x5");
-        fw.depends( sum6, dices + 5 ).maps("value", "x6");
+        fw.precedes( sum6, dices + 0 ).maps("value", "x1");
+        fw.precedes( sum6, dices + 1 ).maps("value", "x2");
+        fw.precedes( sum6, dices + 2 ).maps("value", "x3");
+        fw.precedes( sum6, dices + 3 ).maps("value", "x4");
+        fw.precedes( sum6, dices + 4 ).maps("value", "x5");
+        fw.precedes( sum6, dices + 5 ).maps("value", "x6");
         // Connect dices and pairwise sums
-        fw.depends( sum2 + 0, dices + 1 ).maps("value", "a");
-        fw.depends( sum2 + 0, dices + 2 ).maps("value", "b");
-        fw.depends( sum2 + 1, dices + 4 ).maps("value", "a");
-        fw.depends( sum2 + 1, dices + 5 ).maps("value", "b");
-        fw.depends( sum2 + 2, dices + 0 ).maps("value", "a");
-        fw.depends( sum2 + 2, sum2  + 0 ).maps("c",     "b");
-        fw.depends( sum2 + 3, dices + 3 ).maps("value", "a");
-        fw.depends( sum2 + 3, sum2  + 1 ).maps("c",     "b");
-        fw.depends( sum2 + 4, sum2  + 2 ).maps("c",     "a");
-        fw.depends( sum2 + 4, sum2  + 3 ).maps("c",     "b");
+        fw.precedes( sum2 + 0, dices + 1 ).maps("value", "a");
+        fw.precedes( sum2 + 0, dices + 2 ).maps("value", "b");
+        fw.precedes( sum2 + 1, dices + 4 ).maps("value", "a");
+        fw.precedes( sum2 + 1, dices + 5 ).maps("value", "b");
+        fw.precedes( sum2 + 2, dices + 0 ).maps("value", "a");
+        fw.precedes( sum2 + 2, sum2  + 0 ).maps("c",     "b");
+        fw.precedes( sum2 + 3, dices + 3 ).maps("value", "a");
+        fw.precedes( sum2 + 3, sum2  + 1 ).maps("c",     "b");
+        fw.precedes( sum2 + 4, sum2  + 2 ).maps("c",     "a");
+        fw.precedes( sum2 + 4, sum2  + 3 ).maps("c",     "b");
         // Compare pairwise sum result with 6-sum
-        fw.depends( sum2 + 4, cmp ).maps("c", "A");
-        fw.depends( sum6    , cmp ).maps("S", "B");
+        fw.precedes( sum2 + 4, cmp ).maps("c", "A");
+        fw.precedes( sum6    , cmp ).maps("S", "B");
     }
     delete [] dices;
     delete sum6;

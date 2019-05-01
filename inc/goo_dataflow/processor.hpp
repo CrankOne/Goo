@@ -6,6 +6,7 @@
 # include <list>
 
 # include "goo_exception.hpp"
+# include "goo_tsort.tcc"
 
 # pragma once
 
@@ -13,29 +14,28 @@ namespace goo {
 namespace dataflow {
 
 class ValuesMap;
+class iProcessor;
 
 /// Processing status code.
 typedef uint8_t PSC;
 
-class Slot {
-private:
-    const std::string _name;
-    const std::type_info * _typeInfo;
-public:
-    Slot( const std::string & nm
-        , const std::type_info & ti ) : _name(nm)
-                                      , _typeInfo(&ti) {}
-    const std::string & name() const { return _name; }
-    const std::type_info & type() const { return *_typeInfo; }
+// TODO: this class will be probably further extended much to support
+// description of advanced mechanisms of data transfer (by references, etc).
+struct Link {
+    dag::Node<iProcessor> & from, & to;
+    std::string fromName, toName;
+    // ... TODO: other properties of a link instance
+    void maps( const std::string & fn
+             , const std::string & tn );
 };
 
 class ValueEntry {
 protected:
     void * _data;
-    Slot * _slot;
+    Link * _link;
 public:
     template<typename T> T as() {
-        assert( typeid(T) == _slot->type() );
+        //assert( typeid(T) == _link->from.type() );
         return *reinterpret_cast<T*>(_data);
     }
 
@@ -57,12 +57,14 @@ protected:
             emraise( noSuchKey, "Slot \"%s\" is not declared in processor."
                    , vName.c_str() );
         }
+        # if 0
         if( it->second._slot->type() != typeid(T) ) {
             emraise( badCast, "Type mismatch for \"%s\": declared \"%s\","
                     " requested \"%s\".", vName.c_str()
                     , it->second._slot->type().name()
                     , typeid(T).name() );
         }
+        # endif
         return it;
     }
 public:
@@ -80,8 +82,10 @@ public:
 };
 
 class iProcessor {
+public:
+    typedef std::unordered_map<std::string, const std::type_info *> Slots;
 private:
-    std::list<Slot *> _slots;
+    Slots _slots;
 protected:
     virtual PSC _V_eval( ValuesMap & ) = 0;
 public:
@@ -90,10 +94,13 @@ public:
     }
     /// Creates new typed slot.
     template<typename T> void slot( const std::string & slotName ) {
-        _slots.push_back(new Slot(slotName, typeid(T)));
+        auto ir = _slots.emplace( slotName, &(typeid(T)) );
+        if( !ir.second ) {
+            emraise(nonUniq, "Slot named \"%s\" already exists in processor.")
+        }
     }
 
-    const std::list<Slot *> & slots() const { return _slots; }
+    const Slots & slots() const { return _slots; }
 };
 
 # if 0

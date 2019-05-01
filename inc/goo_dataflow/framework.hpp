@@ -21,15 +21,6 @@ namespace dataflow {
  * directly in DAG.
  * */
 class Framework {
-public:
-    struct Link {
-        dag::Node<iProcessor> & from, & to;
-        // ... TODO: other properties of a link instance
-        void maps( const std::string & fromName
-                 , const std::string & toName ) {
-            _TODO_  // TODO: implement
-        }
-    };
 private:
     std::unordered_set<dag::DAGNode*> _nodes;
     std::list<Link *> _links;
@@ -49,7 +40,7 @@ protected:
     dag::Node<iProcessor> & _get_node_by_proc_ptr( iProcessor * );
 public:
     /// Makes processor A to precede processor B.
-    Link & depends( iProcessor * a, iProcessor * b );
+    Link & precedes( iProcessor * a, iProcessor * b );  // TODO: rename to `precedes'
 };
 
 }  // ::goo::dataflow
