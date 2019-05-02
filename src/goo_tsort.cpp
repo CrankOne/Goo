@@ -29,7 +29,7 @@ visit( DAGNode & n
 
 
 std::vector<std::unordered_set<DAGNode*> >
-dfs( std::unordered_set<DAGNode*> & s ) {
+dfs( const std::unordered_set<DAGNode*> & s ) {
     std::vector<std::unordered_set<DAGNode*> > l;
     for( auto nPtr : s ) {
         if( !nPtr->is_marked() ) {

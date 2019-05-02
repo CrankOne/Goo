@@ -15,24 +15,29 @@ namespace dataflow {
 
 class ValuesMap;
 class iProcessor;
+class Tier;
+class Link;
+
+struct ValueTypeInfo {
+    const std::type_info * typeInfo;
+    size_t typeSize;
+};
+
+template<typename T>
+struct Traits {
+    static ValueTypeInfo type_info() {
+        return ValueTypeInfo{ &(typeid(T)), sizeof(T)};
+    }
+};
 
 /// Processing status code.
 typedef uint8_t PSC;
-
-// TODO: this class will be probably further extended much to support
-// description of advanced mechanisms of data transfer (by references, etc).
-struct Link {
-    dag::Node<iProcessor> & from, & to;
-    std::string fromName, toName;
-    // ... TODO: other properties of a link instance
-    void maps( const std::string & fn
-             , const std::string & tn );
-};
 
 class ValueEntry {
 protected:
     void * _data;
     Link * _link;
+    size_t _dataSize;
 public:
     template<typename T> T as() {
         //assert( typeid(T) == _link->from.type() );
@@ -70,7 +75,7 @@ protected:
 public:
     template<typename T> void
     set( const std::string & vName
-           , const T & value ) {
+       , const T & value ) {
         auto it = _find<T>(vName);
         *reinterpret_cast<T*>(it->second._data) = value;
     }
@@ -86,42 +91,42 @@ public:
 
 class iProcessor {
 public:
-    typedef std::unordered_map<std::string, const std::type_info *> Slots;
+    typedef std::unordered_map<std::string, ValueTypeInfo> Ports;
 private:
-    Slots _slots;
+    Ports _ports;
 protected:
     virtual PSC _V_eval( ValuesMap & ) = 0;
 public:
     PSC eval( ValuesMap & vm ) {
         return _V_eval(vm);
     }
-    /// Creates new typed slot.
-    template<typename T> void slot( const std::string & slotName ) {
-        auto ir = _slots.emplace( slotName, &(typeid(T)) );
+    /// Creates new typed port.
+    template<typename T> void port( const std::string & portName ) {
+        auto ir = _ports.emplace( portName, Traits<T>::type_info() );
         if( !ir.second ) {
-            emraise(nonUniq, "Slot named \"%s\" already exists in processor.")
+            emraise(nonUniq, "Port named \"%s\" already exists in processor.")
         }
     }
 
-    const Slots & slots() const { return _slots; }
+    const Ports & ports() const { return _ports; }
 };
 
 # if 0
-class Processor : public iProcessor {
+// TODO: this class will be probably further extended much to support
+// description of advanced mechanisms of data transfer (by references, etc).
+struct Link {
+private:
+    typename iProcessor::Ports::const_iterator _from, _to;
 public:
-    Processor() {
-        slot<int>("a");
-        slot<float>("b");
-        slot<MyEvent&>("event");
-        slot<float>("sum");
-    }
-    virtual PSC eval( const Values & values ) {
-        values["sum"].as<float>() = values["a"].as<int>()
-                                  + values.get_as<float>("b");
-        auto & e = args["event"].as<MyEvent&>();
-        // ... do stuff with mutable & e.
-        return 0;  // equivalent to goo::dataflow::proceed;
-    }
+    Link( iProcessor::Ports::const_iterator from_
+        , iProcessor::Ports::const_iterator to_ ) : _from(from_), _to(to_) {}
+
+    /// Returns data size in bytes to be reserved in thread-local storage.
+    virtual size_t data_size( Tier & tier, size_t nProc );
+    //virtual void free( std::vector<uint8_t> &, Tier &, size_t ) = 0;
+    //
+    typename iProcessor::Ports::const_iterator from() const { return _from; }
+    typename iProcessor::Ports::const_iterator to() const { return _to; }
 };
 # endif
 

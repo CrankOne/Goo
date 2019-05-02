@@ -273,7 +273,10 @@ target_compile_features( ${Goo_LIBRARY} PUBLIC
             cxx_delegating_constructors
             cxx_variadic_macros
             cxx_variadic_templates
-            cxx_template_template_parameters )
+            cxx_template_template_parameters
+            #cxx_structured_bindings
+            cxx_std_17
+            )
 
 target_compile_definitions( ${Goo_LIBRARY} PUBLIC _GNU_SOURCE _FILE_OFFSET_BITS=64 )
 target_compile_options( ${Goo_LIBRARY} PRIVATE -Wall -fexceptions -pthread )

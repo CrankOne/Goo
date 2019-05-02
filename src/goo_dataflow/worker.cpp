@@ -5,30 +5,20 @@ namespace goo {
 namespace dataflow {
 
 Storage::Storage( const Framework::Cache & fwCache ) {
-    dag::Order order = dag::dfs(_nodes);
-    std::list<Tier *> tiers;
-    for(auto tierNodes : order) {
-        tiers.push_back(new Tier(tierNodes));
-        for(auto dagNodePtr : tierNodes) {
-            auto nodePtr = static_cast<dag::Node<iProcessor *>*>(dagNodePtr);
-            iProcessor * p = nodePtr->data();
-            for( auto slotPtr : p->slots() ) {
-                //slotPtr->name()
-                //slotPtr->type()
-            }
-        }
-    }
+    // Allocate storage according to structure provided by framework's cache
+    //for( auto link )
 }
 
 void
 Storage::build_variables_map( ValuesMap & vm
                             , const Tier & tier
                             , size_t nProcessor ) {
-    for( auto slot : tier[nProcessor]->data().slots() ) {
-        // We use name from the slot to assure that processor will receive the
+    for( auto port : tier[nProcessor]->data().ports() ) {
+        // We use name from the port to assure that processor will receive the
         // entry named exact as it was desired.
-        vm._add_value_entry( slot->first
-                           , ValueEntry{dataPtr, linkPtr} );
+        //vm._add_value_entry( port->first
+        //                   , ValueEntry{ dataPtr
+        //                               , linkPtr } );
     }
 }
 
@@ -41,9 +31,9 @@ Storage::free_values_map( ValuesMap & vm
 // Worker
 ////////
 
-Worker::Worker() {}
+//Worker::Worker() {}
 
-# if 1
+# if 0
 void
 Worker::run() {
     // Allocate storage

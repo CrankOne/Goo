@@ -22,25 +22,50 @@ namespace dataflow {
  * */
 class Framework {
 protected:
+    struct Link {
+        size_t id;
+        dag::Node<iProcessor> & nf, & nt;
+        typename iProcessor::Ports::const_iterator tp, fp;
+        size_t valueOffset;
+    };
     /// Caches derived from _links & _nodes.
     struct Cache {
         std::unordered_map< const iProcessor *
                           , dag::Node<iProcessor> *> nodesByProcPtr;
-        std::unordered_map< const iProcessor *
-                          , Link * > linksByFrom
-                                   , linksByTo;
+        // Updated only during `_recache()' operation:
+        /// Order of nodes processing.
+        dag::Order order;
+        /// Tiers storage.
+        std::list<Tier *> tiers;
     };
     const Cache & get_cache() const;
 private:
     std::unordered_set<dag::DAGNode*> _nodes;
-    std::list<Link *> _links;
+    std::unordered_set<Link *> _links;
+
+    mutable bool _isCacheValid;
+    mutable Cache _cache;
+    void _free_cache() const;
+    void _recache() const;
+
     /// Returns Node by processor pointer. If processor has not been added
     /// before, allocates new node.
     dag::Node<iProcessor> & _get_node_by_proc_ptr( iProcessor * );
-    Cache _cache;
+    /// Check type compatibilities of requested link ports and returns a pair
+    /// of iterators for link construction.
+    std::pair< typename iProcessor::Ports::const_iterator
+             , typename iProcessor::Ports::const_iterator> _assure_link_valid(
+                     dag::Node<iProcessor> & a, const std::string & aPortName
+                   , dag::Node<iProcessor> & b, const std::string & bPortName
+                   );
 public:
-    /// Makes processor A to precede processor B.
-    Link & precedes( iProcessor * a, iProcessor * b );  // TODO: rename to `precedes'
+    Framework();
+
+    /// Makes processor A to precede processor B with default (copying) link.
+    size_t precedes( iProcessor * a, const std::string & aPortName
+                   , iProcessor * b, const std::string & bPortName );
+
+    
 
     friend class Storage;
 };

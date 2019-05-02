@@ -7,6 +7,7 @@
 
 # include "goo_dataflow/processor.hpp"
 # include "goo_dataflow/tier.hpp"
+# include "goo_dataflow/framework.hpp"
 
 namespace goo {
 namespace dataflow {
@@ -18,7 +19,7 @@ namespace dataflow {
  * */
 class Storage : public std::vector<uint8_t> {
 protected:
-    Storage();
+    Storage( const Framework::Cache & );
     /// Builds variables map for certain processor in certain tier.
     void build_variables_map( ValuesMap & vm
                             , const Tier & tier

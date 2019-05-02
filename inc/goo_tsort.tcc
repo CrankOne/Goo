@@ -61,7 +61,7 @@ typedef std::vector<std::unordered_set<DAGNode*> > Order;
 void visit( DAGNode & n
           , std::vector< std::unordered_set<DAGNode*> > & l );
 
-Order dfs(std::unordered_set<DAGNode*> & s );
+Order dfs(const std::unordered_set<DAGNode*> & s );
 
 class DAGNode : public std::unordered_set<DAGNode *> {
 private:
@@ -101,7 +101,7 @@ public:
     friend void visit( DAGNode & n
                      , std::vector< std::unordered_set<DAGNode*> > & l );
     friend std::vector<std::unordered_set<DAGNode*> > dfs(
-                     std::unordered_set<DAGNode*> & s );
+                     const std::unordered_set<DAGNode*> & s );
 };
 
 /// Represents a DAG node with associated data. Contains set of dependencies
