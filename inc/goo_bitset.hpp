@@ -6,6 +6,8 @@
 # include <stdexcept>
 # include <bitset>
 
+# include <iostream>  // XXX
+
 # pragma once
 
 namespace goo {
@@ -124,13 +126,23 @@ template<typename T> T
 Bitset::to() const {
     if( sizeof(T) < _nWords*sizeof(Word_t) )
         throw std::overflow_error("Bitset is too large.");
-    T result {0};
+    T result = 0;
+    # if 0
     for( size_t nw = 0; nw < _nWords; ++nw ) {
         memcpy( ((Word_t*) &result) + nw
               , _data + nw
               , sizeof(Word_t) );
     }
-    *(((Word_t*) &result) + (_nWords-1)) &= _tailMask;
+    # endif
+    memcpy( ((Word_t*) &result), _data, _nWords*sizeof(Word_t) );
+    //*(((Word_t*) &result) + (_nWords-1)) &= _tailMask;
+    *((reinterpret_cast<Word_t*>(&result)) + _nWords - 1) &= _tailMask;
+    std::cout << _size << " sizeof(T)=" << sizeof(T) << " _data="
+              << std::hex << *_data << " result=" << result << std::endl;  // XXX
+    //*((reinterpret_cast<Word_t*>(&result)) + _nWords - 1) <<= (nBiW - (_size%nBiW));
+    //std::cout << _size << " sizeof(T)=" << sizeof(T) << " _data="
+    //          << std::hex << *_data << " result=" << result << std::endl;  // XXX
+    //result >>= sizeof(T)*8 - _size;
     return result;
 }
 

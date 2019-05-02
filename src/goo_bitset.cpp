@@ -20,7 +20,13 @@ Bitset::Bitset(size_t length) : _size(0) {
 
 Bitset::Word_t *
 Bitset::_alloc( size_t nw ) {
+    # if 1
+    auto d = new Word_t [nw];
+    bzero( d, sizeof(Word_t)*nw );
+    return d;
+    # else
     return new Word_t [nw];
+    # endif
 }
 
 void
@@ -43,7 +49,7 @@ Bitset::~Bitset() {
 Bitset &
 Bitset::operator=(const Bitset & o) {
     this->resize(o._size);
-    memcpy( _data, o._data, o._nWords );
+    memcpy( _data, o._data, o._nWords*sizeof(Word_t) );
     return *this;
 }
 
@@ -203,7 +209,7 @@ Bitset::operator^( const Bitset & bs ) const {
 
 std::string
 Bitset::to_string() const {
-    std::string s(size(), '\0');
+    std::string s(size()+1, '\0');
     for( size_t nw = 0; nw < _nWords-1; ++nw ) {
         for( size_t nb = 0; nb < nBiW; ++nb ) {
             s[nw*nBiW + nb] = ((Word_t(1) << nb) & _data[nw] ? '1' : '0' );

@@ -25,7 +25,7 @@ protected:
     struct Link {
         size_t id;
         dag::Node<iProcessor> & nf, & nt;
-        typename iProcessor::Ports::const_iterator tp, fp;
+        typename iProcessor::Ports::const_iterator fp, tp;
         size_t valueOffset;
     };
     /// Caches derived from _links & _nodes.

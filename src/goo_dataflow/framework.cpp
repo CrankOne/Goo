@@ -99,9 +99,15 @@ Framework::_recache() const {
                                                   , splitValues
                                                   , standaloneValues
                                                   ;
-    for( auto linkPtr : _links ) {
+# if 0
+    for( auto lPtr : _links ) {
+        auto jIt =       joinValues.find( std::make_pair(lPtr->nf, lPtr->fp) )
+           , sIt =      splitValues.find( std::make_pair(lPtr->nf, lPtr->fp) )
+           , vIt = standaloneValues.find( std::make_pair(lPtr->nf, lPtr->fp) )
+           ;
         //dataOffset += linkPtr->from()->second.typeInfo->typeSize;
     }
+# endif
     size_t dataOffset = 0;
 
     // Compute out the worker storage and tiers structures
