@@ -28,9 +28,26 @@ namespace goo {
  * It may be wiped in future, if STL will introduce such a thing... Perhaps,
  * for the time being the bitset is a nice container to study for novice.
  *
+ * Bits layout scheme
+ *
+ * For bitset of size N, the M words will be allocated, where M is computed as:
+ *      M = N/sizeof(Word_t) ; if N%sizeof(Word_t) == 0
+ *      M = N/sizeof(Word_t) + 1 ; otherwise
+ * Bits the will be placed in member Word_t * _data:
+ *
+ *      | 0100 ... | 1100 ... | ... | 1010 .. |
+ *        Word #0    Word #1    ...   Word #M
+ *
+ * In each word, the bits are numerated from right to left. For case when
+ * _size%sizeof(Word_t) != 0, there is a last Word_t block which is
+ * used only partially. Generally, we do not care about its content. To get rid
+ * of it there is a special `_tailMask' member containing a bitmask disabling
+ * those insignificant bits.
+ *
  * @TODO: profile, study performance against different Word_t types
  * @TODO: allocators
  * @TODO: bitshift operators (<<. <<=, >>, >>=).
+ * @TODO: check for big-endian platforms
  */
 class Bitset {
 protected:
@@ -54,6 +71,8 @@ public:
     Bitset( const Bitset & );
     /// Allocates set of size N.
     Bitset(size_t length);
+    /// Allocates set of size N and sets to value.
+    Bitset(size_t length, unsigned long v);
     /// Frees allocated memory.
     ~Bitset();
     /// Assignment operator.
@@ -119,30 +138,20 @@ public:
     friend std::ostream & operator<<( std::ostream & os, const Bitset & bs ) {
         os << bs.to_string(); return os; }
 
-    //void dump( std::ostream &);  // XXX: for debugging
+    void dump( std::ostream &);  // XXX: for debugging
 };
 
 template<typename T> T
 Bitset::to() const {
-    if( sizeof(T) < _nWords*sizeof(Word_t) )
+    if( sizeof(T)*8 < _size )
         throw std::overflow_error("Bitset is too large.");
     T result = 0;
-    # if 0
     for( size_t nw = 0; nw < _nWords; ++nw ) {
-        memcpy( ((Word_t*) &result) + nw
+        memcpy( reinterpret_cast<Word_t*>(&result) + nw
               , _data + nw
               , sizeof(Word_t) );
     }
-    # endif
-    memcpy( ((Word_t*) &result), _data, _nWords*sizeof(Word_t) );
-    //*(((Word_t*) &result) + (_nWords-1)) &= _tailMask;
-    *((reinterpret_cast<Word_t*>(&result)) + _nWords - 1) &= _tailMask;
-    std::cout << _size << " sizeof(T)=" << sizeof(T) << " _data="
-              << std::hex << *_data << " result=" << result << std::endl;  // XXX
-    //*((reinterpret_cast<Word_t*>(&result)) + _nWords - 1) <<= (nBiW - (_size%nBiW));
-    //std::cout << _size << " sizeof(T)=" << sizeof(T) << " _data="
-    //          << std::hex << *_data << " result=" << result << std::endl;  // XXX
-    //result >>= sizeof(T)*8 - _size;
+    *(reinterpret_cast<Word_t*>(&result)) &= _tailMask;
     return result;
 }
 

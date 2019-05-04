@@ -18,6 +18,17 @@ Bitset::Bitset(size_t length) : _size(0) {
     if(length) resize( length );
 }
 
+Bitset::Bitset(size_t length, unsigned long v) : Bitset(length) {
+    if( length < 8*sizeof(unsigned long) ) {
+        reset();
+        for( size_t i = 0; i < 8*sizeof(unsigned long); ++i ) {
+            set( i, v & (1 << i) );
+        }
+    } else {
+        _TODO_
+    }
+}
+
 Bitset::Word_t *
 Bitset::_alloc( size_t nw ) {
     # if 1
@@ -212,11 +223,11 @@ Bitset::to_string() const {
     std::string s(size()+1, '\0');
     for( size_t nw = 0; nw < _nWords-1; ++nw ) {
         for( size_t nb = 0; nb < nBiW; ++nb ) {
-            s[nw*nBiW + nb] = ((Word_t(1) << nb) & _data[nw] ? '1' : '0' );
+            s[size() - (nw*nBiW + nb) - 1] = ((Word_t(1) << nb) & _data[nw] ? '1' : '0' );
         }
     }
     for( size_t nb = 0; nb < _size%nBiW; ++nb ) {
-        s[(_nWords-1)*nBiW + nb] = ((Word_t(1) << nb) & _data[_nWords-1] ? '1' : '0' );
+        s[size() - ((_nWords-1)*nBiW + nb) - 1] = ((Word_t(1) << nb) & _data[_nWords-1] ? '1' : '0' );
     }
     return s;
 }
@@ -226,25 +237,31 @@ Bitset::to<std::string>() const {
     return to_string();
 }
 
-# if 0
+# if 1
 void
 Bitset::dump( std::ostream & os ) {
     if(empty()) return;
+    os << "bitset-" << this << ": ";
     for( size_t nw = 0; nw < _nWords-1; ++nw ) {
-        for( size_t nb = 0; nb < nBiW; ++nb ) {
+        for( int nb = nBiW - 1; nb >= 0 ; --nb ) {
             os << ((Word_t(1) << nb) & _data[nw] ? '1' : '0' );
         }
-        os << " ";
+        os << "(" << std::hex << _data[nw] << ") ";
     }
-    for( size_t nb = 0; nb < _size%nBiW; ++nb ) {
-        os << ((Word_t(1) << nb) & _data[_nWords-1] ? '1' : '0' );
+    for( signed long nb = nBiW - 1; nb >= 0 ; --nb ) {
+        if( _size%nBiW > (size_t) nb ) {
+            os << ((Word_t(1) << nb) & _data[_nWords-1] ? '1' : '0' );
+        } else {
+            os << ((Word_t(1) << nb) & _data[_nWords-1] ? 'i' : 'o' );
+        }
     }
+    os << "(" << std::hex << _data[_nWords - 1] << ")";
     // XXX:
-    os << ", _size = " << _size
+    os << ", _size = " << std::dec << _size
+       << ", sizeof(Word_t)*8 = " << nBiW
        << ", _nWords = " << _nWords
        << ", _tailMask = " << std::hex << (int) _tailMask << std::dec << "(" << (int) _tailMask << ")"
-       << std::endl;
-    os << "std::string -> " << to_string() << std::endl;
+       << ", std::string -> " << to_string() << std::endl;
 }
 # endif
 

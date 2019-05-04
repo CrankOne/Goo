@@ -88,13 +88,35 @@ GOO_UT_BGN( Bitset, "Dynamic bitset" ) {
             os << a << "^" << b << "=" << c << std::endl;
             _ASSERT(   c, "Bitwise-XOR result of full and empty set is true." );
         }
+        {
+            // stl bitset<N> behaves like:
+            // 0	00000	11111	31
+            // 1	00001	11110	30
+            // 2	00010	11101	29
+            // 3	00011	11100	28
+            // 4	00100	11011	27
+            // 5	00101	11010	26
+            // 6	00110	11001	25
+            // 7	00111	11000	24
+            // 8	01000	10111	23
+            // 9	01001	10110	22
+            // See e.g.: https://ru.cppreference.com/w/cpp/utility/bitset/to_ulong
+            for( unsigned long i = 0; i < 10; ++i ) {
+                Bitset b(5, i);
+                Bitset b_inverted = ~b;
+                os << i << '\t';
+                os << b << '\t';
+                os << b_inverted << '\t';
+                os << b_inverted.to_ulong() << '\n'; 
+            }
+        }
         {  // bitwise expression #1
             a.set(0, false);
             b = a;
             b.flip();
             c = a|b;
             os << a << "|" << b << "=" << c << std::endl;
-            _ASSERT( c.all(), "Bitwise expression #1 evaluated wrong." );
+            _ASSERT( c.all(), "Bitwise expression #1 gives wrong result." );
         }
         {  // bitwise expression #2
             a.resize(4);
@@ -108,8 +130,27 @@ GOO_UT_BGN( Bitset, "Dynamic bitset" ) {
             b.reset(3);
             c = a^b;
             os << a << "^" << b << "=" << c << std::endl;
-            os << c.to_ulong() << std::endl;
-            //_ASSERT( (unsigned long) 0x6 == c.to_ulong(), "Bitwise expression #2 evaluated wrong." );
+            //c.dump(os);
+            _ASSERT( (unsigned long) 0x6 == c.to_ulong()
+                   , "Bitwise expression #2 gives wrong result (ulong): %d != %lu."
+                   , 0x6, c.to_ulong() );
+            _ASSERT( (unsigned char) 0x6 == c.to<unsigned char>()
+                   , "Bitwise expression #2 gives wrong result (uchar)." );
+        }
+        {  // bitwise expression #3
+            goo::Bitset bs(sizeof(unsigned long)*8 - 2);
+            unsigned long ctrl = 0;
+            const char nBits[] = { 0, 3, 12, 17, 21, 27, -1 };
+            for( const char * c = nBits; -1 != *c; ++c ) {
+                ctrl |= (1 << *c);
+                bs.set( *c );
+            }
+            os << bs << " = " << std::hex << bs.to_ulong()
+               << ", ctrl = " << std::hex << ctrl << std::dec << std::endl;
+            //bs.dump(os);
+            _ASSERT( ctrl == bs.to_ulong()
+                   , "Bitwise expression #3 evaluated wrong (ulong"
+                   " control): %lu != %lu.", ctrl, bs.to_ulong() );
         }
     }
 } GOO_UT_END( Bitset )
