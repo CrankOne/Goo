@@ -105,23 +105,23 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
     # if 1
     {
         // Connect dices to 6-input sum
-        fw.precedes( sum6, "x1", dices + 0, "value");
-        fw.precedes( sum6, "x2", dices + 1, "value");
-        fw.precedes( sum6, "x3", dices + 2, "value");
-        fw.precedes( sum6, "x4", dices + 3, "value");
-        fw.precedes( sum6, "x5", dices + 4, "value");
-        fw.precedes( sum6, "x6", dices + 5, "value");
+        fw.precedes( dices + 0, "value", sum6, "x1" );
+        fw.precedes( dices + 1, "value", sum6, "x2" );
+        fw.precedes( dices + 2, "value", sum6, "x3" );
+        fw.precedes( dices + 3, "value", sum6, "x4" );
+        fw.precedes( dices + 4, "value", sum6, "x5" );
+        fw.precedes( dices + 5, "value", sum6, "x6" );
         // Connect dices and pairwise sums
-        fw.precedes( sum2 + 0, "a", dices + 1, "value" );
-        fw.precedes( sum2 + 0, "b", dices + 2, "value" );
-        fw.precedes( sum2 + 1, "a", dices + 4, "value" );
-        fw.precedes( sum2 + 1, "b", dices + 5, "value" );
-        fw.precedes( sum2 + 2, "a", dices + 0, "value" );
-        fw.precedes( sum2 + 2, "b", sum2  + 0, "c"     );
-        fw.precedes( sum2 + 3, "a", dices + 3, "value" );
-        fw.precedes( sum2 + 3, "b", sum2  + 1, "c"     );
-        fw.precedes( sum2 + 4, "a", sum2  + 2, "c"     );
-        fw.precedes( sum2 + 4, "b", sum2  + 3, "c"     );
+        fw.precedes( dices + 1, "value", sum2 + 0, "a" );
+        fw.precedes( dices + 2, "value", sum2 + 0, "b" );
+        fw.precedes( dices + 4, "value", sum2 + 1, "a" );
+        fw.precedes( dices + 5, "value", sum2 + 1, "b" );
+        fw.precedes( dices + 0, "value", sum2 + 2, "a" );
+        fw.precedes( sum2  + 0, "c"    , sum2 + 2, "b" );
+        fw.precedes( dices + 3, "value", sum2 + 3, "a" );
+        fw.precedes( sum2  + 1, "c"    , sum2 + 3, "b" );
+        fw.precedes( sum2  + 2, "c"    , sum2 + 4, "a" );
+        fw.precedes( sum2  + 3, "c"    , sum2 + 4, "b" );
         // Compare pairwise sum result with 6-sum
         fw.precedes( sum2 + 4, "c", cmp, "A" );
         fw.precedes( sum6    , "S", cmp, "B" );

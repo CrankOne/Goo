@@ -48,6 +48,7 @@ Framework::_build_values_map( const std::unordered_map<size_t, Link> & linksSet 
 	}
     # endif
 
+    // Create & fill links table
     rc = sqlite3_exec( db, "CREATE TABLE links ( "
                 "LinkID INT,"
                 "FromProc UNSIGNED BIG INT,"
@@ -72,6 +73,17 @@ Framework::_build_values_map( const std::unordered_map<size_t, Link> & linksSet 
     		sqlite3_free(zErrMsg);
             break;
         }
+    }
+    // Find splits:
+    rc = sqlite3_exec( db,
+        "SELECT LinkID, FromProc, FromPort, count(*)"
+        " FROM links"
+        " GROUP BY FromProc, FromPort"
+        " HAVING count(*) > 1"
+        " ORDER BY LinkID;", NULL, NULL, &zErrMsg );
+    if( SQLITE_OK != rc ) {
+        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+		sqlite3_free(zErrMsg);
     }
 
 	sqlite3_close(db);
