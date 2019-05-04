@@ -138,7 +138,7 @@ public:
     friend std::ostream & operator<<( std::ostream & os, const Bitset & bs ) {
         os << bs.to_string(); return os; }
 
-    void dump( std::ostream &);  // XXX: for debugging
+    //void dump( std::ostream &);  // XXX: for debugging
 };
 
 template<typename T> T

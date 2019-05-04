@@ -23,10 +23,8 @@ namespace dataflow {
 class Framework {
 protected:
     struct Link {
-        size_t id;
         dag::Node<iProcessor> & nf, & nt;
         typename iProcessor::Ports::const_iterator fp, tp;
-        size_t valueOffset;
     };
     /// Caches derived from _links & _nodes.
     struct Cache {
@@ -41,12 +39,11 @@ protected:
     const Cache & get_cache() const;
 private:
     std::unordered_set<dag::DAGNode*> _nodes;
-    std::unordered_set<Link *> _links;
+    std::unordered_map<size_t, Link> _links;
 
     mutable bool _isCacheValid;
     mutable Cache _cache;
     void _free_cache() const;
-    void _recache() const;
 
     /// Returns Node by processor pointer. If processor has not been added
     /// before, allocates new node.
@@ -58,6 +55,7 @@ private:
                      dag::Node<iProcessor> & a, const std::string & aPortName
                    , dag::Node<iProcessor> & b, const std::string & bPortName
                    );
+    static void _build_values_map( const std::unordered_map<size_t, Link> & );
 public:
     Framework();
 
@@ -65,7 +63,8 @@ public:
     size_t precedes( iProcessor * a, const std::string & aPortName
                    , iProcessor * b, const std::string & bPortName );
 
-    
+    // TODO: move under `protected':
+    void _recache() const;
 
     friend class Storage;
 };

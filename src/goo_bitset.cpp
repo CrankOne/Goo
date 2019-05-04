@@ -239,7 +239,7 @@ Bitset::to<std::string>() const {
     return to_string();
 }
 
-# if 1
+# if 0
 void
 Bitset::dump( std::ostream & os ) {
     if(empty()) return;

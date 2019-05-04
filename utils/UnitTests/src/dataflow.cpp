@@ -102,30 +102,31 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
     auto sum6 = new Sum6;
     auto sum2 = new Sum2 [5];
     auto cmp = new Compare();
-    # if 0
+    # if 1
     {
         // Connect dices to 6-input sum
-        fw.precedes( sum6, dices + 0 ).maps("value", "x1");
-        fw.precedes( sum6, dices + 1 ).maps("value", "x2");
-        fw.precedes( sum6, dices + 2 ).maps("value", "x3");
-        fw.precedes( sum6, dices + 3 ).maps("value", "x4");
-        fw.precedes( sum6, dices + 4 ).maps("value", "x5");
-        fw.precedes( sum6, dices + 5 ).maps("value", "x6");
+        fw.precedes( sum6, "x1", dices + 0, "value");
+        fw.precedes( sum6, "x2", dices + 1, "value");
+        fw.precedes( sum6, "x3", dices + 2, "value");
+        fw.precedes( sum6, "x4", dices + 3, "value");
+        fw.precedes( sum6, "x5", dices + 4, "value");
+        fw.precedes( sum6, "x6", dices + 5, "value");
         // Connect dices and pairwise sums
-        fw.precedes( sum2 + 0, dices + 1 ).maps("value", "a");
-        fw.precedes( sum2 + 0, dices + 2 ).maps("value", "b");
-        fw.precedes( sum2 + 1, dices + 4 ).maps("value", "a");
-        fw.precedes( sum2 + 1, dices + 5 ).maps("value", "b");
-        fw.precedes( sum2 + 2, dices + 0 ).maps("value", "a");
-        fw.precedes( sum2 + 2, sum2  + 0 ).maps("c",     "b");
-        fw.precedes( sum2 + 3, dices + 3 ).maps("value", "a");
-        fw.precedes( sum2 + 3, sum2  + 1 ).maps("c",     "b");
-        fw.precedes( sum2 + 4, sum2  + 2 ).maps("c",     "a");
-        fw.precedes( sum2 + 4, sum2  + 3 ).maps("c",     "b");
+        fw.precedes( sum2 + 0, "a", dices + 1, "value" );
+        fw.precedes( sum2 + 0, "b", dices + 2, "value" );
+        fw.precedes( sum2 + 1, "a", dices + 4, "value" );
+        fw.precedes( sum2 + 1, "b", dices + 5, "value" );
+        fw.precedes( sum2 + 2, "a", dices + 0, "value" );
+        fw.precedes( sum2 + 2, "b", sum2  + 0, "c"     );
+        fw.precedes( sum2 + 3, "a", dices + 3, "value" );
+        fw.precedes( sum2 + 3, "b", sum2  + 1, "c"     );
+        fw.precedes( sum2 + 4, "a", sum2  + 2, "c"     );
+        fw.precedes( sum2 + 4, "b", sum2  + 3, "c"     );
         // Compare pairwise sum result with 6-sum
-        fw.precedes( sum2 + 4, cmp ).maps("c", "A");
-        fw.precedes( sum6    , cmp ).maps("S", "B");
+        fw.precedes( sum2 + 4, "c", cmp, "A" );
+        fw.precedes( sum6    , "S", cmp, "B" );
     }
+    fw._recache();
     # endif
     delete [] dices;
     delete sum6;

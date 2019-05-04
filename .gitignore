@@ -29,3 +29,5 @@ CMakeFiles
 assets/buildsystems/FindGoo.cmake
 assets/buildsystems/goo.pc
 assets/buildsystems/GooConfig.cmake
+.idea/
+.cmake-build*
