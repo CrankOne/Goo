@@ -143,16 +143,22 @@ public:
 
 template<typename T> T
 Bitset::to() const {
+    // Note: to follow strict aliasing rule, we have to create a temporary copy
+    // of words array. Violating this rule causes optimized code to mess up the
+    // copying logic yielding malformed results.
     if( sizeof(T)*8 < _size )
         throw std::overflow_error("Bitset is too large.");
-    T result = 0;
+    Word_t result[ sizeof(T) > sizeof(Word_t) ? sizeof(T)/sizeof(Word_t) : 1 ];
+    bzero( result, sizeof(result) );
     for( size_t nw = 0; nw < _nWords; ++nw ) {
-        memcpy( reinterpret_cast<Word_t*>(&result) + nw
+        memcpy( result + nw
               , _data + nw
               , sizeof(Word_t) );
     }
-    *(reinterpret_cast<Word_t*>(&result)) &= _tailMask;
-    return result;
+    *result &= _tailMask;
+    T r;
+    memcpy( &r, result, sizeof(result) );
+    return r;
 }
 
 template<> std::string Bitset::to<std::string>() const;

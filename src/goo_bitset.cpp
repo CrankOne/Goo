@@ -19,10 +19,10 @@ Bitset::Bitset(size_t length) : _size(0) {
 }
 
 Bitset::Bitset(size_t length, unsigned long v) : Bitset(length) {
-    if( length < 8*sizeof(unsigned long) ) {
+    if( length <= 8*sizeof(unsigned long) ) {
         reset();
-        for( size_t i = 0; i < 8*sizeof(unsigned long); ++i ) {
-            set( i, v & (1 << i) );
+        for( size_t i = 0; i < size(); ++i ) {
+            set( i, (bool) (v & (1 << i)) );
         }
     } else {
         _TODO_
@@ -31,7 +31,7 @@ Bitset::Bitset(size_t length, unsigned long v) : Bitset(length) {
 
 Bitset::Word_t *
 Bitset::_alloc( size_t nw ) {
-    # if 1
+    # if 0
     auto d = new Word_t [nw];
     bzero( d, sizeof(Word_t)*nw );
     return d;
@@ -60,7 +60,7 @@ Bitset::~Bitset() {
 Bitset &
 Bitset::operator=(const Bitset & o) {
     this->resize(o._size);
-    memcpy( _data, o._data, o._nWords*sizeof(Word_t) );
+    memcpy( _data, o._data, _nWords*sizeof(Word_t) );
     return *this;
 }
 
@@ -111,13 +111,15 @@ Bitset::resize( size_t newSize ) {
     ++newNWords;
     // Set least-significant n bits to 0, others to 1 to obtain a tail
     // bit mask.
-    newTailMask = 0x0;  //std::numeric_limits<Word_t>::max();
+    newTailMask = 0x0;
     if( remnant ) {
         newTailMask = (Word_t(1) << remnant) - 1;
     }
+    // TODO: do not re-allocate block if newSize < _size;
     Word_t * newData = _alloc(newNWords);
     if( !empty() ) {
-        memcpy( newData, _data, newNWords > _nWords ? _nWords : newNWords );
+        memcpy( newData, _data
+              , newNWords > _nWords ? _nWords : newNWords );
         _delete(_data);
     }
     _data = newData;

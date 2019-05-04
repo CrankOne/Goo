@@ -139,6 +139,7 @@ GOO_UT_BGN( Bitset, "Dynamic bitset" ) {
         }
         {  // bitwise expression #3
             goo::Bitset bs(sizeof(unsigned long)*8 - 2);
+            bs.reset();
             unsigned long ctrl = 0;
             const char nBits[] = { 0, 3, 12, 17, 21, 27, -1 };
             for( const char * c = nBits; -1 != *c; ++c ) {
