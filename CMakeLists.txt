@@ -108,7 +108,6 @@ find_package( ZLIB  )
 find_package( Lzo   )
 find_package( BZip2 )
 find_package( Git   )
-find_package( SQLite3 )  # TODO: experimental
 find_program( GOO_GDB_EXEC      gdb     )
 find_program( GOO_GCORE_EXEC    gcore   )
 if( EM_STACK_UNWINDING )
@@ -267,9 +266,6 @@ target_include_directories( ${Goo_LIBRARY} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:include/goo> )
 target_include_directories( ${Goo_LIBRARY} SYSTEM PUBLIC ${LibIberty_INCLUDE_DIRS} )
-if( SQLITE3_FOUND )  # TODO: experimental
-  target_include_directories(${Goo_LIBRARY} SYSTEM PUBLIC ${SQLITE3_INCLUDE_DIRS})
-endif( SQLITE3_FOUND )
 target_compile_features( ${Goo_LIBRARY} PUBLIC
             c_variadic_macros
             cxx_constexpr
@@ -317,9 +313,6 @@ endif( LZO_FOUND )
 if( BZIP2_FOUND )
     target_link_libraries( ${Goo_LIBRARY} PUBLIC ${BZIP2_LIBRARIES} )
 endif( BZIP2_FOUND )
-if( SQLITE3_FOUND )
-    target_link_libraries( ${Goo_LIBRARY} PUBLIC ${SQLITE3_LIBRARIES} )
-endif( SQLITE3_FOUND )
 
 if( EM_STACK_UNWINDING )
     if( BFD_FOUND )

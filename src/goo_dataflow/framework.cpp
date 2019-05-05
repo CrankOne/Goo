@@ -1,11 +1,8 @@
 # include "goo_dataflow/framework.hpp"
 
-# include <sqlite3.h>
-
 namespace goo {
 namespace dataflow {
 
-# if ! SQLITE3_FOUND
 namespace aux {
 struct gfw_link_pair_hash {
     typedef goo::dag::Node<goo::dataflow::iProcessor> * T1;
@@ -17,79 +14,6 @@ struct gfw_link_pair_hash {
     }
 };
 }  // namespace aux
-# else
-void
-Framework::_build_values_map( const std::unordered_map<size_t, Link> & linksSet ) {
-	sqlite3 * db;
-	char * zErrMsg = 0;
-    char pSQLVar[1024];
-	int rc;
-	rc = sqlite3_open( "/tmp/links.sqlite3", &db );
-	if( rc ) {
-		emraise( badState, "Unable to open sqlite3 database; rc=%d.", rc );
-	}
-
-    # if 0
-	pSQL[0] = "create table myTable (FirstName varchar(30), LastName varchar(30), Age smallint, Hometown varchar(30), Job varchar(30))";
-	pSQL[1] = "insert into myTable (FirstName, LastName, Age, Hometown, Job) values ('Peter', 'Griffin', 41, 'Quahog', 'Brewery')";
-	pSQL[2] = "insert into myTable (FirstName, LastName, Age, Hometown, Job) values ('Lois', 'Griffin', 40, 'Newport', 'Piano Teacher')";
-	pSQL[3] = "insert into myTable (FirstName, LastName, Age, Hometown, Job) values ('Joseph', 'Swanson', 39, 'Quahog', 'Police Officer')";
-	pSQL[4] = "insert into myTable (FirstName, LastName, Age, Hometown, Job) values ('Glenn', 'Quagmire', 41, 'Quahog', 'Pilot')";
-	pSQL[5] = "select * from myTable";
-	pSQL[6] = "delete from myTable"; 
-	pSQL[7] = "drop table myTable";
-	for(size_t i = 0; i < sizeof(pSQL)/sizeof(*pSQL); ++i) {
-		rc = sqlite3_exec(db, pSQL[i], NULL, 0, &zErrMsg);
-		if( rc != SQLITE_OK ) {
-            std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
-			sqlite3_free(zErrMsg);
-			break;
-		}
-	}
-    # endif
-
-    // Create & fill links table
-    rc = sqlite3_exec( db, "CREATE TABLE links ( "
-                "LinkID INT,"
-                "FromProc UNSIGNED BIG INT,"
-                "FromPort VARCHAR(128),"
-                "ToProc UNSIGNED BIG INT,"
-                "ToPort VARCHAR(128),"
-                "Value INTEGER"
-            " )", NULL, NULL, &zErrMsg );
-    if( SQLITE_OK != rc ) {
-        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
-		sqlite3_free(zErrMsg);
-    }
-    for( auto lp : linksSet ) {
-        snprintf( pSQLVar, sizeof(pSQLVar)
-                , "INSERT INTO links (LinkID, FromProc, FromPort, ToProc, ToPort)"
-                " VALUES (%zu, %p, '%s', %p, '%s')"
-                , lp.first
-                , &(lp.second.nf), lp.second.fp->first.c_str()
-                , &(lp.second.nt), lp.second.tp->first.c_str() );
-        if( SQLITE_OK != sqlite3_exec( db, pSQLVar, NULL, NULL, &zErrMsg ) ) {
-            std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
-    		sqlite3_free(zErrMsg);
-            break;
-        }
-    }
-    // Find splits:
-    rc = sqlite3_exec( db,
-        "SELECT LinkID, FromProc, FromPort, count(*)"
-        " FROM links"
-        " GROUP BY FromProc, FromPort"
-        " HAVING count(*) > 1"
-        " ORDER BY LinkID;", NULL, NULL, &zErrMsg );
-    if( SQLITE_OK != rc ) {
-        std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
-		sqlite3_free(zErrMsg);
-    }
-
-	sqlite3_close(db);
-}
-
-# endif
 
 Framework::Framework() : _isCacheValid(false) {}
 
@@ -177,7 +101,7 @@ Framework::_recache() const {
     //
     //  To accomplish this we currently involve some SQL routines... That have
     //  to be, perhaps, substituted with pure C++ algorithm further.
-    # if ! SQLITE3_FOUND
+
     std::unordered_map<std::pair< dag::Node<iProcessor>*
                                 , typename iProcessor::Ports::const_iterator>
                       , size_t, aux::gfw_link_pair_hash> joinValues
@@ -185,9 +109,9 @@ Framework::_recache() const {
                                                        , standaloneValues
                                                        ;
 
-    for( auto lPtr : _links ) {
+    for( auto & l : _links ) {
         auto from = std::pair< dag::Node<iProcessor>*
-                             , typename iProcessor::Ports::const_iterator>( &(lPtr->nf), lPtr->fp )
+                             , typename iProcessor::Ports::const_iterator>( &(l.second.nf), l.second.fp )
            //,   to = std::pair< dag::Node<iProcessor>*
            //                  , typename iProcessor::Ports::const_iterator>( &(lPtr->nf), lPtr->fp )
            ;
@@ -217,9 +141,6 @@ Framework::_recache() const {
             }
         }
     }
-    # else
-    _build_values_map( _links );
-    # endif
 }
 
 const Framework::Cache &
