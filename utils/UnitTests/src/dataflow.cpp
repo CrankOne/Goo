@@ -36,7 +36,7 @@ protected:
     }
 public:
     Dice() {
-        port<int>("value");
+        out_port<int>("value");
     }
 };
 
@@ -51,10 +51,10 @@ protected:
     }
 public:
     Sum6() {
-        port<int>("x1");    port<int>("x2");    port<int>("x3");
-        port<int>("x4");    port<int>("x5");    port<int>("x6");
+        in_port<int>("x1"); in_port<int>("x2"); in_port<int>("x3");
+        in_port<int>("x4"); in_port<int>("x5"); in_port<int>("x6");
 
-        port<int>("S");
+        out_port<int>("S");
     }
 };
 
@@ -67,9 +67,9 @@ protected:
     }
 public:
     Sum2() {
-        port<int>("a");    port<int>("b");
+        in_port<int>("a");    in_port<int>("b");
 
-        port<int>("c");
+        out_port<int>("c");
     }
 };
 
@@ -88,7 +88,7 @@ protected:
     }
 public:
     Compare() : _match(0), _mismatch(0) {
-        port<int>("A");    port<int>("B");
+        in_port<int>("A");    in_port<int>("B");
     }
 
     size_t total() const { return _match + _mismatch; }

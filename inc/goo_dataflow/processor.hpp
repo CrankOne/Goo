@@ -16,31 +16,45 @@ namespace dataflow {
 class ValuesMap;
 class iProcessor;
 class Tier;
-class Link;
 
-struct ValueTypeInfo {
-    const std::type_info * typeInfo;
-    size_t typeSize;
+class PortInfo {
+public:
+    /// I/O flags and size to be encoded in this type.
+    typedef size_t Features_t;
+private:
+    constexpr static Features_t flag_inputPort = 0x1;
+    constexpr static Features_t flag_outputPort = 0x2;
+
+    const std::type_info * _typeInfoPtr;
+    Features_t _features;
+public:
+    PortInfo( const std::type_info & ti
+            , size_t size_
+            , bool isI, bool isO );
+
+    size_t data_size() const {
+        return (_features & (~(flag_inputPort | flag_outputPort)) >> 2); }
+    bool is_input() const  { return _features & flag_inputPort; }
+    bool is_output() const { return _features & flag_outputPort; }
+    const std::type_info & type() const { return *_typeInfoPtr; }
 };
 
 template<typename T>
 struct Traits {
-    static ValueTypeInfo type_info() {
-        return ValueTypeInfo{ &(typeid(T)), sizeof(T)};
+    static PortInfo type_info( bool isInput, bool isOutput ) {
+        return PortInfo( typeid(T), sizeof(T), isInput, isOutput );
     }
 };
 
 /// Processing status code.
 typedef uint8_t PSC;
 
+/// Represents a single value entry within variables map.
 class ValueEntry {
 protected:
     void * _data;
-    Link * _link;
-    size_t _dataSize;
 public:
     template<typename T> T as() {
-        //assert( typeid(T) == _link->from.type() );
         return *reinterpret_cast<T*>(_data);
     }
 
@@ -91,7 +105,7 @@ public:
 
 class iProcessor {
 public:
-    typedef std::unordered_map<std::string, ValueTypeInfo> Ports;
+    typedef std::unordered_map<std::string, PortInfo> Ports;
 private:
     Ports _ports;
 protected:
@@ -100,35 +114,30 @@ public:
     PSC eval( ValuesMap & vm ) {
         return _V_eval(vm);
     }
-    /// Creates new typed port.
-    template<typename T> void port( const std::string & portName ) {
-        auto ir = _ports.emplace( portName, Traits<T>::type_info() );
+    /// Creates new typed I/O port.
+    template<typename T> void
+    port( const std::string & portName
+        , bool isI=true
+        , bool isO=true ) {
+        auto ir = _ports.emplace( portName
+                                , Traits<T>::type_info( isI, isO ) );
         if( !ir.second ) {
             emraise(nonUniq, "Port named \"%s\" already exists in processor.")
         }
     }
 
+    template<typename T> void
+    in_port( const std::string & portName ) {
+        port<T>( portName, true, false );
+    }
+
+    template<typename T> void
+    out_port( const std::string & portName ) {
+        port<T>( portName, false, true );
+    }
+
     const Ports & ports() const { return _ports; }
 };
-
-# if 0
-// TODO: this class will be probably further extended much to support
-// description of advanced mechanisms of data transfer (by references, etc).
-struct Link {
-private:
-    typename iProcessor::Ports::const_iterator _from, _to;
-public:
-    Link( iProcessor::Ports::const_iterator from_
-        , iProcessor::Ports::const_iterator to_ ) : _from(from_), _to(to_) {}
-
-    /// Returns data size in bytes to be reserved in thread-local storage.
-    virtual size_t data_size( Tier & tier, size_t nProc );
-    //virtual void free( std::vector<uint8_t> &, Tier &, size_t ) = 0;
-    //
-    typename iProcessor::Ports::const_iterator from() const { return _from; }
-    typename iProcessor::Ports::const_iterator to() const { return _to; }
-};
-# endif
 
 }  // namespace dataflow
 }  // namespace goo
