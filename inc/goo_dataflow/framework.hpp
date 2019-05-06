@@ -66,6 +66,8 @@ public:
     // TODO: move under `protected':
     void _recache() const;
 
+    void generate_dot_graph( std::ostream & ) const;
+
     friend class Storage;
 };
 

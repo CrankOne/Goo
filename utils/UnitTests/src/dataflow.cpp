@@ -23,6 +23,8 @@
 # include "utest.hpp"
 # include "goo_dataflow/framework.hpp"
 
+# include <fstream>  // XXX file i/o for .dot debug
+
 namespace gdf = goo::dataflow;
 
 // TODO: make it stateless
@@ -126,6 +128,14 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
         fw.precedes( sum2 + 4, "c", cmp, "A" );
         fw.precedes( sum6    , "S", cmp, "B" );
     }
+    # if 1
+    fw.generate_dot_graph(os);
+    # else
+    std::ofstream dotF;
+    dotF.open("/tmp/one.dot");
+    fw.generate_dot_graph(dotF);
+    dotF.close();
+    # endif
     fw._recache();
     # endif
     delete [] dices;

@@ -1,9 +1,14 @@
 # include "goo_dataflow/framework.hpp"
 
+# include <iomanip>
+
 namespace goo {
 namespace dataflow {
 
 namespace aux {
+typedef std::pair< goo::dag::Node<goo::dataflow::iProcessor> *
+                 , typename goo::dataflow::iProcessor::Ports::const_iterator> BoundPort_t;
+
 // This hashing function probably does not provide hash being unique enough to
 // rely on it as collision-free, though providing us some boost with
 // unique-finding routines need in Framework::recache() method. Moreover,
@@ -11,12 +16,22 @@ namespace aux {
 struct gfw_link_pair_hash {
     typedef goo::dag::Node<goo::dataflow::iProcessor> * T1;
     typedef typename goo::dataflow::iProcessor::Ports::const_iterator T2;
-    size_t operator()( const std::pair<T1, T2> & p ) const {
+    size_t operator()( const BoundPort_t & p ) const {
         return std::hash<T1>()(p.first)
              ^ std::hash<std::string>()(p.second->first)
              ;
     }
 };
+
+struct gfw_link_pair_less {
+    bool operator()( const BoundPort_t & a
+                   , const BoundPort_t & b ) const {
+        return (a.first < b.first)
+            || (a.first == b.first && a.second->first.compare(b.second->first) < 0)
+            ;
+    }
+};
+
 }  // namespace aux
 
 Framework::Framework() : _isCacheValid(false) {}
@@ -114,104 +129,143 @@ Framework::_recache() const {
     // Goo currently does not support `join' type of links. It seems to be
     // redundant for framework built in assumption of single message
     // propagation.
-    typedef std::pair< dag::Node<iProcessor>*
-                     , typename iProcessor::Ports::const_iterator> BoundPort_t;
-    std::unordered_multiset< BoundPort_t
-                           , aux::gfw_link_pair_hash> bySrc
-                                                    , byDst;
-    for( auto & l : _links ) {
-        BoundPort_t src( &(l.second.nf), l.second.fp )
-                  , dst( &(l.second.nt), l.second.tp )
-                  ;
-        bySrc.insert( src );
-        byDst.insert( dst );
-    }
-    // Assure we have no `join' connection type
-    for( auto & dstBucket : byDst ) {
-        // Due to the fact our hashing function is not collision-free, we can
-        // not rely solely on buckets and, thus, have to check for uniqueness
-        // additionally within each bucket. If we suspect collision here, make
-        // direct comparison of entries within a bucket.
-        if( 1 < byDst.count( dstBucket ) ) {
-            // Iterate over some entry in bucket first time
-            for( auto it1 = byDst.begin( byDst.bucket(dstBucket) )
-               ; byDst.end( byDst.bucket(dstBucket) ) != it1; ++it1 ) {
-                // Iterate over some entry in bucket second time
-                for( auto it2 = byDst.begin( byDst.bucket(dstBucket) )
-                   ; byDst.end( byDst.bucket(dstBucket) ) != it2; ++it2 ) {
-                    // 
-                    if( it1 != it2
-                     && it1->first == it2->first
-                     && it1->second == it2->second ) {
-                        emraise( malformedArguments, "Join link condition"
-                                " revealed: at least two processors have their"
-                                " outputs connected to input \"%s\" of"
-                                " processor %p."
-                               , it1->second->first.c_str()
-                               , &(it1->first->data()) );
-                    }
-                }  // end of it2 loop
-            }  // end of it1 loop
-            std::cout << "XXX FALSE join condition suppressed." << std::endl;  // XXX
-        } // end of bucket.count() > 1 if-clause
-    } // end of by-bucket iteration
-    // The `bySrc' set gives us exactly the set of values to allocate for
-    // further usage
-    std::vector<BoundPort_t> uniquePorts;
-    for( auto & srcBucket : bySrc ) {
-        // Now we have to count true unique src-ports to figure out the
-        // proper storage layout (each unique src port have to cover a unique
-        // value). If there are collisions (entries with matching hash, but
-        // with distinct processor-port values), they have to be re-considered.
-        if( 1 < bySrc.count( srcBucket ) ) {
-            // Iterate over some entry in bucket first time
-            for( auto it1 = bySrc.begin( bySrc.bucket(srcBucket) )
-               ; bySrc.end( bySrc.bucket(srcBucket) ) != it1; ++it1 ) {
-                // Iterate over some entry in bucket second time
-                for( auto it2 = bySrc.begin( bySrc.bucket(srcBucket) )
-                   ; bySrc.end( bySrc.bucket(srcBucket) ) != it2; ++it2 ) {
-                    // That's a collision
-                    if( it1->first != it2->first
-                     || it1->second != it2->second ) {
-                        //std::cerr << "XXX collision: "
-                        //          << &(it1->first->data()) << ":\"" << it1->second->first << "\" vs "
-                        //          << &(it2->first->data()) << ":\"" << it2->second->first << "\"" << std::endl
-                        //          ;
-                        //_TODO_  // collision revealed
-                    }
-                }  // end of it2 loop
-            }  // end of it1 loop
-            //std::cout << "XXX " << bySrc.count( srcBucket ) << " links on "
-            //          << &(bySrc.begin( bySrc.bucket(srcBucket) )->first->data()) << ":\""
-            //          <<   bySrc.begin( bySrc.bucket(srcBucket) )->second->first << "\"."
-            //          << std::endl;
-        }
-        // Push back port description
-        uniquePorts.push_back( *bySrc.begin( bySrc.bucket(srcBucket) ) );
-        //std::cout << "XXX single link on "
-        //          << &(bySrc.begin( bySrc.bucket(srcBucket) )->first->data()) << ":\""
-        //          <<   bySrc.begin( bySrc.bucket(srcBucket) )->second->first << "\"."
-        //          << std::endl;
-    }
-
-    size_t dataOffset = 0;
-
-    // Compute out the worker storage and tiers structures
-    std::list<Tier *> tiers;
-    for(auto tierNodes : _cache.order) {
-        tiers.push_back(new Tier(tierNodes));
-        size_t nodeNum = 0;
-        for(auto dagNodePtr : tierNodes) {
-            auto nodePtr = static_cast<dag::Node<iProcessor>*>(dagNodePtr);
-            iProcessor & p = nodePtr->data();
-            for( auto portPtr : p.ports() ) {
-                // Get links for this port!
-                //dataSize += portPtr->second.typeSize;
-                //slotPtr->name()
-                //slotPtr->type()
+    
+    std::multimap< aux::BoundPort_t
+                 , size_t
+                 , aux::gfw_link_pair_less > bySrcLinked
+                                           , byDstLinked
+                                           ;
+    std::set<aux::BoundPort_t, aux::gfw_link_pair_less> bySrcAll, byDstAll;
+    // Fill source port -> LinkID map
+    std::transform( _links.begin(), _links.end()
+                  , std::inserter(bySrcLinked, bySrcLinked.begin())
+                  , [](const std::pair<size_t, Link> & p )
+                    { return std::pair<aux::BoundPort_t, size_t>
+                            ( aux::BoundPort_t(&(p.second.nf), p.second.fp)
+                            , p.first
+                            ); }
+                  );
+    // Fill dest port -> LinkID map
+    std::transform( _links.begin(), _links.end()
+                  , std::inserter(byDstLinked, byDstLinked.begin())
+                  , [](const std::pair<size_t, Link> & p )
+                    { return std::pair<aux::BoundPort_t, size_t>
+                            ( aux::BoundPort_t(&(p.second.nf), p.second.fp)
+                            , p.first
+                            ); }
+                  );
+    // Fill sets of source/dest links sorted by i/o feature (sets may
+    // intersect)
+    for( auto dagNPtr : _nodes ) {
+        auto nPtr = static_cast<dag::Node<iProcessor>*>(dagNPtr);
+        for( auto portIt = nPtr->data().ports().cbegin()
+           ; portIt != nPtr->data().ports().cend(); ++portIt ) {
+            assert( portIt->second.is_input() || portIt->second.is_output() );
+            if( portIt->second.is_output() ) {
+                bySrcAll.insert( aux::BoundPort_t( nPtr, portIt ) );
+            }
+            if( portIt->second.is_input() ) {
+                byDstAll.insert( aux::BoundPort_t( nPtr, portIt ) );
             }
         }
     }
+    // Initialize data layout map: each output (or bidirectional) port has to
+    // have it's own physical data representation
+    size_t dataOffset = 0
+         , dataSize;
+    std::map<aux::BoundPort_t, size_t, aux::gfw_link_pair_less> layoutMap;
+
+    //std::cout << std::endl
+    //          << " Offset | Output port       | nLinks | size" << std::endl
+    //          << "--------+-------------------+--------+--------" << std::endl; // XXX
+    for( auto outPortPair : bySrcAll ) {
+        dataSize = outPortPair.second->second.data_size();
+        layoutMap.emplace( outPortPair, dataOffset );
+        //{  // debug out, XXX
+        //    std::cout << std::setw(7) << dataOffset << " | "
+        //              << std::setw(9) << outPortPair.first << "::"
+        //              << std::left << std::setw(6) << outPortPair.second->first << std::right << " | "
+        //              << std::setw(6) << bySrcLinked.count(outPortPair) << " | "
+        //              << std::setw(6) << std::left << dataSize << std::right
+        //              << std::endl;
+        //}
+        dataOffset += dataSize;
+    }
+}
+
+void
+Framework::generate_dot_graph( std::ostream & os ) const {
+    os << "digraph g {" << std::endl;
+    for( auto dagNodePtr : _nodes ) {
+        auto n = static_cast<const dag::Node<iProcessor>*>(dagNodePtr);
+        std::map<std::string, PortInfo> inPorts, outPorts;
+        for( auto pp : n->data().ports() ) {
+            if( pp.second.is_input() ) {
+                inPorts.insert(pp);
+            }
+            if( pp.second.is_output() ) {
+                outPorts.insert(pp);
+            }
+        }
+        os << " node" << dagNodePtr << " [ shape=component, margin=0, label=<"
+           << "<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"0\" CELLPADDING=\"0\">" << std::endl;
+        if( ! inPorts.empty() ) {
+            os << "  <TR>" << std::endl
+               << "   <TD>" << std::endl
+               << "    <TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"0\">" << std::endl
+               << "     <TR>" << std::endl;
+            {  // input ports
+                for( auto pp : inPorts ) {
+                    if( ! pp.second.is_input() ) continue;
+                    // TODO BGCOLOR="red" if not connected, "grey" if not connected
+                    // and optional
+                    os << "      <TD SIDES=\"R\" PORT=\"" << pp.first << "\"><FONT POINT-SIZE=\"10\">"
+                       << pp.first
+                       << "</FONT></TD>" << std::endl;
+                }
+            }
+            os << "     </TR>" << std::endl
+               << "    </TABLE>" << std::endl
+               << "   </TD>" << std::endl
+               << "  </TR>" << std::endl;
+        }
+        os << "  <TR>" << std::endl;
+        {  // processor credentials
+            os << "   <TD BORDER=\"1\" ALIGN=\"CENTER\" CELLPADDING=\"3\">"
+               << "<U>" << typeid(n->data()).name() << "</U><BR/>"
+               << "<B>" << dagNodePtr << "</B><BR/>"  // TODO: label, if has
+               << &(n->data())
+               << "</TD>" << std::endl;
+        }
+        os << "  </TR>" << std::endl;
+        if( ! outPorts.empty() ) {
+            os << "  <TR>" << std::endl
+               << "   <TD>" << std::endl
+               << "    <TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"0\">" << std::endl
+               << "     <TR>" << std::endl;
+            {  // output ports
+                for( auto pp : n->data().ports() ) {
+                    if( ! pp.second.is_output() ) continue;
+                    // TODO BGCOLOR="grey" if not connected
+                    os << "      <TD SIDES=\"R\" PORT=\"" << pp.first << "\"><FONT POINT-SIZE=\"10\">"
+                       << pp.first
+                       << "</FONT></TD>" << std::endl;
+                }
+            }
+            os << "     </TR>" << std::endl
+               << "    </TABLE>" << std::endl
+               << "   </TD>" << std::endl
+               << "  </TR>" << std::endl;
+        }
+        os << " </TABLE>>];" << std::endl;
+    }
+    for( auto linkPair : _links ) {
+        const Link & l = linkPair.second;
+        os << " node" << &(l.nf) << ":" << l.fp->first << ":s -> "
+           << "node" << &(l.nt) << ":" << l.tp->first << ":n;"
+           << std::endl;
+    }
+    os << "}" << std::endl;
 }
 
 const Framework::Cache &
