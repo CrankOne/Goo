@@ -157,7 +157,7 @@ Bitset::to() const {
     }
     *result &= _tailMask;
     T r;
-    memcpy( &r, result, sizeof(result) );
+    memcpy( &r, result, sizeof(T) );
     return r;
 }
 
