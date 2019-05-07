@@ -16,6 +16,7 @@ namespace dataflow {
 class ValuesMap;
 class iProcessor;
 class Tier;
+class Storage;
 
 class PortInfo {
 public:
@@ -51,14 +52,17 @@ typedef uint8_t PSC;
 
 /// Represents a single value entry within variables map.
 class ValueEntry {
-protected:
+private:
     void * _data;
+protected:
+    ValueEntry( void * dataPtr ) : _data(dataPtr) {}
 public:
     template<typename T> T as() {
         return *reinterpret_cast<T*>(_data);
     }
 
-    friend class ::goo::dataflow::ValuesMap;
+    friend class ValuesMap;
+    friend class Storage;
 };
 
 /// Represents the values set, that processor operates. Built by worker
@@ -86,6 +90,8 @@ protected:
         # endif
         return it;
     }
+    /// Emplaces value entry with given name. TODO: protect it from users code.
+    void add_value_entry( const std::string &, ValueEntry );
 public:
     template<typename T> void
     set( const std::string & vName
@@ -99,8 +105,7 @@ public:
         return *reinterpret_cast<T*>(it->second._data);
     }
     
-    /// Emplaces value entry with given name. TODO: protect it from users code.
-    void _add_value_entry( const std::string &, ValueEntry );
+    friend class Storage;
 };
 
 class iProcessor {

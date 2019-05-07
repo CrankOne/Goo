@@ -7,6 +7,9 @@
 namespace goo {
 namespace dataflow {
 
+class Worker;
+class Storage;
+
 /**@brief Represents a complex data processing algorithm.
  * @class Framework
  *
@@ -57,7 +60,8 @@ protected:
         std::set<BoundPort_t, Cache::BoundLinkLess> bySrcAll
                                                   , byDstAll
                                                   ;
-        std::map<Cache::BoundPort_t, size_t, Cache::BoundLinkLess> layoutMap;
+        // Index keeps linkID vs offset.
+        std::unordered_map<size_t, size_t> layoutMap;
     };
     const Cache & get_cache() const;
 private:
@@ -133,6 +137,7 @@ public:
     void generate_dot_graph( std::ostream & ) const;
 
     friend class Storage;
+    friend class Worker;
 };
 
 }  // ::goo::dataflow

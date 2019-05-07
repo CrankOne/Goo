@@ -4,28 +4,65 @@
 namespace goo {
 namespace dataflow {
 
-Storage::Storage( const Framework::Cache & fwCache ) {
+Storage::Storage( const Framework::Cache & fwc ) {
+    _vms = new std::vector<ValuesMap> [fwc.tiers.size()];
     // Allocate storage according to structure provided by framework's cache
-    //for( auto link )
-}
-
-void
-Storage::build_variables_map( ValuesMap & vm
-                            , const Tier & tier
-                            , size_t nProcessor ) {
-    for( auto port : tier[nProcessor]->data().ports() ) {
-        // We use name from the port to assure that processor will receive the
-        // entry named exact as it was desired.
-        //vm._add_value_entry( port->first
-        //                   , ValueEntry{ dataPtr
-        //                               , linkPtr } );
+    size_t nTier = 0;
+    // * in each tier
+    for( auto tierPtr : fwc.tiers ) {
+        _vms[nTier].resize(tierPtr->size());
+        size_t nProc = 0;
+        // * for each processor
+        for( auto nodePtr : *tierPtr ) {
+            ValuesMap & vm = _vms[nTier][nProc];
+            // * build the values map entries to hold the data pointer
+            for( auto portIt = nodePtr->data().ports().cbegin()
+               ; nodePtr->data().ports().cend() != portIt
+               ; ++portIt) {
+                size_t linkID;
+                Framework::Cache::BoundPort_t bp( nodePtr, portIt );
+                if( portIt->second.is_input() ) {
+                    auto linkIt = fwc.byDstLinked.find( bp );
+                    if( fwc.byDstLinked.end() == linkIt) {
+                        emraise( badState, "Input port %p:\"%s\" does not"
+                                " refer to any link in DAG."
+                                , nodePtr, portIt->first.c_str() );
+                    }
+                    linkID = linkIt->second;
+                } else if( portIt->second.is_output() ) {
+                    auto linkIt = fwc.bySrcLinked.find( bp );
+                    if( fwc.bySrcLinked.end() == linkIt) {
+                        // TODO: turn in warning?
+                        emraise( badState, "Output port %p:\"%s\" does not"
+                                " refer to any link in DAG."
+                                , nodePtr, portIt->first.c_str() );
+                    }
+                    linkID = linkIt->second;
+                }
+                auto layoutIt = fwc.layoutMap.find( linkID );
+                if( fwc.layoutMap.end() == layoutIt ) {
+                    emraise( badState, "Framework data layout map does not"
+                            " provide offset value for link %zu"
+                            " (port %p:\"%s\")."
+                            , linkID, nodePtr, portIt->first.c_str() );
+                }
+                vm.add_value_entry( portIt->first
+                                  , ValueEntry(this->data() + layoutIt->second) );
+            }
+            ++nProc;
+        }
+        ++nTier;
     }
 }
 
-void
-Storage::free_values_map( ValuesMap & vm
-                        , const Tier & tier
-                        , size_t nProcessor ) {
+Storage::~Storage() {
+    delete [] _vms;
+}
+
+ValuesMap &
+Storage::values_map_for( size_t tierNo
+                       , size_t processorNo ) {
+    return _vms[tierNo][processorNo];
 }
 
 // Worker
@@ -33,32 +70,34 @@ Storage::free_values_map( ValuesMap & vm
 
 //Worker::Worker() {}
 
-# if 0
 void
 Worker::run() {
     // Allocate storage
-    Storage context( _dwRef );
+    Storage context( _fwRef.get_cache() );
     size_t tierCount = 0;
-    for( auto & tier : tiers ) {
+    for( auto tierPtr : _fwRef.get_cache().tiers ) {
+        auto & tier = *tierPtr;
         // Bitmask reflecting one-to-one bits for processing
-        Bitset toProcess( tier.size );
+        Bitset toProcess( tier.size() );
         toProcess.set();
         while( toProcess.any() ) {
-            size_t nProcCurrent = tier.borrow_one();
-            // Retrieve the data
-            ValuesMap vm;
-            context.build_values_map( vm, tier, nProcCurrent );
+            dag::Node<iProcessor> * nPtr;
+            size_t nProcCurrent = tier.borrow_one( toProcess, nPtr );
             // Here the actual processing goes
-            tier[nProcCurrent].eval(vm);
+            //try {
+                nPtr->data().eval(
+                        context.values_map_for( tierCount, nProcCurrent )
+                    );
+            //} catch( std::exception & e ) {
+            //  ... TODO
+            //}
             // Release the processor, drop "interest" bit
-            tm.set_free(nProcCurrent);
-            context.free_values_map( vm, tier, nProcCurrent );
-            toProcess.clear( nProcCurrent );
+            tier.set_free(nProcCurrent);
+            toProcess.reset( nProcCurrent );
         }
         assert( toProcess.none() );  // assure all done
     }
 }
-# endif
 
 # if 0
 // Testing fixture

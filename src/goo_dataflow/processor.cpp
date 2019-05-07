@@ -12,7 +12,7 @@ PortInfo::PortInfo( const std::type_info & ti
 }
 
 void
-ValuesMap::_add_value_entry( const std::string & nm
+ValuesMap::add_value_entry( const std::string & nm
                            , ValueEntry ve ) {
     _values.emplace( nm, ve );
 }

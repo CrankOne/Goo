@@ -54,9 +54,9 @@ protected:
     /// available.
     size_t borrow_one( const Bitset &, dag::Node<iProcessor> *& );
 
-    friend class ::goo::dataflow::Worker;
-    friend class ::goo::dataflow::Framework;
-    friend class ::goo::dataflow::Storage;
+    friend class Worker;
+    friend class Framework;
+    friend class Storage;
 };
 
 }  // namespace ::goo::dataflow

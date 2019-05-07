@@ -18,16 +18,15 @@ namespace dataflow {
  * ...
  * */
 class Storage : public std::vector<uint8_t> {
+private:
+    std::vector<ValuesMap> * _vms;
 protected:
     Storage( const Framework::Cache & );
+    ~Storage();
     /// Builds variables map for certain processor in certain tier.
-    void build_variables_map( ValuesMap & vm
-                            , const Tier & tier
-                            , size_t nProcessor );
-    /// Called to free variables map for certain processor in certain tier.
-    void free_values_map( ValuesMap & vm
-                        , const Tier & tier
-                        , size_t nProcessor );
+    ValuesMap & values_map_for( size_t tierNo, size_t processorNo );
+
+    friend class Worker;
 };
 
 /** A worker constitues thread-local context to be utilized during graph

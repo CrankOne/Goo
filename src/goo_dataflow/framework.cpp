@@ -197,7 +197,8 @@ Framework::_recache() const {
     //          << "--------+-------------------+--------+--------" << std::endl; // XXX
     for( auto outPortPair : _cache.bySrcAll ) {
         dataSize = outPortPair.second->second.data_size();
-        _cache.layoutMap.emplace( outPortPair, dataOffset );
+        //bySrcLinked.find( it. );
+        //_TODO_ //_cache.layoutMap.emplace( outPortPair, dataOffset );
         //{  // debug out, XXX
         //    std::cout << std::setw(7) << dataOffset << " | "
         //              << std::setw(9) << outPortPair.first << "::"
@@ -299,8 +300,9 @@ Framework::generate_dot_graph( std::ostream & os ) const {
     for( auto linkPair : _links ) {
         const Link & l = linkPair.second;
         os << " node" << &(l.nf) << ":" << l.fp->first << ":s -> "
-           << "node" << &(l.nt) << ":" << l.tp->first << ":n [label=\""
-           << _cache.layoutMap[Cache::BoundPort_t(&l.nf, l.fp)]
+           << "node" << &(l.nt) << ":" << l.tp->first << ":n"
+           //<< " [label=\""
+           //<< _cache.layoutMap[Cache::BoundPort_t(&l.nf, l.fp)]
            << "\"];" << std::endl;
     }
     os << "}" << std::endl;
