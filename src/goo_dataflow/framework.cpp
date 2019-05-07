@@ -124,36 +124,15 @@ Framework::_free_cache() const {
     _cache.tiers.clear();
     _cache.bySrcLinked.clear();
     _cache.byDstLinked.clear();
-    _cache.bySrcAll.clear();
-    _cache.byDstAll.clear();
+    _cache.layoutMap.clear();
+    _cache.dataSize = 0;
 }
 
 void
 Framework::_recache() const {
     _free_cache();
-
     // Compute order of execution
     _cache.order = dag::dfs(_nodes);
-
-    // Compute values table
-    //
-    // Each value has it's physical representation identified by offset in
-    // storage. With each value few links may be associated.
-    //
-    // To find out the values that has to be allocated, we have to consider all
-    // connections between processors in a way similar to search in relational
-    // table where following conditions steer the type of the value in storage:
-    //  - links having the same destination port (on same processors) have to
-    //  be considered as `join' value type;
-    //  - links having the same source port (on same processors) have to
-    //  be considered as `split' value type;
-    //  - links with unique source and destination ports have to have their own
-    //  unique values.
-    //
-    // Goo currently does not support `join' type of links. It seems to be
-    // redundant for framework built in assumption of single message
-    // propagation.
-    
     // Fill source port -> LinkID map
     std::transform( _links.begin(), _links.end()
                   , std::inserter(_cache.bySrcLinked, _cache.bySrcLinked.begin())
@@ -172,43 +151,18 @@ Framework::_recache() const {
                             , p.first
                             ); }
                   );
-    // Fill sets of source/dest links sorted by i/o feature (sets may
-    // intersect)
-    for( auto dagNPtr : _nodes ) {
-        auto nPtr = static_cast<ExecNode*>(dagNPtr);
-        for( auto portIt = nPtr->data().ports().cbegin()
-           ; portIt != nPtr->data().ports().cend(); ++portIt ) {
-            assert( portIt->second.is_input() || portIt->second.is_output() );
-            if( portIt->second.is_output() ) {
-                _cache.bySrcAll.insert( Cache::BoundPort_t( nPtr, portIt ) );
-            }
-            if( portIt->second.is_input() ) {
-                _cache.byDstAll.insert( Cache::BoundPort_t( nPtr, portIt ) );
-            }
-        }
-    }
     // Initialize data layout map: each output (or bidirectional) port has to
     // have it's own physical data representation
-    size_t dataOffset = 0
-         , dataSize;
-
-    //std::cout << std::endl
-    //          << " Offset | Output port       | nLinks | size" << std::endl
-    //          << "--------+-------------------+--------+--------" << std::endl; // XXX
-    for( auto outPortPair : _cache.bySrcAll ) {
-        dataSize = outPortPair.second->second.data_size();
-        //bySrcLinked.find( it. );
-        //_TODO_ //_cache.layoutMap.emplace( outPortPair, dataOffset );
-        //{  // debug out, XXX
-        //    std::cout << std::setw(7) << dataOffset << " | "
-        //              << std::setw(9) << outPortPair.first << "::"
-        //              << std::left << std::setw(6) << outPortPair.second->first << std::right << " | "
-        //              << std::setw(6) << _cache.bySrcLinked.count(outPortPair) << " | "
-        //              << std::setw(6) << std::left << dataSize << std::right
-        //              << std::endl;
-        //}
-        dataOffset += dataSize;
+    _cache.dataSize = 0;  // cumulatevely incrementing
+    for( auto outPortPair : _cache.bySrcLinked ) {
+        auto rng = _cache.bySrcLinked.equal_range( outPortPair.first );
+        assert( rng.first != _cache.bySrcLinked.end() );
+        for( auto it = rng.first; rng.second != it; ++it ) {
+            _cache.layoutMap.emplace( it->second, _cache.dataSize );
+        }
+        _cache.dataSize += outPortPair.first.second->second.data_size();
     }
+    // Recaching done.
     _isCacheValid = true;
 }
 

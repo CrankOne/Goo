@@ -5,6 +5,7 @@ namespace goo {
 namespace dataflow {
 
 Storage::Storage( const Framework::Cache & fwc ) {
+    std::vector<uint8_t>::resize(fwc.dataSize);
     _vms = new std::vector<ValuesMap> [fwc.tiers.size()];
     // Allocate storage according to structure provided by framework's cache
     size_t nTier = 0;

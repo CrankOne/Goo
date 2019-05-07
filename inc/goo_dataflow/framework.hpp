@@ -32,36 +32,28 @@ protected:
         ExecNode & nf, & nt;
         typename iProcessor::Ports::const_iterator fp, tp;
     };
-    /// Caches derived from _links & _nodes. Must not be changed while
-    /// worker thread(s) running.
+    /// Cache derived from links & nodes. Must not be changed while worker
+    /// thread(s) running.
     struct Cache {
         /// A special indexing key: ports are uniquely addressed by their node
         /// AND port declaration iterator.
-        typedef std::pair< goo::dag::Node<goo::dataflow::iProcessor> *
-                         , typename goo::dataflow::iProcessor::Ports::const_iterator> BoundPort_t;
-
+        typedef std::pair< dag::Node<iProcessor> *
+                         , typename iProcessor::Ports::const_iterator> BoundPort_t;
+        /// Special less operator for (multi-)maps.
         struct BoundLinkLess {
             bool operator()( const BoundPort_t &, const BoundPort_t & ) const;
         };
-
-        //std::unordered_map< const iProcessor *
-        //                  , dag::Node<iProcessor> *> nodesByProcPtr;  // XXX
-
         /// Order of nodes processing.
         dag::Order order;
         /// Processing tiers storage.
         std::list<Tier *> tiers;
-
-        std::multimap< BoundPort_t
-                     , size_t
-                     , BoundLinkLess > bySrcLinked
-                                     , byDstLinked
-                                     ;
-        std::set<BoundPort_t, Cache::BoundLinkLess> bySrcAll
-                                                  , byDstAll
-                                                  ;
+        /// Lists link IDs by their connected ports.
+        std::multimap<BoundPort_t, size_t, BoundLinkLess> bySrcLinked
+                                                        , byDstLinked;
         // Index keeps linkID vs offset.
         std::unordered_map<size_t, size_t> layoutMap;
+        // Overall data size to be allocated.
+        size_t dataSize;
     };
     const Cache & get_cache() const;
 private:

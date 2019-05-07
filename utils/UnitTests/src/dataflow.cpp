@@ -22,6 +22,7 @@
 
 # include "utest.hpp"
 # include "goo_dataflow/framework.hpp"
+# include "goo_dataflow/worker.hpp"
 
 # include <fstream>  // XXX file i/o for .dot debug
 
@@ -154,4 +155,17 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
     fw.generate_dot_graph(dotF);
     dotF.close();
     # endif
+    gdf::Worker w1( fw );
+    std::thread t1( &gdf::Worker::run
+                  , &w1 );
+    t1.join();
+    os << "Control:" << std::endl
+       << " - match:" << cmp.n_match() << std::endl
+       << " - mismatch:" << cmp.n_mismatch() << std::endl
+       << " - total:" << cmp.total() << std::endl
+       ;
+    _ASSERT( 0 == cmp.n_mismatch()
+           , "Mismatch values revealed." );
+    //_ASSERT( cmp.n_match() == 1, "Wrong number of values have passed"
+    //        " the comparison processor." );
 } GOO_UT_END( Dataflow, "Bitset", "DFS_DAG" )
