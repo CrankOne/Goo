@@ -100,35 +100,53 @@ public:
 
 GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
     gdf::Framework fw;
-    auto dices = new Dice [6];
-    auto sum6 = new Sum6;
-    auto sum2 = new Sum2 [5];
-    auto cmp = new Compare();
-    # if 1
+    // All processors except "Compare" are statelss, so we can safely populate
+    // single instances among few nodes in framework.
+    Dice dice;
+    Sum2 sum2;
+    Sum6 sum6;
+    // Compare is stateful, however we'll need just one instance...
+    Compare cmp;
+
+    // Emplace 6 "dices" anmed as "Dice #N".
+    for( int i = 0; i < 6; ++i ) {
+        char bf[32];
+        snprintf( bf, sizeof(bf), "Dice #%d", i+1 );
+        fw.impose( bf, dice );
+    }
+    // Emplace 5 pairwise summators
+    for( int i = 0; i < 5; ++i ) {
+        char bf[32];
+        snprintf( bf, sizeof(bf), "Sum-2 #%d", i+1 );
+        fw.impose( bf, sum2 );
+    }
+    // Emplace 6-wise summator
+    fw.impose( "Sum-6", sum6 );
+    fw.impose( "Compare", cmp );
     {
         // Connect dices to 6-input sum
-        fw.precedes( dices + 0, "value", sum6, "x1" );
-        fw.precedes( dices + 1, "value", sum6, "x2" );
-        fw.precedes( dices + 2, "value", sum6, "x3" );
-        fw.precedes( dices + 3, "value", sum6, "x4" );
-        fw.precedes( dices + 4, "value", sum6, "x5" );
-        fw.precedes( dices + 5, "value", sum6, "x6" );
+        fw.precedes( "Dice #1",  "value", "Sum-6",    "x1" );
+        fw.precedes( "Dice #2",  "value", "Sum-6",    "x2" );
+        fw.precedes( "Dice #3",  "value", "Sum-6",    "x3" );
+        fw.precedes( "Dice #4",  "value", "Sum-6",    "x4" );
+        fw.precedes( "Dice #5",  "value", "Sum-6",    "x5" );
+        fw.precedes( "Dice #6",  "value", "Sum-6",    "x6" );
         // Connect dices and pairwise sums
-        fw.precedes( dices + 1, "value", sum2 + 0, "a" );
-        fw.precedes( dices + 2, "value", sum2 + 0, "b" );
-        fw.precedes( dices + 4, "value", sum2 + 1, "a" );
-        fw.precedes( dices + 5, "value", sum2 + 1, "b" );
-        fw.precedes( dices + 0, "value", sum2 + 2, "a" );
-        fw.precedes( sum2  + 0, "c"    , sum2 + 2, "b" );
-        fw.precedes( dices + 3, "value", sum2 + 3, "a" );
-        fw.precedes( sum2  + 1, "c"    , sum2 + 3, "b" );
-        fw.precedes( sum2  + 2, "c"    , sum2 + 4, "a" );
-        fw.precedes( sum2  + 3, "c"    , sum2 + 4, "b" );
+        fw.precedes( "Dice #2",  "value", "Sum-2 #1", "a" );
+        fw.precedes( "Dice #3",  "value", "Sum-2 #1", "b" );
+        fw.precedes( "Dice #5",  "value", "Sum-2 #2", "a" );
+        fw.precedes( "Dice #6",  "value", "Sum-2 #2", "b" );
+        fw.precedes( "Dice #1",  "value", "Sum-2 #3", "a" );
+        fw.precedes( "Sum-2 #1", "c"    , "Sum-2 #3", "b" );
+        fw.precedes( "Dice #4",  "value", "Sum-2 #4", "a" );
+        fw.precedes( "Sum-2 #2", "c"    , "Sum-2 #4", "b" );
+        fw.precedes( "Sum-2 #3", "c"    , "Sum-2 #5", "a" );
+        fw.precedes( "Sum-2 #4", "c"    , "Sum-2 #5", "b" );
         // Compare pairwise sum result with 6-sum
-        fw.precedes( sum2 + 4, "c", cmp, "A" );
-        fw.precedes( sum6    , "S", cmp, "B" );
+        fw.precedes( "Sum-2 #5", "c",     "Compare", "A" );
+        fw.precedes( "Sum-6",    "S",     "Compare", "B" );
     }
-    # if 1
+    # if 0
     fw.generate_dot_graph(os);
     # else
     std::ofstream dotF;
@@ -136,10 +154,4 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
     fw.generate_dot_graph(dotF);
     dotF.close();
     # endif
-    fw._recache();
-    # endif
-    delete [] dices;
-    delete sum6;
-    delete [] sum2;
-    delete cmp;
 } GOO_UT_END( Dataflow, "Bitset", "DFS_DAG" )

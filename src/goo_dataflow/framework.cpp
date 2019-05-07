@@ -5,10 +5,8 @@
 namespace goo {
 namespace dataflow {
 
+# if 0
 namespace aux {
-typedef std::pair< goo::dag::Node<goo::dataflow::iProcessor> *
-                 , typename goo::dataflow::iProcessor::Ports::const_iterator> BoundPort_t;
-
 // This hashing function probably does not provide hash being unique enough to
 // rely on it as collision-free, though providing us some boost with
 // unique-finding routines need in Framework::recache() method. Moreover,
@@ -22,38 +20,59 @@ struct gfw_link_pair_hash {
              ;
     }
 };
-
-struct gfw_link_pair_less {
-    bool operator()( const BoundPort_t & a
-                   , const BoundPort_t & b ) const {
-        return (a.first < b.first)
-            || (a.first == b.first && a.second->first.compare(b.second->first) < 0)
-            ;
-    }
-};
-
 }  // namespace aux
+# endif
+
+bool
+Framework::Cache::BoundLinkLess::operator()( const BoundPort_t & a
+               , const BoundPort_t & b ) const {
+    return (a.first < b.first)
+        || (a.first == b.first && a.second->first.compare(b.second->first) < 0)
+        ;
+}
 
 Framework::Framework() : _isCacheValid(false) {}
 
-dag::Node<iProcessor> &
-Framework::_get_node_by_proc_ptr( iProcessor * p ) {
-    auto it = _cache.nodesByProcPtr.find(p);
-    if( _cache.nodesByProcPtr.end() != it ) return *(it->second);
-    auto ir = _cache.nodesByProcPtr.emplace( p, new dag::Node<iProcessor>(*p) );
-    if( !ir.second ) {
-        emraise( badState, "Unable to emplace new processor entry." );
+Framework::~Framework() {
+    _free_cache();
+    for( auto nPtr : _nodes ) {
+        delete nPtr;
     }
-    it = ir.first;
-    _nodes.insert( it->second );
-    return *(it->second);
+}
+
+Framework::ExecNode *
+Framework::impose( iProcessor & p ) {
+    auto en = new ExecNode(p);
+    _nodes.insert(en);
+    _invalidate_cache();
+    return en;
+}
+
+Framework::ExecNode *
+Framework::impose( const std::string & name, iProcessor & p ) {
+    auto it = _nodesByName.find(name);
+    if( _nodesByName.end() != it ) {
+        emraise( nonUniq
+               , "Unable to insert node over a processor %p named"
+                 " \"%s\" since this name is already assigned to"
+                 " processor %p.", &p, name.c_str(), it->second );
+    }
+    auto ir = _nodesByName.emplace(name, impose(p));
+    if( ! ir.second ) {
+        emraise( badState
+               , "Unable to insert node named \"%s\" over processor %p."
+               , name.c_str(), &p );
+    }
+    auto iir = _namesByNodes.emplace(ir.first->second, name);
+    assert(iir.second);  // assure reverse index insertion
+    return ir.first->second;
 }
 
 std::pair< typename iProcessor::Ports::const_iterator
          , typename iProcessor::Ports::const_iterator>
 Framework::_assure_link_valid(
-                     dag::Node<iProcessor> & nodeA, const std::string & aPortName
-                   , dag::Node<iProcessor> & nodeB, const std::string & bPortName
+                     ExecNode & nodeA, const std::string & aPortName
+                   , ExecNode & nodeB, const std::string & bPortName
                    ) {
     auto itPortA = nodeA.data().ports().find( aPortName )
        , itPortB = nodeB.data().ports().find( bPortName )
@@ -85,23 +104,28 @@ Framework::_assure_link_valid(
 }
 
 size_t
-Framework::precedes( iProcessor * a, const std::string & aPortName
-                   , iProcessor * b, const std::string & bPortName ) {
-    dag::Node<iProcessor> & nodeA = _get_node_by_proc_ptr( a )
-                        , & nodeB = _get_node_by_proc_ptr( b );
+Framework::precedes( ExecNode * a, const std::string & aPortName
+                   , ExecNode * b, const std::string & bPortName ) {
+    ExecNode & nodeA = *a
+           , & nodeB = *b;
     auto [itPortA, itPortB] = _assure_link_valid( nodeA, aPortName, nodeB, bPortName );
     nodeA.depends_on( nodeB );
     _links.emplace( _links.size(), Link{ nodeA, nodeB, itPortA, itPortB } );
-    _isCacheValid = false;
+    _invalidate_cache();
     return _links.size() - 1;
 }
 
 void
 Framework::_free_cache() const {
+    _cache.order.clear();
     for( auto tierPtr : _cache.tiers ) {
         delete tierPtr;
     }
     _cache.tiers.clear();
+    _cache.bySrcLinked.clear();
+    _cache.byDstLinked.clear();
+    _cache.bySrcAll.clear();
+    _cache.byDstAll.clear();
 }
 
 void
@@ -130,42 +154,36 @@ Framework::_recache() const {
     // redundant for framework built in assumption of single message
     // propagation.
     
-    std::multimap< aux::BoundPort_t
-                 , size_t
-                 , aux::gfw_link_pair_less > bySrcLinked
-                                           , byDstLinked
-                                           ;
-    std::set<aux::BoundPort_t, aux::gfw_link_pair_less> bySrcAll, byDstAll;
     // Fill source port -> LinkID map
     std::transform( _links.begin(), _links.end()
-                  , std::inserter(bySrcLinked, bySrcLinked.begin())
+                  , std::inserter(_cache.bySrcLinked, _cache.bySrcLinked.begin())
                   , [](const std::pair<size_t, Link> & p )
-                    { return std::pair<aux::BoundPort_t, size_t>
-                            ( aux::BoundPort_t(&(p.second.nf), p.second.fp)
+                    { return std::pair<Cache::BoundPort_t, size_t>
+                            ( Cache::BoundPort_t(&(p.second.nf), p.second.fp)
                             , p.first
                             ); }
                   );
     // Fill dest port -> LinkID map
     std::transform( _links.begin(), _links.end()
-                  , std::inserter(byDstLinked, byDstLinked.begin())
+                  , std::inserter(_cache.byDstLinked, _cache.byDstLinked.begin())
                   , [](const std::pair<size_t, Link> & p )
-                    { return std::pair<aux::BoundPort_t, size_t>
-                            ( aux::BoundPort_t(&(p.second.nf), p.second.fp)
+                    { return std::pair<Cache::BoundPort_t, size_t>
+                            ( Cache::BoundPort_t(&(p.second.nt), p.second.tp)
                             , p.first
                             ); }
                   );
     // Fill sets of source/dest links sorted by i/o feature (sets may
     // intersect)
     for( auto dagNPtr : _nodes ) {
-        auto nPtr = static_cast<dag::Node<iProcessor>*>(dagNPtr);
+        auto nPtr = static_cast<ExecNode*>(dagNPtr);
         for( auto portIt = nPtr->data().ports().cbegin()
            ; portIt != nPtr->data().ports().cend(); ++portIt ) {
             assert( portIt->second.is_input() || portIt->second.is_output() );
             if( portIt->second.is_output() ) {
-                bySrcAll.insert( aux::BoundPort_t( nPtr, portIt ) );
+                _cache.bySrcAll.insert( Cache::BoundPort_t( nPtr, portIt ) );
             }
             if( portIt->second.is_input() ) {
-                byDstAll.insert( aux::BoundPort_t( nPtr, portIt ) );
+                _cache.byDstAll.insert( Cache::BoundPort_t( nPtr, portIt ) );
             }
         }
     }
@@ -173,31 +191,32 @@ Framework::_recache() const {
     // have it's own physical data representation
     size_t dataOffset = 0
          , dataSize;
-    std::map<aux::BoundPort_t, size_t, aux::gfw_link_pair_less> layoutMap;
 
     //std::cout << std::endl
     //          << " Offset | Output port       | nLinks | size" << std::endl
     //          << "--------+-------------------+--------+--------" << std::endl; // XXX
-    for( auto outPortPair : bySrcAll ) {
+    for( auto outPortPair : _cache.bySrcAll ) {
         dataSize = outPortPair.second->second.data_size();
-        layoutMap.emplace( outPortPair, dataOffset );
+        _cache.layoutMap.emplace( outPortPair, dataOffset );
         //{  // debug out, XXX
         //    std::cout << std::setw(7) << dataOffset << " | "
         //              << std::setw(9) << outPortPair.first << "::"
         //              << std::left << std::setw(6) << outPortPair.second->first << std::right << " | "
-        //              << std::setw(6) << bySrcLinked.count(outPortPair) << " | "
+        //              << std::setw(6) << _cache.bySrcLinked.count(outPortPair) << " | "
         //              << std::setw(6) << std::left << dataSize << std::right
         //              << std::endl;
         //}
         dataOffset += dataSize;
     }
+    _isCacheValid = true;
 }
 
 void
 Framework::generate_dot_graph( std::ostream & os ) const {
+
     os << "digraph g {" << std::endl;
     for( auto dagNodePtr : _nodes ) {
-        auto n = static_cast<const dag::Node<iProcessor>*>(dagNodePtr);
+        auto n = static_cast<const ExecNode*>(dagNodePtr);
         std::map<std::string, PortInfo> inPorts, outPorts;
         for( auto pp : n->data().ports() ) {
             if( pp.second.is_input() ) {
@@ -215,11 +234,16 @@ Framework::generate_dot_graph( std::ostream & os ) const {
                << "    <TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"0\">" << std::endl
                << "     <TR>" << std::endl;
             {  // input ports
-                for( auto pp : inPorts ) {
+                for( auto portIt = n->data().ports().cbegin()
+                   ; n->data().ports().cend() != portIt; ++portIt ) {
+                    auto pp = *portIt;
                     if( ! pp.second.is_input() ) continue;
-                    // TODO BGCOLOR="red" if not connected, "grey" if not connected
-                    // and optional
-                    os << "      <TD SIDES=\"R\" PORT=\"" << pp.first << "\"><FONT POINT-SIZE=\"10\">"
+                    os << "      <TD SIDES=\"R\" PORT=\"" << pp.first;
+                    auto dstCnctdIt = get_cache().byDstLinked.find( Cache::BoundPort_t( const_cast<ExecNode*>(n), portIt ) );
+                    if( get_cache().byDstLinked.end() == dstCnctdIt ) {
+                        os << "\" BGCOLOR=\"red";
+                    }
+                    os << "\"><FONT POINT-SIZE=\"10\">"
                        << pp.first
                        << "</FONT></TD>" << std::endl;
                 }
@@ -231,9 +255,16 @@ Framework::generate_dot_graph( std::ostream & os ) const {
         }
         os << "  <TR>" << std::endl;
         {  // processor credentials
+            char bf[128];
+            auto procNameIt = _namesByNodes.find(const_cast<ExecNode*>(n));
+            if( _namesByNodes.end() == procNameIt ) {
+                snprintf( bf, sizeof(bf), "%p", n );
+            } else {
+                snprintf( bf, sizeof(bf), "%s", procNameIt->second.c_str() );
+            }
             os << "   <TD BORDER=\"1\" ALIGN=\"CENTER\" CELLPADDING=\"3\">"
                << "<U>" << typeid(n->data()).name() << "</U><BR/>"
-               << "<B>" << dagNodePtr << "</B><BR/>"  // TODO: label, if has
+               << "<B>" << bf << "</B><BR/>"
                << &(n->data())
                << "</TD>" << std::endl;
         }
@@ -244,10 +275,16 @@ Framework::generate_dot_graph( std::ostream & os ) const {
                << "    <TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"0\">" << std::endl
                << "     <TR>" << std::endl;
             {  // output ports
-                for( auto pp : n->data().ports() ) {
+                for( auto portIt = n->data().ports().cbegin()
+                   ; n->data().ports().cend() != portIt; ++portIt ) {
+                    auto pp = *portIt;
                     if( ! pp.second.is_output() ) continue;
-                    // TODO BGCOLOR="grey" if not connected
-                    os << "      <TD SIDES=\"R\" PORT=\"" << pp.first << "\"><FONT POINT-SIZE=\"10\">"
+                    os << "      <TD SIDES=\"R\" PORT=\"" << pp.first;
+                    auto srcCnctdIt = get_cache().bySrcLinked.find( Cache::BoundPort_t( const_cast<ExecNode*>(n), portIt ) );
+                    if( get_cache().bySrcLinked.end() == srcCnctdIt ) {
+                        os << "\" BGCOLOR=\"yellow";
+                    }
+                    os << "\"><FONT POINT-SIZE=\"10\">"
                        << pp.first
                        << "</FONT></TD>" << std::endl;
                 }
@@ -262,8 +299,9 @@ Framework::generate_dot_graph( std::ostream & os ) const {
     for( auto linkPair : _links ) {
         const Link & l = linkPair.second;
         os << " node" << &(l.nf) << ":" << l.fp->first << ":s -> "
-           << "node" << &(l.nt) << ":" << l.tp->first << ":n;"
-           << std::endl;
+           << "node" << &(l.nt) << ":" << l.tp->first << ":n [label=\""
+           << _cache.layoutMap[Cache::BoundPort_t(&l.nf, l.fp)]
+           << "\"];" << std::endl;
     }
     os << "}" << std::endl;
 }
