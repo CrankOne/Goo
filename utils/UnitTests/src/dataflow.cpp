@@ -24,6 +24,7 @@
 # include "goo_dataflow/framework.hpp"
 # include "goo_dataflow/worker.hpp"
 
+# include <iomanip>
 # include <fstream>  // XXX file i/o for .dot debug
 
 namespace gdf = goo::dataflow;
@@ -35,6 +36,7 @@ class Dice : public gdf::iProcessor {
 protected:
     virtual gdf::PSC _V_eval( gdf::ValuesMap & vm ) override {
         vm.set<int>("value", rand()%6 + 1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
         return 0;
     }
 public:
@@ -50,6 +52,7 @@ protected:
         vm.set<int>("S", vm.get<int>("x1") + vm.get<int>("x2")
                        + vm.get<int>("x3") + vm.get<int>("x4")
                        + vm.get<int>("x5") + vm.get<int>("x6") );
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
         return 0;
     }
 public:
@@ -66,6 +69,7 @@ class Sum2 : public gdf::iProcessor {
 protected:
     virtual gdf::PSC _V_eval( gdf::ValuesMap & vm ) override {
         vm.set<int>("c", vm.get<int>("a") + vm.get<int>("b") );
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
         return 0;
     }
 public:
@@ -96,7 +100,13 @@ public:
 
     size_t total() const { return _match + _mismatch; }
     size_t n_match() const { return _match; }
-    size_t n_mismatch() const { return _match; }
+    size_t n_mismatch() const { return _mismatch; }
+};
+
+// Used to control over elapsed time and worker events.
+struct ParallelEvent {
+    uint8_t type;
+    size_t nProc, nTier, nWorker;
 };
 
 GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
@@ -155,10 +165,63 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
     fw.generate_dot_graph(dotF);
     dotF.close();
     # endif
+    # if 0
     gdf::Worker w1( fw );
-    std::thread t1( &gdf::Worker::run
-                  , &w1 );
-    t1.join();
+    w1.run();
+    # else
+    const size_t nThreads = std::thread::hardware_concurrency();
+    std::thread * ts[nThreads];
+    gdf::Worker * ws[nThreads];
+    for( size_t nThread = 0; nThread < nThreads; ++nThread ) {
+        ws[nThread] = new gdf::Worker( fw );
+        ts[nThread] = new std::thread( &gdf::Worker::run, ws[nThread] );
+    }
+    std::map<std::clock_t, ParallelEvent> paes;
+    for( size_t nThread = 0
+       ; nThread < nThreads
+       ; ++nThread ) {
+        ts[nThread]->join();
+        delete ts[nThread];
+        auto workLog = ws[nThread]->log();
+        std::transform( workLog.begin(), workLog.end()
+                      , std::inserter(paes, paes.begin())
+                      , [&nThread](const gdf::Worker::LogEntry & le) {
+                        return std::pair<clock_t, ParallelEvent>( le.time, ParallelEvent{
+                                le.type, le.nProc, le.nTier, nThread
+                            } );
+                      } );
+        delete ws[nThread];
+    }
+    # endif
+    
+    os << "Dataflow:" << std::endl
+       << "  time |";
+    for( size_t nThread = 0; nThread < nThreads; ++nThread ) {
+        os << " worker #" << std::setw(2) << std::left << nThread << " |";
+    }
+    os << std::endl;
+    std::clock_t start = paes.begin()->first;
+    size_t cnt;
+    for( auto pae : paes ) {
+        os << std::setw(6) << std::right << pae.first - start << " | ";
+        for( cnt = 0; cnt < pae.second.nWorker; ++cnt ) {
+            os << "           | ";
+        }
+        {
+            std::stringstream ss;
+            ss << pae.second.nTier
+               << "/"
+               << pae.second.nProc
+               << "-" << ( pae.second.type == gdf::Worker::LogEntry::execStarted
+                         ? "bgn" : "end");
+            os << std::setw(10) << ss.str() << " | ";
+        }
+        for( ++cnt ; cnt < nThreads; ++cnt ) {
+            os << "           | ";
+        }
+        os << std::endl;
+    }
+
     os << "Control:" << std::endl
        << " - match:" << cmp.n_match() << std::endl
        << " - mismatch:" << cmp.n_mismatch() << std::endl
@@ -166,6 +229,7 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
        ;
     _ASSERT( 0 == cmp.n_mismatch()
            , "Mismatch values revealed." );
-    //_ASSERT( cmp.n_match() == 1, "Wrong number of values have passed"
-    //        " the comparison processor." );
+    _ASSERT( cmp.total() == nThreads, "Wrong number of values have passed"
+           " the comparison processor: %zu (%zu expected)."
+           , cmp.total(), nThreads);
 } GOO_UT_END( Dataflow, "Bitset", "DFS_DAG" )

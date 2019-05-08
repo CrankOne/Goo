@@ -10,7 +10,9 @@ Storage::Storage( const Framework::Cache & fwc ) {
     // Allocate storage according to structure provided by framework's cache
     size_t nTier = 0;
     // * in each tier
+    assert(!fwc.tiers.empty());
     for( auto tierPtr : fwc.tiers ) {
+        assert(!tierPtr->empty());
         _vms[nTier].resize(tierPtr->size());
         size_t nProc = 0;
         // * for each processor
@@ -84,6 +86,12 @@ Worker::run() {
         while( toProcess.any() ) {
             dag::Node<iProcessor> * nPtr;
             size_t nProcCurrent = tier.borrow_one( toProcess, nPtr );
+            {
+                std::unique_lock<std::mutex> l(_logSyncM);
+                _log.push_back( LogEntry{ LogEntry::execStarted
+                                        , nProcCurrent, tierCount
+                                        , std::clock() } );
+            }
             // Here the actual processing goes
             //try {
                 nPtr->data().eval(
@@ -95,8 +103,15 @@ Worker::run() {
             // Release the processor, drop "interest" bit
             tier.set_free(nProcCurrent);
             toProcess.reset( nProcCurrent );
+            {
+                std::unique_lock<std::mutex> l(_logSyncM);
+                _log.push_back( LogEntry{ LogEntry::execEnded
+                                        , nProcCurrent, tierCount
+                                        , std::clock() } );
+            }
         }
         assert( toProcess.none() );  // assure all done
+        ++tierCount;
     }
 }
 

@@ -133,6 +133,9 @@ Framework::_recache() const {
     _free_cache();
     // Compute order of execution
     _cache.order = dag::dfs(_nodes);
+    for( auto tierDescription : _cache.order ) {
+        _cache.tiers.push_back( new Tier(tierDescription) );
+    }
     // Fill source port -> LinkID map
     std::transform( _links.begin(), _links.end()
                   , std::inserter(_cache.bySrcLinked, _cache.bySrcLinked.begin())

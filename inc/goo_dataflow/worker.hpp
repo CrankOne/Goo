@@ -33,12 +33,28 @@ protected:
  * traversal.
  * */
 class Worker {
+public:
+    struct LogEntry {
+        static constexpr uint8_t execStarted = 0x1;
+        static constexpr uint8_t execEnded = 0x2;
+
+        uint8_t type;
+        size_t nProc, nTier;
+        std::clock_t time;
+    };
 protected:
     Framework & _fwRef;
+    mutable std::mutex _logSyncM;
+    std::vector <LogEntry> _log;
 public:
     Worker( Framework & fr ) : _fwRef(fr) {}
     /// Must be passed to a std::thread.
     void run();
+    /// Log. TODO: sync access.
+    const std::vector<LogEntry> log() const {
+        std::unique_lock<std::mutex> l(_logSyncM);
+        return _log;
+    }
 };
 
 }  // namespace goo::dataflow
