@@ -48,13 +48,13 @@ hctime() {
     if(cTime < 0) {
         return "time_unsupp";
     }
-    snprintf(timebf, sizeof(timebf), "%.2f", cTime );
+    snprintf(timebf, sizeof(timebf)/2, "%.2f", cTime );
     return timebf;
 }
 
 const char *
 get_timestamp() {
-    char sbf[8];
+    char sbf[sizeof(timebf)/2];
     char tbf[32];
     strncpy( sbf, hctime(), 8 );
     time_t rawtime;
