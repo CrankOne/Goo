@@ -13,9 +13,13 @@ namespace goo {
 namespace dataflow {
 
 /**@brief Thread local storage for a worker.
- * @class TLS
+ * @class Storage
  *
- * ...
+ * Implements a dynamic buffer providing thread-local storage for the data used
+ * by links in DAG.
+ *
+ * @TODO custom allocation/deletion of data, lifecycle hooks, std::allocator
+ * support
  * */
 class Storage : public std::vector<uint8_t> {
 private:
@@ -29,8 +33,8 @@ protected:
     friend class Worker;
 };
 
-/** A worker constitues thread-local context to be utilized during graph
- * traversal.
+/**@class Worker
+ * @brief Defines thread-local context to be utilized during graph traversal.
  * */
 class Worker {
 public:
