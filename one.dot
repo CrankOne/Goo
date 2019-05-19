@@ -1,0 +1,37 @@
+digraph g {
+    node0[ shape=component, margin=0, label = <<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
+        <TR>
+            <TD>
+                <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3">
+                    <TR>
+                        <TD SIDES="R" BGCOLOR="red"><FONT POINT-SIZE="10">one</FONT></TD>
+                        <TD SIDES="R" ><FONT POINT-SIZE="10">two</FONT></TD>
+                        <TD SIDES="R" ><FONT POINT-SIZE="10">three</FONT></TD>
+                        <TD SIDES="R" ><FONT POINT-SIZE="10">four</FONT></TD>
+                        <TD SIDES="R" ><FONT POINT-SIZE="10">five</FONT></TD>
+                    </TR>
+                </TABLE>
+            </TD>
+        </TR>
+        <TR>
+            <TD BORDER="1" STYLE="BOLD" ALIGN="CENTER" CELLPADDING="3"><U>Type1</U><BR/><B>0x633580</B><BR/>instance1</TD>
+        </TR>
+        <TR>
+            <TD>
+                <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="2">
+                    <TR>
+                        <TD PORT="uno" SIDES="R"><FONT POINT-SIZE="10">uno</FONT></TD>
+                        <TD            SIDES="R" BGCOLOR="grey"><FONT POINT-SIZE="10">dos</FONT></TD>
+                    </TR>
+                </TABLE>
+            </TD>
+        </TR>
+    </TABLE>> ];
+    node1[ shape=none, margin=0, label = <<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="2">
+        <TR>
+            <TD PORT="a">a</TD>
+            <TD><B>0x635010</B></TD>
+        </TR>
+    </TABLE>> ];
+    node0:uno:s -> node1:a:n
+}

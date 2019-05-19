@@ -1,48 +1,56 @@
-*This readme is realated only for generic (master) branch of Goo library.*
-
 # The Goo [[#](#the-goo)]
 
-This library composes together some stuff that was done during various
-scientific application development. The need in such an infrastructural library
-comes from modern C/C++ applications requirements.
+This library is designed as a toolkit for scientific application development
+needs. This library has a bunch of loosely-bound tools like application class
+or various configuration templates for fast assembly of short and versatile
+embeddable apps. One may think about `Goo` as of software glue laying between
+fast C/C++ routines and higher level steering applications.
 
-We have arranged various loosely-bound elements in modular manner instead of
-making something with centralized framwork architecture and trying to handle
-here only uncommon or poor-implemented things. Actually, many of them (e.g.
-`boost::variables_map`) were just found inconvinient in various practical cases.
-The Goo offers a replacement for them.
-
+The main purpose of this library is to provide some common but useful
+versatile infrastructural classes, so one may think as it is a micro-framework
+for organizing scientific applications. It does provide a common exception
+classes suitable for a number of generic cases with handy stack-trace mechanism
+as well as a few advanced error-reporting features: object-oriented signal
+handling, run-time `gdb` accompaniment and so on.
 # Brief installation notes [[#](#brief-install)]
 
-If one had come to this page, this probably means that this library is need
-as a dependency since we often include Goo into other projects. If so, we would
-recommend to use this snippet for quick build and non-obtrusive installation:
+If you have found this library as a dependency, you will probably wish to build
+and install it in user-space (meaning NOT system-wide installation).
 
+## User-space installation
+
+At this case you have to choose a proper location for library to be installed
+(let's say at the /opt/goo) and perform an ordinary installation procedure for
+CMake project:
+
+* First, clone sources into temporary directory:
     $ cd /tmp
     $ git clone https://github.com/CrankOne/Goo.git
+* Then create a separate temporary build directory where intermediate build
+files have to be placed:
     $ mkdir -p goo.build/debug
     $ cd goo.build/debug
-    $ cmake ../../goo
+* Configure and build the library with:
+    $ cmake ../../goo -DCMAKE_INSTALL_PREFIX=/opt/goo
     $ make
-    $ make DESTDIR=/opt/goo install
+* ...and install it with:
+    $ make install
 
-One can choose any path for DESTDIR where goo library would be installed. Just
-be sure you can point out this directory for subsequent build operations.
+The `/tmp/goo` sources directory and `/tmp/goo.build` temporary directory can
+be then safely removed.
 
-## Master branch description [[#](#branch-description)]
+## System-wide installation
 
-Each module here usually has its own branch. The `master`
-branch is intended to be only compilative all-in-one branch for putting
-the modules altogether.
+System-wide installation is quite similar to installation in userspace except
+for `-DCMAKE_INSTALL_PREFIX=...` command-line argument that has to be omitted.
+In that case installation prefix will be set to `/usr/local` which is standard
+for Linux systems.
 
-The `master` branch contains only generic application framework library for
-all descendant branches: application class, exceptions and modest unit-testing
-facility.
+# Features branches [[#](#other-branches)]
 
-## Other branches [[#](#other-branches)]
-
-Excluding several initial commits, we're planning to develop the following
-things in parallel before thhe first release at `master branch`:
+Some major features are planned to be added into library in the future. This
+features usually have a dedicated branches where their development takes place
+aside from `master` and `development` branches:
 
    1. `grammar` branch contains the GDS (Goo Declarative Semantics)
       language. Kind of laconic declarative language of common purposes.
@@ -59,10 +67,29 @@ things in parallel before thhe first release at `master branch`:
    5. `allocators` is a memory management subsystem, supplementing standard
       library allocators.
 
-One can not probably find all of them at my [github repo](https://github.com/CrankOne/Goo)
-whilst we working on those features mostly at the spare time on a whim.
+We're working on those features mostly at spare time on a whim.
 
 # License [[#](#license-info)]
+
+> Copyright (c) 2016 Renat R. Dusaev <crank@qcrypt.org>,
+>                    Bogdan Vasilishin <togetherwithra@gmail.com>
+> 
+> Permission is hereby granted, free of charge, to any person obtaining a copy of
+> this software and associated documentation files (the "Software"), to deal in
+> the Software without restriction, including without limitation the rights to
+> use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+> the Software, and to permit persons to whom the Software is furnished to do so,
+> subject to the following conditions:
+> 
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+> 
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+> FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+> COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+> IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+> CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 All non-contributed code here can be distributed by the terms of MIT
 license and thereby are free for commercial use.

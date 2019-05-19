@@ -32,12 +32,12 @@
  * UT system to be malfunctional.
  * */
 
-typedef goo::DAG<char> NumberHoldingGraph;
+typedef std::unordered_map<char, goo::dag::Node<char>*> NumberHoldingGraph;
 
 struct DepDecl {
     char name;
     char deps[9];
-    NumberHoldingGraph::Node * n;
+    goo::dag::Node<char> * n;
 };
 
 static const char _static_manualHelpInstructions[] = 
@@ -48,14 +48,19 @@ one can draw the nodes in following form:
  6  7
 1 2 3 4 5
 and denote the following dependency relations:)"
-;  // Note the new C++11 multiline string syntax
+;  // Note the C++11 multiline string syntax
 
 //
 // local testing routines:
 void
-dump_order( std::ostream & os, const NumberHoldingGraph::Order & order ) {
-    for( auto it = order.begin(); it != order.end(); ++it ) {
-        os << **it << ",";
+dump_order( std::ostream & os
+          , const goo::dag::Order & order ) {
+    for( auto tier : order ) {
+        os << "{";
+        for( auto nPtr : tier ) {
+            os << static_cast<goo::dag::Node<char>*>(nPtr)->data() << ", ";
+        }
+        os << "}";
     }
 }
 
@@ -76,30 +81,31 @@ resolve_nth( uint16_t & indicators, uint8_t n ) {
 
 void
 check_resolution_chain( const DepDecl * arr,
-                        const NumberHoldingGraph::Order & order,
+                        const goo::dag::Order & order,
                         char target  // 0 means 'no target'
                         ) {
     // used to check order correctness. True bit means 'resolved'.
     uint16_t visitIndicatorBits = 0x0;
-    for(     auto it  = order.begin();
-         order.end() != it; ++it ) {
-        const char cNodeChar = **it;
-        for( const DepDecl * cDecl = arr; cDecl->name != '\0'; ++cDecl ) {
-            if( strchr(cDecl->deps, cNodeChar) ) {
-                if( !is_nth_resolved( visitIndicatorBits, char_to_n(cDecl->name) ) ) {
-                    std::stringstream ss;
-                    dump_order( ss, order );
-                    emraise( uTestFailure,
-                            "Ordered node refers to unresolved node; target: %c, order: %s, problem on: %c w dep %c.",
-                            target ? target : '!',
-                            ss.str().c_str(),
-                            cNodeChar,
-                            cDecl->name
-                        );
+    for( auto tier : order ) {
+        for( auto nPtr : tier ) {
+            const char cNodeChar = static_cast<goo::dag::Node<char>*>(nPtr)->data();
+            for( const DepDecl * cDecl = arr; cDecl->name != '\0'; ++cDecl ) {
+                if( strchr(cDecl->deps, cNodeChar) ) {
+                    if( !is_nth_resolved( visitIndicatorBits, char_to_n(cDecl->name) ) ) {
+                        std::stringstream ss;
+                        dump_order( ss, order );
+                        emraise( uTestFailure,
+                                "Ordered node refers to unresolved node; target: %c, order: %s, problem on: %c w dep %c.",
+                                target ? target : '!',
+                                ss.str().c_str(),
+                                cNodeChar,
+                                cDecl->name
+                            );
+                    }
                 }
             }
+            resolve_nth( visitIndicatorBits, char_to_n( cNodeChar ) );
         }
-        resolve_nth( visitIndicatorBits, char_to_n( cNodeChar ) );
     }
     // Check, if target is resolved:
     if( !target ) {
@@ -129,7 +135,7 @@ check_resolution_chain( const DepDecl * arr,
     }
 }
 
-GOO_UT_BGN( DFS_DAG, "Direct acyclic graph depth-first search" )
+GOO_UT_BGN( DFS_DAG, "Direct acyclic graph depth-first search tests" )
 
 {  // Basic DAG
     DepDecl deps[] = {
@@ -143,30 +149,35 @@ GOO_UT_BGN( DFS_DAG, "Direct acyclic graph depth-first search" )
         };
     os << "Now, the basic DAG testing procedures will be invoked:" << std::endl;
     NumberHoldingGraph ng;
-    std::unordered_map<char, NumberHoldingGraph::Node *> nodesIndex;
     // Initialize nodes
-    for( uint8_t i = 0; i < sizeof(deps)/sizeof(DepDecl) - 1; ++i ) {
-        DepDecl * cnDataPtr = deps + i;
-        cnDataPtr->n = ng.insert_data( &(cnDataPtr->name) );
-        nodesIndex[cnDataPtr->name] = cnDataPtr->n;
+    for( DepDecl * c = deps; '\0' != c->name; ++c ) {
+        c->n = new goo::dag::Node<char>(c->name);
+        ng.emplace( c->name, c->n );
     }
     os << _static_manualHelpInstructions << std::endl;
     // Set-up nodes dependencies.
-    for( uint8_t i = 0; i < sizeof(deps)/sizeof(DepDecl) - 1; ++i ) {
-        DepDecl * cnDataPtr = deps + i;
-        os << " node '" << cnDataPtr->name << "' is dependence of: ";
-        for( char * c = cnDataPtr->deps; *c != '\0'; c++ ) {
-            cnDataPtr->n->dependance_of( nodesIndex[*c] );
-            os << *c << ",";
+    for( DepDecl * c = deps; '\0' != c->name; ++c ) {
+        os << " node '" << c->name << "' is required for: ";
+        for( char * cd = c->deps; *cd != '\0'; cd++ ) {
+            auto depIt = ng.find(*cd);
+            assert( ng.end() != depIt );
+            c->n->depends_on( *(depIt->second) );
+            os << *cd << ",";
         }
         os << std::endl;
     }
 
+    std::unordered_set<goo::dag::DAGNode*> nodes;
+    std::transform( ng.begin(), ng.end()
+                  , std::inserter( nodes, nodes.begin() )
+                  , [](std::pair<char, goo::dag::Node<char> *> p)
+                    { return p.second; });
+
     os << "Now get some fun with DAG:" << std::endl;
     // Fun:
-    NumberHoldingGraph::Order order;
+    goo::dag::Order order;
     os << " - generic DFS" << std::endl;
-    ng.dfs( order );
+    order = goo::dag::dfs( nodes );
     check_resolution_chain( deps, order, 0 );  // check
     dump_order( os, order );
     os << std::endl;
@@ -174,32 +185,38 @@ GOO_UT_BGN( DFS_DAG, "Direct acyclic graph depth-first search" )
 
     os << " - minimal necessary chain search" << std::endl;
     os << " -- trivial (orphant) node" << std::endl;
-    ng.chain_for_node( &((deps + 3)->name), order );
+    goo::dag::visit( *((deps + 3)->n), order );
     check_resolution_chain( deps, order, '4' );  // check
     dump_order( os, order );
     os << std::endl;
     order.clear();
+    for( auto n : nodes ) n->reset_dfs_descriptor();
+
     os << " -- middle-length" << std::endl;
-    ng.chain_for_node( &((deps + 7)->name), order );
+    goo::dag::visit( *((deps + 7)->n), order );
     check_resolution_chain( deps, order, '8' );  // check
     dump_order( os, order );
     os << std::endl;
     order.clear();
+    for( auto n : nodes ) n->reset_dfs_descriptor();
+
     os << " -- long-length" << std::endl;
-    ng.chain_for_node( &((deps + 8)->name), order );
+    goo::dag::visit( *((deps + 8)->n), order );
     check_resolution_chain( deps, order, '9' );  // check
     dump_order( os, order );
     os << std::endl;
     order.clear();
+    for( auto n : nodes ) n->reset_dfs_descriptor();
+
     os << " -- full-length" << std::endl;
-    ng.chain_for_node( &((deps + 9)->name), order );
+    goo::dag::visit( *((deps + 9)->n), order );
     check_resolution_chain( deps, order, '0' );  // check
     dump_order( os, order );
     os << std::endl;
     order.clear();
+    for( auto n : nodes ) n->reset_dfs_descriptor();
 
     os << "ok!" << std::endl;
 }
 
 GOO_UT_END( DFS_DAG )
-

@@ -73,7 +73,6 @@ Dictionary::~Dictionary() {
  * be deleted by dictionary destructor. */
 void
 Dictionary::insert_parameter( iSingularParameter * instPtr ) {
-    _parameters.push_back( instPtr );
     bool wasIndexed = false;
     if( instPtr->has_shortcut() ) {
         auto insertionResult = _parametersIndexByShortcut
@@ -105,6 +104,7 @@ Dictionary::insert_parameter( iSingularParameter * instPtr ) {
         emraise( badArchitect, "Got %p parameter without name and shortcut.",
                                                                     instPtr );
     }
+    _parameters.push_back( instPtr );
 }
 
 /** Dictionary class design emplies that lifetime of sub-dictionaries inserted
@@ -172,8 +172,8 @@ Dictionary::pull_opt_path_token( char *& path,
     return 1;  // tail is not empty
 }
 
-const iSingularParameter &
-Dictionary::_get_parameter( char path[] ) const {
+const iSingularParameter *
+Dictionary::_get_parameter( char path[], bool noThrow ) const {
     char * current;
     int rc = pull_opt_path_token( path, current );
     if( 0 == rc ) {
@@ -183,12 +183,16 @@ Dictionary::_get_parameter( char path[] ) const {
             // option parameter indexed by long name
             auto it = _parametersIndexByName.find( current );
             if( it != _parametersIndexByName.end() ) {
-                return *(it->second);
+                return it->second;
             }
-            emraise( notFound,
-                 "Option \"%s\" (long name considered) not found in "
-                 "section \"%s\"",
-                 current, name() ? name() : "<root>" );
+            if( !noThrow ) {
+                emraise( notFound,
+                     "Option \"%s\" (long name considered) not found in "
+                     "section \"%s\"",
+                     current, name() ? name() : "<root>" );
+            } else {
+                return nullptr;
+            }
         } else if( path - current == 0 ) {
             emraise( badState, "Unexpected state of option path parser --- "
                                "null option length."
@@ -197,54 +201,81 @@ Dictionary::_get_parameter( char path[] ) const {
             // option parameter indexed by shortcut
             auto it = _parametersIndexByShortcut.find( *current );
             if( it == _parametersIndexByShortcut.end() ) {
-                emraise( notFound,
-                     "Option \"%s\" (shortcut considered) not found in "
-                     "section \"%s\"",
-                     current, name() ? name() : "<root>" );
+                if( !noThrow ) {
+                    emraise( notFound,
+                         "Option \"%s\" (shortcut considered) not found in "
+                         "section \"%s\"",
+                         current, name() ? name() : "<root>" );
+                } else {
+                    return nullptr;
+                }
             }
-            return *(it->second);
+            return it->second;
         }
     } else {
         // proceed recursively within section -- `current' contains
         // section name and the `path' leads to an option.
         auto it = _dictionaries.find( current );
         if( it == _dictionaries.end() ) {
-            emraise( notFound,
-                     "Section \"%s\" not found in section \"%s\"",
-                     current, name() ? name() : "<root>" );
+            if( !noThrow ) {
+                emraise( notFound,
+                         "Subsection \"%s\" is not found in section \"%s\"",
+                         current, name() ? name() : "<root>" );
+            } else {
+                return nullptr;
+            }
         }
-        return it->second->_get_parameter( path );
+        return it->second->_get_parameter( path, noThrow );
     }
 }
 
 const iSingularParameter &
 Dictionary::parameter( const char path [] ) const {
-    return _get_parameter( strdupa( path ) );
+    return *_get_parameter( strdupa( path ) );
 }
 
-const Dictionary &
-Dictionary::_get_subsection( char path[] ) const {
+const iSingularParameter *
+Dictionary::probe_parameter( const char path [] ) const {
+    return _get_parameter( strdupa( path ), true );
+}
+
+const iSingularParameter *
+Dictionary::probe_parameter( const std::string & sPath ) const {
+    return _get_parameter( strdupa( sPath.c_str() ), true );
+}
+
+const Dictionary *
+Dictionary::_get_subsection( char path[], bool noThrow ) const {
     char * current;
     int rc = pull_opt_path_token( path, current );
     auto it = _dictionaries.find( current );
     if( _dictionaries.end() == it ) {
-        emraise( notFound, "Dictionary %p has no section named \"%s\".",
-                this, current );
+        if( !noThrow ) {
+            emraise( notFound, "Dictionary %p has no section named \"%s\".",
+                    this, current );
+        } else {
+            return nullptr;
+        }
     }
     if( 0 == rc ) {
         // terminal case --- consider the `current' refers to one of
         // own sections:
-        return *(it->second);
+        return it->second;
     } else {
         // proceed recursively within section -- `current' contains
         // section name and the `path' leads to an option.
-        return it->second->subsection( path );
+        return it->second->_get_subsection( path, noThrow );
     }
 }
 
 const Dictionary &
 Dictionary::subsection( const char path[] ) const {
-    return _get_subsection( strdupa(path) );
+    return *_get_subsection( strdupa(path) );
+}
+
+const Dictionary *
+Dictionary::probe_subsection( const char path[] ) const {
+    return _get_subsection( strdupa(path), true );
 }
 
 void
@@ -285,21 +316,23 @@ Dictionary::is_consistant( std::map<std::string, const iSingularParameter *> & b
 }
 
 void
-Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
+Dictionary::print_ASCII_tree( std::list<std::string> & output,
+                              size_t terminalWidth ) const {
     std::stringstream ss;
     size_t n = _parameters.size();
     bool hasSubsections = !_dictionaries.empty();
+    terminalWidth = terminalWidth - 3;
     for( auto p : _parameters ) {
         n--;
         ss << (n || hasSubsections ? "╟─" : "╙─") << " ";
         if( p->name() ) {
-            ss << "--" << ESC_CLRUNDRLN << p->name() << ESC_CLRCLEAR;
+            ss << ESC_CLRUNDRLN << p->name() << ESC_CLRCLEAR;
             if( p->has_shortcut() ) {
                 ss << "|";
             }
         }
         if( p->has_shortcut() ) {
-            ss << "-" << ESC_CLRBOLD << p->shortcut() << ESC_CLRCLEAR;
+            ss << ESC_CLRBOLD << p->shortcut() << ESC_CLRCLEAR;
         }
         ss << ", type=`" << p->target_type_info().name() << "'";
         if( p->is_flag() ) {
@@ -312,16 +345,41 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
             ss << ", list";
         }
         if( p->is_set() ) {
-            ss << ", value set";
+            ss << ", value set: \"" << p->to_string() << "\"";
         }
         // TODO: somehow reflect other parameter properties?
+        if( p->description() ) {
+            ss << std::endl;
+            if ( n > 0 || _dictionaries.size() > 0 ) {
+                ss << "║";
+            }
+            else {
+                ss << " ";
+            }
+            std::string desc( p->description() );
+            if ( desc.size() > terminalWidth ) {
+                for ( ;desc.size() > terminalWidth; ) {
+                    std::string subbody = desc.substr( 0, terminalWidth );
+                    ss << "  " << subbody;
+                    desc = desc.substr( terminalWidth );
+                    ss << std::endl;
+                    if ( n > 0 || _dictionaries.size() > 0 ) {
+                        ss << "║";
+                    }
+                    else {
+                        ss << " ";
+                    }
+                }
+            }
+            //ss << " " << p->description();
+        }
         ss << std::endl;
     }
     n = _dictionaries.size();
     for( auto dctPair : _dictionaries ) {
         n--;
         std::list<std::string> sub;
-        dctPair.second->print_ASCII_tree( sub );
+        dctPair.second->print_ASCII_tree( sub, terminalWidth + 1 );
         ss << (n ? "╠═" : "╚═")
             << (sub.empty() ? "═" : "╦" )
             << " < " ESC_CLRGREEN << dctPair.first
@@ -334,6 +392,11 @@ Dictionary::print_ASCII_tree( std::list<std::string> & output ) const {
     while( std::getline(ss, line) ) {
         output.push_back( line );
     }
+}
+
+InsertionProxy
+Dictionary::insertion_proxy() {
+    return InsertionProxy( this );
 }
 
 }  // namespace dict

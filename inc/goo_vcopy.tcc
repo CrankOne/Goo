@@ -69,6 +69,8 @@ public:
     typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, false, true> DuplicableParent;
     typedef iDuplicable<BaseTypeT, SelfTypeT> DuplicableBase;
     typedef ParentT Parent;
+
+    virtual ~iDuplicable(){}
 protected:
     /// Pure virtual method for copy construction.
     virtual BaseTypeT * _V_clone() const = 0;
@@ -94,6 +96,8 @@ public:
     typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, true, true> DuplicableParent;
     typedef iDuplicable<BaseTypeT, SelfTypeT> DuplicableBase;
     typedef ParentT Parent;
+
+    virtual ~iDuplicable(){}
 protected:
     /// Performs invokation of copy constructor.
     virtual BaseTypeT * _V_clone() const {
@@ -120,6 +124,8 @@ public:
     typedef iDuplicable<BaseTypeT, SelfTypeT, ParentT, false, false> DuplicableParent;
     typedef iDuplicable<BaseTypeT, BaseTypeT> DuplicableBase;
     typedef ParentT Parent;
+
+    virtual ~iDuplicable(){}
 protected:
     template<typename ... CtrArgsT>
     iDuplicable( CtrArgsT ... args ) : ParentT( args ... ) {}

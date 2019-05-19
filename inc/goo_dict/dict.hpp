@@ -117,27 +117,13 @@ protected:
 private:
     /// A parameters storage (composition).
     std::list<iSingularParameter *> _parameters;
-
     /// A sub-dictionaries composition index.
     std::unordered_map<std::string, Dictionary *> _dictionaries;
-
     /// Long-name parameters index (aggregation).
     std::unordered_map<std::string, iSingularParameter *> 
                                                     _parametersIndexByName;
     /// Shortcut parameters index (aggregation).
     std::unordered_map<char, iSingularParameter *> _parametersIndexByShortcut;
-
-protected:
-    /// Inserts parameter instance created by insertion proxy.
-    virtual void insert_parameter( iSingularParameter * );
-
-    /// Inserts dictionary instance created by insertion proxy.
-    virtual void insert_section( Dictionary * );
-
-    Dictionary( const char *, const char * );
-
-    ~Dictionary();
-
     # if 0
     /// Internal procedure --- appends access caches.
     virtual void _append_configuration_caches(
@@ -145,22 +131,25 @@ protected:
                 Configuration * conf
             ) const;
     # endif
-
     /// Marks last inserted parameter as required one.
     void _mark_last_inserted_as_required();
-
     /// Internal function mutating given path str --- parameter entry getter.
-    virtual const iSingularParameter & _get_parameter( char [] ) const;
-
+    virtual const iSingularParameter * _get_parameter( char [], bool noThrow=false ) const;
     /// Internal function mutating given path str --- subsection getter.
-    virtual const Dictionary & _get_subsection( char [] ) const;
-
-    friend class InsertionProxy;
-    friend class Configuration;
+    virtual const Dictionary * _get_subsection( char [], bool noThrow=false ) const;
 public:
+    Dictionary( const char *, const char * );
+
+    ~Dictionary();
+
+    /// Inserts parameter instance.
+    virtual void insert_parameter( iSingularParameter * );
+    /// Inserts dictionary instance.
+    virtual void insert_section( Dictionary * );
     /// Public copy ctr for virtual copy ctr.
     Dictionary( const Dictionary & );
-
+    /// Constructs a bound insertion proxy instance object.
+    InsertionProxy insertion_proxy();
     /// This routine performs simple token extraction from option path.
     /// For example, the following string:
     ///     "one.three-four.five"
@@ -173,38 +162,87 @@ public:
     /// @returns 1 if there are something in path after extraction.
     static int pull_opt_path_token( char *& path,
                                     char *& current );
-
     /// Get parameter instance by its full name.
     /// Note, that path delimeter here is dot symbol '.' (const getter).
+    /// When parameter is not found, raises `notFound' exception.
     virtual const iSingularParameter & parameter( const char path [] ) const;
-
+    /// Const parameter getter by std::string key.
+    virtual const iSingularParameter & parameter( const std::string & path ) const {
+        return parameter( path.c_str() );
+    }
     /// Get parameter instance by its full name.
     /// Note, that path delimeter here is dot symbol '.'.
     virtual iSingularParameter & parameter( const char path[] ) {
         const Dictionary * constThis = this;
         return const_cast<iSingularParameter &>(constThis->parameter( path ));
     }
-
+    /// Const parameter getter by std::string key.
+    virtual iSingularParameter & parameter( const std::string & path ) {
+        return parameter( path.c_str() );
+    }
+    /// Operator shortcut for `parameter()`.
+    virtual const iSingularParameter & operator[]( const char p[] ) const {
+        return parameter(p); }
+    /// Const version of faulty-tolerant parameter instance getter. If
+    /// parameter lookup fails, returns nullptr.
+    virtual const iSingularParameter * probe_parameter( const char path[] ) const;
+    /// Faulty-tolerant parameter instance getter. If parameter lookup fails,
+    /// returns nullptr.
+    virtual iSingularParameter * probe_parameter( const char path[] ) {
+        const Dictionary * constThis = this;
+        return const_cast<iSingularParameter *>(constThis->probe_parameter( path ));
+    }
+    virtual const iSingularParameter * probe_parameter( const std::string & sPath ) const;
+    virtual iSingularParameter * probe_parameter( const std::string & sp ) {
+        const Dictionary * constThis = this;
+        return const_cast<iSingularParameter *>(constThis->probe_parameter( sp ));
+    }
     /// Get sub-dictionary instance by its full name.
     /// Note, that path delimeter here is dot symbol '.' (const getter).
     virtual const Dictionary & subsection( const char [] ) const;
-
     /// Get sub-dictionary instance by its full name.
     /// Note, that path delimeter here is dot symbol '.'.
     virtual Dictionary & subsection( const char path[] ) {
         const Dictionary * constThis = this;
         return const_cast<Dictionary &>(constThis->subsection( path ));
     }
-
+    virtual Dictionary & subsection( const std::string & s ) {
+        return subsection(s.c_str());
+    }
+    virtual const Dictionary & subsection( const std::string & s ) const {
+        return subsection(s.c_str());
+    }
+    /// Const version of faulty-tolerant subsection instance getter. If
+    /// parameter lookup fails, returns nullptr.
+    virtual const Dictionary * probe_subsection( const char path[] ) const;
+    /// Faulty-tolerant subsection instance getter. If lookup fails,
+    /// returns nullptr.
+    virtual Dictionary * probe_subsection( const char path[] ) {
+        const Dictionary * constThis = this;
+        return const_cast<Dictionary *>(constThis->probe_subsection( path ));
+    }
+    virtual const Dictionary * probe_subsection( const std::string & p ) const {
+        return probe_subsection( p.c_str() );
+    }
+    virtual Dictionary * probe_subsection( const std::string & p ) {
+        return probe_subsection( p.c_str() );
+    }
     /// Performs consistency check (only has sense, if extract() was performed
     /// before).
     virtual bool is_consistant( std::map<std::string, const iSingularParameter *> &,
                                 const std::string & prefix ) const;
-
     /// Prints an ASCII-drawn tree with names and brief comments for all
     /// parameters and sub-sections.
-    virtual void print_ASCII_tree( std::list<std::string> & ) const;
-    
+    virtual void print_ASCII_tree( std::list<std::string> &,
+                                   size_t terminalWidth = 80) const;
+    const std::list<iSingularParameter *> & parameters() const
+                                                    { return _parameters; }
+    /// A sub-dictionaries composition index.
+    const std::unordered_map<std::string, Dictionary *> & dictionaries() const
+                                                    { return _dictionaries; }
+
+    friend class InsertionProxy;
+    friend class Configuration;
 };  // class Dictionary
 
 }  // namespace dict

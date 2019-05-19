@@ -213,9 +213,7 @@ goo_sysexec_lst( const char * utilName,
     close( execStat->stdStreamDescs[0][1] );
     close( execStat->stdStreamDescs[1][1] );
     if( flags & gooExec_noSync ) {
-        if( execStat ) {
-            execStat->status = forkResult;
-        }
+        execStat->status = forkResult;
         /* if not sync, return 1 immediately */
         return gooExec_detached;
     }

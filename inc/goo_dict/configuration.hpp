@@ -60,6 +60,9 @@ private:
     /// Indicates whether `getopt_long()` caches are valid.
     mutable bool _getoptCachesValid;
 
+    /// Controls, whether to automatically generate -h|--help [subsect] interface.
+    bool _dftHelpIFace;
+
     /// Access cache for short options. This index includes recursively all the
     /// shortcuts provided in sub-sections. Filled by overrided
     /// insert_parameter() method.
@@ -112,13 +115,26 @@ protected:
                                      Dictionary::LongOptionEntries &,
                                      const iSingularParameter & );
 
+    ///  Collects shortcutted flags and required options.
+    static void _collect_first_level_options(
+                        const Dictionary & d,
+                        const std::string & nameprefix,
+                        std::unordered_map<std::string, iSingularParameter *> & rqs,
+                        std::unordered_map<char, iSingularParameter *> & shrt );
+
+    /// Used for usage/help print.
+    static void _print_dict_usage( const Dictionary & d,
+                                   const std::string & omitShortcuts );
+
     /// Helper function setting/appending given token as a positional argument.
     void _append_positional_arg( const char * );
 
 public:
     /// Ctr expects the `name' here to be an application name and `description'
     /// to be an application description.
-    Configuration( const char * name, const char * description );
+    Configuration( const char * name,
+                   const char * description,
+                   bool defaultHelpIFace=true );
 
     ~Configuration();
 
@@ -128,27 +144,23 @@ public:
     /// Explicit copy creation.
     //Configuration copy() const { return *this; }
 
-    /// Parses command-line arguments.
-    void extract( int argc,
+    /// Parses command-line arguments. Returns -1 if immediate exit is required.
+    int extract( int argc,
                   char * const argv[],
                   bool doConsistencyCheck=true,
                   std::ostream * verbose=nullptr );
 
-    /// Constructs a bound insertion proxy instance object.
-    InsertionProxy insertion_proxy();
-
     /// Produces an `usage' instruction text to the stream provided by arg.
-    void usage_text( std::ostream &, bool enableASCIIColoring = false );
+    void usage_text( std::ostream &, const char * );
+
+    /// Produces subsection reference.
+    void subsection_reference( std::ostream &, const char * );
 
     /// A wrapper to glibc's wordexp() function.
     static Size tokenize_string( const std::string &, char **& argvTokens );
 
     /// Cleaner for tokenized string
     static void free_tokens( size_t argcTokens, char ** argvTokens );
-
-    /// Operator shortcut for `parameter()`.
-    virtual const iSingularParameter & operator[]( const char p[] ) const {
-        return parameter(p); }
 
     /// Extendeds parent version with positional argument resolution.
     virtual const iSingularParameter & parameter( const char path[] ) const override;
@@ -164,11 +176,18 @@ public:
 
     /// Extended version of Dictionary's method printing additional decorations
     /// around root node.
-    virtual void print_ASCII_tree( std::list<std::string> & ) const override;
+    virtual void print_ASCII_tree( std::list<std::string> &,
+                                   size_t terminalWidth = 80) const override;
 
     /// Argument-overloaded method that user will probably wish to invoke to
     /// get an ASCII-tree in output stream.
-    virtual void print_ASCII_tree( std::ostream & ) const;
+    virtual void print_ASCII_tree( std::ostream &,
+                                   size_t terminalWidth = 80) const;
+
+    /// Inserts dictionary instance created by third-party code (causes caches)
+    /// invalidation. Note, that copy of dictionary will be dynamically
+    /// allocated on heap.
+    virtual void append_section( const Dictionary & dPtr );
 
     /// Makes configuration able to acquire single (only) positional argument.
     /// This is not an incremental procedure and has to be used rarely: if

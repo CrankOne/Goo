@@ -70,7 +70,7 @@ template<typename ConfigObjectT,
 namespace aux {
 
 /// Abstract application base class.
-class iApp {
+class GOO_DLL_PUBLIC iApp {
 public:
     /// System signal handler callback type; only difference from std UNIX
     /// handler type is bool returning value indicating whether default
@@ -237,7 +237,7 @@ ConcreteAppType & app() {
  */
 template<typename ConfigObjectT,
          typename LogStreamT>
-class App : public aux::iApp {
+class GOO_DLL_PUBLIC App : public aux::iApp {
 public:
     typedef App<ConfigObjectT, LogStreamT> SelfAbstractType;
 private:

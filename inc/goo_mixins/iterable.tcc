@@ -29,6 +29,240 @@
 # include <iterator>
 
 namespace goo {
+
+/* TODO: make a Doxygen section from this note
+ * Iterators
+ *
+ * The goo iterators are nothing but merely lexical helpers to automate the
+ * most frequent iterators definitions in C++.
+ *
+ * Direction:
+ *  - BaseForwardIterator<FinalT, SymT>
+ *  - BaseBidirIterator<FinalT, SymT>
+ * Access:
+ *  - BaseOutputIterator<FinalT, SymT, T>
+ *  - BaseInputIterator<FinalT, SymT, T>
+ *  - BaseIOIterator<FinalT, SymT, T>
+ * Comparison:
+ *  - BaseComparableIterator<FinalT, SymT>
+ *  - DirectionComparableIterator<FinalT, SymT>
+ */
+
+namespace iterators {
+
+/**@brief Basic comparison trait of iterators.
+ *
+ * Defines how iterator may be compared. Overloads the '==' and '!=' operators.
+ **/
+template<typename FinalT, typename SymT>
+struct BaseComparableIterator {
+    bool operator!= (const FinalT & eit) const {
+        return static_cast<const FinalT*>(this)->sym() != eit.sym();
+    }
+
+    bool operator== (const FinalT & o) const {
+        return !(*this != o);
+    }
+};
+
+
+/**@brief Iterator ability for increment itself with pre/postfix operator.
+ *
+ * Overloads 'a++' and '++a' operators.
+ */
+template<typename FinalT,
+         typename SymT>
+struct BaseForwardIterator {
+    FinalT & operator++() {
+        ++(static_cast<FinalT*>(this)->sym());
+        return *static_cast<FinalT*>(this);
+    }
+
+    FinalT operator++ (int) {
+        return FinalT( ++ (static_cast<FinalT &>(*this)) );
+    }
+};  // BaseForwardIterator
+
+
+
+template<typename FinalT, typename SymT, typename T>
+struct BaseOutputIterator {
+    T & operator*() const {
+        return *(static_cast<const FinalT*>(this)->sym());
+    }
+};  // BaseOutputIterator
+
+
+
+template<typename FinalT, typename SymT, typename T>
+struct BaseInputIterator {
+    static_assert(!std::is_const<T>::value,
+            "Input iterator can not be dereferenced for const value type." );
+    T & operator*() {
+        return *(static_cast<FinalT*>(this)->sym());
+    }
+};  // BaseOutputIterator
+
+
+template<typename FinalT, typename SymT, typename T>
+struct BaseIOIterator {
+    const T & operator*() const {
+        return *(static_cast<const FinalT*>(this)->sym());
+    }
+
+    T & operator*() {
+        return *(static_cast<FinalT*>(this)->sym());
+    }
+};
+
+
+template<typename FinalT, typename SymT>
+struct BaseBidirIterator : public BaseForwardIterator<FinalT, SymT> {
+    typedef BaseForwardIterator<FinalT, SymT> Parent;
+
+    FinalT & operator--() {
+        --(static_cast<FinalT*>(this)->sym());
+        return static_cast<FinalT &>(*this);
+    }
+    FinalT operator-- (int) {
+        return FinalT( -- (static_cast<FinalT &>(*this)) );
+    }
+};  // BaseForwardIterator
+
+
+template<typename FinalT,
+         typename SymT>
+struct DirectionComparableIterator :
+                            public BaseComparableIterator<FinalT, SymT> {
+    typedef DirectionComparableIterator<FinalT, SymT> Self;
+    typedef BaseComparableIterator<FinalT, SymT> Parent;
+
+    bool operator>( const FinalT & prhs ) const {
+        return static_cast<const FinalT*>(this)->sym() > prhs.sym();
+    }
+
+    bool operator<  (const FinalT & o) const {
+        return (  static_cast<const FinalT*>(this)->sym() != o.sym
+            && !( static_cast<const FinalT*>(this)->sym()  > o.sym ) );
+    }
+};  // DirectionComparableIterator
+
+
+
+template<
+        template<class, class> class DirectionTT,
+        template<class, class, class> class AccessTT,
+        template<class, class> class ComparisonTT,
+        typename FinalT,
+        typename SymT,
+        typename T,
+        typename DistanceT=void>
+struct Iterator : public DirectionTT<FinalT, SymT>,
+                 public AccessTT<FinalT, SymT, T>,
+                 public ComparisonTT<FinalT, SymT> {
+    typedef DirectionTT<FinalT, SymT> Direction;
+    typedef AccessTT<FinalT, SymT, T> Access;
+    typedef ComparisonTT<FinalT, SymT> Comparison;
+};
+
+
+template<template<class, class, class> class AccessTT,
+         typename FinalT,
+         typename SymT,
+         typename T,
+         typename DistanceT>
+struct Iterator<BaseBidirIterator,
+               AccessTT,
+               DirectionComparableIterator,
+            FinalT,
+            SymT,
+            T,
+            DistanceT> : public BaseBidirIterator<FinalT, SymT>,
+                         public AccessTT<FinalT, SymT, T>,
+                         public DirectionComparableIterator<FinalT, SymT> {
+    typedef BaseBidirIterator<FinalT, SymT> Direction;
+    typedef AccessTT<FinalT, SymT, T> Access;
+    typedef DirectionComparableIterator<FinalT, SymT> Comparison;
+
+    typedef Iterator<BaseBidirIterator, AccessTT, DirectionComparableIterator,
+                     FinalT, SymT, T, DistanceT> Self;
+
+    FinalT operator+( const DistanceT & o ) const {
+        FinalT C(*static_cast<const FinalT*>(this));
+        return C += o;
+    }
+
+    FinalT & operator+= ( const DistanceT & d ) {
+        static_cast<FinalT*>(this)->sym() += d;
+        return *static_cast<FinalT*>(this);
+    }
+
+    FinalT operator-( const DistanceT & o ) const {
+        FinalT C(*static_cast<const FinalT*>(this));
+        return C -= o;
+    }
+
+    FinalT & operator-= ( const DistanceT & d ) {
+        static_cast<FinalT*>(this)->sym() += -d;
+        return *static_cast<FinalT*>(this);
+    }
+
+    DistanceT operator- ( const FinalT & prhs ) const {
+        return static_cast<const FinalT*>(this)->sym() - prhs.sym();
+    }
+};
+
+}  // namespace ::goo::iterators
+
+namespace mixins {
+
+//template
+//class Iterable
+
+}  // namespace ::goo::mixins
+
+# if 0
+// XXX:
+
+template<   typename IteratorSymT,
+            typename DereferencedTypeT,
+            typename EndIteratorClassT>
+class ConstOutputIteratorBase : public mixins::PostfixIncOp<EndIteratorClassT> {
+public:
+    typedef EndIteratorClassT EndIteratorClass;
+    typedef IteratorSymT IteratorSym;
+    typedef DereferencedTypeT DereferencedType;
+protected:
+    IteratorSym _sym;
+
+    virtual DereferencedType & _V_dereference_sym( const IteratorSym & ) const = 0;
+public:
+    ConstOutputIteratorBase() {}
+    ConstOutputIteratorBase( const IteratorSym & itSym ) : _sym(itSym) {}
+    virtual~ConstOutputIteratorBase() {}
+
+    const DereferencedType & operator*() const {
+        return _V_dereference_sym( _sym );
+    }
+};
+
+template<   typename IteratorSymT,
+            typename DereferencedTypeT,
+            typename EndIteratorClassT>
+class OutputIteratorBase : public ConstOutputIteratorBase<  IteratorSymT,
+                                                            DereferencedTypeT,
+                                                            EndIteratorClassT> {
+public:
+    typedef EndIteratorClassT EndIteratorClass;
+    typedef IteratorSymT IteratorSym;
+    typedef DereferencedTypeT DereferencedType;
+public:
+    DereferencedType & operator*() const {
+        return _V_dereference_sym( ConstOutputIteratorBase<
+                    IteratorSym, DereferencedType, EndIteratorClass>::_sym );
+    }
+};  // class OutputIteratorBase
+
 namespace mixins {
 
 /**@class Iterable
@@ -45,17 +279,15 @@ namespace mixins {
  * for details).
  */
 template<typename DereferencedTypeT,
-         typename IteratorAssociatedDataT,
          typename IteratorSymT>
 class IterableBase {
 public:
     typedef DereferencedTypeT DereferencedType;
-    typedef IteratorAssociatedDataT IteratorAssociatedData;
     typedef IteratorSymT IteratorSym;
-    typedef IterableBase<DereferencedType, IteratorAssociatedData, IteratorSym> Self;
+    typedef IterableBase<DereferencedType, IteratorSym> Self;
 protected:
     template<typename EndIteratorClassT>  /// Keep 'Iterator' name for default.
-    class IteratorBase : public PostfixIncOp<EndIteratorClassT> {
+    class ConstIteratorBase : public PostfixIncOp<EndIteratorClassT> {
     public:
         typedef Self Authority;
         typedef EndIteratorClassT EndIteratorClass;
@@ -64,28 +296,15 @@ protected:
         IteratorSym _sym;
         void _check_authority_is_set() const { DBG_NULLPTR_CHECK( _authorityPtr, "Empty iterator %p.", this ); }
         // Ctr/dtr --- protected from explicit use.
-        IteratorBase() : _authorityPtr(nullptr) {}
+        ConstIteratorBase() : _authorityPtr(nullptr) {}
     public:
-        IteratorBase( const IteratorSym & d ) : 
+        ConstIteratorBase( const IteratorSym & d ) : 
                 _authorityPtr(nullptr), _sym(d) {}
 
         // authority acquizition:
-        Authority & authority() {
-                _check_authority_is_set();
-                return *_authorityPtr; }
         const Authority & authority() const {
                 _check_authority_is_set();
                 return *_authorityPtr; }
-
-        // dereferencing:
-        //IteratorAssociatedData & dereference() {
-        //        _check_authority_is_set();
-        //        return _authorityPtr->_V_dereference_sym( _sym );
-        //    }
-        //const IteratorAssociatedData & dereference() const {
-        //        _check_authority_is_set();
-        //        return _authorityPtr->_V_dereference_sym( _sym );
-        //    }
 
         // increment:
         virtual EndIteratorClass & operator++() override {
@@ -93,10 +312,20 @@ protected:
             _authorityPtr->_V_increase_iterator_sym( _sym );
         }
     };
+
+    template<typename EndIteratorClassT>  /// Keep 'Iterator' name for default.
+    class IteratorBase : public ConstIteratorBase<EndIteratorClassT> {
+    public:
+        IteratorBase( const IteratorSym & d ) : 
+                ConstIteratorBase<EndIteratorClassT>(d) {}
+
+        // authority acquizition:
+        typename ConstIteratorBase<EndIteratorClassT>::Authority & authority() {
+                ConstIteratorBase<EndIteratorClassT>::_check_authority_is_set();
+                return *ConstIteratorBase<EndIteratorClassT>::_authorityPtr; }
+    };
 protected:
     virtual void _V_increase_iterator_sym( IteratorSym & ) = 0;
-    //virtual IteratorAssociatedData _V_dereference_sym( const IteratorSym & ) = 0;
-    //virtual const IteratorAssociatedData & _V_dereference_sym( const IteratorSym & ) const = 0;
 };  // class IterableBase
 
 //
@@ -104,18 +333,13 @@ protected:
 //
 
 template<typename DereferencedTypeT,
-         typename IteratorAssociatedDataT,
          typename IteratorSymT>
 class OutputIterable : public virtual IterableBase<DereferencedTypeT,
-                                                  IteratorAssociatedDataT,
                                                   IteratorSymT> {
 public:
     typedef DereferencedTypeT DereferencedType;
-    typedef IteratorAssociatedDataT IteratorAssociatedData;
     typedef IteratorSymT IteratorSym;
-
     typedef IterableBase<DereferencedType,
-                         IteratorAssociatedData,
                          IteratorSym> Parent;
 protected:
     template<typename EndIteratorClassT>
@@ -138,26 +362,22 @@ protected:
 //
 
 template<typename DereferencedTypeT,
-         typename IteratorAssociatedDataT,
          typename IteratorSymT>
-class ComprIterable : public virtual IterableBase<DereferencedTypeT,
-                                                  IteratorAssociatedDataT,
+class ComparableIterable : public virtual IterableBase<DereferencedTypeT,
                                                   IteratorSymT> {
 public:
     typedef DereferencedTypeT DereferencedType;
-    typedef IteratorAssociatedDataT IteratorAssociatedData;
     typedef IteratorSymT IteratorSym;
 
     typedef IterableBase<DereferencedType,
-                         IteratorAssociatedData,
                          IteratorSym> Parent;
 protected:
     template<typename EndIteratorClassT>
-    class ComparableIterator : public virtual IdentityOp<EndIteratorClassT>,
-                               public virtual Parent::template IteratorBase<EndIteratorClassT> {
+    class ComparableIterator : public IdentityOp<EndIteratorClassT>,
+                               public virtual Parent::template ConstIteratorBase<EndIteratorClassT> {
     public:
         typedef EndIteratorClassT EndIteratorClass;
-        typedef typename Parent::template IteratorBase<EndIteratorClassT> ParentIterator;
+        typedef typename Parent::template ConstIteratorBase<EndIteratorClassT> ParentIterator;
 
         virtual bool operator!= (const EndIteratorClass & eit) const override {
             ParentIterator::_check_authority_is_set();
@@ -175,18 +395,14 @@ protected:
 //
 
 template<typename DereferencedTypeT,
-         typename IteratorAssociatedDataT,
          typename IteratorSymT>
-class BidirIterable : public virtual ComprIterable<DereferencedTypeT,
-                                                   IteratorAssociatedDataT,
+class BidirIterable : public virtual ComparableIterable<DereferencedTypeT,
                                                    IteratorSymT> {
 public:
     typedef DereferencedTypeT DereferencedType;
-    typedef IteratorAssociatedDataT IteratorAssociatedData;
     typedef IteratorSymT IteratorSym;
 
-    typedef ComprIterable<DereferencedType,
-                          IteratorAssociatedData,
+    typedef ComparableIterable<DereferencedType,
                           IteratorSym> Parent;
 protected:
     template<typename EndIteratorClassT>
@@ -199,16 +415,9 @@ protected:
             ParentIterator::_check_authority_is_set();
             ParentIterator::_authorityPtr->_V_decrease_iterator_sym( ParentIterator::_sym );
         }
-        virtual bool operator!= (const EndIteratorClass & eit) const override {
-            ParentIterator::_check_authority_is_set();
-            return ParentIterator::_authorityPtr->_V_compare_iterators(
-                        ParentIterator::_sym,
-                        eit._sym );
-        }
     };
 
     virtual void _V_decrease_iterator_sym( IteratorSym & ) = 0;
-    virtual void _V_compare_iterators( const IteratorSym &, const IteratorSym & ) = 0;
 };
 
 //
@@ -216,18 +425,14 @@ protected:
 //
 
 template<typename DereferencedTypeT,
-         typename IteratorAssociatedDataT,
          typename IteratorSymT>
-class InputIterable : public virtual ComprIterable<DereferencedTypeT,
-                                                  IteratorAssociatedDataT,
+class InputIterable : public virtual ComparableIterable<DereferencedTypeT,
                                                   IteratorSymT> {
 public:
     typedef DereferencedTypeT DereferencedType;
-    typedef IteratorAssociatedDataT IteratorAssociatedData;
     typedef IteratorSymT IteratorSym;
 
-    typedef ComprIterable<DereferencedType,
-                          IteratorAssociatedData,
+    typedef ComparableIterable<DereferencedType,
                           IteratorSym> Parent;
 protected:
     template<typename EndIteratorClassT>
@@ -240,14 +445,9 @@ protected:
             ParentIterator::_check_authority_is_set();
             return ParentIterator::_authorityPtr->_V_dereference_iterator_sym( ParentIterator::_sym );
         }
-        DereferencedType && operator*() {  // TODO ??
-            ParentIterator::_check_authority_is_set();
-            return ParentIterator::_authorityPtr->_V_dereference_iterator_sym( ParentIterator::_sym );
-        }
     };
 
     virtual const DereferencedType & _V_dereference_iterator_sym( const IteratorSym & ) const = 0;
-    DereferencedType && _V_dereference_iterator_sym( const IteratorSym & ) = 0;  // TODO ??
 };
 
 //
@@ -255,18 +455,14 @@ protected:
 //
 
 template<typename DereferencedTypeT,
-         typename IteratorAssociatedDataT,
          typename IteratorSymT>
-class ForwardIterable : public virtual ComprIterable<DereferencedTypeT,
-                                                     IteratorAssociatedDataT,
+class ForwardIterable : public virtual ComparableIterable<DereferencedTypeT,
                                                      IteratorSymT> {
 public:
     typedef DereferencedTypeT DereferencedType;
-    typedef IteratorAssociatedDataT IteratorAssociatedData;
     typedef IteratorSymT IteratorSym;
 
-    typedef ComprIterable<DereferencedType,
-                          IteratorAssociatedData,
+    typedef ComparableIterable<DereferencedType,
                           IteratorSym> Parent;
 protected:
     template<typename EndIteratorClassT>
@@ -277,8 +473,6 @@ protected:
 
         ForwardIterator(){}
     };
-
-    // todo: begin/end/etc?
 };
 
 //
@@ -286,20 +480,16 @@ protected:
 //
 
 template<typename DereferencedTypeT,
-         typename IteratorAssociatedDataT,
          typename IteratorSymT,
          typename OffsetT>
 class RandomIterable : public virtual BidirIterable<DereferencedTypeT,
-                                                     IteratorAssociatedDataT,
                                                      IteratorSymT> {
 public:
     typedef DereferencedTypeT DereferencedType;
-    typedef IteratorAssociatedDataT IteratorAssociatedData;
     typedef IteratorSymT IteratorSym;
     typedef OffsetT Offset;
 
     typedef BidirIterable<DereferencedType,
-                          IteratorAssociatedData,
                           IteratorSym> Parent;
 protected:
     template<typename EndIteratorClassT>
@@ -361,6 +551,9 @@ enum IteratorFeatures {
 };
 
 }  // namespace mixins
+
+# endif
+
 }  // namespace goo
 
 # endif  // H_GOO_ITERABLE_MIXIN_H

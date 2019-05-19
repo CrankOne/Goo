@@ -128,6 +128,7 @@ run_test_on_base( std::ostream & os ) {
         _ASSERT( copyAPtr->original_id() == baseA->id(),
                  "Wrong original ID set for copy." )
         os << "ok (expected)" << std::endl;
+        delete copyAPtr;
     }
     {   // Far descendant copy check:
         Derived3<BaseT> a;
@@ -140,6 +141,7 @@ run_test_on_base( std::ostream & os ) {
         _ASSERT( copyAPtr->original_id() == baseA->id(),
                  "Wrong original ID set for copy." )
         os << "ok (expected)" << std::endl;
+        delete copyAPtr;
     }
 
     # ifndef NDEBUG
@@ -151,6 +153,7 @@ run_test_on_base( std::ostream & os ) {
         try {
             BaseT * copyAPtr = goo::clone( baseA );
             (void)(copyAPtr);
+            delete copyAPtr;
         } catch( goo::Exception & e ) {
             if( goo::Exception::dbgBadArchitect == e.code() ) {
                 hadFailure = true;
@@ -177,6 +180,7 @@ GOO_UT_BGN( VCtr, "Virtual copy constructor" ) {
                  "Base copy: IDs of copy and original matches." );
         _ASSERT( aCopyPtr->original_id() == a.id(),
                  "Base copy: wrong original ID set for copy." )
+        delete aCopyPtr;
     }
     os << "(base itself cloned ok):" << std::endl;
     run_test_on_base<Base>( os );

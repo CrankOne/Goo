@@ -41,12 +41,13 @@ class UTApp : public goo::App<Config, std::ostream> {
 public:
     class TestingUnit;
     typedef goo::App<Config, std::ostream> Parent;
+    typedef std::unordered_map<std::string, dag::Node<TestingUnit>*> Registry;
 private:
     /// Set to nullptr when cout is used.
     std::stringstream * _ss;
     /// The DAG is not a storage.
-    static LabeledDAG<TestingUnit>                        * _modulesGraphPtr;
-    static std::unordered_map<std::string, TestingUnit *> * _modulesStoragePtr;
+    static Registry * _modulesGraphPtr;
+    //static std::unordered_map<std::string, TestingUnit *> * _modulesStoragePtr;  // XXX
 public:
     class TestingUnit {
     private:
@@ -90,8 +91,6 @@ protected:
     /// Run configured application.
     virtual int _V_run() override;
 
-    /// Sets up all dependencies enlisted in units descriptions.
-    void _incorporate_dependencies();
     /// Run module wrapper routine. Result < 0 indicates an error.
     int _run_unit( TestingUnit *, std::ostream &, bool noRun=false );
 public:

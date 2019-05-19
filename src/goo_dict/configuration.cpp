@@ -24,7 +24,9 @@
 # include "goo_dict/insertion_proxy.tcc"
 # include "goo_exception.hpp"
 # include "goo_utility.hpp"
+# include "goo_dict/conf_help_render.hpp"
 
+# include <algorithm>
 # include <cstring>
 # include <unistd.h>
 # include <getopt.h>
@@ -41,16 +43,19 @@ const int Configuration::longOptKey = 2;
 const int Configuration::longOptNoShortcutRequiresArgument = 3;
 
 Configuration::Configuration( const char * name_,
-                              const char * descr_ ) : Dictionary(name_, descr_),
+                              const char * descr_,
+                              bool defaultHelpIFace ) : Dictionary(name_, descr_),
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
                                                       _getoptCachesValid( false ),
+                                                      _dftHelpIFace(defaultHelpIFace),
                                                       _positionalArgument( nullptr ) {}
 
 Configuration::Configuration( const Configuration & orig ) : Dictionary( orig ),
                                                       _cache_longOptionsPtr( nullptr ),
                                                       _cache_shortOptionsPtr( nullptr ),
                                                       _getoptCachesValid( false ),
+                                                      _dftHelpIFace(orig._dftHelpIFace),
                                                       _positionalArgument( nullptr ) {}
 
 Configuration::~Configuration() {
@@ -64,21 +69,36 @@ void
 Configuration::_recache_getopt_arguments() const {
     _free_caches_if_need();
 
+    //abort();
+
     Configuration::ShortOptString    sOptsQ;
     Configuration::LongOptionEntries lOptsQ;
     _cache_append_options( *this, "", sOptsQ, _cache_shortcutPaths, lOptsQ );
-    static const char _static_shortOptionsPrefix[] = "-:";  // todo: move to define
-    const size_t sOptsStrLen = sizeof(_static_shortOptionsPrefix) + sOptsQ.size() - 1;
+    static const char _static_shortOptionsPrefix[] = "-:",  // todo: move to define
+                      _static_shortOptionsPrefixWHelp[] = "-:h::";
+    const char * cmnShrtPrfx = ( _dftHelpIFace ? _static_shortOptionsPrefixWHelp
+                                               : _static_shortOptionsPrefix );
+    size_t cmnShrtPrfxLen = strlen(cmnShrtPrfx);
+    const size_t sOptsStrLen = cmnShrtPrfxLen + sOptsQ.size();
 
     // TODO: string with back-insertion iterator?
     _cache_shortOptionsPtr             = new char [ sOptsStrLen + 1 ];
-    struct ::option * longOptionsPtr_t = new struct ::option [ lOptsQ.size() + 1 ];
+    struct ::option * longOptionsPtr_t = new struct ::option [
+                                    lOptsQ.size() + (_dftHelpIFace ? 2 : 1) ];
     _cache_longOptionsPtr = longOptionsPtr_t;
 
+    if( _dftHelpIFace ) {
+        longOptionsPtr_t[0].name = strdup("help");
+        longOptionsPtr_t[0].has_arg = optional_argument;
+        longOptionsPtr_t[0].flag = NULL;
+        longOptionsPtr_t[0].val = 'h';
+    }
+
     {  // Form short options string:
-        memcpy( _cache_shortOptionsPtr, _static_shortOptionsPrefix,
-                sizeof(_static_shortOptionsPrefix) );
-        for( char * c = _cache_shortOptionsPtr + sizeof(_static_shortOptionsPrefix) - 1;
+        memcpy( _cache_shortOptionsPtr,
+                cmnShrtPrfx,
+                cmnShrtPrfxLen );
+        for( char * c = _cache_shortOptionsPtr + cmnShrtPrfxLen;
                         !sOptsQ.empty();
                         ++c, sOptsQ.pop_front() ) {
             *c = sOptsQ.front();
@@ -87,9 +107,10 @@ Configuration::_recache_getopt_arguments() const {
     }
 
     {  // Form long options structures array:
-        longOptionsPtr_t[lOptsQ.size()] = {NULL, 0, 0, 0};  // sentinel
+        longOptionsPtr_t[lOptsQ.size() + (_dftHelpIFace ? 1 : 0)]
+                                                = {NULL, 0, 0, 0};  // sentinel
         struct ::option * queuedInstancePtr;
-        for( struct ::option * c = longOptionsPtr_t;
+        for( struct ::option * c = longOptionsPtr_t + (_dftHelpIFace ? 1 : 0);
              !lOptsQ.empty();
              ++c, lOptsQ.pop_front() ) {
             memcpy(c,
@@ -206,7 +227,7 @@ Configuration::_append_positional_arg( const char * strv ) {
     _positionalArgument->parse_argument( strv );
 }
 
-void
+int
 Configuration::extract( int argc,
                         char * const argv[],
                         bool doConsistencyCheck,
@@ -239,12 +260,24 @@ Configuration::extract( int argc,
     // If they are --- shall we raise an exception? How about shortened-only
     // case or even when only positional arguments are provided?
     int optIndex = -1, c;
+
     while( -1 != (c = getopt_long( argc, argv, _cache_shortOptionsPtr, longOptions, &optIndex )) ) {
         //if ( optind == prevInd + 2 && *optarg == '-' ) {
         //    c = ':';
         //    -- optind;
         //}
         if( isalnum(c) ) {
+            if( 'h' == c && _dftHelpIFace ) {
+                if( !optarg || !strnlen(optarg, USHRT_MAX) ) {
+                    // No argument given --- print default usage text.
+                    usage_text( std::cout, argv[0] );
+                    return -1;
+                } else {
+                    // Section name given --- print subsection reference.
+                    subsection_reference( std::cout, optarg );
+                    return -1;
+                }
+            }
             // indicates this is an option with shortcut (or a shortcut-only option)
             auto pIt = _parametersIndexByShortcut.find( c );
             if( _parametersIndexByShortcut.end() == pIt ) {
@@ -388,6 +421,7 @@ Configuration::extract( int argc,
         }
     }
     # undef log_extraction
+    return 0;
 }
 
 const iSingularParameter &
@@ -396,11 +430,6 @@ Configuration::parameter( const char path[] ) const {
         return *_positionalArgument;
     }
     return Dictionary::parameter(path);
-}
-
-InsertionProxy
-Configuration::insertion_proxy() {
-    return InsertionProxy( this );
 }
 
 void
@@ -424,10 +453,112 @@ Configuration::_free_caches_if_need() const {
 }
 
 void
+Configuration::_collect_first_level_options(
+                    const Dictionary & self,
+                    const std::string & nameprefix,
+                    std::unordered_map<std::string, iSingularParameter *> & rqs,
+                    std::unordered_map<char, iSingularParameter *> & shrt ) {
+    // Iterate among dictionary options collecting the parameters:
+    for( auto it  = self._parameters.begin();
+              it != self._parameters.end(); ++it ) {
+        // Collect, if parameter has the shortcut or is mandatory:
+        if( (*it)->has_shortcut() || (*it)->is_mandatory() ) {
+            if( (*it)->name() ) {
+                // parameter has long name, collect it with its full path:
+                # ifndef NDEBUG
+                auto ir = rqs.emplace( nameprefix + (*it)->name(), *it );
+                assert( ir.second );
+                # else
+                rqs.emplace( nameprefix + (*it)->name(), *it );
+                # endif
+            } else {
+                // parameter has no long name, collect it with its shortcut:
+                # ifndef NDEBUG
+                auto ir = shrt.emplace( (*it)->shortcut(), *it );
+                assert( ir.second );
+                # else
+                shrt.emplace( (*it)->shortcut(), *it );
+                # endif
+            }
+            // TODO: positional?
+        }
+    }
+    /*
+    for( auto it  = self._dictionaries.cbegin();
+              it != self._dictionaries.cend(); ++it ) {
+        std::string sectPrefix = nameprefix
+                               + it->second->name()
+                               + nameprefix;
+    }
+    */
+}
+
+void
+Configuration::subsection_reference(
+                    std::ostream & os,
+                    const char * subsectName ) {
+    POSIXRenderer pr( *this );
+    pr.render_reference( os, subsection( subsectName ) );
+}
+
+void
 Configuration::usage_text( std::ostream & os,
-                           bool enableASCIIColoring ) {
-    os << name() << " --- " << description() << std::endl
-       << "Usage:" << std::endl;
+                           const char * appName ) {
+    POSIXRenderer pr( *this );  // TODO
+    pr.render_help_page( os );
+
+    # if 0
+    std::unordered_map<std::string, iSingularParameter *> fla;
+    std::unordered_map<char, iSingularParameter *> shrt;
+
+    _collect_first_level_options( *this, "", fla, shrt );
+    std::string shrtFlags;
+    
+    for( const auto & p : shrt ) {
+        if( p.second->is_flag() ) {
+            shrtFlags.push_back( p.first );
+        }
+    }
+    if( !shrtFlags.empty() ) {
+        std::sort( shrtFlags.begin(), shrtFlags.end());
+        os << "[-" << shrtFlags << "] ";
+    }
+
+    {
+        std::map<char, iSingularParameter *> sshrt(shrt.begin(), shrt.end());
+        for( const auto & p : sshrt ) {
+            assert( !p.second->name() );
+            if( p.second->requires_value() ) {
+                os << _parameter_usage_info(*(p.second) ) << " ";
+            }
+        }
+    }
+
+    {
+        for( const auto & p : fla ) {
+            os << _parameter_usage_info(*(p.second), p.first.c_str() ) << " ";
+        }
+    }
+    # endif
+
+    os << std::endl;
+    # if 0
+    _collect_options_descriptions( *this, shrtFlags );
+    // Print single-character flags (options) that does not require argument:
+    //      example: [-1ab]
+    if( !shrtFlags.empty() ) {
+        std::sort( shrtFlags.begin(), shrtFlags.end() );
+        os << "[-" << shrtFlags "]" << " ";
+    }
+    // Print sorted options of current level. Examples:
+    //      [-a]
+    //      [-o|--output <str>]
+    //      --input|-i <str>...
+    //      -O <I>
+    //      [--flag <yes|no>]
+    //      [--opt-w-dft-val=<str:dft-val>]
+    //      [--opt-w-dft-val=<str:{dft-val#1,dft-val#2,dft-val#3}>]...
+    # endif
 }
 
 Size
@@ -474,6 +605,11 @@ void
 Configuration::insert_section( Dictionary * sect ) {
     Dictionary::insert_section( sect );
     invalidate_getopt_caches();
+}
+
+void
+Configuration::append_section( const Dictionary & dPtr ) {
+    insert_section( new Dictionary( dPtr ) );
 }
 
 # if 0
@@ -530,21 +666,52 @@ Configuration::_cache_parameter_by_full_name( const std::string & fullName,
 }
 
 void
-Configuration::print_ASCII_tree( std::ostream & ss ) const {
+Configuration::print_ASCII_tree( std::ostream & ss, size_t terminalWidth ) const {
     std::list<std::string> fullOutput;
-    print_ASCII_tree( fullOutput );
+    print_ASCII_tree( fullOutput, terminalWidth );
     for( auto line : fullOutput ) {
         ss << line << std::endl;
     }
 }
 
+// TODO: consider move this functions to goo::utils (may be useful in many places further).
+// taken from: https://stackoverflow.com/a/7298458/1734499
+static size_t utf8_length( const char * s ) {
+    size_t len = 0;
+    for (; *s; ++s) if ((*s & 0xC0) != 0x80) ++len;
+    return len;
+}
+
 void
-Configuration::print_ASCII_tree( std::list<std::string> & output ) const {
-    Dictionary::print_ASCII_tree( output );
+Configuration::print_ASCII_tree( std::list<std::string> & output,
+                                 size_t terminalWidth ) const {
+    Dictionary::print_ASCII_tree( output, terminalWidth );
     if( output.empty() ) {
         output.push_back( std::string("╚═ " ESC_BLDRED "<!empty!>" ESC_CLRCLEAR) );
     }
-    output.push_front( std::string("╔═ << " ESC_BLDGREEN) + name() + ESC_CLRCLEAR " >>" );
+    std::string prefix("╔═ << ")
+              , body( description() )
+              ;
+    const size_t prefixSize = utf8_length( prefix.c_str() );
+    std::string subprefix = "║" + std::string( prefixSize - 1, ' ' );
+    terminalWidth = terminalWidth - prefixSize;
+    if( body.size() > terminalWidth ) {
+        std::string tail = body.substr( body.size() -
+                                        body.size() % terminalWidth );
+        output.push_front( subprefix + tail + "\n║" );
+        for( body = body.substr( 0, body.size() - tail.size() )
+           ; body.size() > terminalWidth
+           ; ) {
+            std::string subbody = body.substr( body.size() - terminalWidth );
+            output.push_front( subprefix + subbody );
+            body = body.substr( 0, body.size() - subbody.size() );
+        }
+        output.push_front( subprefix + body );
+    } else {
+        output.push_front( subprefix + body );
+    }
+
+    output.push_front( prefix + ESC_BLDGREEN + name() + ESC_CLRCLEAR " >>" );
 }
 
 }  // namespace dict

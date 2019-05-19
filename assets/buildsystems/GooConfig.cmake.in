@@ -18,6 +18,7 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# This file includes Goo's exported target  TODO: and what?!
 # CMake config file for Goo library package
 # - It defines the following variables
 #  Goo_INCLUDE_DIRS     - include directories for Goo library
@@ -33,11 +34,16 @@
 # to be defined:
 #  Goo_UT_EXECUTABLE    - the Goo unit tests executable
 
-set( Goo_INCLUDE_DIRS   "@CMAKE_INSTALL_PREFIX@/include/goo" )
-set( Goo_LIBRARIES      @Goo_LIBRARY@ )
-set( Goo_LIBRARY_DIR    @CMAKE_INSTALL_PREFIX@/lib/goo )
-set( Goo_INSTALL_PREFIX @CMAKE_INSTALL_PREFIX@ )
-set( Goo_CMAKE_MODULES_DIR @CMAKE_INSTALL_PREFIX@/lib/cmake/goo )
+#  Compute the installation prefix relative to this file.
+get_filename_component(_CURRENT_LOCATION "${CMAKE_CURRENT_LIST_FILE}" PATH)
+include( ${_CURRENT_LOCATION}/GooTargets.cmake )
+
+set( Goo_CMAKE_MODULES_DIR  ${_CURRENT_LOCATION} )
+
+set( Goo_INCLUDE_DIRS       "@CMAKE_INSTALL_PREFIX@/include/goo" )
+set( Goo_LIBRARIES          @Goo_LIBRARY@ )
+set( Goo_LIBRARY_DIR        @CMAKE_INSTALL_PREFIX@/lib/goo )
+set( Goo_INSTALL_PREFIX     @CMAKE_INSTALL_PREFIX@ )
 
 set( Goo_CC             "@CMAKE_C_COMPILER@" )
 set( Goo_C_CFLAGS       "@CMAKE_C_FLAGS@"   )

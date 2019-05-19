@@ -2,6 +2,7 @@
 # include <wordexp.h>
 # include "utest.hpp"
 # include "goo_dict/configuration.hpp"
+# include "goo_dict/parameters/enum_parameter.tcc"
 
 /**@file pdict.cpp
  * @brief Parameters dictionary test.
@@ -25,9 +26,9 @@ static void expected_argv_parsing_error(
             goo::dict::Configuration conf,
             std::ostream & mainOutStream ) {
     char ** argv;
+    int argc = goo::dict::Configuration::tokenize_string( str, argv );
     std::stringstream subStream;
     try {
-        int argc = goo::dict::Configuration::tokenize_string( str, argv );
         subStream << "Input arguments after tokenization:" << std::endl;
         for( uint8_t i = 0; i < argc; ++i ) {
             subStream << "  argv[" << (int) i << "]=\""
@@ -36,7 +37,6 @@ static void expected_argv_parsing_error(
         conf.extract( argc, argv, true, &subStream );
         // The code from here to catch() part has not be evaluated unless
         // expected exception was not triggered:
-        goo::dict::Configuration::free_tokens( argc, argv );
         mainOutStream << "Failed case extraction log dump {" << std::endl
                       << subStream.str()
                       << "} Failed case extraction log dump" << std::endl
@@ -60,7 +60,28 @@ static void expected_argv_parsing_error(
                 get_errcode_description(e.code()) );
         }
     }
+    goo::dict::Configuration::free_tokens( argc, argv );
 }
+
+namespace other {
+struct another {
+enum TestingEnum {
+    zero = 0,
+    one = 1,
+    two = 2,
+    ten = 10
+};  // TestingEnum
+};  // struct another
+}  // namespace other
+
+# define for_all_TestingEnum_enum_entries( m, ... )   \
+    m( zero,  __VA_ARGS__ ) \
+    m( one,  __VA_ARGS__  ) \
+    m( two,  __VA_ARGS__  ) \
+    m( ten,  __VA_ARGS__  )
+GOO_ENUM_PARAMETER_DEFINE( other::another:: , TestingEnum,
+                            for_all_TestingEnum_enum_entries )
+# undef for_all_TestingEnum_enum_entries
 
 GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
     # if 1
@@ -124,11 +145,14 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
             .p<float>( "fp-num-i", "Some fp-number" )
             .p<double>( "fp-num-ii", "Some fp-number (double)" )
             .p<std::string>( "strval", "Some string value", "defstrval" )
-            .p<std::string>( 's', nullptr, "Another string value" )
+            .p<std::string>( 's', nullptr, "Another string value" ) 
+            // ^^^ special case: setting string parameter idenitified by
+            // shortcut (one-letter string) only, WITHOUT a default valuue.
+            .p<other::another::TestingEnum>( 'e', "enum parameter", other::another::zero )
             ;
 
         const char ex1[] = "./foo -1vqfalse -simastrval --fp-num-ii 0x1.568515b1d78d4p-36 "
-            " --quiet=true -V --quiet2 false --verbosity 23 --fp-num-i 1.23";
+            " --quiet=true -V --quiet2 false -eten --verbosity 23 --fp-num-i 1.23";
         char ** argv;
         os << "For given source string: " << ex1 << ":" << std::endl;
         int argc = goo::dict::Configuration::tokenize_string( ex1, argv );
@@ -156,6 +180,8 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                   "\"strval\" default set wrong: \"%s\"", conf["strval"].as<std::string>().c_str() );
         _ASSERT(  "imastrval" == conf["s"].as<std::string>(),
                   "\"s\" set wrong: \"%s\"", conf["s"].as<std::string>().c_str() );
+        _ASSERT(  other::another::ten == conf["e"].as<other::another::TestingEnum>(),
+                  "\"e\" set wrong: %d", (int) conf["e"].as<other::another::TestingEnum>() );
 
         try {
             conf["verbose"].as<bool>();
@@ -172,6 +198,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Basic parsing tests done." << std::endl;
     }
     # endif
+    # if 1
     {
         os << "Basic parsing errors checks: {" << std::endl;
         goo::dict::Configuration conf( "theApplication2", "Testing parameter set #1." );
@@ -202,6 +229,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         os << "} Basic parsing errors checks." << std::endl;
     }
+    # endif
     # if 1
     {
         os << "List parameters tests : {" << std::endl;
@@ -211,16 +239,19 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         conf.insertion_proxy()
             .flag( '1', "parameter-one",  "First parameter" )
-            .list<bool>( 'b', "binary", "options array #1",
-                                                {true, true, false, false} )
-            .list<bool>( 'B', "options array #2", {false, false, false, false} )
+            .list<bool>( 'b', "binary", "options array #1"
+                       , {true, true, false, false} )
+            .list<bool>( 'B', "options array #2"
+                       , {false, false, false, false} )
             .list<bool>( "binary2", "options array #3" )
-            .list<bool>( 'a', "options array #4", {true, false, true} )
+            .list<bool>( 'a', "options array #4"
+                       , {true, false, true} )
             .flag( 'v', "Enables verbose output" )
             .list<short>( 'x', "List of short ints", { 112, 53, 1024 } )
             .list<float>( "fl-num", "List of floating numbers" )
             .list<std::string>( 's', "lstr-i", "String list one", {"a", "b", "c"} )
-            .list<std::string>( "lstr-ii", "String list one", { "one", "two", "three" } )
+            .list<std::string>( "lstr-ii", "String list two", { "one", "two", "three" } )
+            .list<std::string>( 'S', nullptr, "String list three", { "1", "two", "III" } )
             ;
 
         const char ex1[] = "./foo -s one -1v --fl-num 1e-6 -b true -b Off -b On "
@@ -380,7 +411,6 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         os << "} Consistency tests done." << std::endl;
     }
     # endif
-
     # if 1
     {
         os << "Subsection parameter retrieving : {" << std::endl;
@@ -416,6 +446,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
 
         os << "} Subsection parameter retrieving." << std::endl;
         conf.extract( argc, argv, true, &os );
+        goo::dict::Configuration::free_tokens( argc, argv );
 
         _ASSERT( conf["v"].as<uint8_t>() == 3, "'v' parameter set wrong" );
         _ASSERT( conf["quiet"].as<bool>(), "\"quiet\" parameter set wrong" );
@@ -429,7 +460,6 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
                     "\"subsect3.imaflag\" set wrong")
     }
     # endif
-
     # if 1
     // See http://unix.stackexchange.com/questions/147143/when-and-how-was-the-double-dash-introduced-as-an-end-of-options-delimiter
     // for historical details about useful `--` special token that initially
@@ -470,6 +500,7 @@ GOO_UT_BGN( PDICT, "Parameters dictionary routines" ) {
         } os << std::endl;
 
         conf.extract( argc, argv, true, &os );
+        goo::dict::Configuration::free_tokens( argc, argv );
 
         const char chkTokens[][10][64] = {
             { "/tmp/build.log",     "/tmp/build-11-03-017.log", "-", "" },

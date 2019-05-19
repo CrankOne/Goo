@@ -112,11 +112,18 @@ protected:
     /// Raises an exception if contradictory states are set for parameter
     /// on initial stage.
     void _check_initial_validity();
+
+    /// Useful for auxilliary classes.
+    void _append_description( const char * );
 public:
     virtual ~iAbstractParameter();
 
     /// Returns pointer to name string.
     const char * name() const;
+
+    /// Name setter. Use with care since these parameters may often be cached
+    /// by owning dictionaries.
+    void name( const char * );
 
     /// Returns pointer to description string.
     const char * description() const;
@@ -190,6 +197,7 @@ class iSingularParameter : public iAbstractParameter /*{{{*/ {
 protected:
     virtual void _V_parse_argument( const char * ) = 0;
     virtual std::string _V_to_string() const = 0;
+    virtual void _V_assign( const iSingularParameter & ) = 0;
 public:
     /// Returns single-char shortcut for this parameter.
     char shortcut() const { return _shortcut; }
@@ -224,6 +232,15 @@ public:
     as_list_of() const;
 
     virtual const std::type_info & target_type_info() const = 0;
+
+    virtual void assign( const iSingularParameter & src ) {
+        _V_assign( src );
+    }
+
+    iSingularParameter & operator=( const iSingularParameter & src ) {
+        assign( src );
+        return *this;
+    }
 };  // }}} class iSingularParameter
 
 
@@ -245,12 +262,14 @@ public:
 private:
     Value _value;
 protected:
+    virtual void _V_assign( const iSingularParameter & ) override;
     void _set_value( const ValueT & );
     virtual void _V_parse_argument( const char * strval ) override {
         _set_value( _V_parse( strval ) ); }
     virtual std::string _V_to_string( ) const override {
         assert( this->is_set() );
         return _V_stringify_value( value() ); }
+    ValueT & mutable_value() { return _value; }
 
     virtual Value _V_parse( const char * ) const = 0;
     virtual std::string _V_stringify_value( const Value & ) const = 0;
@@ -274,6 +293,10 @@ public:
 
     virtual const std::type_info & target_type_info() const final {
         return typeid(ValueT); }
+
+    /// This method is to be used by user code, for special cases. It should
+    /// not be used by Goo API, during the normal argument parsing cycle.
+    void set_value( const ValueT & v ) { _set_value(v); }
 };  // class iParameter
 
 template<typename ValueT>
@@ -322,6 +345,27 @@ iParameter<ValueT>::_set_value( const ValueT & val ) {
     _value = val;
 }
 
+template<typename ValueT> void
+iParameter<ValueT>::_V_assign( const iSingularParameter & spVal ) {
+    if( !spVal.is_set() ) {
+        // The original value is not set. The expected behaviour in this case
+        // is to do nothing with own value. TODO: this has to be reflected in
+        // documentation!
+        return;
+    }
+    this->_set_is_set_flag();
+
+    // TODO: dynamic_cast<> here may ruin the performance for complex types.
+    auto p = dynamic_cast<const iParameter<ValueT> *>( &spVal );
+    if( !p ) {
+        emraise( badCast, "Types mismatch. Unable to perform assignment of "
+            "parameter instance \"%s\" (with value =%s) to iParameter<%s> "
+            "instance.", spVal.target_type_info().name(),
+            spVal.to_string().c_str(), typeid(ValueT).name() );
+    }
+    _set_value( p->value() );
+}
+
 /*}}}*/  // class iParameter implementation
 
 /**@class Parameter
@@ -335,7 +379,10 @@ class Parameter;  // Defailt implementation is empty.
 
 template <typename T> class IntegralParameter;
 template <typename T> class FloatingPointParameter;
+template <typename T> class EnumParameter;
+template <typename T> class PointerParameter;
 
+# ifndef SWIG
 template<typename T>
 using InsertableParameter = typename
     std::conditional< std::is_arithmetic<T>::value,
@@ -349,8 +396,15 @@ using InsertableParameter = typename
                     >::type
             >::type
         >::type,
-        Parameter<T>
+        typename std::conditional< std::is_enum<T>::value,
+            EnumParameter<T>,
+            typename std::conditional< std::is_pointer<T>::value,
+                PointerParameter<T>,
+                Parameter<T>
+                >::type
+            >::type
     >::type;
+# endif
 
 /**@brief A parameter list class.
  * 
@@ -402,7 +456,20 @@ public:
         this->_unset_singular();
         this->_set_is_set_flag();
         assert( !(this->name() == nullptr && !this->has_shortcut()) );
-        assert( this->description() ); }
+        assert( this->description() );
+    }
+
+    template<class ... Types>
+    Parameter( const std::list<ValueT> & il, Types ... args ) :
+        DuplicableParent( args ... , *il.begin() ),
+        _setToDefault( true ),
+        _values( il )
+    {
+        this->_unset_singular();
+        this->_set_is_set_flag();
+        assert( !(this->name() == nullptr && !this->has_shortcut()) );
+        assert( this->description() );
+    }
 
     template<class ... Types>
     Parameter( Types ... args ) :
@@ -410,7 +477,8 @@ public:
         _setToDefault( false )
     {   this->_unset_singular();
         assert( !(this->name() == nullptr && !this->has_shortcut()) );
-        assert( this->description() ); }
+        assert( this->description() );
+    }
 
     Parameter( const Parameter<std::list<ValueT> > & orig ) :
         DuplicableParent( orig ),
@@ -426,6 +494,15 @@ public:
     /// Sets `_setToDefault` flag. See note about this flag in class
     /// description.
     void set_to_default(bool v) { _setToDefault = v; }
+
+    /// This method is usually used by some user code desiring set all the
+    /// parameters list at once. It should not be used by Goo API, during the
+    /// normal argument parsing cycle.
+    void assign( const std::list<ValueT> & plst ) {
+        for( auto v : plst ) {
+            _V_push_value(v);
+        }
+    }
 
     friend class InsertionProxy;
 
