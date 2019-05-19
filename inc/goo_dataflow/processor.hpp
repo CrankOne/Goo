@@ -47,8 +47,38 @@ struct Traits {
     }
 };
 
-/// Processing status code.
-typedef uint8_t PSC;
+/**@struct EvalStatus
+ * @brief Processing status code.
+ *
+ * Each processor have to return a status code for encompassing
+ * graph-traversal routine at the end of its invocation. This status code
+ * may interrupt DAG traversal (data propagation). One has to distinguish
+ * following cases of abortion:
+ *      - interrupt DAG traversal; useful for look-up procedures, filtering or
+ *      fault-tolerant errors. By "fault tolerance" we imply that processor is
+ *      capable to recover after the error and be able to continue.
+ *      - abort DAG processing; besides of fatal errors, is useful for global
+ *      look-up procedure when all the parallel-running tasks have to be stopped
+ *      (`reduce'-like application patterns).
+ *
+ * Default return code is `0' (integer), meaning that DAG traversal shall
+ * continue.
+ */
+struct EvalStatus {
+    /// Continue traversal.
+    static constexpr int ok = 0;
+    /// Abort DAG traversal: interrupt DAG propagation in current worker.
+    static constexpr int skip = 1;
+    /// Abort DAG processing: interrupt all the workers and set failure flag.
+    static constexpr int done = 2;
+    /// Abort DAG processing: interrupt all the workers, but do not set the
+    /// failure flag.
+    static constexpr int error = -1;
+    int value;
+    EvalStatus() {}
+    EvalStatus(int v) : value(v) {}
+    bool operator==(int cv) { return cv == value; }
+};
 
 /// Represents a single value entry within variables map.
 class ValueEntry {
@@ -115,9 +145,9 @@ public:
 private:
     Ports _ports;
 protected:
-    virtual PSC _V_eval( ValuesMap & ) = 0;
+    virtual EvalStatus _V_eval( ValuesMap & ) = 0;
 public:
-    PSC eval( ValuesMap & vm ) {
+    EvalStatus eval( ValuesMap & vm ) {
         return _V_eval(vm);
     }
     /// Creates new typed I/O port.

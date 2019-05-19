@@ -50,7 +50,7 @@ namespace gdf = goo::dataflow;
 /// number in [1:6] interval.
 class Dice : public gdf::iProcessor {
 protected:
-    virtual gdf::PSC _V_eval( gdf::ValuesMap & vm ) override {
+    virtual gdf::EvalStatus _V_eval( gdf::ValuesMap & vm ) override {
         vm.set<int>("value", rand()%6 + 1);
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
         return 0;
@@ -64,7 +64,7 @@ public:
 /// Sums 6 integer numbers.
 class Sum6 : public gdf::iProcessor {
 protected:
-    virtual gdf::PSC _V_eval( gdf::ValuesMap & vm ) override {
+    virtual gdf::EvalStatus _V_eval( gdf::ValuesMap & vm ) override {
         vm.set<int>("S", vm.get<int>("x1") + vm.get<int>("x2")
                        + vm.get<int>("x3") + vm.get<int>("x4")
                        + vm.get<int>("x5") + vm.get<int>("x6") );
@@ -83,7 +83,7 @@ public:
 /// Sums 2 integer numbers.
 class Sum2 : public gdf::iProcessor {
 protected:
-    virtual gdf::PSC _V_eval( gdf::ValuesMap & vm ) override {
+    virtual gdf::EvalStatus _V_eval( gdf::ValuesMap & vm ) override {
         vm.set<int>("c", vm.get<int>("a") + vm.get<int>("b") );
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
         return 0;
@@ -101,7 +101,7 @@ class Compare : public gdf::iProcessor {
 private:
     size_t _match, _mismatch;
 protected:
-    virtual gdf::PSC _V_eval( gdf::ValuesMap & vm ) override {
+    virtual gdf::EvalStatus _V_eval( gdf::ValuesMap & vm ) override {
         if( vm.get<int>("A") == vm.get<int>("B") ) {
             ++_match;
         } else {
@@ -125,7 +125,7 @@ struct ParallelEvent {
     size_t nProc, nTier, nWorker;
 };
 
-GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
+GOO_UT_BGN( Dataflow, "Dataflow basics" ) {
     gdf::Framework fw;
     // All processors except "Compare" are statelss, so we can safely populate
     // single instances among few nodes in framework.
@@ -182,15 +182,15 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
     fw.generate_dot_graph(os);
     # endif
     # ifdef _m_DEV_SINGLE_THREADED_DAG_TRAV
-    gdf::Worker w1( fw );
+    gdf::JournaledWorker w1( fw );
     w1.run();
     # else
     const size_t nThreads = std::thread::hardware_concurrency();
-    std::thread * ts[nThreads];
-    gdf::Worker * ws[nThreads];
+    std::thread          * ts[nThreads];
+    gdf::JournaledWorker * ws[nThreads];
     for( size_t nThread = 0; nThread < nThreads; ++nThread ) {
-        ws[nThread] = new gdf::Worker( fw );
-        ts[nThread] = new std::thread( &gdf::Worker::run, ws[nThread] );
+        ws[nThread] = new gdf::JournaledWorker( fw );
+        ts[nThread] = new std::thread( &gdf::JournaledWorker::run, ws[nThread] );
     }
     std::multimap<std::clock_t, ParallelEvent> paes;
     for( size_t nThread = 0
@@ -201,7 +201,7 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
         auto workLog = ws[nThread]->log();
         std::transform( workLog.begin(), workLog.end()
                       , std::inserter(paes, paes.begin())
-                      , [&nThread](const gdf::Worker::LogEntry & le) {
+                      , [&nThread](const gdf::JournaledWorker::LogEntry & le) {
                         return std::pair<clock_t, ParallelEvent>( le.time, ParallelEvent{
                                 le.type, le.nProc, le.nTier, nThread
                             } );
@@ -227,10 +227,13 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
             ss << pae.second.nTier
                << "/"
                << pae.second.nProc
-               << "-" << ( pae.second.type == gdf::Worker::LogEntry::execStarted
+               << "-" << ( pae.second.type == gdf::Worker::EventCode::execStarted
                          ? "bgn" : "end");
             os << std::setw(10) << ss.str() << " | ";
         }
+        _ASSERT( pae.second.type == gdf::Worker::EventCode::execStarted
+              || pae.second.type == gdf::Worker::EventCode::execOk
+              , "Unexpected workflow event type: %#x.", (int) pae.second.type );
         for( ++cnt ; cnt < nThreads; ++cnt ) {
             os << "           | ";
         }

@@ -38,23 +38,61 @@ protected:
  * */
 class Worker {
 public:
-    struct LogEntry {
-        static constexpr uint8_t execStarted = 0x1;
-        static constexpr uint8_t execEnded = 0x2;
+    enum EventCode : uint8_t {
+        execStarted,        // on processing start
+        execOk,             // on EvalStatus::ok
+        execErrException,   // on exception
+        execRuntimeError,   // on EvalStatus::error
+        execSkip,           // on EvalStatus::skip
+        execDone,           // on EvalStatus::done
+        execBadRC,          // otherwise
+    };
+protected:
+    /// Reference to the framework instance to be executed.
+    Framework & _fwRef;
+    /// TODO: description
+    virtual inline void _notify( size_t nProc, size_t nTier, EventCode evType ) {
+        //if( evType & _stopFlag ) {
+        //    // In this case, all the concurrent threads has to be notified that
+        //}
+    }
+    /// Ptr to exception caught, if any.
+    std::exception_ptr _excPtr;
+public:
+    Worker( Framework & fr ) : _fwRef(fr), _excPtr(nullptr) {}
+    /// Must be passed to a std::thread.
+    void run();
+    /// Returns current exception pointer in case of malfunction.
+    std::exception_ptr exception_ptr() const { return _excPtr; }
+};
 
-        uint8_t type;
+/**@class JournalingWorker
+ * @brief An implementation of Worker class with journaling capabilities.
+ *
+ * Performs simple logging during execution. Useful for debugging.
+ * */
+class JournaledWorker : public Worker {
+public:
+    struct LogEntry {
+        Worker::EventCode type;
         size_t nProc, nTier;
         std::clock_t time;
     };
 protected:
-    Framework & _fwRef;
+    /// Synchronizes access to internal logging journal.
     mutable std::mutex _logSyncM;
+    /// Logging journal.
     std::vector <LogEntry> _log;
+    /// Adss `processing started' event to the journal.
+    virtual inline void _notify( size_t nProc, size_t nTier, Worker::EventCode event ) override {
+        std::unique_lock<std::mutex> l(_logSyncM);
+        _log.push_back( LogEntry{ event
+                                , nProc, nTier
+                                , std::clock() } );
+    }
 public:
-    Worker( Framework & fr ) : _fwRef(fr) {}
-    /// Must be passed to a std::thread.
-    void run();
-    /// Log. TODO: sync access.
+    JournaledWorker( Framework & fr ) : Worker(fr) {}
+    /// returns copy of journal for external usage.
     const std::vector<LogEntry> log() const {
         std::unique_lock<std::mutex> l(_logSyncM);
         return _log;
