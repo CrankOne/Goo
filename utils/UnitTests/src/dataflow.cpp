@@ -20,16 +20,32 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+
+/**@file dataflow.cpp
+ * @brief Basic dataflow facility unit test sources.
+ *
+ * @TODO: assure that DAG is processed in a really semi-parallel mode, by
+ * introducing some checks to work log.
+ * */
+
 # include "utest.hpp"
 # include "goo_dataflow/framework.hpp"
 # include "goo_dataflow/worker.hpp"
 
+// Enable this to generate a dedicated .dot filefor dev debugging
+//# define _m_DEV_WRITE_DOT_FILE  "/tmp/gdf_example.dot"
+// Enable this to perform a single DAG traversal for dev purposes
+//# define _m_DEV_SINGLE_THREADED_DAG_TRAV
+
 # include <iomanip>
-# include <fstream>  // XXX file i/o for .dot debug
+
+# ifdef _m_DEV_WRITE_DOT_FILE
+#   include <fstream>
+# endif
 
 namespace gdf = goo::dataflow;
 
-// TODO: make it stateless
+// TODO: explicitly mark it as a stateless processor
 /// A testing single-output stateless processor, generating uniform random
 /// number in [1:6] interval.
 class Dice : public gdf::iProcessor {
@@ -157,15 +173,15 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
         fw.precedes( "Sum-2 #5", "c",     "Compare", "A" );
         fw.precedes( "Sum-6",    "S",     "Compare", "B" );
     }
-    # if 0
-    fw.generate_dot_graph(os);
-    # else
+    # ifdef _m_DEV_WRITE_DOT_FILE  // enables .dot file dump for dev checks
     std::ofstream dotF;
-    dotF.open("/tmp/one.dot");
+    dotF.open(_m_DEV_WRITE_DOT_FILE);
     fw.generate_dot_graph(dotF);
     dotF.close();
+    # else
+    fw.generate_dot_graph(os);
     # endif
-    # if 0
+    # ifdef _m_DEV_SINGLE_THREADED_DAG_TRAV
     gdf::Worker w1( fw );
     w1.run();
     # else
@@ -176,7 +192,7 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
         ws[nThread] = new gdf::Worker( fw );
         ts[nThread] = new std::thread( &gdf::Worker::run, ws[nThread] );
     }
-    std::map<std::clock_t, ParallelEvent> paes;
+    std::multimap<std::clock_t, ParallelEvent> paes;
     for( size_t nThread = 0
        ; nThread < nThreads
        ; ++nThread ) {
@@ -192,7 +208,6 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
                       } );
         delete ws[nThread];
     }
-    # endif
     
     os << "Dataflow:" << std::endl
        << "  time |";
@@ -232,4 +247,5 @@ GOO_UT_BGN( Dataflow, "Dataflow framework" ) {
     _ASSERT( cmp.total() == nThreads, "Wrong number of values have passed"
            " the comparison processor: %zu (%zu expected)."
            , cmp.total(), nThreads);
+    # endif
 } GOO_UT_END( Dataflow, "Bitset", "DFS_DAG" )

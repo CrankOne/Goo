@@ -63,8 +63,12 @@ Framework::impose( const std::string & name, iProcessor & p ) {
                , "Unable to insert node named \"%s\" over processor %p."
                , name.c_str(), &p );
     }
+    # ifdef NDEBUG
+    _namesByNodes.emplace(ir.first->second, name);
+    # else
     auto iir = _namesByNodes.emplace(ir.first->second, name);
     assert(iir.second);  // assure reverse index insertion
+    # endif
     return ir.first->second;
 }
 

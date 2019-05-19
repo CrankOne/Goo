@@ -77,9 +77,6 @@ protected:
     _find(const std::string & vName) {
         auto it = _values.find(vName);
         if( _values.end() == it ) {
-            for( auto iit : _values ) {  // XXX
-                std::cerr << " - " << iit.first << std::endl;
-            }
             emraise( noSuchKey, "Unable to retrieve value."
                    " Port \"%s\" has not been declared."
                    , vName.c_str() );
