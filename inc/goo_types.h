@@ -207,7 +207,8 @@
     m(108,      badArchitect,       "architectural incompleteness or undefined state", ## __VA_ARGS__  ) \
     m(109,      parserFailure,      "failed to parse string expression or token", ## __VA_ARGS__  ) \
     m(110,      inconsistentConfig, "inconsistent configuration or state", ## __VA_ARGS__ ) \
-    m(253,      gdsError,           "Declarative Semantics language parsing error") \
+    m(201,      gdsError,           "Declarative Semantics language parsing error") \
+    m(253,      expected,           "Scheduled testing exception.") \
     m(254,      dbgBadArchitect,    "code style violation / bad architecture / debug warning", ## __VA_ARGS__) \
     m(255,      thirdParty,         "thirt-party code error", ## __VA_ARGS__ ) \
     /* ... */
