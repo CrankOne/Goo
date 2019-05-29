@@ -23,6 +23,27 @@
 
 /**@file dataflow_err.cpp
  * @brief Tests for dataflow error-treatment capabilites.
+ *
+ * This fixture tests all the return codes possible during the dataflow
+ * processing and their effects on propagation as well as basic error-recovery
+ * mechanics provided by dataflow framework.
+ *
+ * In this test we build simple filtering pipeline consisting of:
+ *
+ *  - two random number generators ("value" and "control")
+ *  - one filtering node consuming random numbers from generators, producing an
+ *    which confirms propagation of "event" only if "ctrl" is greater
+ *    than "value". This way we check, that "skip" return code is treated in a
+ *    proper manner.
+ *
+ *
+ *    |             Inputs              ||              Result              |
+ *    | ctrl > value | count exhausted  ||  Return code   |   Exception   |
+ *    +---------------------------------++------------------+---------------+
+ *    |     true     |    false         ||      ok          |   no          |
+ *    |     false    |    false         ||      skip        |   no          |
+ *    |     true     |    true          ||      ok          |   no          |
+ *    |     false    |    true          ||      error       |   no          |
  * */
 
 # include "utest.hpp"
@@ -33,83 +54,76 @@
 
 namespace gdf = goo::dataflow;
 
-// PRG
-class Random : public gdf::iProcessor {
-public:
-    typedef std::mt19937::result_type Type;
-private:
-    std::mt19937 _g;
-protected:
-    virtual gdf::EvalStatus _V_eval( gdf::ValuesMap & vm ) override {
-        vm.set<Type>( "value", _g() );
-        return 0;
-    }
-public:
-    Random( int seed=1 ) : _g(seed) {
-        out_port<Type>("value");
-    }
+static const int _static_eventSequence[] = {
+    1,  1,  1,  1,  /* Four ordinary events */
+    2,  1,  2,  3,  /* Skip two events and abort propagation with error code */
+    1,  2,  1, -1,  /* Skip one event and abort propagation with exception */
+    1,  1,  1,  1,
 };
 
-// Passes value "v_i" only if "ctrl" > "value" AND current event's no is lesser
-// than parameter "count".
-class StochasticFilter : public gdf::iProcessor {
+// PRG
+class EventSource : public gdf::iProcessor {
+public:
+    typedef size_t Type;
 private:
     size_t _count;
 protected:
     virtual gdf::EvalStatus _V_eval( gdf::ValuesMap & vm ) override {
-        if( _count )
-            --_count;
-        auto value = vm.get<Random::Type>("v_i")
-           , ctrl = vm.get<Random::Type>("ctrl")
-           ;
-        if( ctrl > value ) {
-            if( _count )
-                return gdf::EvalStatus::skip;  // block further propagation
-            else
-                vm.set<bool>("error", true);
-        } else {
-            vm.set<bool>("error", false);
-        }
-        vm.set<Random::Type>("v_o", value);
+        vm.set<Type>( "value", _count++ );
         return 0;
     }
 public:
-    StochasticFilter( size_t count ) : _count(count) {
-        in_port<Random::Type>("v_i");
-        in_port<Random::Type>("ctrl");
+    EventSource( int seed=1 ) : _count(0) {
+        out_port<Type>("value");
+    }
+};
 
-        out_port<Random::Type>("v_o");
-        out_port<bool>("error");
+class TestingFilter : public gdf::iProcessor {
+private:
+    const int * _ctrlPtr;
+protected:
+    virtual gdf::EvalStatus _V_eval( gdf::ValuesMap & vm ) override {
+        vm.set<EventSource::Type>( "v_o"
+                            , vm.get<EventSource::Type>("v_i1") + vm.get<EventSource::Type>("v_i2") );
+        return *_ctrlPtr++;
+    }
+public:
+    TestingFilter( size_t count ) : _count(count) {
+        in_port<EventSource::Type>("v_i1");
+        in_port<EventSource::Type>("v_i2");
+        out_port<EventSource::Type>("v_o");
     }
 };
 
 class Recorder : public gdf::iProcessor {
 protected:
     virtual gdf::EvalStatus _V_eval( gdf::ValuesMap & vm ) override {
-        auto value = vm.get<Random::Type>("v_i")
-           , ctrl = vm.get<Random::Type>("ctrl")
-           ;
-        if( ctrl <= value ) {
-            if( vm.get<bool>("error") ) {
-                emraise( expected, "%u <= %u, expected."
-                       , ctrl, value );
-            } else {
-                emraise( badState, "%u <= %u, not expected."
-                       , ctrl, value );
-            }
-        }
+        vm.set<Type>( "value", _g() );
         return 0;
-    }
-public:
-    Recorder() {
-        in_port<Random::Type>("v_i");
-        in_port<Random::Type>("ctrl");
-        in_port<bool>("error");
     }
 };
 
 GOO_UT_BGN( DataflowErr, "Dataflow errors" ) {
+    // Declare framework
     gdf::Framework fw;
-    // ...    
+    
+    // Declare two event sources
+    EventSource src1, src2;
+    fw.impose( "src#1", src1 );
+    fw.impose( "src#1", src2 );
+
+    // Declare testing filter
+    TestingFilter filter;
+    fw.impose( "filter", filter );
+
+    // Declare event recordin processor
+    Recorder rec;
+    fw.impose( "recorder" );
+
+    // Connect nodes
+    fw.precedes( "src#1", "value",       "filter", "v_i1" );
+    fw.precedes( "src#2", "value",       "filter", "v_i2" );
+    fw.precedes( "filter", "v_o",        "recorder", "input" );
+
 } GOO_UT_END( DataflowErr, "Dataflow" )
 
