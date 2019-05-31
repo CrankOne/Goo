@@ -98,6 +98,8 @@ Worker::run() {
                         context.values_map_for( tierCount, nProcCurrent )
                     );
             } catch( ... ) {
+                std::cout << "Exception occured in thread." << std::endl;  // XXX
+                std::cout.flush();  // XXX
                 _excPtr = std::current_exception();
                 // We do not set processor free here intentionally. It has to
                 // remain blocked.

@@ -119,6 +119,28 @@ Framework::precedes( ExecNode * a, const std::string & aPortName
     return _links.size() - 1;
 }
 
+size_t
+Framework::precedes( const std::string & a, const std::string & aPortName
+                   , const std::string & b, const std::string & bPortName ) {
+    return precedes( this->get_processor_by_name(a), aPortName
+                   , this->get_processor_by_name(b), bPortName );
+}
+
+Framework::ExecNode *
+Framework::operator[](const std::string & name) {
+    return get_processor_by_name( name );
+}
+
+Framework::ExecNode *
+Framework::get_processor_by_name(const std::string & name) {
+    auto it = _nodesByName.find( name );
+    if( _nodesByName.end() == it ) {
+        emraise( noSuchKey, "Has no processor named \"%s\" in framework %p."
+               , name.c_str(), this );
+    }
+    return _nodesByName[name];
+}
+
 void
 Framework::_free_cache() const {
     _cache.order.clear();

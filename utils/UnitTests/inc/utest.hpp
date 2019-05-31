@@ -112,6 +112,35 @@ protected: virtual void _V_run(std::ostream & os) override { using namespace goo
 # define _ASSERT( expr, ... )                                                   \
 if( !(expr) ) { emraise( uTestFailure, __VA_ARGS__ ); }
 
+/// Starts an "expect throw" block.
+# define ut_Goo_EXPECT_THROW_BGN { bool wasThrown = false; try
+
+# define _m_Goo_COMMON_WRONG_RAISED(excType, description)                       \
+  catch( ... ) { emraise( uTestFailure, "Wrong exception type arised."          \
+        " Expected \"%s\".", typeid(excType).name() );                          \
+}                                                                               \
+    if( !wasThrown ) {                                                          \
+        emraise( uTestFailure, "Exception was not thrown while it was expected. " \
+                description );                                                  \
+    }                                                                           \
+}
+
+/// Ends an "expect throw" block.
+# define ut_Goo_EXPECT_THROW_END( excType, description )                        \
+  catch( excType ) { wasThrown = true; }                                        \
+_m_Goo_COMMON_WRONG_RAISED( excType, description )
+
+/// Ends an "expect throw" block, alternative for Goo's exceptions.
+# define ut_Goo_EXPECT_THROW_CODE_END( expCode, description )                   \
+  catch( goo::Exception & e ) {                                                 \
+    if( goo::Exception:: expCode != e.code() ) {                                \
+        emraise( uTestFailure, "Wrong Goo exception type arised. Got %d,"       \
+                " expected %d.", e.code(), goo::Exception:: expCode );          \
+    } wasThrown = true;                                                         \
+} _m_Goo_COMMON_WRONG_RAISED( goo::Exception, description )
+
+
+
 # define GOO_UT_END( name, ... ) } };                                           \
 } } void __ut_ctr_ ## name(){                                                   \
     const char depsString[][48] = { __VA_ARGS__ };                              \

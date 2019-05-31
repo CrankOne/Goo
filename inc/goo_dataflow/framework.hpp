@@ -110,9 +110,8 @@ public:
     const std::unordered_map<std::string, ExecNode *> & named_nodes( ) {
         return _nodesByName; }
 
-    ExecNode * operator[](const std::string & name) {
-        return _nodesByName[name];
-    }
+    ExecNode * get_processor_by_name(const std::string & name);
+    ExecNode * operator[](const std::string & name);
 
     /// Makes processor A to precede processor B with default (copying) link.
     size_t precedes( ExecNode * a, const std::string & aPortName
@@ -120,10 +119,7 @@ public:
 
     /// Makes processor A to precede processor B with default (copying) link.
     size_t precedes( const std::string & a, const std::string & aPortName
-                   , const std::string & b, const std::string & bPortName ) {
-        return precedes( (*this)[a], aPortName
-                       , (*this)[b], bPortName );
-    }
+                   , const std::string & b, const std::string & bPortName );
 
     /// Prints the DAG information. Needs a valid cache.
     void generate_dot_graph( std::ostream & ) const;

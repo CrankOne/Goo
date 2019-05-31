@@ -52,24 +52,39 @@
 
 # include <random>
 
+// Define this to avoid checking for expected recoverable exceptions and make
+// the module to test only error-propagation algorithm.
+# define NO_EXCEPTIONS_TESTS
+
 namespace gdf = goo::dataflow;
 
 static const int _static_eventSequence[] = {
-    1,  1,  1,  1,  /* Four ordinary events */
-    2,  1,  2,  3,  /* Skip two events and abort propagation with error code */
-    1,  2,  1, -1,  /* Skip one event and abort propagation with exception */
-    1,  1,  1,  1,
+    gdf::EvalStatus::ok,
+    gdf::EvalStatus::ok,
+    gdf::EvalStatus::ok,
+    gdf::EvalStatus::ok,
+    gdf::EvalStatus::skip,
+    gdf::EvalStatus::skip,
+    gdf::EvalStatus::done,
+    gdf::EvalStatus::ok,
+    gdf::EvalStatus::skip,
+    gdf::EvalStatus::error,
 };
 
-// PRG
+// Data source emitting the "events"
 class EventSource : public gdf::iProcessor {
 public:
-    typedef size_t Type;
+    /// Event type
+    struct Type {
+        int value;
+        size_t id;
+    };
 private:
     size_t _count;
 protected:
     virtual gdf::EvalStatus _V_eval( gdf::ValuesMap & vm ) override {
-        vm.set<Type>( "value", _count++ );
+        vm.set<Type>( "value", { _static_eventSequence[_count], _count} );
+        ++_count;
         return 0;
     }
 public:
@@ -78,28 +93,36 @@ public:
     }
 };
 
+// Filter, performing the "processing" and "discrimination"
 class TestingFilter : public gdf::iProcessor {
-private:
-    const int * _ctrlPtr;
 protected:
     virtual gdf::EvalStatus _V_eval( gdf::ValuesMap & vm ) override {
-        vm.set<EventSource::Type>( "v_o"
-                            , vm.get<EventSource::Type>("v_i1") + vm.get<EventSource::Type>("v_i2") );
-        return *_ctrlPtr++;
+        int res;
+        auto & ev = vm.get<EventSource::Type>("v_i");
+        vm.set<EventSource::Type>( "v_o", ev  );
+        return ev.value;
     }
 public:
-    TestingFilter( size_t count ) : _count(count) {
-        in_port<EventSource::Type>("v_i1");
-        in_port<EventSource::Type>("v_i2");
+    TestingFilter( ) {
+        in_port<EventSource::Type>("v_i");
         out_port<EventSource::Type>("v_o");
     }
 };
 
+// End-point consumer, tracking events passed through the filters.
 class Recorder : public gdf::iProcessor {
+private:
+    std::vector<EventSource::Type> _values;
 protected:
     virtual gdf::EvalStatus _V_eval( gdf::ValuesMap & vm ) override {
-        vm.set<Type>( "value", _g() );
+        _values.push_back( vm.get<EventSource::Type>("value1") );
+        _values.push_back( vm.get<EventSource::Type>("value2") );
         return 0;
+    }
+public:
+    Recorder() {
+        in_port<EventSource::Type>( "value1" );
+        in_port<EventSource::Type>( "value2" );
     }
 };
 
@@ -107,23 +130,89 @@ GOO_UT_BGN( DataflowErr, "Dataflow errors" ) {
     // Declare framework
     gdf::Framework fw;
     
-    // Declare two event sources
-    EventSource src1, src2;
-    fw.impose( "src#1", src1 );
-    fw.impose( "src#1", src2 );
+    # ifndef NO_EXCEPTIONS_TESTS
+    // We expect here a recoverable error of the framework, not being able to
+    // find the processor with such a name identifier (non-empty case).
+    {
+        bool hasError = false;
+        try {
+            fw.precedes( "one", "two", "three", "four" );
+        } catch( goo::Exception & e ) {
+            _ASSERT( e.code() == goo::Exception::noSuchKey
+                   , "Got wrong exception code while connecting of non-existing"
+                     " processor in empty framework: got %d instead of %d."
+                   , e.code(), goo::Exception::noSuchKey );
+            hasError = true;
+        } catch( ... ) {
+            emraise( uTestFailure, "Got wrong exception type while connecting"
+                    " non-existing processor in empty framework." );
+        }
+        _ASSERT( hasError
+               , "Connecting of non-existing processors in empty set succeed." );
+    }
+    # endif
 
-    // Declare testing filter
-    TestingFilter filter;
-    fw.impose( "filter", filter );
+    // Declare source
+    EventSource src;
+    fw.impose( "src", src );
 
-    // Declare event recordin processor
+    // Declare two (concurrent) testing filters
+    TestingFilter filter1, filter2;
+    fw.impose( "filter#1", filter1 );
+    fw.impose( "filter#2", filter2 );
+
+    // Declare event recording processor
     Recorder rec;
-    fw.impose( "recorder" );
+    fw.impose( "recorder", rec );
+
+    # ifndef NO_EXCEPTIONS_TESTS
+    // We expect here a recoverable error of the framework, not being able to
+    // find the processor with such a name identifier (non-empty case #1).
+    ut_Goo_EXPECT_THROW_BGN {
+        fw.precedes( "one", "two", "three", "four" );
+    } ut_Goo_EXPECT_THROW_CODE_END( noSuchKey, "Non-existing processor in the"
+            " empty set." );
+    # endif
 
     // Connect nodes
-    fw.precedes( "src#1", "value",       "filter", "v_i1" );
-    fw.precedes( "src#2", "value",       "filter", "v_i2" );
-    fw.precedes( "filter", "v_o",        "recorder", "input" );
+    fw.precedes( "src", "value",        "filter#1", "v_i" );
+    fw.precedes( "src", "value",        "filter#2", "v_i" );
+    # ifndef NO_EXCEPTIONS_TESTS
+    // We expect here a recoverable error of the framework, not being able to
+    // find the processor with such a name identifier (non-empty case #2).
+    ut_Goo_EXPECT_THROW_BGN {
+        fw.precedes( "src", "value", "three", "four" );
+    } ut_Goo_EXPECT_THROW_CODE_END( noSuchKey, "Non-existing processor in the"
+            " non-empty set." );
+    // We expect here a recoverable error of the framework, not being able to
+    // find the port with such a name identifier.
+    ut_Goo_EXPECT_THROW_BGN {
+        fw.precedes( "filter#1", "v_z", "recorder", "value" );
+    } ut_Goo_EXPECT_THROW_CODE_END( noSuchKey, "Non-existing port in the"
+            " non-empty set." );
+    // We expect here a recoverable error of the framework, reacting on an
+    // attempt to mess with the output/input ports
+    ut_Goo_EXPECT_THROW_BGN {
+        fw.precedes( "filter#1", "v_i", "recorder", "value" );
+    } ut_Goo_EXPECT_THROW_CODE_END( badState, "Messed up I/O ports." );
+    # endif
+    fw.precedes( "filter#1", "v_o",     "recorder", "value1" );
+    fw.precedes( "filter#2", "v_o",     "recorder", "value2" );
 
+    # if 0
+    // Process the DAG in two concurrent threads
+    std::thread          * ts[2];
+    gdf::JournaledWorker * ws[2];
+    for( size_t nThread = 0; nThread < 2; ++nThread ) {
+        ws[nThread] = new gdf::JournaledWorker( fw );
+        ts[nThread] = new std::thread( &gdf::JournaledWorker::run, ws[nThread] );
+    }
+
+    for( size_t nThread = 0; nThread < 2; ++nThread ) {
+        ts[nThread]->join();
+        delete ts[nThread];
+        delete ws[nThread];
+    }
+    # endif
 } GOO_UT_END( DataflowErr, "Dataflow" )
 
