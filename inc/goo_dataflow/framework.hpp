@@ -1,5 +1,7 @@
 # pragma once
 
+# include <mutex>
+
 # include "goo_tsort.tcc"
 # include "goo_dataflow/processor.hpp"
 # include "goo_dataflow/tier.hpp"
@@ -73,6 +75,9 @@ private:
     mutable bool _isCacheValid;
     /// Cache built on a framework: indexes, storage layout, etc.
     mutable Cache _cache;
+    /// Mutex protecting cache.
+    mutable std::recursive_mutex _cacheMtx;
+
     /// Marks cache as invalid.
     void _invalidate_cache() const { _isCacheValid = false; }
     /// Performs cache cleanup.

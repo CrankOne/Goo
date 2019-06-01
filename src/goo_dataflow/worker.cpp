@@ -78,70 +78,72 @@ Storage::values_map_for( size_t tierNo
 
 void
 Worker::run() {
-    // Allocate storage
-    Storage context( _fwRef.get_cache() );
-    size_t tierCount = 0;
-    EvalStatus rc;
-    for( auto tierPtr : _fwRef.get_cache().tiers ) {
-        auto & tier = *tierPtr;
-        // Bitmask reflecting one-to-one bits for processing
-        Bitset toProcess( tier.size() );
-        toProcess.set();
-        while( toProcess.any() ) {
-            dag::Node<iProcessor> * nPtr;
-            size_t nProcCurrent = tier.borrow_one( toProcess, nPtr );
-            _notify( nProcCurrent, tierCount
-                   , EventCode::execStarted );
-            try {
+    ssize_t nProcCurrent = -1;
+    ssize_t tierCount = -1;
+    try {
+        // Allocate storage
+        Storage context( _fwRef.get_cache() );
+        tierCount = 0;
+        EvalStatus rc;
+        for( auto tierPtr : _fwRef.get_cache().tiers ) {
+            auto & tier = *tierPtr;
+            // Bitmask reflecting one-to-one bits for processing
+            Bitset toProcess( tier.size() );
+            toProcess.set();
+            while( toProcess.any() ) {
+                dag::Node<iProcessor> * nPtr;
+                nProcCurrent = tier.borrow_one( toProcess, nPtr );
+                _notify( nProcCurrent, tierCount
+                       , EventCode::execStarted );
                 // Here the actual processing goes:
                 rc = nPtr->data().eval(
                         context.values_map_for( tierCount, nProcCurrent )
                     );
-            } catch( ... ) {
-                std::cout << "Exception occured in thread." << std::endl;  // XXX
-                std::cout.flush();  // XXX
-                _excPtr = std::current_exception();
-                // We do not set processor free here intentionally. It has to
-                // remain blocked.
-                _notify( nProcCurrent, tierCount
-                       , EventCode::execErrException );
-                return;
+                if( rc == EvalStatus::ok ) {
+                    // Normal termination. Release the processor, drop "interest"
+                    // bit
+                    tier.set_free(nProcCurrent);
+                    toProcess.reset( nProcCurrent );
+                    _notify( nProcCurrent, tierCount
+                           , EventCode::execOk );
+                } else if( rc == EvalStatus::skip ) {
+                    _notify( nProcCurrent, tierCount
+                           , EventCode::execSkip );
+                    // ^^^ notify done BEFORE setting processor free to prevent
+                    // re-activation from other threads.
+                    tier.set_free( nProcCurrent );
+                    toProcess.reset( nProcCurrent );
+                } else if( rc == EvalStatus::done ) {
+                    _notify( nProcCurrent, tierCount
+                           , EventCode::execDone );
+                    tier.set_free( nProcCurrent );
+                    toProcess.reset( nProcCurrent );
+                } else if( rc == EvalStatus::error ) {
+                    // We do not set processor free here intentionally. It has
+                    // to remain blocked.
+                    _notify( nProcCurrent, tierCount
+                           , EventCode::execRuntimeError );
+                    return;
+                } else {
+                    // Processor returned unexpected status code. Block execution
+                    // as in case of usual error.
+                    _notify( nProcCurrent, tierCount 
+                           , EventCode::execBadRC );
+                    return;
+                }
             }
-            if( rc == EvalStatus::ok ) {
-                // Normal termination. Release the processor, drop "interest"
-                // bit
-                tier.set_free(nProcCurrent);
-                toProcess.reset( nProcCurrent );
-                _notify( nProcCurrent, tierCount
-                       , EventCode::execOk );
-            } else if( rc == EvalStatus::skip ) {
-                _notify( nProcCurrent, tierCount
-                       , EventCode::execSkip );
-                // ^^^ notify done BEFORE setting processor free to prevent
-                // re-activation from other threads.
-                tier.set_free( nProcCurrent );
-                toProcess.reset( nProcCurrent );
-            } else if( rc == EvalStatus::done ) {
-                _notify( nProcCurrent, tierCount
-                       , EventCode::execDone );
-                tier.set_free( nProcCurrent );
-                toProcess.reset( nProcCurrent );
-            } else if( rc == EvalStatus::error ) {
-                // We do not set processor free here intentionally. It has
-                // to remain blocked.
-                _notify( nProcCurrent, tierCount
-                       , EventCode::execRuntimeError );
-                return;
-            } else {
-                // Processor returned unexpected status code. Block execution
-                // as in case of usual error.
-                _notify( nProcCurrent, tierCount 
-                       , EventCode::execBadRC );
-                return;
-            }
+            assert( toProcess.none() );  // assure all done
+            ++tierCount;
         }
-        assert( toProcess.none() );  // assure all done
-        ++tierCount;
+    } catch( ... ) {
+        std::cout << "Exception occured in thread." << std::endl;  // XXX
+        std::cout.flush();  // XXX
+        _excPtr = std::current_exception();
+        // We do not set processor free here intentionally. It has to
+        // remain blocked.
+        _notify( nProcCurrent, tierCount
+               , EventCode::execErrException );
+        return;
     }
 }
 

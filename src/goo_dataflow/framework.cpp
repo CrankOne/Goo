@@ -143,6 +143,7 @@ Framework::get_processor_by_name(const std::string & name) {
 
 void
 Framework::_free_cache() const {
+    std::unique_lock<std::recursive_mutex> lock(_cacheMtx);
     _cache.order.clear();
     for( auto tierPtr : _cache.tiers ) {
         delete tierPtr;
@@ -156,6 +157,7 @@ Framework::_free_cache() const {
 
 void
 Framework::_recache() const {
+    std::unique_lock<std::recursive_mutex> lock(_cacheMtx);
     _free_cache();
     // Compute order of execution
     _cache.order = dag::dfs(_nodes);
@@ -197,7 +199,7 @@ Framework::_recache() const {
 
 void
 Framework::generate_dot_graph( std::ostream & os ) const {
-
+    std::unique_lock<std::recursive_mutex> lock(_cacheMtx);
     os << "digraph g {" << std::endl;
     for( auto dagNodePtr : _nodes ) {
         auto n = static_cast<const ExecNode*>(dagNodePtr);
@@ -293,6 +295,7 @@ Framework::generate_dot_graph( std::ostream & os ) const {
 
 const Framework::Cache &
 Framework::get_cache() const {
+    std::unique_lock<std::recursive_mutex> lock(_cacheMtx);
     if( !_isCacheValid ) {
         _recache();
     }

@@ -130,27 +130,14 @@ GOO_UT_BGN( DataflowErr, "Dataflow errors" ) {
     // Declare framework
     gdf::Framework fw;
     
-    # ifndef NO_EXCEPTIONS_TESTS
+    # ifndef NO_EXCEPTIONS_TESTS /*{{{*/
     // We expect here a recoverable error of the framework, not being able to
     // find the processor with such a name identifier (non-empty case).
-    {
-        bool hasError = false;
-        try {
+    ut_Goo_EXPECT_THROW_BGN {
             fw.precedes( "one", "two", "three", "four" );
-        } catch( goo::Exception & e ) {
-            _ASSERT( e.code() == goo::Exception::noSuchKey
-                   , "Got wrong exception code while connecting of non-existing"
-                     " processor in empty framework: got %d instead of %d."
-                   , e.code(), goo::Exception::noSuchKey );
-            hasError = true;
-        } catch( ... ) {
-            emraise( uTestFailure, "Got wrong exception type while connecting"
-                    " non-existing processor in empty framework." );
-        }
-        _ASSERT( hasError
-               , "Connecting of non-existing processors in empty set succeed." );
-    }
-    # endif
+    } ut_Goo_EXPECT_THROW_CODE_END( noSuchKey,
+            "Connecting of non-existing processors in empty set");
+    # endif /*}}}*/
 
     // Declare source
     EventSource src;
@@ -165,19 +152,19 @@ GOO_UT_BGN( DataflowErr, "Dataflow errors" ) {
     Recorder rec;
     fw.impose( "recorder", rec );
 
-    # ifndef NO_EXCEPTIONS_TESTS
+    # ifndef NO_EXCEPTIONS_TESTS /* {{{ */
     // We expect here a recoverable error of the framework, not being able to
     // find the processor with such a name identifier (non-empty case #1).
     ut_Goo_EXPECT_THROW_BGN {
         fw.precedes( "one", "two", "three", "four" );
     } ut_Goo_EXPECT_THROW_CODE_END( noSuchKey, "Non-existing processor in the"
             " empty set." );
-    # endif
+    # endif /* }}} */
 
     // Connect nodes
     fw.precedes( "src", "value",        "filter#1", "v_i" );
     fw.precedes( "src", "value",        "filter#2", "v_i" );
-    # ifndef NO_EXCEPTIONS_TESTS
+    # ifndef NO_EXCEPTIONS_TESTS /*{{{*/
     // We expect here a recoverable error of the framework, not being able to
     // find the processor with such a name identifier (non-empty case #2).
     ut_Goo_EXPECT_THROW_BGN {
@@ -195,11 +182,13 @@ GOO_UT_BGN( DataflowErr, "Dataflow errors" ) {
     ut_Goo_EXPECT_THROW_BGN {
         fw.precedes( "filter#1", "v_i", "recorder", "value" );
     } ut_Goo_EXPECT_THROW_CODE_END( badState, "Messed up I/O ports." );
-    # endif
+    # endif  /* }}} */
     fw.precedes( "filter#1", "v_o",     "recorder", "value1" );
     fw.precedes( "filter#2", "v_o",     "recorder", "value2" );
 
-    # if 0
+    //fw.generate_dot_graph(os);
+
+    # if 1
     // Process the DAG in two concurrent threads
     std::thread          * ts[2];
     gdf::JournaledWorker * ws[2];
@@ -207,7 +196,7 @@ GOO_UT_BGN( DataflowErr, "Dataflow errors" ) {
         ws[nThread] = new gdf::JournaledWorker( fw );
         ts[nThread] = new std::thread( &gdf::JournaledWorker::run, ws[nThread] );
     }
-
+    // ...
     for( size_t nThread = 0; nThread < 2; ++nThread ) {
         ts[nThread]->join();
         delete ts[nThread];
