@@ -91,6 +91,13 @@ Worker::run() {
             Bitset toProcess( tier.size() );
             toProcess.set();
             while( toProcess.any() ) {
+                // Check the error flag that might be set by other and stop
+                if( _fwRef.terminate_flag_is_set() ) {
+                    tier.set_free( nProcCurrent );
+                    _notify( nProcCurrent, tierCount
+                           , EventCode::execTerm );
+                    return;
+                }
                 dag::Node<iProcessor> * nPtr;
                 nProcCurrent = tier.borrow_one( toProcess, nPtr );
                 _notify( nProcCurrent, tierCount
@@ -100,20 +107,26 @@ Worker::run() {
                         context.values_map_for( tierCount, nProcCurrent )
                     );
                 if( rc == EvalStatus::ok ) {
-                    // Normal termination. Release the processor, drop "interest"
-                    // bit
+                    // Normal termination. Release the processor, clear
+                    // "interest" bit
                     tier.set_free(nProcCurrent);
                     toProcess.reset( nProcCurrent );
                     _notify( nProcCurrent, tierCount
                            , EventCode::execOk );
                 } else if( rc == EvalStatus::skip ) {
+                    // Message has to be skipped, terminate this thread.
                     _notify( nProcCurrent, tierCount
                            , EventCode::execSkip );
                     // ^^^ notify done BEFORE setting processor free to prevent
                     // re-activation from other threads.
                     tier.set_free( nProcCurrent );
                     toProcess.reset( nProcCurrent );
+                    return;
                 } else if( rc == EvalStatus::done ) {
+                    // Message satisfies look-up/final reduce condition.
+                    // Terminate this thread and gracefully stop all the rest
+                    // threads.
+                    _fwRef._set_terminate_flag();
                     _notify( nProcCurrent, tierCount
                            , EventCode::execDone );
                     tier.set_free( nProcCurrent );
@@ -121,12 +134,14 @@ Worker::run() {
                 } else if( rc == EvalStatus::error ) {
                     // We do not set processor free here intentionally. It has
                     // to remain blocked.
+                    _fwRef._set_terminate_flag();
                     _notify( nProcCurrent, tierCount
                            , EventCode::execRuntimeError );
                     return;
                 } else {
                     // Processor returned unexpected status code. Block execution
                     // as in case of usual error.
+                    _fwRef._set_terminate_flag();
                     _notify( nProcCurrent, tierCount 
                            , EventCode::execBadRC );
                     return;

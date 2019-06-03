@@ -41,6 +41,7 @@ public:
     enum EventCode : uint8_t {
         execStarted,        // on processing start
         execOk,             // on EvalStatus::ok
+        execTerm,           // in case of termination by external reason
         execErrException,   // on exception
         execRuntimeError,   // on EvalStatus::error
         execSkip,           // on EvalStatus::skip
@@ -50,7 +51,7 @@ public:
 protected:
     /// Reference to the framework instance to be executed.
     Framework & _fwRef;
-    /// TODO: description
+    /// TODO: XXX
     virtual inline void _notify( size_t nProc, size_t nTier, EventCode evType ) {
         //if( evType & _stopFlag ) {
         //    // In this case, all the concurrent threads has to be notified that

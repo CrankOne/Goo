@@ -77,6 +77,11 @@ private:
     mutable Cache _cache;
     /// Mutex protecting cache.
     mutable std::recursive_mutex _cacheMtx;
+    
+    /// When set to true, every worker has to terminate traversal through DAG.
+    bool _terminateFlag;
+    /// Guards _errorFlag
+    mutable std::mutex _terminateFlagMtx;
 
     /// Marks cache as invalid.
     void _invalidate_cache() const { _isCacheValid = false; }
@@ -93,6 +98,9 @@ private:
                    , ExecNode & b, const std::string & bPortName
                    );
     static void _build_values_map( const std::unordered_map<size_t, Link> & );
+protected:
+    /// Sets the error flag.
+    void _set_terminate_flag();
 public:
     /// Default ctr -- empty framework.
     Framework();
@@ -128,6 +136,11 @@ public:
 
     /// Prints the DAG information. Needs a valid cache.
     void generate_dot_graph( std::ostream & ) const;
+
+    bool terminate_flag_is_set() const {
+        std::unique_lock<std::mutex> l( _terminateFlagMtx );
+        return _terminateFlag;
+    }
 
     friend class Storage;
     friend class Worker;

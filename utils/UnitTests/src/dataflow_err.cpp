@@ -67,6 +67,7 @@ static const int _static_eventSequence[] = {
     gdf::EvalStatus::skip,
     gdf::EvalStatus::done,
     gdf::EvalStatus::ok,
+    gdf::EvalStatus::ok,
     gdf::EvalStatus::skip,
     gdf::EvalStatus::error,
 };

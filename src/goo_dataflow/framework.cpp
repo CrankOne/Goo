@@ -31,7 +31,7 @@ Framework::Cache::BoundLinkLess::operator()( const BoundPort_t & a
         ;
 }
 
-Framework::Framework() : _isCacheValid(false) {}
+Framework::Framework() : _isCacheValid(false), _terminateFlag(false) {}
 
 Framework::~Framework() {
     _free_cache();
@@ -300,6 +300,12 @@ Framework::get_cache() const {
         _recache();
     }
     return _cache;
+}
+
+void
+Framework::_set_terminate_flag() {
+    std::unique_lock<std::mutex> lock( _terminateFlagMtx );
+    _terminateFlag = true;
 }
 
 }  // ::goo::dataflow
