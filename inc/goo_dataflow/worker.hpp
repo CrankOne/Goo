@@ -4,6 +4,7 @@
 # include <vector>
 # include <unordered_map>
 # include <cstdint>
+# include <thread>
 
 # include "goo_dataflow/processor.hpp"
 # include "goo_dataflow/tier.hpp"
@@ -51,12 +52,10 @@ public:
 protected:
     /// Reference to the framework instance to be executed.
     Framework & _fwRef;
-    /// TODO: XXX
-    virtual inline void _notify( size_t nProc, size_t nTier, EventCode evType ) {
-        //if( evType & _stopFlag ) {
-        //    // In this case, all the concurrent threads has to be notified that
-        //}
-    }
+    /// Empty implementation by default.
+    virtual inline void _notify( size_t nProc
+                               , size_t nTier
+                               , EventCode evType ) {}
     /// Ptr to exception caught, if any.
     std::exception_ptr _excPtr;
 public:
@@ -97,6 +96,102 @@ public:
     const std::vector<LogEntry> log() const {
         std::unique_lock<std::mutex> l(_logSyncM);
         return _log;
+    }
+};
+
+/**@class ReentrantWorkers
+ * @brief Manages a set of reentrant workers processing a framework.
+ *
+ * Performs dynamic scheduling across a set of threads & workers. Functionality
+ * is close to the worker pool.
+ *
+ * Supposed to be used from main thread only.
+ *
+ * @TODO: run threads, actually
+ * */
+template<typename T>
+class ReentrantWorkers {
+private:
+    Bitset _wrksBusyFlags;
+    std::mutex _wrksBusyMtx;
+    bool _processingRequired, _done;
+    std::condition_variable _busyCV;
+
+    T ** _workers;
+    std::thread ** _threads;
+
+    /// Running in thread, provides waiting/holding operations.
+    void _thread_monitor( size_t n ) {
+        std::unique_lock<std::mutex> lock(_wrksBusyMtx);
+        while( ! _done ) {
+            while( ! _processingRequired ) {
+                _busyCV.wait( lock );
+            }
+            // Check `done' flag to support termination wake-up.
+            if( _done ) break;
+            _wrksBusyFlags.set( n );
+            _workers[n].run();
+        }
+    }
+public:
+    ReentrantWorkers() : _wrksBusyFlags(std::thread::hardware_concurrency())
+                       , _processingRequired(false)
+                       , _done(false) {
+    }
+
+    ReentrantWorkers( int nWorkers ) : _wrksBusyFlags(nWorkers)
+                                     , _threads(nullptr)
+                                     , _processingRequired(false)
+                                     , _done(false) {
+        _wrksBusyFlags.reset();
+        _workers = new T* [nWorkers];
+        bzero( _workers, sizeof(T*)*nWorkers );
+    }
+
+    /// Starts execution of single worker from the pool (async). Only the
+    /// vacant worker may be started. Returns `false' if there is no workers
+    /// currently being vacant.
+    bool dispatch_one( Framework & fw ) {
+        std::unique_lock<std::mutex> lock(_wrksBusyFlags);
+        if( _wrksBusyFlags.all() ) {
+            // No vacant workers.
+            return false;
+        }
+        // Some of the pending workers has to mark itself as busy.
+        _processingRequired = true;
+        _busyCV.notify_one();
+        _processingRequired = false;
+        return true;
+    }
+
+    /// Launches all the workers currently being available. Returns `false' if
+    /// no workers had been activated.
+    bool dispatch( Framework & fw ) {
+        std::unique_lock<std::mutex> lock(_wrksBusyMtx);
+        if( _wrksBusyFlags.all() ) {
+            // No vacant workers.
+            return false;
+        }
+        // Some of the pending workers has to mark itself as busy.
+        _processingRequired = true;
+        _busyCV.notify_all();
+        _processingRequired = false;
+        return true;
+    }
+
+    /// Blocks execution of caller untill all the workers is done.
+    bool wait() {
+        std::unique_lock<std::mutex> lock(_wrksBusyMtx);
+        if( _wrksBusyFlags.all() ) {
+            // No vacant workers.
+            return false;
+        }
+        // Some of the pending workers has to mark itself as busy.
+        _done = true;
+        _busyCV.notify_all();
+        _done = false;
+        assert( _wrksBusyFlags.none() );
+        return true;
     }
 };
 

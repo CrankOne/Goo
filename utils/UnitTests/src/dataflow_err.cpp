@@ -189,7 +189,13 @@ GOO_UT_BGN( DataflowErr, "Dataflow errors" ) {
 
     //fw.generate_dot_graph(os);
 
-    # if 1
+    gdf::ReentrantWorkers<gdf::JournaledWorker> workers;
+    workers.dispatch( fw );
+    /// Here we have to end up with few events being read. 
+    workers.wait();
+    // ...
+
+    # if 0
     // Process the DAG in two concurrent threads
     std::thread          * ts[2];
     gdf::JournaledWorker * ws[2];
