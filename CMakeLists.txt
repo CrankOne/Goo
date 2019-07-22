@@ -18,7 +18,7 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-cmake_minimum_required( VERSION 2.6 )
+cmake_minimum_required( VERSION 3.1 )
 project( Goo )
 
 # TODO: read this:
@@ -276,7 +276,7 @@ target_compile_features( ${Goo_LIBRARY} PUBLIC
             cxx_variadic_templates
             cxx_template_template_parameters
             #cxx_structured_bindings
-            cxx_std_17
+            #cxx_std_17
             )
 
 target_compile_definitions( ${Goo_LIBRARY} PUBLIC _GNU_SOURCE _FILE_OFFSET_BITS=64 )
