@@ -1,5 +1,6 @@
 # include <assert.h>
 # include <math.h>
+# include "goo_utility.h"
 # include "gds/expression.h"
 # include "gds/arithmetic_eval.h"
 

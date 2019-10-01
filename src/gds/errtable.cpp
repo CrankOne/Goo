@@ -26,6 +26,7 @@
 # include <map>
 # include <goo_exception.hpp>
 
+# ifdef ENABLE_GDS
 namespace goo {
 namespace gds {
 
@@ -35,7 +36,6 @@ _static_GDSErrorsDescriptionsPtr = NULL;
 }  // namespace gds
 }  // namespace goo
 
-# ifdef ENABLE_GDS
 # ifdef __cplusplus
 extern "C" {
 # endif  /* __cplusplus */
